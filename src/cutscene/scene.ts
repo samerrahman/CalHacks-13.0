@@ -119,10 +119,9 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   const tank = await prop('containment_tank'); tank.position.copy(LAB_TANK); labSet.add(tank); own(tank);
   const claws = await prop('claws'); own(claws); claws.scale.setScalar(1.8); // claw_mount is placed for this scale
   (find(tank, 'claw_mount') ?? tank).add(claws);
-  // Two colleagues: A works the bench right of the tank, B checks it with a clipboard on the left.
-  const colleagues = await Promise.all([prop('researcher'), prop('researcher')]);
-  colleagues.forEach(r => { own(r); labSet.add(r); });
-  find(colleagues[0], 'clipboard')?.traverse(o => { o.visible = false; });
+  // A colleague with a clipboard checks the tube from its front-right: the one the hand takes.
+  const colleague = await prop('researcher'); own(colleague); labSet.add(colleague);
+  colleague.rotation.order = 'YXZ';
   const corridor = await prop('lab_corridor'); corridor.position.z = CORRIDOR_Z; corridorSet.add(corridor); own(corridor);
   const exit = await prop('exit_door'); exit.position.z = EXIT_Z; corridorSet.add(exit); own(exit);
   const ground = await prop('forest_ground'); ground.position.z = GROUND_Z; forestSet.add(ground);
@@ -196,8 +195,8 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   // ---------- lights ----------
   const hemi = new THREE.HemisphereLight(0x6f8a9a, 0x0b0d0c, 0.2); scene.add(hemi);
   const labLights = [0, 1, 2, 3].map(i => {
-    const at = worldOf(find(lab, `ceiling_light_${i}`), new THREE.Vector3(i % 2 ? 2.5 : -2.5, 3.0, i < 2 ? -2 : 2));
-    const l = new THREE.PointLight(0xd8eeff, 0, 10, 2); l.position.copy(at).add(new THREE.Vector3(0, -0.25, 0)); scene.add(l); return l;
+    const at = worldOf(find(lab, `ceiling_light_${i}`), new THREE.Vector3(i % 2 ? 3.5 : -3.5, 3.95, i < 2 ? -6 : 1));
+    const l = new THREE.PointLight(0xd8eeff, 0, 12, 2); l.position.copy(at).add(new THREE.Vector3(0, -0.25, 0)); scene.add(l); return l;
   });
   const hatchAt = worldOf(find(tank, 'hatch_hole'), LAB_TANK.clone().add(new THREE.Vector3(0, 1.65, 1.2)));
   const tankWash = new THREE.PointLight(0x37e0c8, 0, 6, 2); tankWash.position.copy(hatchAt).add(new THREE.Vector3(0, 1.0, 1.4)); scene.add(tankWash);
@@ -205,9 +204,9 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   const clawKey = new THREE.PointLight(0xc8dcff, 0, 3, 2); clawKey.position.copy(hatchAt).add(new THREE.Vector3(1.3, 0.55, 0.9)); scene.add(clawKey); // catches the hand on the frame
   const burstFlash = new THREE.PointLight(0xffa868, 0, 6, 2); burstFlash.position.copy(hatchAt).add(new THREE.Vector3(0, 0, 0.6)); scene.add(burstFlash);
   const consoleGlow = new THREE.PointLight(0x37e0c8, 0, 2.5, 2); consoleGlow.position.set(0, 1.25, 0.7); scene.add(consoleGlow);
-  const labAlarmAt = [0, 1, 2, 3].map(i => worldOf(find(lab, `alarm_light_${i}`), new THREE.Vector3(i % 2 ? 4.6 : -4.6, 2.8, i < 2 ? -3 : 3)));
+  const labAlarmAt = [0, 1, 2, 3].map(i => worldOf(find(lab, `alarm_light_${i}`), new THREE.Vector3(i % 2 ? 6.9 : -6.9, 3.2, i < 2 ? -2.5 : 4.4)));
   const corridorAlarmAt = [0, 1, 2, 3, 4, 5].map(i => worldOf(find(corridor, `alarm_light_${i}`), new THREE.Vector3(0, 2.4, CORRIDOR_Z + 1 + i * 2)));
-  const labAlarms = labAlarmAt.map(at => { const l = new THREE.PointLight(0xff2a1a, 0, 7, 2); l.position.copy(at); scene.add(l); return l; });
+  const labAlarms = labAlarmAt.map(at => { const l = new THREE.PointLight(0xff2a1a, 0, 10, 2); l.position.copy(at); scene.add(l); return l; });
   const corridorAlarms = corridorAlarmAt.map(at => { const l = new THREE.PointLight(0xff2a1a, 0, 7, 2); l.position.copy(at); scene.add(l); return l; });
   const exitGlow = new THREE.PointLight(0x3dff6e, 0, 3.5, 2); exitGlow.position.copy(worldOf(find(exit, 'exit_sign'), new THREE.Vector3(0, 2.4, EXIT_Z))).add(new THREE.Vector3(0, -0.15, -0.35)); scene.add(exitGlow);
   const moon = new THREE.DirectionalLight(0x7d93b8, 0); moon.position.set(-25, 40, 10); moon.target.position.set(0, 0, 32); scene.add(moon, moon.target);
@@ -275,7 +274,7 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   fade.position.z = -0.08; fade.renderOrder = 999; camera.add(fade);
   const fadeMaterial = fade.material as THREE.MeshBasicMaterial;
 
-  await applyLook(scene, look);
+  await applyLook(scene, look, [lab, tank, corridor, exit]); // the facility is kept clean; the woods are not
   const post = createPost(renderer, look);
 
   // ---------- camera ----------
@@ -287,28 +286,28 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   }
   const shedY = shelter.position.y, inside = SHED.z + 0.75, sx = SHED.x;
   const rig = new CameraRig([
-    // Reading the subject's vitals at the console; the lights stutter overhead; the breach comes
-    // up on screen; A bolts past on the right; the first thud snaps the eyes to the tank as B runs left.
-    { t: 0, pos: [0.05, 1.62, 1.08], yaw: 3, pitch: -33 },
-    { t: 1.7, pos: [0.04, 1.62, 1.08], yaw: 2, pitch: -31 },
-    { t: B.flicker + 0.05, pos: [0.04, 1.63, 1.1], yaw: 0, pitch: -8 },
-    { t: B.flicker + 0.45, pos: [0.05, 1.64, 1.12], yaw: -24, pitch: 15 },
-    { t: B.alarm + 0.1, pos: [0.05, 1.64, 1.14], yaw: -14, pitch: 6 },
-    { t: B.alarm + 0.45, pos: [0.04, 1.63, 1.12], yaw: 1, pitch: -30 },
-    { t: 3.95, pos: [0.04, 1.64, 1.18], yaw: -2, pitch: -26 },
-    { t: 4.2, pos: [0.08, 1.65, 1.28], yaw: -62, pitch: -2 },
-    { t: B.thud1 + 0.15, pos: [0.04, 1.65, 1.3], yaw: -8, pitch: 3 },
-    { t: 4.95, pos: [0, 1.65, 1.3], yaw: 32, pitch: 2 },
-    { t: B.thud2, pos: [0, 1.63, 1.05], yaw: 2, pitch: 3 },
-    { t: B.thud3 + 0.2, pos: [0, 1.62, 0.95], yaw: 0, pitch: 1 },
-    { t: B.open + 0.3, pos: [0, 1.6, 1.15], yaw: 2, pitch: 2 },
-    { t: B.grab + 0.35, pos: [0.04, 1.6, 1.3], yaw: -7, pitch: 1 },
+    // Unhurried: the hall and its tube, the colleague at work beside it; one slow look down to the
+    // console, then stillness while the screen goes from STABLE to SENSOR FAULT to CONTAINMENT
+    // BREACH. The first thud brings the eyes up to the tube. Then the hand, and the snatch.
+    { t: 0, pos: [0.05, 1.63, 1.12], yaw: -5, pitch: 3 },
+    { t: 1.4, pos: [0.05, 1.63, 1.1], yaw: -3, pitch: 2 },
+    { t: 2.2, pos: [0.05, 1.62, 1.08], yaw: 1, pitch: -31 },
+    { t: B.thud1 - 0.35, pos: [0.04, 1.62, 1.1], yaw: 1, pitch: -30 },
+    { t: B.thud1 + 0.3, pos: [0.04, 1.64, 1.2], yaw: -9, pitch: 2 },
+    { t: B.thud2, pos: [0, 1.63, 1.1], yaw: -7, pitch: 3 },
+    { t: B.thud3 + 0.2, pos: [0, 1.62, 1.0], yaw: -5, pitch: 1 },
+    { t: B.open + 0.3, pos: [0, 1.6, 1.15], yaw: -6, pitch: 2 },
+    { t: B.grab + 0.35, pos: [0.04, 1.6, 1.25], yaw: -12, pitch: 1 },
+    { t: B.snatch, pos: [0.04, 1.6, 1.25], yaw: -14, pitch: 1 },
+    { t: B.snatch + 0.24, pos: [-0.02, 1.6, 1.22], yaw: -46, pitch: -2 },
+    { t: B.snatch + 0.45, pos: [-0.04, 1.6, 1.25], yaw: -36, pitch: 0 },
+    { t: B.snatch + 0.85, pos: [0.04, 1.6, 1.4], yaw: -8, pitch: 2 },
     { t: B.turn + 0.3, pos: [0.15, 1.6, 2.0], yaw: 120, pitch: -1, run: 0.5 },
-    { t: 9.3, pos: [0.1, 1.62, 3.6], yaw: 182, run: 1, breath: 0.2 },
-    { t: 10.1, pos: [0.02, 1.62, 6.5], yaw: 181, run: 1 },
-    { t: 11.0, pos: [-0.45, 1.62, 9.6], yaw: 172, run: 1 },
-    { t: 11.6, pos: [-0.5, 1.62, 11.7], yaw: 180, run: 1 },
-    { t: 12.2, pos: [-0.05, 1.62, 14.3], yaw: 186, run: 1 },
+    { t: B.turn + 0.9, pos: [0.1, 1.62, 3.6], yaw: 182, run: 1, breath: 0.2 },
+    { t: B.turn + 1.7, pos: [0.02, 1.62, 6.5], yaw: 181, run: 1 },
+    { t: B.turn + 2.6, pos: [-0.45, 1.62, 9.6], yaw: 172, run: 1 },
+    { t: B.turn + 3.2, pos: [-0.5, 1.62, 11.7], yaw: 180, run: 1 },
+    { t: B.turn + 3.8, pos: [-0.05, 1.62, 14.3], yaw: 186, run: 1 },
     { t: B.barge, pos: [0, 1.6, 16.0], yaw: 180, pitch: -3, run: 0.8 },
     ...forestKeys,
     // The door is hinged on +X (camera left) and swings out 1.5 m; keep the eye outside that arc.
@@ -328,7 +327,7 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
     { t: B.end, pos: [sx + 0.1, shedY + 1.48, inside + 0.2], yaw: 358, pitch: 3 },
   ], [
     { t: B.thud1, strength: 0.25 }, { t: B.thud2, strength: 0.45 }, { t: B.thud3, strength: 0.6, kick: 0.05 },
-    { t: B.open, strength: 1.2, kick: 0.2 }, { t: B.grab, strength: 0.3 }, { t: B.barge, strength: 0.9, kick: -0.1 },
+    { t: B.open, strength: 1.2, kick: 0.2 }, { t: B.grab, strength: 0.3 }, { t: B.snatch + 0.2, strength: 0.7, kick: 0.06 }, { t: B.snatch + 0.78, strength: 0.4 }, { t: B.barge, strength: 0.9, kick: -0.1 },
     { t: B.slam, strength: 1.1, kick: 0.08 }, { t: B.crash, strength: 2.2, kick: 0.2 }, { t: B.scrape, strength: 0.4 },
   ]);
 
@@ -337,37 +336,62 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   const crashFlickerOf = (t: number) => t >= B.crash && t < B.crash + 0.5 ? (hash(Math.floor(t * 40)) > 0.4 ? 1 : 0.15) : 1;
   const shakeOf = (t: number, hits: [number, number][]) => hits.reduce((s, [at, amp]) => { const dt = t - at; return dt < 0 || dt > 1 ? s : s + Math.sin(dt * 70) * amp * Math.exp(-dt * 7); }, 0);
 
+  // The colleague's marks: beside you at the console's right end, a step back at the first thud,
+  // another as it bursts; the last is where the hand takes them, at chest height.
+  const STAND: [number, number][] = [[0.95, 0.85], [1.0, 0.95], [1.05, 1.0]];
+  const facing = Math.atan2(LAB_TANK.x - STAND[0][0], LAB_TANK.z + 1.2 - STAND[0][1]); // toward the hatch
+  const clawMount = claws.parent!;
+  clawMount.updateWorldMatrix(true, false);
+  // In claw_mount space: the arm aims from the hatch straight at the colleague's chest (palm 0.27
+  // ahead of the wrist), and its forearm stretches so it always runs back into the dark.
+  const chestAt = clawMount.worldToLocal(new THREE.Vector3(STAND[2][0], 1.3, STAND[2][1])), aim = chestAt.clone().normalize();
+  const lunge = chestAt.clone().addScaledVector(aim, -0.27), INSIDE = aim.clone().multiplyScalar(-1.2), held = new THREE.Vector3();
+  const aimQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), aim), twist = new THREE.Quaternion(), twistE = new THREE.Euler();
+  const forearm = find(claws, 'forearm'), FOREARM = 0.95 * 1.8; // its length at the scene's scale
+
   function poseClaws(t: number): void {
-    // Out of the dark, around the frame on the non-hinge side, fingers curling to grip.
-    claws.visible = t >= B.grab - 0.25 && t < 12;
-    claws.position.set(0, track(t, [[B.grab, 0], [B.turn + 0.5, 0.03]]), track(t, [[B.grab - 0.25, -0.8], [B.grab, 0], [B.grab + 0.15, 0.03], [B.turn + 0.5, 0.07]]));
-    claws.rotation.set(Math.sin(t * 7) * 0.02, track(t, [[B.grab, 0.25], [B.grab + 0.3, 0]]), 0);
-    const grip = track(t, [[B.grab - 0.25, -0.1], [B.grab + 0.05, 0.2], [B.grab + 0.25, 1.05], [B.grab + 0.6, 1.15]]);
+    // Out of the dark onto the frame (non-hinge side), fingers curling to grip. Then it lets go,
+    // lunges, closes on the colleague and drags them back into the dark.
+    claws.visible = t >= B.grab - 0.25 && t < B.snatch + 0.9;
+    const reach = ramp(t, B.snatch, B.snatch + 0.2), back = Math.pow(clamp01((t - B.snatch - 0.35) / 0.4), 2);
+    held.set(0, track(t, [[B.grab, 0], [B.snatch, 0.02]]), track(t, [[B.grab - 0.25, -0.8], [B.grab, 0], [B.grab + 0.15, 0.03], [B.snatch, 0.05]]));
+    claws.position.copy(held).lerp(lunge, reach).lerp(INSIDE, back);
+    if (t > B.snatch + 0.2 && t < B.snatch + 0.4) claws.position.x += Math.sin(t * 90) * 0.02; // the struggle
+    twist.setFromEuler(twistE.set(Math.sin(t * 7) * 0.02, track(t, [[B.grab, 0.25], [B.grab + 0.3, 0]]), 0));
+    claws.quaternion.identity().slerp(aimQ, ramp(t, B.snatch, B.snatch + 0.12)).multiply(twist);
+    if (forearm) forearm.scale.z = Math.max(1, (claws.position.length() + 0.35) / FOREARM);
+    const grip = track(t, [[B.grab - 0.25, -0.1], [B.grab + 0.05, 0.2], [B.grab + 0.25, 1.05], [B.grab + 0.6, 1.15], [B.snatch, 1.15], [B.snatch + 0.08, -0.35], [B.snatch + 0.18, -0.3], [B.snatch + 0.26, 1.3]]);
     fingers.forEach((f, i) => { if (f) f.node.rotation.set(f.rest.x + grip + Math.sin(t * 13 + i * 1.7) * 0.04, f.rest.y, f.rest.z); });
   }
 
-  // Colleagues: idle at their stations, then they run for the lab door (+Z) and are gone.
-  const tankYaw = (x: number, z: number) => Math.atan2(LAB_TANK.x - x, LAB_TANK.z - z);
-  const flights = [
-    { who: colleagues[0], go: 3.7, gone: 5.3, path: [[2.7, -0.6], [1.7, 0.5], [1.1, 1.8], [0.4, 3.4], [0.05, 4.9]], startle: B.alarm },
-    { who: colleagues[1], go: 4.6, gone: 6.1, path: [[-2.2, -1.2], [-2.4, 0.3], [-1.5, 2.0], [-0.4, 3.6], [-0.05, 4.9]], startle: B.thud1 },
-  ].map(f => ({ ...f, curve: new THREE.CatmullRomCurve3(f.path.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'centripetal'), rest: tankYaw(f.path[0][0], f.path[0][1]),
-    joints: Object.fromEntries(['body', 'torso', 'head', 'arm_l', 'arm_r', 'leg_l', 'leg_r'].map(n => [n, find(f.who, n)])) as Record<string, THREE.Object3D | null> }));
-  function poseColleagues(t: number): void {
-    for (const f of flights) {
-      f.who.visible = labSet.visible && t < f.gone;
-      if (!f.who.visible) continue;
-      const k = clamp01((t - f.go) / (f.gone - f.go)), run = ramp(t, f.go - 0.05, f.go + 0.25);
-      const p = f.curve.getPointAt(Math.pow(k, 1.25)), tan = f.curve.getTangentAt(Math.max(0.001, Math.pow(k, 1.25)));
-      const flinch = ramp(t, f.startle, f.startle + 0.15) * (1 - ramp(t, f.go, f.go + 0.3)), stride = Math.sin((t - f.go) * Math.PI * 2 * 2.8) * run;
-      f.who.position.set(p.x, Math.abs(stride) * 0.05, p.z);
-      f.who.rotation.y = f.rest + (Math.atan2(tan.x, tan.z) - f.rest) * run + Math.sin(t * 0.7) * 0.05 * (1 - run);
-      const j = f.joints, set = (o: THREE.Object3D | null, x: number, y = 0) => o?.rotation.set(x, y, 0);
-      set(j.torso, 0.3 * run - 0.25 * flinch + Math.sin(t * 1.3) * 0.02 * (1 - run));
-      set(j.head, -0.25 * flinch + 0.1 * run, 0.6 * flinch);  // a look toward the camera as it all goes wrong
-      set(j.arm_l, -0.6 * stride + (0.5 - 1.4 * flinch) * (1 - run));  // working at the bench, then thrown up
-      set(j.arm_r, 0.6 * stride + (0.5 - 1.2 * flinch) * (1 - run));
-      set(j.leg_l, 0.75 * stride); set(j.leg_r, -0.75 * stride);
+  const cj = Object.fromEntries(['body', 'torso', 'head', 'arm_l', 'arm_r', 'leg_l', 'leg_r'].map(n => [n, find(colleague, n)])) as Record<string, THREE.Object3D | null>;
+  const palm = new THREE.Vector3(), chestOffset = new THREE.Vector3();
+  function poseColleague(t: number): void {
+    colleague.visible = labSet.visible && t < B.snatch + 0.85;
+    if (!colleague.visible) return;
+    const set = (o: THREE.Object3D | null, x: number, y = 0, z = 0) => o?.rotation.set(x, y, z);
+    if (t < B.snatch + 0.2) {
+      // Working the console beside you, a look your way at the alarm, a flinch at each blow, frozen.
+      const look = ramp(t, B.alarm, B.alarm + 0.3) * (1 - ramp(t, B.thud1, B.thud1 + 0.3));
+      const jolt = Math.max(ramp(t, B.thud1, B.thud1 + 0.12) * (1 - ramp(t, B.thud1 + 0.5, B.thud2)), ramp(t, B.open, B.open + 0.1));
+      const s1 = ramp(t, B.thud1, B.thud1 + 0.4), s2 = ramp(t, B.open, B.open + 0.35);
+      colleague.position.set(STAND[0][0] + (STAND[1][0] - STAND[0][0]) * s1 + (STAND[2][0] - STAND[1][0]) * s2, 0, STAND[0][1] + (STAND[1][1] - STAND[0][1]) * s1 + (STAND[2][1] - STAND[1][1]) * s2);
+      colleague.rotation.set(0, facing + 0.55 * look, 0);
+      const tremble = Math.sin(t * 31) * 0.03 * ramp(t, B.grab, B.grab + 0.2), up = ramp(t, B.open, B.open + 0.15);
+      set(cj.torso, -0.22 * jolt + Math.sin(t * 1.3) * 0.02 + tremble);
+      set(cj.head, 0.15 * (1 - look) - 0.2 * jolt, 0.4 * look);
+      set(cj.arm_l, 0.5 - 1.3 * up + tremble); set(cj.arm_r, 0.5 - 1.0 * up);
+      set(cj.leg_l, 0); set(cj.leg_r, 0);
+    } else {
+      // Seized at the chest: pitched head-first toward the hatch and dragged in with the hand.
+      const k = ramp(t, B.snatch + 0.2, B.snatch + 0.5), flail = Math.sin(t * 34);
+      colleague.rotation.set(1.35 * k, facing, 0.25 * Math.sin(t * 9) * k);
+      claws.updateWorldMatrix(true, false);
+      claws.localToWorld(palm.set(0, 0, 0.15));
+      colleague.position.copy(palm).sub(chestOffset.set(0, 1.3, 0.12).applyEuler(colleague.rotation));
+      set(cj.torso, 0.2); set(cj.head, -0.5);
+      set(cj.arm_l, -2.2 + 0.6 * flail); set(cj.arm_r, -2.0 - 0.6 * flail);
+      set(cj.leg_l, 0.5 * flail); set(cj.leg_r, -0.5 * flail);
     }
   }
 
@@ -392,8 +416,8 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
           g.fillText(t >= B.open ? 'HATCH OPEN' : t >= B.thud2 ? 'HATCH SEAL FAILING' : 'EVACUATE TO SHELTER', 10, 86);
         } else {
           g.font = 'bold 12px monospace'; g.fillText('SUBJECT 07 · CHAMBER 2', 8, 8);
-          g.font = 'bold 28px monospace';
-          if (!fault || hash(step) > 0.5) g.fillText(fault ? 'SENSOR FAULT' : 'STABLE', fault ? 4 : 44, 26);
+          g.font = fault ? 'bold 21px monospace' : 'bold 28px monospace';
+          if (!fault || hash(step) > 0.5) g.fillText(fault ? 'SENSOR FAULT' : 'STABLE', fault ? 18 : 44, fault ? 30 : 26);
           g.beginPath(); // its heartbeat, scrolling: slow, then racing as the lights stutter
           for (let x = 0; x < w; x += 2) {
             const ph = ((x + t * 70) % 48) / 48, beat = ph < 0.06 ? -Math.sin(ph / 0.06 * Math.PI) * 18 : 0;
@@ -422,10 +446,10 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   }
 
   function poseArms(t: number): void {
-    arms.visible = t >= B.open && t < B.black;
+    arms.visible = t >= B.turn - 0.1 && t < B.black; // only once you run: no hands hovering in the lab
     const stride = Math.sin(Math.PI * t * STEP_RATE);
     const running = ramp(t, B.turn, B.turn + 0.5) * (1 - ramp(t, B.arrive - 0.3, B.arrive + 0.2)) + ramp(t, B.enter, B.enter + 0.2) * (1 - ramp(t, B.enter + 0.4, B.lookBack)) * 0.5;
-    const guard = ramp(t, B.open, B.open + 0.12) * (1 - ramp(t, B.grab, B.turn + 0.3));
+    const guard = ramp(t, B.open, B.open + 0.12) * (1 - ramp(t, B.turn - 0.3, B.turn + 0.3));
     const push = ramp(t, B.barge - 0.35, B.barge) * (1 - ramp(t, B.barge + 0.3, B.barge + 0.8));
     const opening = ramp(t, B.arrive - 0.2, B.doorOpen) * (1 - ramp(t, B.doorOpen + 0.6, B.enter));
     const pull = ramp(t, B.haul - 0.3, B.haul + 0.4) * (1 - ramp(t, B.slam + 0.05, B.slam + 0.4));
@@ -441,11 +465,10 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
     rig.apply(camera, t);
     // Eyes lock on: reading the console, the breach on screen, the hand on the frame (a slight push-in each time).
     const fixate = Math.max(
-      1 - ramp(t, 1.9, 2.5),
-      0.8 * ramp(t, B.alarm + 0.2, B.alarm + 0.45) * (1 - ramp(t, 3.95, 4.15)),
-      ramp(t, B.grab - 0.1, B.grab + 0.35) * (1 - ramp(t, B.turn - 0.05, B.turn + 0.3)));
+      ramp(t, 1.6, 2.3) * (1 - ramp(t, B.thud1 - 0.35, B.thud1)),
+      ramp(t, B.grab - 0.1, B.grab + 0.35) * (1 - ramp(t, B.snatch - 0.05, B.snatch + 0.2)));
     if (fixate > 0) { camera.fov -= 18 * fixate; camera.updateProjectionMatrix(); }
-    labSet.visible = t < 15; corridorSet.visible = t > B.turn - 0.2 && t < 15.5; forestSet.visible = t > 12.3;
+    labSet.visible = t < B.forest + 1.8; corridorSet.visible = t > B.turn - 0.2 && t < B.forest + 2.3; forestSet.visible = t > B.barge - 0.4;
 
     // Fog and background per location.
     fogColor.copy(labFog).lerp(corridorFog, ramp(t, B.turn, B.turn + 1)).lerp(forestFog, ramp(t, B.barge, B.barge + 1));
@@ -457,7 +480,7 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
     // Lab: steady lights, a stutter, then emergency red. Thuds shake the tube.
     const step = Math.floor(t * 18), flickering = t >= B.flicker && t < B.alarm;
     const ceiling = t < B.flicker ? 1 : flickering ? (hash(step) > 0.45 ? 0.15 + hash(step + 9) * 0.9 : 0.02) : 0;
-    labLights.forEach(l => { l.intensity = labSet.visible ? ceiling * 9 : 0; });
+    labLights.forEach(l => { l.intensity = labSet.visible ? ceiling * 13 : 0; }); // a 4 m ceiling
     labCeiling.forEach(m => glow(m, ceiling * 1.6));
     tank.position.set(LAB_TANK.x + shakeOf(t, [[B.thud1, 0.015], [B.thud2, 0.03], [B.thud3, 0.04], [B.open, 0.05]]), 0, LAB_TANK.z + shakeOf(t + 0.13, [[B.thud1, 0.01], [B.thud2, 0.02], [B.thud3, 0.03], [B.open, 0.04]]));
     const alarmOn = t >= B.alarm ? 1 : 0;
@@ -474,11 +497,11 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
     if (hatchBulge) { hatchBulge.visible = t >= B.thud2; hatchBulge.scale.set(1, 1, track(t, [[B.thud2, 0.35], [B.thud2 + 0.08, 1], [B.thud2 + 0.4, 0.85], [B.thud3, 0.85], [B.thud3 + 0.08, 1.3], [B.thud3 + 0.4, 1.15]])); }
     if (hatchDoor) hatchDoor.rotation.y = track(t, [[B.open - 0.01, 0], [B.open + 0.12, -1.8], [B.open + 0.28, -2.05], [B.open + 0.55, -1.85], [B.open + 0.9, -1.92]]);
     poseClaws(t);
-    poseColleagues(t);
+    poseColleague(t);
     drawScreens(t);
 
     // Alarm beacons: the lab's fade once it's behind the runner; the corridor's are lit as soon as it can be seen.
-    labAlarms.forEach((l, i) => { l.intensity = labSet.visible ? alarmOn * 9 * (1 - ramp(t, 10.4, 11.2)) * (0.12 + 0.88 * pulse(t + i * 0.37, 1.1, 4)) : 0; });
+    labAlarms.forEach((l, i) => { l.intensity = labSet.visible ? alarmOn * 9 * (1 - ramp(t, B.turn + 2, B.turn + 2.8)) * (0.12 + 0.88 * pulse(t + i * 0.37, 1.1, 4)) : 0; });
     corridorAlarms.forEach((l, i) => { l.intensity = corridorSet.visible ? alarmOn * 7 * (0.12 + 0.88 * pulse(t + i * 0.37, 1.1, 4)) : 0; });
     labAlarmMeshes.forEach((m, i) => glow(m, alarmOn * (0.4 + 2.4 * pulse(t + i * 0.37, 1.1, 4))));
     corridorAlarmMeshes.forEach((m, i) => glow(m, alarmOn * (0.4 + 2.4 * pulse(t + i * 0.37, 1.1, 4))));

@@ -14,7 +14,7 @@ const HULL_A = HULL_R * Math.cos(Math.PI / SEG); // ≈ 1.20, z of the front fac
 const PLINTH_H = 0.3;
 const HULL_TOP = 2.85;
 const CAP_TOP = 3.07;
-const CEILING = 3.2;
+const CEILING = 4.0; // the lab's ceiling (labRoom.ts H)
 
 const HATCH_Y = 1.65;
 const HATCH_W = 0.9, HATCH_H = 1.12; // opening inside the frame

@@ -121,16 +121,21 @@ function synthSources(layers, duration, stepRate) {
     const a = layer.at, d = layer.dur, tau = `(t-${a})`;
     switch (layer.kind) {
       case 'steps':
-        if (layer.surface === 'hard') src(ev(`exp(-mod(t,${P})*26)*(0.9*sin(2*PI*62*t)+0.35*sin(2*PI*131*t))+0.35*exp(-mod(t,${P})*90)*(2*random(0)-1)`), `highpass=f=40,${vol}`);
-        else src(ev(`exp(-mod(t,${P})*22)*0.8*sin(2*PI*48*t)+0.45*exp(-mod(t,${P})*35)*(2*random(0)-1)`), `lowpass=f=1800,${vol}`);
+        // Heel strike and scuff, mostly noise: tonal thumps on this grid read as a drum beat.
+        if (layer.surface === 'hard') src(ev(`0.35*exp(-mod(t,${P})*30)*sin(2*PI*75*t)+0.6*exp(-mod(t,${P})*60)*(2*random(0)-1)+0.2*exp(-mod(t+0.08,${P})*45)*(2*random(1)-1)`), `highpass=f=60,lowpass=f=3000,${vol}`);
+        else src(ev(`0.3*exp(-mod(t,${P})*25)*sin(2*PI*55*t)+0.6*exp(-mod(t,${P})*28)*(2*random(0)-1)`), `lowpass=f=1500,${vol}`);
         break;
       case 'gallop': // something heavy running at you: fast, uneven, wet thumps
         src(ev(`exp(-mod(t,0.23)*18)*sin(2*PI*38*t)+0.6*exp(-mod(t+0.09,0.23)*22)*sin(2*PI*52*t)`), `lowpass=f=300,${vol}`);
         src(ev(`(exp(-mod(t,0.23)*30)+0.7*exp(-mod(t+0.09,0.23)*34))*(2*random(0)-1)`), `bandpass=f=420:width_type=h:w=500,volume='0.8*(${gain})':eval=frame`);
         break;
-      case 'breath':
-        src(noise('pink', 7), `bandpass=f=1300:width_type=h:w=1400,volume='(${gain})*pow(max(0,0.5-0.5*cos(2*PI*${layer.rate}*t)),1.6)':eval=frame`);
+      case 'breath': { // heavy breathing: a sharp, bright inhale, then a longer, rougher, half-voiced exhale
+        const rate = envelope(layer.rate);
+        const phase = `st(3,${rate});st(0,ld(0)+ld(3)/${SR});if(gte(ld(0),1),st(0,ld(0)-1));`;
+        src(ev(`${phase}if(lt(ld(0),0.3),pow(max(0,sin(PI*ld(0)/0.3)),1.4),0)*(2*random(4)-1)`), `highpass=f=900,bandpass=f=2300:width_type=h:w=2600,volume='0.75*(${gain})':eval=frame`);
+        src(ev(`${phase}st(5,if(between(ld(0),0.36,1),pow(max(0,sin(PI*(ld(0)-0.36)/0.64)),1.1),0));ld(5)*((2*random(4)-1)+0.25*tanh(3*sin(2*PI*112*t))*ld(5))`), `bandpass=f=1000:width_type=h:w=1500,lowpass=f=3800,volume='1.1*(${gain})':eval=frame`);
         break;
+      }
       case 'heartbeat': { // lub-dub, saturated so its harmonics carry on small speakers
         const rate = envelope(layer.rate);
         src(ev(`st(3,${rate});st(0,ld(0)+ld(3)/${SR});if(gte(ld(0),1),st(0,ld(0)-1));st(1,ld(0)/ld(3));st(7,ld(1)-min(0.3,0.42/ld(3)));`
@@ -160,9 +165,17 @@ function synthSources(layers, duration, stepRate) {
         src(ev('tanh(1.8*(0.3*sin(2*PI*41*t)+0.3*sin(2*PI*43.6*t)+0.22*sin(2*PI*61.8*t)+0.15*sin(2*PI*92.5*t+3*sin(2*PI*0.7*t))))*(0.75+0.25*sin(2*PI*5.5*t))'), vol);
         src(noise('brown', 19, 0.8), `lowpass=f=220,volume='0.8*(${gain})':eval=frame`);
         break;
-      case 'hit': { // sub-bass drop + metallic ring + crack
+      case 'hit': { // metal impact: a short low knock, inharmonic ring, a burst of noise
         const ring = layer.ring.map((f, i) => `${(0.5 / (i + 1)).toFixed(3)}*sin(2*PI*${f}*${tau})`).join('+');
-        src(ev(`if(gte(t,${a}),exp(-${tau}*2.8)*sin(2*PI*(34*${tau}+5*(1-exp(-${tau}*9))))+exp(-${tau}*${layer.decay})*(${ring})+${layer.crack}*exp(-${tau}*28)*(2*random(0)-1),0)`), `volume=${layer.level}`);
+        src(ev(`if(gte(t,${a}),0.4*exp(-${tau}*6)*sin(2*PI*(40*${tau}+4*(1-exp(-${tau}*9))))+exp(-${tau}*${layer.decay})*(${ring})+(${layer.crack}+0.5)*exp(-${tau}*16)*(2*random(0)-1),0)`), `lowpass=f=2600,volume=${layer.level}`); // a bang on steel, not a kick drum
+        break;
+      }
+      case 'wham': { // something huge hitting a steel door: sub drop, a boomy body, a short clang, a room tail
+        const T = `(t-${a})`, on = body => `if(gte(t,${a}),${body},0)`;
+        src(ev(on(`tanh(2.8*(1-exp(-${T}*300))*exp(-${T}*3.2)*sin(2*PI*(26*${T}+34*(1-exp(-${T}*7))/7)))`)), `lowpass=f=220,volume=${layer.level * 1.1}`);
+        src(ev(on(`tanh(1.8*((2*random(0)-1)*exp(-${T}*10)+0.7*sin(2*PI*92*${T})*exp(-${T}*6)+0.45*sin(2*PI*147*${T})*exp(-${T}*8)))`)), `lowpass=f=900,equalizer=f=110:t=q:w=1.4:g=6,volume=${layer.level * 0.85}`);
+        src(ev(on(`exp(-${T}*16)*(0.5*sin(2*PI*181*${T})+0.35*sin(2*PI*297*${T})+0.25*sin(2*PI*433*${T})+0.18*sin(2*PI*617*${T}))`)), `volume=${layer.level * 0.3}`);
+        src(ev(on(`(2*random(1)-1)*exp(-${T}*1.6)`)), `lowpass=f=150,aecho=0.8:0.7:70|140:0.45|0.3,volume=${layer.level * 0.7 * layer.tail}`);
         break;
       }
       case 'creak': { // stick-slip groan of a hinge or stressed metal: irregular ticks through resonances
@@ -199,13 +212,15 @@ function audioMix(cues, layers, duration, stepRate, firstInput = 1) {
   cues.forEach(cue => {
     const length = cue.until ? cue.until - cue.at : null;
     if (length && !cue.loop) inputs.push('-stream_loop', '-1');
-    inputs.push('-i', path.join(root, 'public/assets/audio', `${cue.file}.wav`));
+    inputs.push('-i', path.join(root, 'cutscene/audio', cue.file)); // recordings for the film only (credits in cutscene/audio/SOURCES.md)
     const chain = [`aformat=sample_rates=48000:channel_layouts=stereo`];
+    if (cue.from) chain.push(`atrim=start=${cue.from}`, 'asetpts=PTS-STARTPTS');
     if (cue.rate) chain.push(`asetrate=${Math.round(48000 * cue.rate)}`, 'aresample=48000');
     // Files that aren't clean loops repeat a trimmed section, so seams don't drop a beat.
     if (length && cue.loop) chain.push(`atrim=0:${cue.loop}`, 'asetpts=PTS-STARTPTS', `aloop=loop=-1:size=${Math.round(cue.loop * 48000)}`);
     if (length) chain.push(`atrim=0:${length}`, 'asetpts=PTS-STARTPTS');
     chain.push(`volume=${cue.gain}`);
+    if (cue.fadeIn) chain.push(`afade=t=in:d=${cue.fadeIn}`);
     if (length && cue.fadeOut) chain.push(`afade=t=out:st=${Math.max(0, length - cue.fadeOut)}:d=${cue.fadeOut}`);
     const ms = Math.round(cue.at * 1000);
     chain.push(`adelay=${ms}|${ms}`);
@@ -215,7 +230,7 @@ function audioMix(cues, layers, duration, stepRate, firstInput = 1) {
     inputs.push('-f', 'lavfi', '-i', s.lavfi);
     filters.push(`[${n}:a]${s.chain},aformat=sample_rates=48000:channel_layouts=stereo[a${n}]`); labels.push(`[a${n}]`); n++;
   }
-  filters.push(`${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0,acompressor=threshold=0.3:ratio=3:attack=5:release=150:makeup=1,alimiter=limit=0.9,apad,atrim=0:${duration}[aout]`);
+  filters.push(`${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0,acompressor=threshold=0.4:ratio=3:attack=15:release=180:makeup=1,alimiter=limit=0.95:attack=2,apad,atrim=0:${duration}[aout]`);
   return { inputs, filter: filters.join(';') };
 }
 

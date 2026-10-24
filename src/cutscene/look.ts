@@ -43,6 +43,21 @@ const SURFACES: Partial<Record<MaterialKey, Surface>> = {
   screen_amber: { tex: 'rusty_metal_04', tile: 0.6, glow: true },
 };
 
+/** The lab interior (room, tank, corridor, exit) is a maintained facility, not a ruin: clean
+ * brushed concrete, washed-out steel and diamond plate. Keys not listed fall back to SURFACES. */
+const CLEAN: Partial<Record<MaterialKey, Surface>> = {
+  lab_panel: { tex: 'brushed_concrete', tile: 2.0 },
+  lab_floor: { tex: 'metal_plate_clean', tile: 1.2 },
+  concrete_dark: { tex: 'brushed_concrete', tile: 2.0 },
+  metal: { tex: 'rusty_metal_02_clean', tile: 1.4 },
+  metal_dark: { tex: 'rusty_metal_02_clean', tile: 1.0 },
+  deep_steel: { tex: 'rusty_metal_02_clean', tile: 1.2, tint: 0x8aa09c },
+  steel_teal: { tex: 'rusty_metal_02_clean', tile: 1.2, tint: 0x9fb8b2 },
+  wall_teal: { tex: 'brushed_concrete', tile: 1.6, tint: 0x9fc0b8 },
+  cream: { tex: 'brushed_concrete', tile: 1.2, tint: 0xf0e8d0 },
+  hazard_yellow: { tex: 'brushed_concrete', tile: 0.8, tint: 0xffe08a },
+};
+
 const loader = new THREE.TextureLoader();
 const textures = new Map<string, Promise<{ map: THREE.Texture; mean: number }>>();
 /** A point-sampled, repeating texture and its mean linear luminance. */
@@ -85,16 +100,18 @@ function projectUVs(geometry: THREE.BufferGeometry, tile: number): void {
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
 
-/** Textures every mesh whose material is a palette key listed in SURFACES. */
-export async function applyLook(root: THREE.Object3D, look: Look): Promise<void> {
+/** Textures every mesh whose material is a palette key listed in SURFACES; meshes under any of
+ * `clean` use CLEAN first. Materials must not be shared between a clean and a grimy prop. */
+export async function applyLook(root: THREE.Object3D, look: Look, clean: THREE.Object3D[] = []): Promise<void> {
   if (look === 'flat') return;
-  const meshes: THREE.Mesh[] = [];
-  root.traverse(o => { if (o instanceof THREE.Mesh && o.geometry.index === null) meshes.push(o); });
+  const meshes: { mesh: THREE.Mesh; tidy: boolean }[] = [], tidy = new Set<THREE.Object3D>();
+  for (const c of clean) c.traverse(o => tidy.add(o));
+  root.traverse(o => { if (o instanceof THREE.Mesh && o.geometry.index === null) meshes.push({ mesh: o, tidy: tidy.has(o) }); });
   const projected = new Set<THREE.BufferGeometry>(), styled = new Set<THREE.Material>();
-  for (const mesh of meshes) {
+  for (const { mesh, tidy: isTidy } of meshes) {
     const m = mesh.material;
     if (!(m instanceof THREE.MeshStandardMaterial)) continue;
-    const surface = SURFACES[m.name as MaterialKey];
+    const key = m.name as MaterialKey, surface = (isTidy ? CLEAN[key] : undefined) ?? SURFACES[key];
     if (!surface) continue;
     if (!projected.has(mesh.geometry)) { projectUVs(mesh.geometry, surface.tile); projected.add(mesh.geometry); }
     if (styled.has(m)) continue;

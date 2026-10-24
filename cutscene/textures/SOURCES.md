@@ -12,6 +12,7 @@ All of them come from [Poly Haven](https://polyhaven.com) and are **CC0** (publi
 | `metal_plate.png` | [Metal Plate](https://polyhaven.com/a/metal_plate) | Rob Tuytel | `lab_floor` |
 | `peeling_painted_wall.png` | [Peeling Painted Wall](https://polyhaven.com/a/peeling_painted_wall) | Dimitrios Savva | `wall_teal`, `cream` |
 | `chipped_concrete.png` | [Chipped Concrete](https://polyhaven.com/a/chipped_concrete) | Amal Kumar | `concrete`, `concrete_dark`, `concrete_stain`, `labcoat` |
+| `brushed_concrete.png` | [Brushed Concrete](https://polyhaven.com/a/brushed_concrete) | Dario Barresi, Dimitrios Savva | lab walls, ceiling and trim (clean set) |
 | `anti_slip_concrete.png` | [Anti Slip Concrete](https://polyhaven.com/a/anti_slip_concrete) | Charlotte Baglioni | `glove` |
 | `bark_brown_02.png` | [Bark Brown 02](https://polyhaven.com/a/bark_brown_02) | Rob Tuytel | `bark` |
 | `forest_leaves_03.png` | [Forest Leaves 03](https://polyhaven.com/a/forest_leaves_03) | Rob Tuytel, Dimitrios Savva | `pine`, `pine_dark` |
@@ -20,5 +21,7 @@ All of them come from [Poly Haven](https://polyhaven.com) and are **CC0** (publi
 | `brown_mud_02.png` | [Brown Mud 02](https://polyhaven.com/a/brown_mud_02) | Rob Tuytel | `mud` |
 | `dark_rock.png` | [Dark Rock](https://polyhaven.com/a/dark_rock) | Amal Kumar | `rock` |
 | `rock_pitted_mossy.png` | [Rock Pitted Mossy](https://polyhaven.com/a/rock_pitted_mossy) | Dimitrios Savva, Rico Cilliers | `claw_skin`, `creature_skin` |
+
+`rusty_metal_02_clean.png` and `metal_plate_clean.png` are the same sources washed out for the clean lab (`eq=contrast=0.22:saturation=0.1:brightness=0.08` and `eq=contrast=0.4:saturation=0.25:brightness=0.06`).
 
 To swap a texture, replace its PNG and keep the file name, or point the palette key at a new file in `SURFACES` in `src/cutscene/look.ts`. Then re-render.

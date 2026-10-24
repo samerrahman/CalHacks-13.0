@@ -27,11 +27,12 @@ function finger(i: number, x: number, scale: number): THREE.Group {
 }
 
 export function buildClaws(): THREE.Group {
-  const forearm = segment(0.95, 0.1, 0.08, 'claw_skin', 6, 11);
-  forearm.position.z = -0.95;
+  const arm = segment(0.95, 0.1, 0.08, 'claw_skin', 6, 11);
+  arm.position.z = -0.95;
   const sinews = [-0.03, 0.03].map(x => box(0.02, 0.02, 0.7, 'creature_flesh', [x, 0.08, -0.45]));
+  const forearm = group('forearm', arm, ...sinews); // pivots at the wrist: scale.z stretches it back into the dark
   const palm = mesh(jitter(new THREE.BoxGeometry(0.21, 0.08, 0.17, 2, 1, 2), 0.012, 12), 'claw_skin');
   palm.position.set(0, 0, 0.075);
   const fingers = [-0.088, -0.03, 0.03, 0.088].map((x, i) => finger(i, x, i === 0 || i === 3 ? 0.85 : 1));
-  return group('claws', forearm, ...sinews, palm, ...fingers);
+  return group('claws', forearm, palm, ...fingers);
 }

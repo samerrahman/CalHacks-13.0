@@ -16,12 +16,12 @@ import { buildResearcher } from './researcher';
 export type PropSpec = { build: () => THREE.Object3D; size: string; origin: string; facing: string; nodes: string[] };
 
 export const PROPS = {
-  lab_room: { build: buildLabRoom, size: 'interior 10 (x) × 3.2 (y) × 9 (z)', origin: 'floor centre; interior spans x −5..5, z −4.5..4.5', facing: 'doorway 1.6 × 2.2 in the +Z wall at x −0.8..0.8; tank pad at (0, 0, −2.5) left empty; observation console at z ≈ +0.4 facing +Z',
+  lab_room: { build: buildLabRoom, size: 'interior 14 (x) × 4 (y) × 14 (z)', origin: 'world origin on the floor; interior spans x −7..7, z −9.5..4.5, centred on the tank pad', facing: 'doorway 1.6 × 2.2 in the +Z wall at x −0.8..0.8; tank pad at (0, 0, −2.5), the room centre, left empty; observation console at z ≈ +0.4 facing +Z; equipment racks around the tube',
     nodes: ['alarm_light_0..3 (emissive alarm_red meshes on walls/ceiling)', 'ceiling_light_0..3 (white panel meshes the scene flickers)', 'console_screen_0..2 (emissive screens on the console)'] },
   containment_tank: { build: buildContainmentTank, size: 'opaque steel vessel about 2.4 across × 3.0 tall on a 0.3 plinth', origin: 'floor centre', facing: 'front hatch faces +Z',
     nodes: ['hatch_door (group pivoting on the hatch hinge at its −X edge; rotation.y = −1.9 swings it open toward +Z)', 'hatch_panel (flat steel plate, child of hatch_door)', 'hatch_bulge (the plate bulged toward +Z, child of hatch_door; hidden at rest, scale.z grows it)', 'hatch_hole (pure black opening behind the door)', 'claw_mount (empty group on the inner frame edge at the non-hinge +X side, rotated so mounted claws hook around the frame)', 'status_light_0..1 (emissive)'] },
   claws: { build: buildClaws, size: 'forearm (about 0.95 long, into the dark) plus a four-fingered clawed hand', origin: 'the wrist', facing: '+Z is out through the hole toward the camera; the forearm stub extends toward −Z',
-    nodes: ['talon_0..3 (fingers: groups pivoting at the knuckles; positive rotation.x curls the whole finger)'] },
+    nodes: ['talon_0..3 (fingers: groups pivoting at the knuckles; positive rotation.x curls the whole finger)', 'forearm (group pivoting at the wrist; scale.z stretches the arm back toward −Z)'] },
   researcher: { build: buildResearcher, size: 'about 1.75 tall', origin: 'ground between the feet', facing: '+Z',
     nodes: ['body (hips pivot)', 'torso (waist pivot; +rotation.x leans forward)', 'head (neck pivot)', 'arm_l, arm_r (shoulder pivots; +rotation.x swings forward)', 'leg_l, leg_r (hip pivots; +rotation.x swings forward)', 'clipboard (in the right hand; the scene may hide it)'] },
   shadow_figure: { build: buildShadowFigure, size: 'about 2.5 tall', origin: 'ground between the feet', facing: '+Z (it runs toward +Z)', nodes: ['figure'] },
