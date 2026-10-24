@@ -12,10 +12,10 @@ try{
  await expect(page.getByRole('button',{name:'Skip guidance & start',exact:true})).toBeEnabled({timeout:20000});
  await expect(page.getByText('Monster speech enabled · ElevenLabs',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Skip guidance & start',exact:true}).click();
- await page.getByRole('button',{name:'Skip opening →',exact:true}).click();
+ await page.getByRole('button',{name:'Skip cutscene →',exact:true}).click();
  await page.keyboard.press('e');
  await expect(page.getByRole('dialog',{name:'Research terminal'})).toBeVisible();
- const marked=page.getByRole('button',{name:/^Machine [1-4] FAULT$/}); const count=await marked.count(); if(count)await marked.nth(0).click();
+ const machine=page.getByRole('button',{name:'Machine 1',exact:true}); if(await machine.count())await machine.click();
  await page.getByRole('button',{name:'Judge view J',exact:true}).click();
  const audio=page.getByTestId('audio-diagnostics');
  await expect(page.locator('.radio-caption')).toContainText('faults, then the cables',{timeout:6000});

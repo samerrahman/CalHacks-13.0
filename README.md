@@ -2,7 +2,7 @@
 
 HUSH is the root application. `npm run dev` opens this game; NIGHT RELAY remains only in its archived build kit and historical evidence.
 
-You have twelve active minutes to finish the research and contain the creature outside a sealed shelter; a human-paced win takes about seven to eight. Repair faults, patch cable panels, route power quietly, memorize growing signal sequences, mask your heartbeat, mark the creature's position from the monitor, breathe with a calm pacer, and broadcast remote lures. Running equipment is loud: while a research task is live, exposure keeps climbing and the creature keeps coming until you turn the equipment off, so you will regularly have to stop mid-task and isolate. There is no alarm: you hear its footsteps get louder and quicker as it nears, from the direction it is in, and it pounds on the wall when it is there. Now and then it charges on its own (a run), even if you have made no mistakes. The security monitor's ping radar shows where it was at the last ping, never an exact number. Five isolation cells (two recharged per completed stage) buy short diversions. Once an attack commits at the wall, cutting power is too late.
+You have eight active minutes to finish the research and contain the creature outside a sealed shelter; a typical win takes about five. Repair faults, patch cable panels, route power quietly, memorize growing signal sequences, mask your heartbeat, mark the creature's position from the monitor, breathe with a calm pacer, and broadcast remote lures. Running equipment is loud: while a research task is live, exposure keeps climbing and the creature keeps coming until you turn the equipment off, so you will regularly have to stop mid-task and isolate. There is no alarm: you hear its footsteps get louder and quicker as it nears, from the direction it is in, and it pounds on the wall when it is there. Now and then it charges on its own (a run), even if you have made no mistakes. The security monitor's ping radar shows where it was at the last ping, never an exact number. Three isolation cells (one recharged per completed stage) buy time: an isolation lasts until you restore power (hold F, from 4 seconds) or 25 seconds, so wait until the footsteps fade. Once an attack commits at the wall, cutting power is too late.
 
 ## Run
 
@@ -35,7 +35,7 @@ On a fresh checkout use `npm ci`. Dependencies are pinned; this build was verifi
 | T | Transmit a calibrated lure, engage a routed relay, or the final containment broadcast |
 | R | Replay the same sequence freely |
 | Drag cables / select cable then socket | Reconnect matching symbols after each fault stage |
-| Q | Spend one of five isolation cells; twelve-second duration, then automatic restoration |
+| Q | Spend one of three isolation cells; hold F to restore once it is clear (from 4 s), or it restores itself at 25 s |
 | B (hold) | Breathe in with the calm pacer; release to breathe out |
 | Hold F for 1 second | Restore a blackout freely, or end isolation in its final restore window |
 | Restore button | Accessible one-click equivalent with cancel |
@@ -43,11 +43,11 @@ On a fresh checkout use `npm ci`. Dependencies are pinned; this build was verifi
 | Escape | Pause game time, sound and capture |
 | J | Open sanitized judge trace |
 
-The run begins with a 25-second grace period. Guided practice is nonlethal and does not use the run's timer or cells. The regular run has a twelve-minute deadline, including time spent with equipment off. Every shutdown consumes a cell, adds persistent exposure and triggers a cooldown after power returns. All task progress persists.
+The run begins with a 25-second grace period. Guided practice is nonlethal and does not use the run's timer or cells. The regular run has an eight-minute deadline, including time spent with equipment off. Every shutdown consumes a cell, adds persistent exposure and triggers a cooldown after power returns. All task progress persists.
 
 The detector refreshes every four seconds and goes completely dark without power. The monster moves every 2.5 seconds, at most three units per step. A nearby alarm and matching captions continue during isolation; the local rules guarantee at least 2.5 seconds of near warning before an irreversible attack can commit. The display never shows a breach countdown. Intermediate lures bias movement outward; the final broadcast brings it to position24 and a three-second seal.
 
-Stage 1 is 24 faults, 12 cables and four quiet-routing circuits. Stage 2 is memory growing from 3 to 7 cues, then the heartbeat mask. Stage 3 is 36 faults, 18 cables and five monitor marks. Stage 4 is memory growing from 4 to 8 cues, then the calm hold. The heartbeat mask and calm hold use the coarse accepted Presage trend when available (an elevated pulse makes them harder) and run on standard rules without it. Memory uses 0.36-second flashes and a sixteen-second response window per round. Replaying is free but costs time. Captions, neutral sensing, reduced motion, softer impacts, fixed memory tempo, volume and mute remain available. The friend's opening cutscene files are unchanged by this overhaul. See [tuning and balance](docs/BALANCE.md) for defaults, probabilities, fairness bounds and measured simulation results.
+Stage 1 is a rack sound key, six faults you find by ear (the buttons only say 1–4), 6 cables and a conduit board. Stage 2 is memory growing from 3 to 5 cues, then the heartbeat mask. Stage 3 is a new sound key, eight faults by ear (two can sound at once), 12 cables and three monitor marks. Stage 4 is memory growing from 4 to 6 cues, then the calm hold. The heartbeat mask and calm hold use the coarse accepted Presage trend when available (an elevated pulse makes them harder) and run on standard rules without it. Memory uses 0.36-second flashes and a sixteen-second response window per round. Replaying is free but costs time. Captions, neutral sensing, reduced motion, softer impacts, fixed memory tempo, volume and mute remain available. The friend's opening cutscene files are unchanged by this overhaul. See [tuning and balance](docs/BALANCE.md) for defaults, probabilities, fairness bounds and measured simulation results.
 
 ## Optional integrations and privacy
 

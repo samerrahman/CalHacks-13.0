@@ -1,6 +1,6 @@
 import { chromium, expect } from '@playwright/test';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { begin, openTerminal, guardDanger, resources, collectBrowserEvidence, TEST_URL } from './hush-browser-helpers.mjs';
+import { begin, openTerminal, guardDanger, resources, collectBrowserEvidence, endOfIsolation, fixFaultByEar, TEST_URL } from './hush-browser-helpers.mjs';
 await mkdir('artifacts', { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const evidence = { passed: false, url: TEST_URL, checks: [], errors: [], failedResources: [] }; let page;
@@ -41,7 +41,7 @@ try {
   await page.getByRole('button', { name: 'Resume protocol →' }).click();
   await page.getByRole('button', { name: 'Close ×', exact: true }).click();
   evidence.checks.push('Escape remains global while a judge checkbox has focus');
-  await expect(page.locator('[data-tutorial="emergency-restore"]')).toBeDisabled({ timeout: 16000 });
+  await endOfIsolation(page);
   await page.getByRole('button', { name: '02 Look at monitor' }).click();
   await expect(page.getByRole('button', { name: 'CAM B SERVICE PATH' })).toHaveCount(0);
   await page.keyboard.press('e');
@@ -65,13 +65,10 @@ try {
   evidence.checks.push('Monitor B/C and isolation equipment require explicit use; Space leaves inspection');
   await openTerminal(page);
   const wireHeading = page.getByRole('heading', { name: 'Reconnect the relay.', exact: true });
-  const wireDeadline = Date.now() + 45000;
+  const wireDeadline = Date.now() + 90000;
   while (!await wireHeading.isVisible() && Date.now() < wireDeadline) {
     await guardDanger(page); await openTerminal(page);
-    const faults = page.getByRole('button', { name: /^Machine [1-4] FAULT$/ });
-    const count = await faults.count();
-    if (count) await faults.first().click();
-    await page.waitForTimeout(80);
+    await fixFaultByEar(page);
   }
   await expect(wireHeading).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cable ▲', exact: true })).toBeVisible();
@@ -86,7 +83,7 @@ try {
   if (!wireDangerUncovered) throw Error('The taller wire puzzle covers the mobile danger meter');
   await page.screenshot({ path: 'artifacts/survival-wires-mobile.png' });
   if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw Error('Wire puzzle causes mobile horizontal overflow');
-  evidence.checks.push('Actual stage-one wiring board rendered at laptop and mobile sizes after twenty-four visible fault repairs; mobile danger meter remains uncovered');
+  evidence.checks.push('Actual stage-one wiring board rendered at laptop and mobile sizes after six faults found by ear; mobile danger meter remains uncovered');
   if (evidence.errors.length || evidence.failedResources.length) throw Error('Browser errors or missing resources');
   evidence.passed = true;
 } catch (error) {

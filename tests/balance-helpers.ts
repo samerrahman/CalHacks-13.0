@@ -1,4 +1,4 @@
-import { config, createGame, dispatch, proximityAlarm, step } from '../src/game/reducer';
+import { canRestore, config, createGame, dispatch, proximityAlarm, step } from '../src/game/reducer';
 import { calmInhale, sectorsAt } from '../src/game/tasks';
 import type { GameState } from '../src/game/state';
 
@@ -6,13 +6,12 @@ import type { GameState } from '../src/game/state';
  * knowledge and scripted reaction times; they are not a human playtest or browser proof. */
 export type Pace = { fault: number; wire: number; digit: number; think: number; react: number; route: number; look: number; jitter: number; mistakes: number };
 export const PACES = {
-  perfect: { fault: .3, wire: .3, digit: .3, think: .2, react: .2, route: .5, look: .5, jitter: 0, mistakes: 0 },
-  fast: { fault: .5, wire: 1.2, digit: .45, think: .6, react: .8, route: 3, look: 1.2, jitter: .04, mistakes: 0 },
-  human: { fault: 1, wire: 2.2, digit: .7, think: 1.2, react: 1.5, route: 8, look: 2, jitter: .08, mistakes: .05 },
-  slow: { fault: 1.6, wire: 3.4, digit: 1, think: 2, react: 2.5, route: 14, look: 3, jitter: .1, mistakes: .14 },
+  perfect: { fault: .3, wire: .3, digit: .3, think: .2, react: .2, route: 1, look: .5, jitter: 0, mistakes: 0 },
+  fast: { fault: 1, wire: 1.2, digit: .45, think: .6, react: .8, route: 8, look: 1.2, jitter: .04, mistakes: 0 },
+  human: { fault: 2.2, wire: 2.2, digit: .7, think: 1.2, react: 1.5, route: 18, look: 2, jitter: .08, mistakes: .05 },
+  slow: { fault: 3.2, wire: 3.4, digit: 1, think: 2, react: 2.5, route: 30, look: 3, jitter: .1, mistakes: .14 },
 } satisfies Record<string, Pace>;
 
-const SUBSETS = Array.from({ length: 15 }, (_, i) => i + 1);
 export function playBalancedRun(seed: number, options: { pace?: keyof typeof PACES; elevated?: boolean } = {}): GameState & { alarmTimes: number[] } {
   const p: Pace = PACES[options.pace ?? 'perfect'];
   let state = createGame(seed), next = 0, inputs = 0, alarmAt = -1, readyAt = -1, nextTap = -1;
@@ -25,6 +24,8 @@ export function playBalancedRun(seed: number, options: { pace?: keyof typeof PAC
     if (alarm && alarmAt < 0) { alarmAt = state.time; alarmTimes.push(state.time); }
     if (!alarm) alarmAt = -1;
     if (state.equipment === 'blackout') state = dispatch(state, { type: 'restore', held: true });
+    // Isolated: restore once the restore window is open and its footsteps have faded (it has moved off).
+    else if (state.equipment === 'quiet' && canRestore(state) && !state.restoreHeld && !proximityAlarm(state).active && state.creature.linePosition >= 12) state = dispatch(state, { type: 'restore', held: true });
     else if (state.equipment === 'on' && alarm && state.time - alarmAt >= p.react && state.shutdown.chargesRemaining > 0 && state.time >= state.shutdown.cooldownUntil && !state.creature.warning) state = dispatch(state, { type: 'quiet' });
     const t = state.tasks, stepName = t.step;
     // With no isolation available, a sensible player goes silent until the alarm clears.
@@ -42,9 +43,8 @@ export function playBalancedRun(seed: number, options: { pace?: keyof typeof PAC
       } else if (stepName === 'routing') {
         if (readyAt < 0) readyAt = state.time + p.route;
         else if (state.time >= readyAt) {
-          const r = t.routing, right = SUBSETS.find(bits => { const power = r.power.reduce((s, v, i) => bits & 1 << i ? s + v : s, 0), noise = r.noise.reduce((s, v, i) => bits & 1 << i ? s + v : s, 0); return power >= r.required && noise <= r.limit; })!;
-          const want = mistake ? 15 : right;
-          for (let i = 0; i < 4; i++) if (!!(want & 1 << i) !== r.on[i]) state = dispatch(state, { type: 'route', machine: i });
+          const r = t.routing;
+          if (!mistake) r.answer.forEach((want, tile) => { if (want >= 0) for (let k = (want - r.turns[tile]! + 4) % 4; k > 0; k--) state = dispatch(state, { type: 'rotate', tile }); });
           state = dispatch(state, { type: 'engage' }); inputs++; readyAt = -1; next = state.time + .5;
         }
       } else if (stepName === 'locate') {

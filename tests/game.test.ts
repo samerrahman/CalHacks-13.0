@@ -14,6 +14,8 @@ function at(position: number, time = 50): GameState {
   state.creature.lastAudibleAt = time; state.creature.lastAudibleStrength = 1; state.creature.nearSince = position <= 7 ? time - 3 : null; state.creature.alarmLatched = position <= 7;
   projectCreature(state); return state;
 }
+/** Faults now spawn only after the rack plays its sound key. */
+function firstFault(state: GameState): GameState { while (!state.tasks.faults.active.length) state = step(state, .1); return state; }
 function request(state: GameState): GameState { state.director.request = buildDirectorRequest(state); state.director.requestSequence++; return state; }
 function proposal(state: GameState, tactic: Tactic = 'WAIT', target: Target = 'NONE'): DirectorProposal {
   const req = state.director.request!;
@@ -99,7 +101,7 @@ test('idle running equipment draws an attack, the deadline still ends a quiet ru
   assert.match(camping.lossReason ?? '', /reached the shelter/, 'doing nothing with the equipment on is not safe');
   let state = createGame(1); startStage(state, 5); state.creature.lastAudibleAt = -1000;
   state = step(state, config.line.deadlineSeconds); assert.equal(state.status, 'lost'); assert.ok(state.events.some(e => e.type === 'TIMEOUT'));
-  assert.equal(state.lossReason, 'The 12-minute protocol window expired.');
+  assert.equal(state.lossReason, `The ${config.line.deadlineSeconds / 60}-minute protocol window expired.`);
   let practice = dispatch(createGame(1, 'tutorial'), { type: 'quiet' }); practice = step(practice, 600);
   assert.equal(practice.status, 'playing'); assert.equal(practice.creature.linePosition, 18); assert.equal(canRestore(practice), true); assert.equal(practice.shutdown.chargesRemaining, config.shutdown.charges);
 });
@@ -147,7 +149,7 @@ test('danger uses bounded accepted coarse physiology and work noise, never raw p
   let state = base;
   for (let i = 0; i < 20; i++) { const wrong = [1, 2, 3, 4].find(value => !state.tasks.faults.active.includes(value - 1))!; state = dispatch(state, { type: 'input', value: wrong }); state = step(state, .3); }
   assert.ok(state.pressure <= config.danger.pressureMaximum && state.danger <= 100);
-  let quietState = createGame(4); const before = quietState.pressure;
+  let quietState = firstFault(createGame(4)); const before = quietState.pressure;
   quietState = dispatch(quietState, { type: 'input', value: quietState.tasks.faults.active[0] + 1 }); assert.equal(quietState.pressure, before + config.danger.workPressure, 'correct work is loud');
 });
 
@@ -212,7 +214,7 @@ test('unknown fields, illegal pairs, stale versions and duplicate model response
 });
 
 test('pending eight-second director calls do not block puzzle input or deterministic fallback', () => {
-  let state = request(createGame(9)); const before = state.tasks.faults.completed;
+  let state = request(firstFault(createGame(9))); const before = state.tasks.faults.completed;
   state = dispatch(state, { type: 'input', value: state.tasks.faults.active[0] + 1 }); assert.equal(state.tasks.faults.completed, before + 1);
   state = step(state, DIRECTOR_TIMEOUT_MS / 1000 + .1); assert.ok(state.director.fallbackCount > 0);
 });

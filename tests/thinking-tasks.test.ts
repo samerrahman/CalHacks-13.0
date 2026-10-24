@@ -2,12 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { config, createGame, dispatch, step } from '../src/game/reducer';
 import { movementProbabilities } from '../src/game/creature';
-import { calmInhale, memoryRounds, pulseRequirement, routingTotals, sectorsAt, startStage } from '../src/game/tasks';
-import type { GameState, RoutingState } from '../src/game/state';
+import { calmInhale, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, listeningTo, memoryRounds, pulseRequirement, sectorsAt, startStage, tileOpenings } from '../src/game/tasks';
+import type { GameState } from '../src/game/state';
 
-const SUBSETS = Array.from({ length: 15 }, (_, i) => i + 1);
-const sum = (bits: number, values: number[]) => values.reduce((total, value, i) => bits & 1 << i ? total + value : total, 0);
-const solutions = (r: RoutingState) => SUBSETS.filter(bits => sum(bits, r.power) >= r.required && sum(bits, r.noise) <= r.limit);
 function at(which: GameState['tasks']['step'], seed = 17): GameState {
   const s = createGame(seed); s.time = 60; s.creature.nextMoveAt = 1000; s.blackout.nextAt = 1000;
   if (which === 'routing') { s.tasks.faults.completed = s.tasks.faults.required; s.tasks.step = 'wires'; s.tasks.wires.connections = s.tasks.wires.targetOrder.map(() => 0); s.tasks.wires.connections[0] = -1; return dispatch(s, { type: 'wire', from: 0, to: s.tasks.wires.targetOrder.indexOf(0) }); }
@@ -21,32 +18,47 @@ function at(which: GameState['tasks']['step'], seed = 17): GameState {
   return state;
 }
 function solve(state: GameState): GameState {
-  const right = solutions(state.tasks.routing)[0];
-  for (let i = 0; i < 4; i++) if (!!(right & 1 << i) !== state.tasks.routing.on[i]) state = dispatch(state, { type: 'route', machine: i });
+  state.tasks.routing.answer.forEach((want, tile) => { if (want >= 0) for (let k = (want - state.tasks.routing.turns[tile]! + 4) % 4; k > 0; k--) state = dispatch(state, { type: 'rotate', tile }); });
   return dispatch(state, { type: 'engage' });
 }
 
-test('quiet routing puzzles always have a combined answer and never accept everything on', () => {
+test('every conduit board is solvable, starts broken, and its answer joins the inlet to the outlet', () => {
+  assert.deepEqual([0, 1, 2, 3].map(t => tileOpenings(2, t)), [3, 6, 12, 9], 'a corner turns clockwise');
   for (let seed = 1; seed <= 40; seed++) {
     let state = at('routing', seed); assert.equal(state.tasks.step, 'routing');
     for (let round = 0; round < config.tasks.routing.rounds; round++) {
-      const r = state.tasks.routing, valid = solutions(r);
-      assert.ok(valid.length >= 1, `seed${seed}`); assert.ok(!valid.includes(15)); assert.ok(valid.every(bits => bits.toString(2).replaceAll('0', '').length >= 2));
+      assert.equal(conduitConnected(state.tasks.routing), false, `seed${seed}: starts broken`);
       state = solve(state);
     }
     assert.deepEqual(state.tasks.completedStages, [1]); assert.equal(state.tasks.stage, 2);
   }
 });
 
-test('routing toggles are silent thinking; a wrong engage is loud and resets the switches', () => {
-  let state = at('routing'); const pressure = state.pressure, events = state.eventSequence;
-  state = dispatch(state, { type: 'route', machine: 0 }); state = dispatch(state, { type: 'input', value: 2 });
-  assert.equal(state.pressure, pressure); assert.equal(state.eventSequence, events);
-  assert.deepEqual(routingTotals(state.tasks.routing), { power: state.tasks.routing.power[0] + state.tasks.routing.power[1], noise: state.tasks.routing.noise[0] + state.tasks.routing.noise[1] });
-  for (let i = 0; i < 4; i++) if (!state.tasks.routing.on[i]) state = dispatch(state, { type: 'route', machine: i });
+test('rotating conduit tiles is quiet; engaging a broken conduit is a loud mistake; only the terminal works it', () => {
+  let state = at('routing'); const pressure = state.pressure, events = state.eventSequence, turns = [...state.tasks.routing.turns];
+  state = dispatch(state, { type: 'rotate', tile: 0 }); state = dispatch(state, { type: 'input', value: 2 });
+  assert.equal(state.pressure, pressure); assert.equal(state.eventSequence, events); assert.equal(state.tasks.routing.turns[0], (turns[0]! + 1) % 4);
+  assert.ok(energizedTiles(state.tasks.routing) instanceof Set);
   state = dispatch(state, { type: 'transmit' });
-  assert.equal(state.events.at(-1)?.detail, 'ROUTING'); assert.ok(state.pressure > pressure); assert.ok(state.tasks.routing.on.every(on => !on));
-  assert.deepEqual(dispatch(dispatch(state, { type: 'station', station: 'cameras' }), { type: 'route', machine: 0 }).tasks.routing.on, [false, false, false, false]);
+  if (!conduitConnected(state.tasks.routing)) { assert.equal(state.events.at(-1)?.detail, 'ROUTING'); assert.ok(state.pressure > pressure); }
+  const elsewhere = dispatch(dispatch(state, { type: 'station', station: 'cameras' }), { type: 'rotate', tile: 1 });
+  assert.equal(elsewhere.tasks.routing.turns[1], state.tasks.routing.turns[1]);
+});
+
+test('faults are found by ear: a shuffled sound key plays first, no fault spawns meanwhile, and nothing marks the answer', () => {
+  let state = createGame(23); state.time = 30; state.creature.nextMoveAt = 1e6; state.blackout.nextAt = 1e6; startStage(state, 1);
+  const key = faultSounds(state); assert.deepEqual([...key].sort(), [0, 1, 2, 3]);
+  const keys = new Set([1, 2, 3, 4, 5, 6].map(seed => { const s = createGame(seed); startStage(s, 1); return faultSounds(s).join(); }));
+  assert.ok(keys.size > 1, 'the key is shuffled between runs');
+  const s3 = structuredClone(state); s3.tasks.stage = 3; assert.equal(faultSounds(s3).length, 4);
+  assert.equal(listeningTo(state), 0); state = step(state, config.tasks.listen.secondsPerMachine); assert.equal(listeningTo(state), 1);
+  state = step(state, config.tasks.listen.secondsPerMachine * 2.5); assert.equal(state.tasks.faults.active.length, 0, 'no fault spawns while the key plays');
+  state = step(state, config.tasks.listen.secondsPerMachine + config.tasks.stage1.spawnIntervalSeconds); assert.equal(listeningTo(state), null); assert.equal(state.tasks.faults.active.length, 1);
+  const machine = state.tasks.faults.active[0]!; assert.ok(FAULT_SOUNDS[key[machine]!]);
+  const wrong = dispatch(state, { type: 'input', value: (machine + 1) % 4 + 1 }); assert.equal(wrong.events.at(-1)?.detail, 'FAULT');
+  state = dispatch(state, { type: 'input', value: machine + 1 }); assert.equal(state.tasks.faults.completed, 1);
+  state = dispatch(state, { type: 'listen' }); assert.equal(listeningTo(state), 0, 'L replays the key');
+  assert.equal(dispatch(dispatch(state, { type: 'station', station: 'cameras' }), { type: 'listen' }).tasks.faults.listenFrom, state.tasks.faults.listenFrom);
 });
 
 test('locate marks need the monitor, the true or last-sampled sector, and spacing between marks', () => {

@@ -57,10 +57,11 @@ test('the in-room terminal mirrors the live task step instead of a stale fault b
   const context = { fillRect: noop, strokeRect: noop, clearRect: noop, beginPath: noop, arc: noop, fill: noop, stroke: noop, fillText(text: string) { lines.push(text); }, createRadialGradient() { return { addColorStop: noop }; } };
   const display = { context, texture: { needsUpdate: false } } as unknown as Display;
   const base: RenderState = { time: 10, power: 'on', stage: 1, faults: [], faultsResolved: 20, faultsRequired: 20, creature: { position: [0, 0, -12], distance: 12, phase: 'search' } };
-  for (const [step, title, progress] of [['wires', 'PATCH THE RELAY', '7 / 10 CABLES LINKED'], ['routing', 'ROUTE POWER QUIETLY', '1 / 3 CIRCUITS ENGAGED'], ['locate', 'MARK ITS POSITION', '2 / 4 POSITIONS MARKED'], ['pulse', 'MASK YOUR HEARTBEAT', '3 / 8 BEATS IN RHYTHM'], ['calm', 'LET IT LOSE YOUR TRAIL', '5 / 12 CALM SECONDS']] as const) {
+  for (const [step, title, progress] of [['wires', 'PATCH THE RELAY', '7 / 10 CABLES LINKED'], ['routing', 'RECONNECT THE CONDUIT', '1 / 2 CONDUITS JOINED'], ['locate', 'MARK ITS POSITION', '2 / 4 POSITIONS MARKED'], ['pulse', 'MASK YOUR HEARTBEAT', '3 / 8 BEATS IN RHYTHM'], ['calm', 'LET IT LOSE YOUR TRAIL', '5 / 12 CALM SECONDS']] as const) {
     lines.length = 0; const [done, total] = progress.split(' / ').map(part => Number.parseInt(part, 10));
     drawTerminal(display, { ...base, step, progress: [done, total], pulseFlash: .5, breath: .5 });
     assert.ok(lines.includes(title), step); assert.ok(lines.includes(progress), step); assert.ok(!lines.some(line => line.includes('FAULTS RESOLVED')), step);
   }
-  lines.length = 0; drawTerminal(display, { ...base, step: 'faults' }); assert.ok(lines.includes('20 / 20 FAULTS RESOLVED'), 'fault steps keep the fault board');
+  lines.length = 0; drawTerminal(display, { ...base, step: 'faults', faults: [2] }); assert.ok(lines.includes('20 / 20 FAULTS RESOLVED'), 'fault steps keep the fault board');
+  assert.ok(!lines.includes('FAULT') && !lines.includes('QUIET'), 'the screen never reveals which machine is failing');
 });

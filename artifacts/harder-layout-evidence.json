@@ -6,14 +6,14 @@
     "Camera settings blocks gameplay input; Escape closes it and resumes even with the camera SELECT focused",
     "Escape remains global while a judge checkbox has focus",
     "Monitor B/C and isolation equipment require explicit use; Space leaves inspection",
-    "Actual stage-one wiring board rendered at laptop and mobile sizes after twenty-four visible fault repairs; mobile danger meter remains uncovered"
+    "Actual stage-one wiring board rendered at laptop and mobile sizes after six faults found by ear; mobile danger meter remains uncovered"
   ],
   "errors": [],
   "failedResources": [],
   "mobileResources": {
-    "cells": 5,
+    "cells": 3,
     "danger": 10,
-    "deadline": "12:00"
+    "deadline": "8:00"
   },
   "radarContact": "Radar contact in the band B, behind"
 }

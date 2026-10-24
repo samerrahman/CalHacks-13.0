@@ -2,7 +2,13 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: Wires attach to their boxes (touching Lea's `WirePuzzle.tsx`/`thinking.css` at the user's request). Paths are now drawn in board pixels from the measured cable right edge and socket left edge, re-measured on resize. Previously they used equal percentage rows while six 46 px buttons overflowed the 240 px board, because `survival.css` silently overrode the intended 260/40 px sizes. Endpoints were measured to within 0.5 px at 1280, 1440 and 390 widths. Check, layout and the seed-17 win pass.
+
 - 2026-10-24: Added seeded0–24 monster movement, tunable danger, five-minute deadline,25-second grace, finite isolation, sampled detector and drag-wire puzzles. Fixed SDK confidence/validation/timestamp handling and exposed breathing status. Opening cutscene/App/intro assets untouched; verification and live-test limits are in docs/HANDOFF.md and docs/BALANCE.md.
+
+- 2026-10-24: Shorter run (about five minutes, 8-minute deadline): 6/8 faults by ear, 6/12 cables, one conduit board, memory 3→5 and 4→6, 8-beat heartbeat mask, 3 locate marks, 12 s calm hold. Isolation is player-controlled: hold F once the window opens at 4 s, or it ends at 25 s; the creature lingers while isolated, three cells with one recharged per stage, hunts every 60 s. Close-footstep captions now outrank the restore-window caption. Sweep: human-paced 13/30 in ~260 s.
+
+- 2026-10-24: Faults are found by ear: plain 1–4 buttons, a per-stage shuffled rack sound key (procedural thump/whine/tick/buzz), a YOU HEAR caption for accessibility, 8 and 12 faults instead of 24/36. The routing sums became a rotate-the-pipes conduit puzzle (two always-solvable boards). The breach jumpscare is longer and animated (twitch, jaw that opens and chatters, eye glints, lunge) and holds on the face behind the run report instead of fading; the scream is longer, layered twice and driven harder through a clipper. Retuned: four cells, base .28; human-paced sweep 12/30.
 
 - 2026-10-24: No alarm siren: the creature is heard. CC0 OpenGameArt recordings (17 WAVs; manifest contract updated at the user's request, post in team chat) give distance-scaled footsteps from a stateless seeded bearing, wall pounding at the wall and a barrage on commit, growls, a wind bed, crickets that fall silent as it nears and random creaks/snaps/howls. The detector is now a ping radar (dot at sampled range and bearing, no number) in the monitor panel and on the in-room screen. Captions describe loudness and direction, never range. assets:validate passes with 44 WAVs.
 

@@ -2,89 +2,16 @@
   "passed": false,
   "url": "http://127.0.0.1:5180",
   "seed": 18,
-  "checks": [
-    "Opt-in simulated baseline survives setup-to-game handoff; accepted sustained ELEVATED appears without raw data injection",
-    "Working draws the creature to the visible proximity alarm; timely Q survives each encounter and automatically restores equipment"
+  "checks": [],
+  "errors": [
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
   ],
-  "errors": [],
-  "failedResources": [],
-  "observations": {
-    "defenses": 3,
-    "automaticRestores": 3,
-    "blackouts": 3,
-    "sequenceLengths": [
-      3,
-      4,
-      5,
-      6,
-      7,
-      4,
-      5,
-      6,
-      7,
-      8
-    ],
-    "wireBoards": 2,
-    "wireDrags": 1,
-    "wireClicks": 29,
-    "stages": [
-      "Silence the machines.",
-      "Reconnect the relay.",
-      "Route power quietly.",
-      "Transmit a false heartbeat.",
-      "Mask your heartbeat.",
-      "Clear the overload.",
-      "Mark its position.",
-      "Lead it toward containment.",
-      "Let it lose your trail.",
-      "Bring it back inside."
-    ],
-    "resourceSamples": [
-      {
-        "cells": 5,
-        "danger": 74,
-        "deadline": "10:13"
-      },
-      {
-        "cells": 4,
-        "danger": null,
-        "deadline": "10:13"
-      },
-      {
-        "cells": 4,
-        "danger": 67,
-        "deadline": "9:35"
-      },
-      {
-        "cells": 3,
-        "danger": null,
-        "deadline": "9:35"
-      },
-      {
-        "cells": 5,
-        "danger": 49,
-        "deadline": "9:13"
-      },
-      {
-        "cells": 4,
-        "danger": null,
-        "deadline": "9:13"
-      }
-    ],
-    "calibratedBeforeRun": true,
-    "routes": 4,
-    "pulsePeriods": [
-      1113
-    ],
-    "pulseBeatsNeeded": [
-      10
-    ],
-    "naturalAlarmDefenses": 3,
-    "marks": 5,
-    "incompleteObservationReplays": 1,
-    "calmHolds": 1
-  },
-  "report": "SIMULATED DATA · DEVELOPMENT FIXTURE\n72\nBASELINE BPM\n84\nHIGHEST ACCEPTED BPM\n88\n68\n0s\n230s\n\nFocus an event marker to inspect it.\n\nNo supported increase could be associated with an event.\n\nTiming association only. Measurement delay, movement, lighting and other events may contribute. Gaps and pauses are excluded; this is not a fear score.",
-  "failure": "Error: The elevated heartbeat-mask and calm-hold rules were not exercised",
-  "visibleTextAtFailure": "CONTAINMENT DEADLINE\n8:10\nISOLATION CELLS\n5 / 5\n\n12s isolation · finite cells\n\nEXPOSURE\n24 / 100\nWork is loud: it climbs fast while you work and cools when you stop. High exposure makes it rush your wall.\nBase\n+10\nTime\n+8\nWork noise\n+0\nIsolations\n+6\nPulse\n+0\n▏\nLOCK IN\nSHELTER 04\nCONTAINMENT PROTOCOL\n4 / 4\nSOUND ON\nⅡ ESC\nREMOTE SEAL CLOSED — CONTAINMENT COMPLETE\nContainment sealed. Research recovered.\nQ\nQuiet equipment\n5 cells · 12 seconds\nF\nHold to restore\nE Use terminal\nCLICK EQUIPMENT TO INTERACT · DRAG TO LOOK\n◎ SIMULATED · UNKNOWN\n01\nLook at terminal\n02\nLook at monitor\n03\nTurn around\nJudge view J\nSIMULATED · NOT A LIVE READING\n↗\nPULSE\n—\nBPM\nBREATHING\n—\nbreaths / min\n\nWaiting for a breathing estimate\n\nACQUIRING SIGNAL\nPulse level\nBaseline 72\n40 BPM\n110 BPM\n\nCapture stopped · neutral gameplay\n\nFIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n230s\nELAPSED\n3\nQUIET RESPONSES\n\nSeed 18 · FALLBACK director · SIMULATED\n\nSIMULATED DATA · DEVELOPMENT FIXTURE\n72\nBASELINE BPM\n84\nHIGHEST ACCEPTED BPM\n88\n68\n0s\n230s\n\nFocus an event marker to inspect it.\n\nNo supported increase could be associated with an event.\n\nTiming association only. Measurement delay, movement, lighting and other events may contribute. Gaps and pauses are excluded; this is not a fear score.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  "failedResources": [
+    {
+      "url": "http://127.0.0.1:5180/src/ui/App.tsx",
+      "status": 500
+    }
+  ],
+  "failure": "Error: expect(locator).toBeEnabled() failed\n\nLocator: getByRole('button', { name: 'Begin with guidance' })\nExpected: enabled\nTimeout: 20000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeEnabled\" getByRole('button', { name: 'Begin with guidance' }) with timeout 20000ms\n  - waiting for getByRole('button', { name: 'Begin with guidance' })\n",
+  "visibleTextAtFailure": ""
 }

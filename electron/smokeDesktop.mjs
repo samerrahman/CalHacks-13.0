@@ -34,7 +34,7 @@ try {
  await page.getByRole('button', { name: /Operator settings/ }).click();
  await page.getByLabel('Share sanitized game events with a judge screen').check();
  await page.getByRole('button', { name: /Skip guidance & start/ }).click();
- await page.getByRole('button', { name: /Skip opening/ }).click();
+ await page.getByRole('button', { name: /Skip cutscene/ }).click();
  await page.keyboard.press('e');
  await page.getByRole('dialog', { name: 'Research terminal' }).waitFor();
  await page.getByRole('button', { name: /^Machine \d FAULT$/ }).first().click();

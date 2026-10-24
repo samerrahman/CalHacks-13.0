@@ -50,7 +50,7 @@ export function enterQuiet(state: GameState): void {
   const c = state.creature;
   // Isolation changes future step probabilities, never the position or step clock.
   if (!c.warning) setPhase(state, 'retreat', 'NONE');
-  state.notice = c.warning ? 'Isolation relay disengaged.' : `Isolation active for ${config.shutdown.durationSeconds} seconds. Research paused; charges are limited.`;
+  state.notice = c.warning ? 'Isolation relay disengaged.' : `Equipment isolated. Hold F to restore after ${config.shutdown.manualRestoreAfterSeconds} s when it sounds clear, or it returns by itself after ${config.shutdown.durationSeconds} s.`;
   emit(state, 'QUIET_ENTERED'); contextualTaunt(state, 'MACHINES_QUIET'); state.version++;
 }
 export function canRestore(state: GameState): boolean {
@@ -151,7 +151,7 @@ export function tickCreature(state: GameState, _dt: number): void {
   if (hunt && state.time - hunt.start < FIXED_DT - 1e-9 && !c.warning && !lureProtected(state)) { emit(state, 'HUNT_STARTED'); state.version++; }
   if (state.quiet) {
     if (state.time - state.quiet.started >= config.shutdown.listeningSeconds && state.quiet.phase === 'listening') { state.quiet.phase = 'retreat'; state.quiet.retreatStarted = state.time; emit(state, 'QUIET_RETREAT'); }
-    const readyAt = state.mode === 'tutorial' ? config.shutdown.durationSeconds : config.shutdown.manualRestoreAfterSeconds;
+    const readyAt = config.shutdown.manualRestoreAfterSeconds;
     if (state.time - state.quiet.started >= readyAt - 1e-8 && state.quiet.phase !== 'ready') { state.quiet.phase = 'ready'; emit(state, 'RESTORE_WINDOW'); }
     if (state.mode !== 'tutorial' && state.time >= state.shutdown.activeUntil - 1e-8) restoreEquipment(state);
   }
@@ -240,8 +240,8 @@ export function updateCaption(state: GameState): void {
   if (state.status === 'won') state.caption = 'REMOTE SEAL CLOSED — CONTAINMENT COMPLETE';
   else if (state.status === 'lost') state.caption = state.lossReason?.includes('protocol window') ? 'PROTOCOL WINDOW CLOSED' : 'SHELTER BREACHED';
   else if (c.warning) state.caption = 'POUNDING ON THE WALL — IT IS BREAKING IN';
-  else if (state.quiet?.phase === 'ready') state.caption = 'ISOLATION ENDING — RESTORE WINDOW';
   else if (proximityAlarm(state).active) state.caption = c.linePosition <= 2 ? `POUNDING ON THE WALL — ${side}` : c.linePosition <= 4 ? `FOOTSTEPS RIGHT OUTSIDE — ${side}` : c.lastMotion === 'receding' ? `HEAVY FOOTSTEPS CLOSE, MOVING OFF — ${side}` : `HEAVY FOOTSTEPS CLOSE — ${side}`;
+  else if (state.quiet?.phase === 'ready') state.caption = 'RESTORE WINDOW OPEN — LISTEN BEFORE YOU RESTORE';
   else if (state.equipment === 'quiet') state.caption = 'EQUIPMENT ISOLATED — LISTEN FOR MOVEMENT';
   else if (c.phase === 'containment') state.caption = 'REMOTE CONTAINMENT SEAL CLOSING';
   else if (huntActive(state)) state.caption = `RUNNING FOOTSTEPS — ${side}`;

@@ -32,7 +32,7 @@ npm run integrations:check   # native check by default; explicit --live provider
 |---|---|
 | `electron/`, `src/sensing/`, `spacetimedb/`, `src/integrations/client.ts`, `src/integrations/spacetime.ts`, `package.json` | **Samer** (1, signals & platform) |
 | `src/game/`, `src/render/`, `src/main.tsx`, `index.html`, `vite.config.ts`, `tsconfig.json`, `tests/`, merging to `main` | **James** (2, gameplay & integrator) |
-| `src/ui/`, `src/audio/engine.ts`, `public/assets/`, `docs/ASSETS.md`, `lock-in-kit/assets` + `tools` | **Lea** (3, art, audio & UI) |
+| `src/ui/`, `src/audio/engine.ts`, `public/assets/`, `docs/ASSETS.md`, `lock-in-kit/assets` + `tools`, opening cutscene (`cutscene/`, `src/cutscene/`, `tools/cutscene.mjs`) | **Lea** (3, art, audio & UI) |
 | `src/integrations/providers.ts`, `src/audio/queue.ts`, `lock-in-kit/prompts/`, `docs/DEMO.md`, Devpost | **Lucy** (4, AI, voice & pitch) |
 | contracts above, `lock-in-kit/design/` | whole team |
 

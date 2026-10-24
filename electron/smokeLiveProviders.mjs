@@ -24,7 +24,7 @@ try {
   await page.getByLabel('Pulse input').selectOption('manual');
   await page.getByLabel('Share sanitized game events with a judge screen').uncheck();
   await page.getByRole('button', { name: /Skip guidance & start/ }).click();
-  await page.getByRole('button', { name: /Skip opening/ }).click();
+  await page.getByRole('button', { name: /Skip cutscene/ }).click();
   // A visible mistake provides observable sound evidence for the first request.
   await page.getByRole('button', { name: /^Machine \d QUIET$/ }).first().click();
   await page.getByRole('button', { name: /Judge view/ }).click();
