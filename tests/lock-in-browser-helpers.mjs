@@ -21,7 +21,7 @@ export async function begin(page, { tutorial = false, seed = 17, simulated = fal
     evidenceFor(page).calibratedBeforeRun = true;
   }
   await page.getByRole('button', { name: tutorial ? 'Begin with guidance' : 'Skip guidance & start' }).click();
-  await page.getByRole('button', { name: 'Skip opening →' }).click();
+  await page.getByRole('button', { name: 'Skip cutscene →' }).click();
   await expect(page.getByRole('button', { name: 'Use terminal' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Research terminal' })).toHaveCount(0);
   evidenceFor(page);

@@ -17,6 +17,7 @@ import JumpScare,{SCARE_MS} from './JumpScare';
 import { calmBreath, calmMatched, faultSounds, listeningTo, pulseFlash, taskProgress } from '../game/tasks';
 import { creatureBearing, creatureHeardPosition, huntActive } from '../game/creature';
 import Tutorial from './Tutorial';
+import OpeningFilm from './OpeningFilm';
 import PulseReport from './PulseReport';
 import JudgeView from './JudgeView';
 import { AsyncRun } from './asyncRun';
@@ -36,7 +37,7 @@ const INTRO=['Containment failure. Proceed to the emergency observation shelter.
 function GameApp(){
  const container=useRef<HTMLDivElement>(null),authority=useRef<GameState>(createGame(17));
  const[game,setGame]=useState(authority.current),[screen,setScreen]=useState<Screen>('setup'),screenRef=useRef<Screen>('setup');
- const[prefs,setPrefs]=useState<Preferences>(DEFAULT_PREFS),prefsRef=useRef(prefs);
+ const[prefs,setPrefs]=useState<Preferences>(()=>({...DEFAULT_PREFS,reducedMotion:typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches})),prefsRef=useRef(prefs);
  const[sensor,setSensor]=useState(INITIAL_SENSOR),sensorRef=useRef(INITIAL_SENSOR),sensing=useRef<SensorController|null>(null);
  const view=useRef<SceneView|null>(null),audio=useRef<AudioEngine|null>(null),[ready,setReady]=useState(false),[sceneError,setSceneError]=useState<string|null>(null);
  const[inspection,setInspection]=useState(false),inspectionRef=useRef(false),[cameraOpen,setCameraOpen]=useState(false),[cameraStream,setCameraStream]=useState<MediaStream|null>(null),[cameraDevice,setCameraDevice]=useState(''),[desktop,setDesktop]=useState(false),[voiceAvailable,setVoiceAvailable]=useState(false),[resultReady,setResultReady]=useState(false);
@@ -45,7 +46,7 @@ function GameApp(){
  const[provider,setProvider]=useState({gemini:'FALLBACK · deterministic director',dialogue:'SCRIPTED FALLBACK · no generated line yet',elevenlabs:'FALLBACK · captions + original effects'});
  const run=useRef(new AsyncRun()),pending=useRef(new Set<string>()),lastEvent=useRef(0),lastStage=useRef(0),cueRef=useRef<number|null>(null);
  const[radio,setRadio]=useState<string|null>(null),radioRef=useRef<{id:string;expires:number;stage:number;role:string}|null>(null),lineSequence=useRef(0);
- const[tutorialStep,setTutorialStep]=useState(0),tutorialStepRef=useRef(0),tutorialWatching=useRef(false),[introStep,setIntroStep]=useState(0),guided=useRef(true);
+ const[tutorialStep,setTutorialStep]=useState(0),tutorialStepRef=useRef(0),tutorialWatching=useRef(false),[introStep,setIntroStep]=useState(0),[introMode,setIntroMode]=useState<'film'|'text'>('film'),guided=useRef(true);
  const recording=useRef(false),recordSource=useRef<SensorMode>('manual'),recordEventSeq=useRef(0);
  const samples=useRef<PulseSample[]>([]),markers=useRef<PulseEvent[]>([]),recordSegment=useRef(0),lastSample=useRef<string|null>(null),reportBaseline=useRef<number|null>(null),[report,setReport]=useState<Report>(EMPTY_REPORT),[deleted,setDeleted]=useState(false);
  function setScreenNow(s:Screen){screenRef.current=s;setScreen(s)}
@@ -99,7 +100,7 @@ function GameApp(){
   const old=trace.current;trace.current=new TraceBridge();void old?.dispose();
   const consent=!practice&&prefsRef.current.shareTrace;setTraceConsent(consent);setTraceStatus(consent?'Connecting consenting trace…':'Trace sharing off');void trace.current.connect(consent,prefsRef.current.seed,'standard');
  }
- function begin(tutorial:boolean){guided.current=tutorial;setIntroStep(0);setScreenNow('intro');audio.current?.setPaused(false);void audio.current?.start();}
+ function begin(tutorial:boolean){guided.current=tutorial;setIntroStep(0);setIntroMode(prefsRef.current.reducedMotion?'text':'film');setScreenNow('intro');audio.current?.setPaused(false);void audio.current?.start();}
  async function deleteRun(){
   const target=trace.current;recording.current=false;samples.current=[];markers.current=[];reportBaseline.current=null;lastSample.current=null;setReport(EMPTY_REPORT);setDeleted(true);setTraceConsent(false);
   try{await target?.deleteSession();if(trace.current===target)setTraceStatus('Session deleted')}catch{if(trace.current===target)setTraceStatus('Local data deleted · remote delete unavailable; retry when connected')}
@@ -143,8 +144,8 @@ function GameApp(){
  },[]);
  useEffect(()=>{audio.current?.setMuted(muted)},[muted]);useEffect(()=>{audio.current?.setVolume(volume)},[volume]);
  useEffect(()=>{
-  if(screen!=='intro')return;let n=0;setIntroStep(0);effect('intro_alarm',.35);const timer=setInterval(()=>{n++;if(n>=4){clearInterval(timer);startRun(guided.current);return}setIntroStep(n);if(n===1)effect('forest_run',.35);if(n===2)effect('door_slam',.3)},2100);return()=>clearInterval(timer);
- },[screen]);
+  if(screen!=='intro'||introMode!=='text')return;let n=0;setIntroStep(0);effect('intro_alarm',.35);const timer=setInterval(()=>{n++;if(n>=4){clearInterval(timer);startRun(guided.current);return}setIntroStep(n);if(n===1)effect('forest_run',.35);if(n===2)effect('door_slam',.3)},2100);return()=>clearInterval(timer);
+ },[screen,introMode]);
  useEffect(()=>{
   if(!['play','tutorial'].includes(screen))return;
   const down=(e:KeyboardEvent)=>{const element=e.target as HTMLElement;const key=e.key.toLowerCase();if(cameraOpen){if(key==='escape'){e.preventDefault();if(!e.repeat)hideCamera()}return}if(['SELECT','TEXTAREA'].includes(element.tagName)||(element.tagName==='INPUT'&&!['checkbox','range','button'].includes((element as HTMLInputElement).type)))return;
@@ -197,7 +198,7 @@ function GameApp(){
   setReport(buildPulseReport({recordingConsent:recording.current,source:recordSource.current,baselineBpm:reportBaseline.current,samples:samples.current,events:markers.current}));void sensing.current?.stop();return()=>clearTimeout(resultTimer);
  },[screen,game.status]);
  const sensorLabel=sensor.source==='simulated'?`SIMULATED · ${sensor.trend}`:sensor.source==='presage'?`${sensor.status==='ready'&&sensor.quality==='accepted'?'LIVE':sensor.ageMs!==null&&sensor.ageMs>5000?'STALE':sensor.status.toUpperCase()} · PULSE ${sensor.trend}`:'PULSE INPUT OFF · NEUTRAL';
- return <><div className="scene" ref={container}/><div className="vignette"/><div className="film-grain"/>{screen==='setup'?<Setup ready={ready} error={sceneError} prefs={prefs} onPrefs={changePrefs} onStart={begin} onSensor={sensorMode} sensor={sensor} stream={cameraStream} desktop={desktop} voiceAvailable={voiceAvailable} cameraDevice={cameraDevice} onDevice={selectCamera}/>:screen==='intro'?<main className="intro"><div className="eyebrow">FIELD RECORDING / CONTAINMENT FAILURE</div><p key={introStep}>{INTRO[introStep]}</p><button className="text-button" onClick={()=>startRun(guided.current)}>Skip opening →</button></main>:<>
+ return <><div className="scene" ref={container}/><div className="vignette"/><div className="film-grain"/>{screen==='setup'?<Setup ready={ready} error={sceneError} prefs={prefs} onPrefs={changePrefs} onStart={begin} onSensor={sensorMode} sensor={sensor} stream={cameraStream} desktop={desktop} voiceAvailable={voiceAvailable} cameraDevice={cameraDevice} onDevice={selectCamera}/>:screen==='intro'?introMode==='film'?<OpeningFilm muted={muted} volume={volume} onDone={()=>startRun(guided.current)} onFail={()=>setIntroMode('text')}/>:<main className="intro"><div className="eyebrow">FIELD RECORDING / CONTAINMENT FAILURE</div><p key={introStep}>{INTRO[introStep]}</p><button className="text-button" onClick={()=>startRun(guided.current)}>Skip cutscene →</button></main>:<>
   <HUD game={game} send={send} onPause={()=>pause(true)} onJudge={()=>setJudge(v=>!v)} muted={muted} setMuted={setMuted} sensorLabel={sensorLabel} radio={radio} radioRole={radioRole} radioSource={radioSource} inspection={inspection} onOpen={openEquipment} onClose={()=>inspect(false)} onCamera={showCamera}/><CornerVitals sensor={sensor} stream={cameraStream} onOpen={showCamera}/><JumpScare scare={game.scare} soft={prefs.softScares} reduced={prefs.reducedMotion}/>
   {screen==='tutorial'&&!game.paused&&<Tutorial inspection={inspection} step={tutorialStep} onSkip={()=>startRun(false)} onContinue={()=>{if(canRestore(authority.current))setPracticeStep(3)}}/>}
   {judge&&<aside className="judge-panel"><button className="text-button close" onClick={()=>setJudge(false)}>Close ×</button><div className="eyebrow">JUDGE TRACE</div><h2>Every decision leaves a trace.</h2><p className="small muted">Game events and coarse signal status only. Pulse recordings and camera frames stay out of this feed.</p><div className="provider-table">{Object.entries({...provider,presage:sensorLabel,spacetime:traceStatus}).map(([k,v])=><div key={k}><span>{k.toUpperCase()}</span><b>{v}</b></div>)}</div><p className="small">Tactic: {game.director.lastTactic} → {game.director.lastTarget}<br/>Outcome: {game.director.lastOutcome}<br/>Evidence: {game.director.lastEvidenceIds.join(', ')||'none'}</p><label className="check"><input type="checkbox" checked={traceConsent} onChange={e=>toggleTrace(e.target.checked)}/> Consent to sanitized trace sharing</label><div className="button-row"><button disabled={!traceConsent} onClick={()=>{const url=trace.current?.judgeUrl();if(url)window.open(url,'_blank','noopener')}}>Open second screen ↗</button><button onClick={()=>void deleteRun()}>Delete session & report</button></div><p className="small">{sensor.hint}<br/>Quality: {sensor.quality} · sample age: {sensor.ageMs===null?'unavailable':Math.round(sensor.ageMs)+'ms'} · baseline: {Math.floor(sensor.acceptedSeconds)}/30 usable seconds</p>{sensor.source==='simulated'&&<label className="check"><input type="checkbox" onChange={e=>sensing.current?.setSimulatedElevated(e.target.checked)}/> Simulate sustained +12 BPM (development)</label>}<button className="text-button" onClick={()=>{changePrefs({...prefsRef.current,sensing:'manual'});sensorMode('manual')}}>Stop capture → neutral play</button><div className="trace-list">{game.events.slice(-25).reverse().map(e=><div key={e.id}><time>{e.time.toFixed(1)}s</time><b>{e.id} / {e.type}</b><span>{e.detail}</span></div>)}</div><p className="small muted">Models {view.current?.diagnostics.loadedAssets.length??0}/10 · Audio {audio.current?.diagnostics.loadedEffects.length??0}/27<br/>Speech playback: {audio.current?.diagnostics.speech??'idle'} · {audio.current?.diagnostics.status??'idle'}</p><output className="small muted" data-testid="audio-diagnostics">{JSON.stringify(audio.current?.diagnostics??{})}</output></aside>}

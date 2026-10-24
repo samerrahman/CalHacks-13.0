@@ -32,9 +32,12 @@ async function checkInventory(directory) {
   }
 }
 await checkInventory(assetRoot);
-const models = await files('models', '.glb'), audio = await files('audio', '.wav'), cameras = await files('cameras', '.png'), decals = await files('decals', '.svg');
-assert.equal(models.length, 10); assert.equal(audio.length, 44); assert.equal(cameras.length, 4); assert.equal(decals.length, 7);
-assert.deepEqual(manifest.counts, { models: 10, audio: 44, cctvBackgrounds: 4, decals: 7 });
+const models = await files('models', '.glb'), audio = await files('audio', '.wav'), cameras = await files('cameras', '.png'), decals = await files('decals', '.svg'), videos = await files('video', '.mp4');
+assert.equal(models.length, 10); assert.equal(audio.length, 44); assert.equal(cameras.length, 4); assert.equal(decals.length, 7); assert.deepEqual(videos, ['opening.mp4']);
+assert.deepEqual(manifest.counts, { models: 10, audio: 44, cctvBackgrounds: 4, decals: 7, openingVideo: 1 });
+// Opening cutscene: an ISO-BMFF (MP4) file rendered by tools/cutscene.mjs. Its source lives in cutscene/ and src/cutscene/.
+const film = await readFile(path.join(assetRoot, 'video', 'opening.mp4'));
+assert.equal(film.subarray(4, 8).toString('latin1'), 'ftyp', 'opening.mp4 is an MP4 container');
 let meshCount = 0, clipCount = 0;
 for (const file of models) {
   const bytes = await readFile(path.join(assetRoot, 'models', file));
@@ -88,4 +91,4 @@ for (const file of cameras) {
   assert.equal(bytes.toString('ascii', 12, 16), 'IHDR'); assert.ok(bytes.readUInt32BE(16) >= 1280 && bytes.readUInt32BE(20) >= 720, `${file}: resolution`);
 }
 for (const file of decals) { const source = await readFile(path.join(assetRoot, 'decals', file), 'utf8'); assert.match(source, /<svg\b[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/); assert.doesNotMatch(source, /<script|<foreignObject|\bon[a-z]+\s*=|(?:href|src)\s*=\s*["']https?:/i); }
-console.log(JSON.stringify({ passed: true, filesHashed: inventoried.size, models: models.length, meshes: meshCount, animationClips: clipCount, wavFiles: audio.length, loopBeds, maximumPeak, cctvBackgrounds: cameras.length, svgDecals: decals.length }, null, 2));
+console.log(JSON.stringify({ passed: true, filesHashed: inventoried.size, models: models.length, meshes: meshCount, animationClips: clipCount, wavFiles: audio.length, loopBeds, maximumPeak, cctvBackgrounds: cameras.length, svgDecals: decals.length, openingVideoBytes: film.length }, null, 2));
