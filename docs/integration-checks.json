@@ -1,66 +1,41 @@
 {
-  "application": "LOCK IN",
-  "checkedAt": "2026-10-24T06:12:07.598558+00:00",
+  "application": "HUSH",
+  "checkedAt": "2026-10-24T21:57:07.769Z",
   "platform": "darwin/arm64",
   "results": {
     "presage": {
-      "status": "blocked",
-      "checkedAt": "2026-10-24T06:06:17.011Z",
-      "nativeImport": "passed",
-      "sdkVersion": "3.4.0",
-      "detail": "Actual Electron camera attempt returned camera-not-found; macOS enumerated zero camera devices. Capture stopped through UI; baseline unavailable.",
-      "category": "CAMERA_NOT_FOUND",
-      "cameraRequested": true,
-      "acceptedBaselineSeconds": 0,
-      "macOSCameraDeviceCount": 0,
-      "evidence": "qa/lock-in-presage-live.json",
-      "keyAccessVerified": false
+      "status": "not_tested",
+      "detail": "Not yet tested in HUSH; previous-game evidence does not qualify"
     },
     "gemini": {
-      "status": "failed",
-      "checkedAt": "2026-10-24T06:02:59.788Z",
+      "status": "passed",
+      "checkedAt": "2026-10-24T21:57:07.769Z",
       "scope": "structured probe; actual game proof separate",
-      "model": "gemini-3.8-flash",
-      "detail": "Gemini timeout",
-      "latencyMs": 8006,
-      "requestId": "lock-in-smoke-1792821779788",
-      "source": "fallback",
-      "validation": "PROVIDER_FAILED",
+      "model": "gemini-3.5-flash-lite",
+      "detail": "Real HUSH proposal passed the full current-state validator",
+      "latencyMs": 770,
+      "requestId": "lock-in-smoke-1792879027770",
+      "providerRequestId": "tCndas21Ecm4sOIP1cO6-Qg",
+      "source": "gemini",
+      "validation": "ACCEPTED",
       "observation": {
-        "requestId": "lock-in-smoke-1792821779788",
-        "stateVersion": 2,
+        "requestId": "lock-in-smoke-1792879027770",
+        "stateVersion": 1,
         "issuedAtGameMs": 2000,
         "expiresAtGameMs": 10000,
         "allowedTactics": [
-          "WAIT",
-          "TAUNT",
-          "RETREAT",
-          "INVESTIGATE_SOUND"
+          "WAIT"
         ],
         "allowedTargets": [
-          "NONE",
-          "SHELTER"
+          "NONE"
         ],
         "allowedTauntIds": [
-          "NONE",
-          "AFTER_MISTAKE"
+          "NONE"
         ],
         "allowedPairs": [
           {
             "tactic": "WAIT",
             "target": "NONE"
-          },
-          {
-            "tactic": "TAUNT",
-            "target": "NONE"
-          },
-          {
-            "tactic": "RETREAT",
-            "target": "NONE"
-          },
-          {
-            "tactic": "INVESTIGATE_SOUND",
-            "target": "SHELTER"
           }
         ],
         "publicEventIds": [
@@ -79,9 +54,9 @@
           {
             "id": "e2",
             "seq": 2,
-            "time": 0.033,
-            "type": "APPROACH",
-            "detail": "SHELTER"
+            "time": 1.4,
+            "type": "FAULT_STARTED",
+            "detail": ""
           },
           {
             "id": "e3",
@@ -94,9 +69,13 @@
         "observations": {
           "equipmentState": "on",
           "researchStage": 1,
-          "creatureNode": "NEAR_PATH",
+          "creatureNode": "JUNCTION",
           "sedationBand": "SEDATED",
-          "machineryClue": 0.35,
+          "linePosition": 18,
+          "lineLength": 24,
+          "danger": 16.069444444444443,
+          "quietChargesRemaining": 5,
+          "machineryClue": 0.7,
           "transientClue": 0.8,
           "physiologyClue": 0,
           "sensor": {
@@ -107,154 +86,22 @@
           "earnedLure": null
         }
       },
-      "configuredModelUnchanged": true,
-      "configuredGameEvidence": "qa/lock-in-electron-live-providers.json",
-      "testedAlternative": {
-        "status": "passed",
-        "checkedAt": "2026-10-24T06:08:27.335Z",
-        "scope": "structured probe; actual game proof separate",
-        "model": "gemini-3.5-flash-lite",
-        "detail": "Real LOCK IN proposal passed the full current-state validator",
-        "latencyMs": 711,
-        "requestId": "lock-in-smoke-1792822107336",
-        "providerRequestId": "W0vcap3kLeKU_uMPloq2kQM",
-        "source": "gemini",
-        "validation": "ACCEPTED",
-        "observation": {
-          "requestId": "lock-in-smoke-1792822107336",
-          "stateVersion": 2,
-          "issuedAtGameMs": 2000,
-          "expiresAtGameMs": 10000,
-          "allowedTactics": [
-            "WAIT",
-            "TAUNT",
-            "RETREAT",
-            "INVESTIGATE_SOUND"
-          ],
-          "allowedTargets": [
-            "NONE",
-            "SHELTER"
-          ],
-          "allowedTauntIds": [
-            "NONE",
-            "AFTER_MISTAKE"
-          ],
-          "allowedPairs": [
-            {
-              "tactic": "WAIT",
-              "target": "NONE"
-            },
-            {
-              "tactic": "TAUNT",
-              "target": "NONE"
-            },
-            {
-              "tactic": "RETREAT",
-              "target": "NONE"
-            },
-            {
-              "tactic": "INVESTIGATE_SOUND",
-              "target": "SHELTER"
-            }
-          ],
-          "publicEventIds": [
-            "e1",
-            "e2",
-            "e3"
-          ],
-          "events": [
-            {
-              "id": "e1",
-              "seq": 1,
-              "time": 0,
-              "type": "RUN_STARTED",
-              "detail": "demo"
-            },
-            {
-              "id": "e2",
-              "seq": 2,
-              "time": 0.033,
-              "type": "APPROACH",
-              "detail": "SHELTER"
-            },
-            {
-              "id": "e3",
-              "seq": 3,
-              "time": 2,
-              "type": "WRONG_INPUT",
-              "detail": "FAULT"
-            }
-          ],
-          "observations": {
-            "equipmentState": "on",
-            "researchStage": 1,
-            "creatureNode": "NEAR_PATH",
-            "sedationBand": "SEDATED",
-            "machineryClue": 0.35,
-            "transientClue": 0.8,
-            "physiologyClue": 0,
-            "sensor": {
-              "source": "manual",
-              "quality": "unknown",
-              "trend": "UNKNOWN"
-            },
-            "earnedLure": null
-          }
-        },
-        "selectedTactic": "INVESTIGATE_SOUND",
-        "selectedTarget": "SHELTER",
-        "evidenceEventIds": [
-          "e2",
-          "e3"
-        ],
-        "tauntId": "NONE",
-        "processOnlyModelOverride": true,
-        "probeEvidence": "qa/lock-in-gemini-alternate.json",
-        "actualGame": {
-          "status": "passed",
-          "checkedAt": "2026-10-24T06:10:45.184Z",
-          "latencyMs": 928,
-          "selectedTactic": "WAIT",
-          "selectedTarget": "NONE",
-          "evidenceEventIds": [
-            "e8"
-          ],
-          "errors": [],
-          "evidence": "qa/lock-in-electron-live-providers-alternate.json",
-          "screenshot": "qa/lock-in-electron-live-providers-alternate.png",
-          "controls": "Visible mistake, Q at breach warning, F after clear window; no state injection"
-        }
-      }
+      "selectedTactic": "WAIT",
+      "selectedTarget": "NONE",
+      "evidenceEventIds": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "tauntId": "NONE"
     },
     "elevenlabs": {
-      "status": "passed",
-      "checkedAt": "2026-10-24T06:03:22.993Z",
-      "detail": "Configured voice/model and real authored speech generated; actual Electron Web Audio decode and source.start verified with running context",
-      "source": "elevenlabs",
-      "latencyMs": 558,
-      "requestId": "lock-in-speech-1792821803875",
-      "providerRequestId": "EmTf62kpHONc7DRpgbM6",
-      "caption": "Machines quiet. It may still investigate the last sound. Prepare emitter A.",
-      "audioBytes": 96592,
-      "actualGame": {
-        "checkedAt": "2026-10-24T06:10:45.184Z",
-        "evidence": "qa/lock-in-electron-live-providers-alternate.json",
-        "latencyMs": 475,
-        "decodedSpeech": 1,
-        "startedSpeech": 1,
-        "playbackErrors": 0,
-        "contextState": "running",
-        "speechPlaybackVerified": true
-      }
+      "status": "not_tested",
+      "detail": "Not yet tested in HUSH; previous-game evidence does not qualify"
     },
-    "convex": {
-      "status": "blocked",
-      "checkedAt": "2026-10-24T06:09:04.278Z",
-      "category": "FUNCTIONS_NOT_PROVISIONED",
-      "detail": "Existing deployment lacks compatible LOCK IN functions. Human provisioning required; no dev/env/deploy CLI commands were run.",
-      "missingFunction": "sessions:version",
-      "networkReached": true,
-      "sessionCreated": false
+    "spacetime": {
+      "status": "not_tested",
+      "detail": "Not yet tested in HUSH; previous-game evidence does not qualify"
     }
   }
 }
