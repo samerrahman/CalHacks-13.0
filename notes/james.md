@@ -2,6 +2,8 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: Wires attach to their boxes (touching Lea's `WirePuzzle.tsx`/`thinking.css` at the user's request). Paths are now drawn in board pixels from the measured cable right edge and socket left edge, re-measured on resize. Previously they used equal percentage rows while six 46 px buttons overflowed the 240 px board, because `survival.css` silently overrode the intended 260/40 px sizes. Endpoints were measured to within 0.5 px at 1280, 1440 and 390 widths. Check, layout and the seed-17 win pass.
+
 - 2026-10-24: Added seeded0–24 monster movement, tunable danger, five-minute deadline,25-second grace, finite isolation, sampled detector and drag-wire puzzles. Fixed SDK confidence/validation/timestamp handling and exposed breathing status. Opening cutscene/App/intro assets untouched; verification and live-test limits are in docs/HANDOFF.md and docs/BALANCE.md.
 
 - 2026-10-24: Shorter run (about five minutes, 8-minute deadline): 6/8 faults by ear, 6/12 cables, one conduit board, memory 3→5 and 4→6, 8-beat heartbeat mask, 3 locate marks, 12 s calm hold. Isolation is player-controlled: hold F once the window opens at 4 s, or it ends at 25 s; the creature lingers while isolated, three cells with one recharged per stage, hunts every 60 s. Close-footstep captions now outrank the restore-window caption. Sweep: human-paced 13/30 in ~260 s.

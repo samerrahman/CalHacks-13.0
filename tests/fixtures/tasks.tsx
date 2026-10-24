@@ -16,9 +16,9 @@ function build(which: Which): GameState {
     for (let round = 0; round < memoryRounds(s).rounds; round++) { while (s.tasks.memory.playing) s = step(s, .2); for (const value of [...s.tasks.memory.sequence]) s = dispatch(s, { type: 'input', value }); }
     return s;
   }
-  if (which === 'locate') startStage(s, 3);
+  if (which === 'locate' || which === 'wires') startStage(s, 3);
   s.tasks.faults.completed = s.tasks.faults.required; s.tasks.faults.active = []; s.tasks.faults.spawned = s.tasks.faults.required; s.tasks.step = 'wires';
-  if (which === 'wires') { for (let from = 0; from < 7; from++) s = dispatch(s, { type: 'wire', from, to: s.tasks.wires.targetOrder.indexOf(from) }); return s; }
+  if (which === 'wires') { for (let from = 0; from < 3; from++) s = dispatch(s, { type: 'wire', from, to: s.tasks.wires.targetOrder.indexOf(from) }); return s; }
   for (let from = 0; from < s.tasks.wires.connections.length; from++) s = dispatch(s, { type: 'wire', from, to: s.tasks.wires.targetOrder.indexOf(from) });
   if (which === 'locate') s = dispatch(s, { type: 'station', station: 'cameras' });
   return s;
