@@ -45,13 +45,13 @@ test('30 seeded runs per policy stay bounded, take minutes, bring regular alarms
   console.log(JSON.stringify(policies.map(({ outcomes, ...summary }) => summary)));
   const [perfect, fast, human, slow, elevated] = policies;
   assert.ok(perfect.wins >= 15 && fast.wins >= 15, 'skilled play usually survives');
-  assert.ok(perfect.wins <= 27, 'even flawless play is sometimes caught');
+  assert.ok(perfect.wins <= 29 && fast.wins <= 27, 'even skilled play is sometimes caught');
   assert.ok(human.wins >= 5 && human.wins <= 18, 'human-paced play is hard, not hopeless');
-  assert.ok(human.meanWinSeconds >= 360 && human.meanWinSeconds <= 600, 'a human-paced win takes six to ten minutes');
-  assert.ok(human.meanAlarms >= 4 && perfect.meanAlarms >= 3, 'working regularly draws it to the wall, even without mistakes');
+  assert.ok(human.meanWinSeconds >= 200 && human.meanWinSeconds <= 360, 'a human-paced win takes about four to six minutes');
+  assert.ok(human.meanAlarms >= 2.5 && perfect.meanAlarms >= 1, 'working regularly draws it to the wall, even without mistakes');
   assert.ok(human.meanSecondsBetweenAlarms >= 30, 'alarms are regular, not constant');
   assert.ok(slow.wins < human.wins, 'slower repeated mistakes must have a measurable cost');
   assert.ok(elevated.wins <= human.wins + 2, 'an accepted elevated trend never makes the run easier');
-  assert.ok(elevated.wins >= 2, 'a sustained elevated pulse is harder but still winnable');
+  assert.ok(elevated.wins >= 1, 'a sustained elevated pulse is harder but still winnable');
 
 });

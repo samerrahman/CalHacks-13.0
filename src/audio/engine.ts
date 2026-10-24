@@ -6,7 +6,7 @@ export const EFFECT_NAMES = ['intro_alarm', 'forest_run', 'door_slam', 'room_hum
 export type EffectName = typeof EFFECT_NAMES[number];
 export type AudioPosition = [number, number, number];
 export type ScareKind = 'impact' | 'monitor' | 'breach';
-const LIMITER_DB = -12, BREACH_LIMITER_DB = -1, SCREAM_BOOST = 1.9;
+const LIMITER_DB = -12, BREACH_LIMITER_DB = -1, SCREAM_BOOST = 3.2, SCREAM_CAP = 1.6;
 export type SpeechEvent =
   | { type: 'started'; id: string; text: string; mode: 'live' | 'cached' | 'caption' }
   | { type: 'ended' | 'cancelled'; id: string }
@@ -22,6 +22,10 @@ export interface AudioWorld {
   paused?: boolean;
   /** A seeded hunt is under way: footsteps break into a run. */
   hunting?: boolean;
+  /** Fault-sound id (0 thump, 1 whine, 2 ticking, 3 buzz) for each machine this stage. */
+  faultSounds?: number[];
+  /** Machine whose sound the rack key is playing right now. */
+  listening?: number | null;
   softScares?: boolean;
   faults: number[];
   creature: { position: AudioPosition; distance: number; phase: string; lastMotion: 'approaching' | 'receding' | 'stationary' | 'circling' };
@@ -64,12 +68,13 @@ export function createAudioEngine(): AudioEngine {
   const scareBuffers = new Set<AudioBufferSourceNode>();
   let lastScareAt = -Infinity, limiter: DynamicsCompressorNode | null = null, scareBus: GainNode | null = null, noise: AudioBuffer | null = null;
   const curves = new Map<number, Float32Array<ArrayBuffer>>();
+  let signatures: AudioBuffer[] = [], lastListening: number | null = null;
   let breathSource: AudioBufferSourceNode | null = null, nextBreathAt = 0, nextScrapeAt = 0, lastWorldTime = 0;
   let nextFootstepAt = 0, nextPoundAt = 0, nextGrowlAt = 0, nextAmbientAt = 8, stepSide = 0, running = false, barrage = false;
   const queue = new SpeechQueue();
   const diagnostics: AudioEngine['diagnostics'] = { status: 'idle', loadedEffects: [], speech: 'idle', error: null, decodedSpeech: 0, startedSpeech: 0, playbackErrors: 0, contextState: 'uninitialized', startedScares: 0, footsteps: 0, lastFootstepGain: 0, wallPounds: 0, ambientOneShots: 0 };
   /** The breach scream follows the volume slider and mute, boosted well above the master mix. */
-  function scareLevel(): number { return muted ? 0 : Math.min(1, volume * SCREAM_BOOST); }
+  function scareLevel(): number { return muted ? 0 : Math.min(SCREAM_CAP, volume * SCREAM_BOOST); }
   function syncContextState(): void { diagnostics.contextState = context?.state ?? 'uninitialized'; }
   function audioFailure(error: unknown): void {
     if (disposed) return;
@@ -116,11 +121,13 @@ export function createAudioEngine(): AudioEngine {
     scareBuffers.clear();
     if (limiter && context) { limiter.threshold.cancelScheduledValues(context.currentTime); limiter.threshold.setValueAtTime(LIMITER_DB, context.currentTime); }
   }
-  function loop(key: string, name: EffectName, level: number, location: AudioPosition): void {
-    if (!context || !master || disposed || !buffers.has(name)) return;
+  function loop(key: string, name: EffectName | AudioBuffer, level: number, location: AudioPosition): void {
+    const buffer = typeof name === 'string' ? buffers.get(name) : name;
+    if (!context || !master || disposed || !buffer) return;
     let current = loops.get(key);
+    if (current && current.source.buffer !== buffer) { try { current.source.stop(); } catch { /* Already ended. */ } current.source.disconnect(); current.gain.disconnect(); current.panner.disconnect(); loops.delete(key); current = undefined; }
     if (!current && level > 0) {
-      const source = context.createBufferSource(); source.buffer = buffers.get(name)!; source.loop = true;
+      const source = context.createBufferSource(); source.buffer = buffer; source.loop = true;
       const gain = context.createGain(); gain.gain.value = 0; const panner = makePanner(location);
       source.connect(gain); gain.connect(panner); panner.connect(master); source.start();
       current = { source, gain, panner }; loops.set(key, current);
@@ -190,13 +197,34 @@ export function createAudioEngine(): AudioEngine {
   }
   /** The CC0 creature scream rides on the same loud scare bus as the synthesized one. */
   function recordedScream(soft: boolean): void {
-    const buffer = buffers.get('creature_scream'); if (!buffer || !context || !master) return;
-    const source = context.createBufferSource(), gain = context.createGain();
-    source.buffer = buffer; source.playbackRate.value = .92; gain.gain.value = soft ? .25 : .95;
-    source.connect(gain); gain.connect(soft || !scareBus ? master : scareBus);
-    scareBuffers.add(source);
-    source.onended = () => { scareBuffers.delete(source); source.disconnect(); gain.disconnect(); };
-    source.start();
+    if (!context || !master) return;
+    // The recorded scream, a second lower scream as it lunges, then a growl as it holds on you.
+    for (const [name, delay, rate, level] of [['creature_scream', 0, .92, .95], ['creature_scream', 1.5, .78, .9], ['creature_growl_1', 2.7, .82, .85]] as const) {
+      const buffer = buffers.get(name); if (!buffer) continue;
+      const source = context.createBufferSource(), gain = context.createGain();
+      source.buffer = buffer; source.playbackRate.value = rate; gain.gain.value = soft ? level * .25 : level;
+      source.connect(gain); gain.connect(soft || !scareBus ? master : scareBus);
+      scareBuffers.add(source);
+      source.onended = () => { scareBuffers.delete(source); source.disconnect(); gain.disconnect(); };
+      source.start(context.currentTime + delay);
+    }
+  }
+  /** Four seamless 1.2-second machine fault sounds, each built from whole cycles so it loops cleanly. */
+  function buildSignatures(): AudioBuffer[] {
+    const rate = context!.sampleRate, length = Math.round(rate * 1.2);
+    let seed = 0x7a11;
+    const noise = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2147483648 - 1; };
+    return [0, 1, 2, 3].map(kind => {
+      const buffer = context!.createBuffer(1, length, rate), data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const t = i / rate;
+        data[i] = kind === 0 ? .55 * Math.exp(-(t % .6) / .14) * (Math.sin(2 * Math.PI * 62 * t) + .35 * Math.sin(2 * Math.PI * 124 * t))
+          : kind === 1 ? .22 * Math.sin(2 * Math.PI * 1650 * t + 5 * Math.sin(2 * Math.PI * 5 * t)) + .05 * Math.sin(2 * Math.PI * 3300 * t)
+            : kind === 2 ? (t % .1 < .004 ? .5 * noise() : 0)
+              : .26 * (.6 + .4 * Math.sin(2 * Math.PI * 5 * t)) * [1, 3, 5, 7, 9, 11].reduce((sum, h) => sum + Math.sin(2 * Math.PI * 100 * h * t) / h, 0);
+      }
+      return buffer;
+    });
   }
   function noiseBuffer(): AudioBuffer {
     if (!noise) {
@@ -236,7 +264,7 @@ export function createAudioEngine(): AudioEngine {
    * own scare bus straight into the limiter, which is briefly opened to -1 dB, so it is
    * far louder than any other sound while still following volume and mute. */
   function scream(at: number, soft: boolean): void {
-    const end = at + 2.05;
+    const end = at + 3.4;
     const drive = context!.createGain(); drive.gain.value = soft ? 1 : 3.2;
     const shaper = context!.createWaveShaper(); shaper.curve = distortion(soft ? 3 : 16); shaper.oversample = '2x';
     const bus = context!.createGain(); bus.gain.value = soft ? .3 : .95;
@@ -244,22 +272,22 @@ export function createAudioEngine(): AudioEngine {
     const vibrato = context!.createOscillator(), vibratoDepth = context!.createGain(), jitter = context!.createOscillator(), jitterDepth = context!.createGain();
     vibrato.frequency.setValueAtTime(5.5, at); vibrato.frequency.linearRampToValueAtTime(8, at + 1.2); vibratoDepth.gain.value = soft ? 25 : 60; vibrato.connect(vibratoDepth);
     jitter.type = 'triangle'; jitter.frequency.value = 23; jitterDepth.gain.value = soft ? 6 : 22; jitter.connect(jitterDepth);
-    const voice = envelope(at, .55, soft ? .05 : .006, 1.35, .62), nodes: AudioNode[] = [drive, shaper, bus, vibratoDepth, jitterDepth, voice];
+    const voice = envelope(at, .55, soft ? .05 : .006, 2.6, .7), nodes: AudioNode[] = [drive, shaper, bus, vibratoDepth, jitterDepth, voice];
     // Open "AAH" formants: the difference between a siren and a throat.
     for (const [frequency, q, level] of [[850, 6, 1], [1250, 7, .8], [2900, 9, .55], [3500, 10, .3]]) {
       const formant = context!.createBiquadFilter(), gain = context!.createGain();
       formant.type = 'bandpass'; formant.frequency.value = frequency; formant.Q.value = q; gain.gain.value = level;
       voice.connect(formant); formant.connect(gain); gain.connect(drive); nodes.push(formant, gain);
     }
-    const growl = envelope(at, .3, .02, 1.2, .7), growlTone = context!.createBiquadFilter();
+    const growl = envelope(at, .3, .02, 2.4, .9), growlTone = context!.createBiquadFilter();
     growlTone.type = 'lowpass'; growlTone.frequency.value = 700; growl.connect(growlTone); growlTone.connect(drive);
-    const rasp = envelope(at, .32, soft ? .04 : .004, 1.1, .8), raspTone = context!.createBiquadFilter();
+    const rasp = envelope(at, .32, soft ? .04 : .004, 2.3, .9), raspTone = context!.createBiquadFilter();
     raspTone.type = 'bandpass'; raspTone.frequency.setValueAtTime(1500, at); raspTone.frequency.exponentialRampToValueAtTime(900, end); raspTone.Q.value = 1.5;
     rasp.connect(raspTone); raspTone.connect(drive); nodes.push(growl, growlTone, rasp, raspTone);
     const start = scareGraph(nodes);
     const contour = (osc: OscillatorNode, scale: number) => {
       osc.frequency.setValueAtTime(380 * scale, at); osc.frequency.exponentialRampToValueAtTime(980 * scale, at + .18);
-      osc.frequency.linearRampToValueAtTime(1080 * scale, at + 1); osc.frequency.exponentialRampToValueAtTime(620 * scale, end);
+      osc.frequency.linearRampToValueAtTime(1080 * scale, at + 1.6); osc.frequency.exponentialRampToValueAtTime(820 * scale, at + 2.6); osc.frequency.exponentialRampToValueAtTime(560 * scale, end);
     };
     for (const cents of [-12, 0, 17]) {
       const fold = context!.createOscillator(); fold.type = 'sawtooth'; fold.detune.value = cents; contour(fold, 1);
@@ -348,7 +376,9 @@ export function createAudioEngine(): AudioEngine {
           master = context.createGain(); master.gain.value = muted ? 0 : Math.min(.7, volume);
           limiter = context.createDynamicsCompressor(); limiter.threshold.value = LIMITER_DB; limiter.knee.value = 8; limiter.ratio.value = 10; limiter.attack.value = .003; limiter.release.value = .18;
           master.connect(limiter); limiter.connect(context.destination);
-          scareBus = context.createGain(); scareBus.gain.value = scareLevel(); scareBus.connect(limiter);
+          scareBus = context.createGain(); scareBus.gain.value = scareLevel();
+          // A gentle saturating clipper ahead of the limiter makes the scream dense as well as loud.
+          const clip = context.createWaveShaper(); clip.curve = distortion(2.5); scareBus.connect(clip); clip.connect(limiter);
           context.listener.positionX.value = .05; context.listener.positionY.value = 1.62; context.listener.positionZ.value = .60;
           context.listener.forwardZ.value = -1; context.listener.upY.value = 1;
           await Promise.all(EFFECT_NAMES.map(async name => {
@@ -358,6 +388,7 @@ export function createAudioEngine(): AudioEngine {
             if (!disposed) { buffers.set(name, buffer); diagnostics.loadedEffects.push(name); }
           }));
           if (disposed || !context || !master) return;
+          signatures = buildSignatures();
           if (paused) await context.suspend(); syncContextState();
           diagnostics.status = 'ready';
         } catch (error) { audioFailure(error); }
@@ -400,9 +431,18 @@ export function createAudioEngine(): AudioEngine {
       lastWorldTime = state.time;
       const powered = state.power === 'on' && !state.paused, creature = state.creature;
       loop('room', 'room_hum', powered ? .46 : 0, [0, 2.8, -.5]);
+      // Each failing machine plays its own fault sound from its rack slot; the player identifies it by ear.
+      const rack = (i: number): AudioPosition => [2.42, i < 2 ? .53 : 1.45, .05 + (i % 2 ? .44 : -.44)];
       for (let i = 0; i < 4; i++) {
-        const level = !state.paused && state.faults.includes(i) ? powered ? .23 : state.power === 'blackout' ? .065 : 0 : 0;
-        loop(`fault-${i}`, 'fault_rattle', level, [2.42, i < 2 ? .53 : 1.45, .05 + (i % 2 ? .44 : -.44)]);
+        const level = !state.paused && state.faults.includes(i) ? powered ? .3 : state.power === 'blackout' ? .08 : 0 : 0;
+        const signature = signatures[state.faultSounds?.[i] ?? i];
+        if (signature) loop(`fault-${i}`, signature, level, rack(i)); else loop(`fault-${i}`, 'fault_rattle', level, rack(i));
+      }
+      const key = state.paused ? null : state.listening ?? null;
+      if (key !== lastListening) {
+        lastListening = key;
+        const signature = key === null ? undefined : signatures[state.faultSounds?.[key] ?? key];
+        if (signature && key !== null) playBuffer(signature, .45, rack(key), false, 0);
       }
       loop('remote-lure', 'lure_heartbeat', state.lure?.active && !state.paused ? .58 : 0, state.lure?.position ?? [0, 0, -26]);
       // Night ambience: wind through the hull is clearer with the machines off; the crickets outside
@@ -455,7 +495,7 @@ export function createAudioEngine(): AudioEngine {
       }
     },
     reset() {
-      cancelSpeech(); stopMovement(); stopLoops(); stopScareTones(); lastScareAt = -Infinity; queue.reset(); now = 0; lastWorldTime = 0; nextBreathAt = 0; nextScrapeAt = 0; breathSource = null;
+      cancelSpeech(); stopMovement(); stopLoops(); stopScareTones(); lastScareAt = -Infinity; lastListening = null; queue.reset(); now = 0; lastWorldTime = 0; nextBreathAt = 0; nextScrapeAt = 0; breathSource = null;
       for (const source of active) { try { source.stop(); } catch { /* Already ended. */ } source.disconnect(); } active.clear();
       positions.clear(); creatureAttached.clear();
     },

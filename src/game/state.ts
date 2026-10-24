@@ -68,8 +68,9 @@ export interface MemoryState {
 export interface WireState { targetOrder: number[]; connections: number[] }
 /** Which part of the current research stage is live. Private local puzzle state. */
 export type TaskStep = 'faults' | 'wires' | 'routing' | 'locate' | 'memory' | 'pulse' | 'calm' | 'transmit' | 'final';
-/** Quiet routing: power at least `required` while total noise stays at or under `limit`. Private. */
-export interface RoutingState { round: number; rounds: number; power: number[]; noise: number[]; on: boolean[]; required: number; limit: number }
+/** Conduit puzzle: rotate tiles on a size×size grid to connect the left inlet row to the right outlet row.
+ * `kinds` 0 blank, 1 straight, 2 corner, 3 tee; `turns` quarter turns clockwise. `answer` is private. */
+export interface RoutingState { round: number; rounds: number; size: number; kinds: number[]; turns: number[]; answer: number[]; start: number; end: number }
 /** Heartbeat mask: tap intervals must match `periodSeconds`. Private. */
 export interface PulseMaskState { periodSeconds: number; startedAt: number; streak: number; lastTap: number | null }
 /** Locate: mark the creature's sector from the monitor. */
@@ -95,7 +96,8 @@ export interface GameState {
     stage: Stage;
     stageStarted: number;
     completedStages: number[];
-    faults: { active: number[]; completed: number; required: number; spawned: number; spawnElapsed: number; maximumActive: number };
+    /** `listenFrom`: game time the rack last played each machine's sound in turn (the fault-sound key). */
+    faults: { active: number[]; completed: number; required: number; spawned: number; spawnElapsed: number; maximumActive: number; listenFrom: number };
     memory: MemoryState;
     wires: WireState;
     step: TaskStep;
@@ -179,7 +181,8 @@ export type GameAction =
   | { type: 'camera'; feed: CameraFeed }
   | { type: 'input'; value: number }
   | { type: 'wire'; from: number; to: number }
-  | { type: 'route'; machine: number }
+  | { type: 'rotate'; tile: number }
+  | { type: 'listen' }
   | { type: 'engage' }
   | { type: 'mark'; sector: Sector }
   | { type: 'tap' }

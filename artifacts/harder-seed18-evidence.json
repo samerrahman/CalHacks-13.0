@@ -3,88 +3,10 @@
   "url": "http://127.0.0.1:5180",
   "seed": 18,
   "checks": [
-    "Opt-in simulated baseline survives setup-to-game handoff; accepted sustained ELEVATED appears without raw data injection",
-    "Working draws the creature to the visible proximity alarm; timely Q survives each encounter and automatically restores equipment"
+    "Opt-in simulated baseline survives setup-to-game handoff; accepted sustained ELEVATED appears without raw data injection"
   ],
   "errors": [],
   "failedResources": [],
-  "observations": {
-    "defenses": 3,
-    "automaticRestores": 3,
-    "blackouts": 3,
-    "sequenceLengths": [
-      3,
-      4,
-      5,
-      6,
-      7,
-      4,
-      5,
-      6,
-      7,
-      8
-    ],
-    "wireBoards": 2,
-    "wireDrags": 1,
-    "wireClicks": 29,
-    "stages": [
-      "Silence the machines.",
-      "Reconnect the relay.",
-      "Route power quietly.",
-      "Transmit a false heartbeat.",
-      "Mask your heartbeat.",
-      "Clear the overload.",
-      "Mark its position.",
-      "Lead it toward containment.",
-      "Let it lose your trail.",
-      "Bring it back inside."
-    ],
-    "resourceSamples": [
-      {
-        "cells": 5,
-        "danger": 74,
-        "deadline": "10:13"
-      },
-      {
-        "cells": 4,
-        "danger": null,
-        "deadline": "10:13"
-      },
-      {
-        "cells": 4,
-        "danger": 67,
-        "deadline": "9:35"
-      },
-      {
-        "cells": 3,
-        "danger": null,
-        "deadline": "9:35"
-      },
-      {
-        "cells": 5,
-        "danger": 49,
-        "deadline": "9:13"
-      },
-      {
-        "cells": 4,
-        "danger": null,
-        "deadline": "9:13"
-      }
-    ],
-    "calibratedBeforeRun": true,
-    "routes": 4,
-    "pulsePeriods": [
-      1113
-    ],
-    "pulseBeatsNeeded": [
-      10
-    ],
-    "naturalAlarmDefenses": 3,
-    "marks": 5,
-    "incompleteObservationReplays": 1,
-    "calmHolds": 1
-  },
-  "report": "SIMULATED DATA · DEVELOPMENT FIXTURE\n72\nBASELINE BPM\n84\nHIGHEST ACCEPTED BPM\n88\n68\n0s\n230s\n\nFocus an event marker to inspect it.\n\nNo supported increase could be associated with an event.\n\nTiming association only. Measurement delay, movement, lighting and other events may contribute. Gaps and pauses are excluded; this is not a fear score.",
-  "failure": "Error: The elevated heartbeat-mask and calm-hold rules were not exercised",
-  "visibleTextAtFailure": "CONTAINMENT DEADLINE\n8:10\nISOLATION CELLS\n5 / 5\n\n12s isolation · finite cells\n\nEXPOSURE\n24 / 100\nWork is loud: it climbs fast while you work and cools when you stop. High exposure makes it rush your wall.\nBase\n+10\nTime\n+8\nWork noise\n+0\nIsolations\n+6\nPulse\n+0\n▏\nLOCK IN\nSHELTER 04\nCONTAINMENT PROTOCOL\n4 / 4\nSOUND ON\nⅡ ESC\nREMOTE SEAL CLOSED — CONTAINMENT COMPLETE\nContainment sealed. Research recovered.\nQ\nQuiet equipment\n5 cells · 12 seconds\nF\nHold to restore\nE Use terminal\nCLICK EQUIPMENT TO INTERACT · DRAG TO LOOK\n◎ SIMULATED · UNKNOWN\n01\nLook at terminal\n02\nLook at monitor\n03\nTurn around\nJudge view J\nSIMULATED · NOT A LIVE READING\n↗\nPULSE\n—\nBPM\nBREATHING\n—\nbreaths / min\n\nWaiting for a breathing estimate\n\nACQUIRING SIGNAL\nPulse level\nBaseline 72\n40 BPM\n110 BPM\n\nCapture stopped · neutral gameplay\n\nFIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n230s\nELAPSED\n3\nQUIET RESPONSES\n\nSeed 18 · FALLBACK director · SIMULATED\n\nSIMULATED DATA · DEVELOPMENT FIXTURE\n72\nBASELINE BPM\n84\nHIGHEST ACCEPTED BPM\n88\n68\n0s\n230s\n\nFocus an event marker to inspect it.\n\nNo supported increase could be associated with an event.\n\nTiming association only. Measurement delay, movement, lighting and other events may contribute. Gaps and pauses are excluded; this is not a fear score.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  "failure": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Replay sequence' })\n    - locator resolved to <button data-tutorial=\"replay-sequence\">…</button>\n  - attempting click action\n    - waiting for element to be visible, enabled and stable\n    - element is visible, enabled and stable\n    - scrolling into view if needed\n  - element was detached from the DOM, retrying\n",
+  "visibleTextAtFailure": "CONTAINMENT DEADLINE\n10:44\nISOLATION CELLS\n5 / 5\n\n12s isolation · finite cells\n\n▏\nLOCK IN\nSHELTER 04\nCONTAINMENT PROTOCOL\n1 / 4\nSOUND ON\nⅡ ESC\nMAIN POWER LOST\nUse the emergency switch.\n\nQ silences the remaining equipment.\n\nFOOTSTEPS RECEDING — AHEAD\nPower lost. Research is preserved. Hold F to restore without spending isolation.\nQ\nQuiet equipment\n5 cells · 12 seconds\nF\nRestore · clear window\n◎ SIMULATED · ELEVATED\n01\nLook at terminal\n02\nLook at monitor\n03\nTurn around\nJudge view J\nSIMULATED · NOT A LIVE READING\n↗\nPULSE\n84\nBPM\nBREATHING\n—\nbreaths / min\n\nWaiting for a breathing estimate\n\nSIGNAL ACCEPTED\nPulse level\nBaseline 72\n40 BPM\n110 BPM\n\n+12 BPM from baseline\n\nDevelopment fixture"
 }

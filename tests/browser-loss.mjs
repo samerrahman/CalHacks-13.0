@@ -1,6 +1,6 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { begin, openTerminal, resources, collectBrowserEvidence, TEST_URL } from './lock-in-browser-helpers.mjs';
+import { begin, openTerminal, resources, collectBrowserEvidence, fixFaultByEar, learnRackKey, TEST_URL } from './lock-in-browser-helpers.mjs';
 await mkdir('artifacts', { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const evidence = { passed: false, url: TEST_URL, mode: 'offline, manual pulse, trace sharing off', checks: [], errors: [], failedResources: [], externalRequests: [] }; let page;
@@ -8,17 +8,14 @@ try {
   page = await browser.newPage({ viewport: { width: 1280, height: 720 } }); collectBrowserEvidence(page, evidence);
   page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['127.0.0.1', 'localhost'].includes(url.hostname)) evidence.externalRequests.push(`${url.origin}${url.pathname}`); });
   await begin(page); await openTerminal(page);
-  await expect(page.locator('.task-progress')).toContainText('0 / 24');
+  await expect(page.locator('.task-progress')).toContainText('0 / 6');
   evidence.initialResources = await resources(page);
   await expect(page.getByRole('complementary', { name: 'Survival resources' })).toContainText('SEDATIVE HOLD');
   // Deliberately make visible mistakes, then leave the noisy machines running.
   // This exercises the actual danger mechanism without touching simulation data.
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const quietMachines = page.getByRole('button', { name: /^Machine [1-4] QUIET$/ });
-    const count = await quietMachines.count();
-    if (!count) throw Error('No visibly quiet machine available for the deliberate wrong input');
-    await quietMachines.first().click(); await page.waitForTimeout(300);
-  }
+  // Learn the rack key as it plays, then press machines whose sound is not the one playing.
+  const keyEnd = Date.now() + 8000; while (Date.now() < keyEnd) { await learnRackKey(page); await page.waitForTimeout(60); }
+  for (let attempt = 0, made = 0; made < 6 && attempt < 200; attempt++) { if (await fixFaultByEar(page, { wrong: true })) { made++; await page.waitForTimeout(300); } }
   evidence.afterMistakes = await resources(page);
   if (evidence.afterMistakes.danger <= evidence.initialResources.danger) throw Error('Visible mistakes did not increase danger');
   await page.getByRole('button', { name: 'Mute', exact: true }).click();
@@ -48,19 +45,20 @@ try {
   await expect(page.locator('.sound-caption')).toContainText('Isolation relay disengaged.');
   await expect(page.locator('.jump-scare.breach')).toBeVisible({ timeout: 4000 });
   await page.screenshot({ path: 'artifacts/harder-breach-scare-active.png' });
-  await expect(page.getByRole('heading', { name: 'The shelter fell silent.', exact: true })).toBeVisible({ timeout: 4000 });
+  await expect(page.getByRole('heading', { name: 'The shelter fell silent.', exact: true })).toBeVisible({ timeout: 7000 });
+  await expect(page.locator('.jump-scare.breach')).toBeVisible(); // it holds on the creature instead of fading out
   const result = page.getByRole('dialog', { name: 'Run results' });
   await expect(result).toContainText('Isolation must be used before its final strike.');
   await expect(result).toContainText('Physiological statistics unrecorded.');
   await page.screenshot({ path: 'artifacts/harder-loss-result.png' });
   evidence.result = await result.innerText();
-  evidence.checks.push('Q after the publicly recorded commitment cannot rescue the run; an actual breach scare precedes the explained loss');
+  evidence.checks.push('Q after the publicly recorded commitment cannot rescue the run; an animated breach scare precedes the explained loss and stays behind the run report without fading out');
   await page.getByRole('button', { name: 'Replay this seed', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Research terminal' })).toHaveCount(0);
   await openTerminal(page);
-  await expect(page.locator('.task-progress')).toContainText('0 / 24');
+  await expect(page.locator('.task-progress')).toContainText('0 / 6');
   await expect(page.locator('.protocol-progress b')).toHaveText('0 / 4');
-  await expect(page.locator('.isolation-reserve b')).toHaveText('5 / 5');
+  await expect(page.locator('.isolation-reserve b')).toHaveText('3 / 3');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Game paused' })).toBeVisible();
   evidence.checks.push('Replay resets research and returns to equipment interaction; keyboard pause remains available');

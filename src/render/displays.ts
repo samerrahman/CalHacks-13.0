@@ -25,10 +25,10 @@ export function plateTexture(title: string, lines: string[]): CanvasTexture {
   return texture;
 }
 const STEP_SCREENS: Record<string, [string, string]> = {
-  wires: ['PATCH THE RELAY', 'MATCH EACH CABLE TO ITS SOCKET'], routing: ['ROUTE POWER QUIETLY', 'ENOUGH POWER, UNDER ITS HEARING'],
+  wires: ['PATCH THE RELAY', 'MATCH EACH CABLE TO ITS SOCKET'], routing: ['RECONNECT THE CONDUIT', 'ROTATE TILES FROM INLET TO OUTLET'],
   locate: ['MARK ITS POSITION', 'USE THE SECURITY MONITOR'], pulse: ['MASK YOUR HEARTBEAT', 'TAP IN RHYTHM WITH THE PULSE'], calm: ['LET IT LOSE YOUR TRAIL', 'BREATHE WITH THE RING'],
 };
-const PROGRESS_UNITS: Record<string, string> = { wires: 'CABLES LINKED', routing: 'CIRCUITS ENGAGED', locate: 'POSITIONS MARKED', pulse: 'BEATS IN RHYTHM', calm: 'CALM SECONDS' };
+const PROGRESS_UNITS: Record<string, string> = { wires: 'CABLES LINKED', routing: 'CONDUITS JOINED', locate: 'POSITIONS MARKED', pulse: 'BEATS IN RHYTHM', calm: 'CALM SECONDS' };
 export function drawTerminal(display: Display, state: RenderState): void {
   const on = state.power === 'on', ctx = display.context;
   ctx.fillStyle = on ? '#14170d' : '#030403'; ctx.fillRect(0, 0, 1024, 512);
@@ -53,13 +53,13 @@ export function drawTerminal(display: Display, state: RenderState): void {
     }
     ctx.fillStyle = '#b8c8a2'; ctx.font = '27px monospace'; ctx.fillText(`${done} / ${total} ${PROGRESS_UNITS[state.step] ?? ''}`, 48, 448);
   } else if (state.stage === 1 || state.stage === 3) {
-    ctx.fillText(state.stage === 1 ? 'SILENCE THE FAULTS' : 'REPAIR THE OVERLOAD', 45, 120);
+    // Faults are found by ear, so the screen never marks which machine is failing; it lights only the rack key.
+    ctx.fillText(state.listening !== null && state.listening !== undefined ? 'LISTEN TO THE RACK' : 'FIND THE FAULTS BY EAR', 45, 120);
     for (let i = 0; i < 4; i++) {
-      const active = state.faults.includes(i), x = 48 + i * 240;
-      ctx.fillStyle = active ? '#b18b4c' : '#153425'; ctx.fillRect(x, 175, 211, 205);
-      ctx.strokeStyle = active ? '#eac58a' : '#476b47'; ctx.lineWidth = active ? 7 : 2; ctx.strokeRect(x, 175, 211, 205);
-      ctx.fillStyle = active ? '#172019' : '#8baf82'; ctx.font = 'bold 78px monospace'; ctx.fillText(String(i + 1), x + 78, 273);
-      ctx.font = '25px monospace'; ctx.fillText(active ? 'FAULT' : 'QUIET', x + 68, 333);
+      const lit = state.listening === i, x = 48 + i * 240;
+      ctx.fillStyle = lit ? '#b18b4c' : '#153425'; ctx.fillRect(x, 175, 211, 205);
+      ctx.strokeStyle = lit ? '#eac58a' : '#476b47'; ctx.lineWidth = lit ? 7 : 2; ctx.strokeRect(x, 175, 211, 205);
+      ctx.fillStyle = lit ? '#172019' : '#8baf82'; ctx.font = 'bold 78px monospace'; ctx.fillText(String(i + 1), x + 78, 300);
     }
     ctx.fillStyle = '#b8c8a2'; ctx.font = '27px monospace'; ctx.fillText(`${state.faultsResolved ?? 0} / ${state.faultsRequired ?? (state.stage === 1 ? 5 : 7)} FAULTS RESOLVED`, 48, 448);
   } else if (state.stage === 2 || state.stage === 4) {
