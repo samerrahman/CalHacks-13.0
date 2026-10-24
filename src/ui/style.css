@@ -6,3 +6,14 @@
 
 .objective{background:linear-gradient(100deg,#071815eb,#071815b8 80%,transparent);padding:15px 17px 17px 12px;margin:-15px 0 0 -12px;border-left:1px solid #9bb18a35}.objective>p{color:#b6c2af}.objective h2{color:#eef0d8}.task-list>div{color:#9daf9a}
 @media(max-width:760px){.objective{padding:12px 9px 12px 8px;margin:-10px 0 0 -6px}}
+
+.modal-shade {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.modal {
+  max-height: calc(100dvh - 50px);
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

@@ -3,6 +3,7 @@ import { TrendTracker } from './trend';
 import { normalizePresage } from './presageSample';
 import { simulatedSample } from './simulated';
 import { acceptedPulse, type SensorMode, type SensorSample, type SensorView } from './types';
+import { adaptNativeMetrics, simulatedPulseObservation, type SignalObservation } from '../wellness/signals';
 import type { SmartSpectraSDK } from '@smartspectra/node-sdk/renderer';
 import '../integrations/contracts';
 
@@ -14,6 +15,7 @@ export class SensorController {
   private stream: MediaStream | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private listeners = new Set<(view: SensorView) => void>();
+  private wellnessListeners = new Set<(observation: SignalObservation) => void>();
   private generation = 0;
   private disposed = false;
   private retiring: Promise<void> = Promise.resolve();
@@ -23,6 +25,7 @@ export class SensorController {
   private hint = 'MANUAL · no camera or pulse data';
   private elevated = false;
   subscribe(listener: (view: SensorView) => void): () => void { this.listeners.add(listener); listener(this.view()); return () => this.listeners.delete(listener); }
+  subscribeWellness(listener: (observation: SignalObservation) => void): () => void { this.wellnessListeners.add(listener); return () => this.wellnessListeners.delete(listener); }
   view(): SensorView {
     const now = performance.now();
     const pulse = acceptedPulse(this.sample, now, this.mode === 'simulated');
@@ -32,6 +35,10 @@ export class SensorController {
   private publish(): void { const view = this.view(); this.listeners.forEach(l => l(view)); }
   private accept(sample: SensorSample): void {
     this.sample = sample;
+    if (sample.source === 'simulated') {
+      const observation = simulatedPulseObservation(sample.receivedAtMs, this.startedAt, sample.pulseBpm, sample.quality === 'accepted');
+      this.wellnessListeners.forEach(listener => listener(observation));
+    }
     this.baseline.add(sample, performance.now(), this.mode === 'simulated');
     this.trends.add(sample);
     this.status = this.baseline.value === null ? 'calibrating' : 'ready';
@@ -69,7 +76,14 @@ export class SensorController {
       sdk.on('metrics', buffer => {
         if (generation !== this.generation) return;
         const receiveMs = performance.now();
-        try { this.accept(normalizePresage(decodeMetrics(buffer), receiveMs, Date.now(), this.startedAt, validation)); }
+        const wallMs = Date.now();
+        try {
+          const metrics = decodeMetrics(buffer);
+          this.accept(normalizePresage(metrics, receiveMs, wallMs, this.startedAt, validation));
+          for (const observation of adaptNativeMetrics(metrics, receiveMs, wallMs, this.startedAt, validation.code === 0)) {
+            this.wellnessListeners.forEach(listener => listener(observation));
+          }
+        }
         catch { this.hint = 'Pulse payload could not be decoded'; this.sample = null; this.publish(); }
       });
       sdk.on('error', (code, message) => { if (generation === this.generation) void this.unavailable(`Sensor ${code}: ${message}`); });
@@ -117,5 +131,5 @@ export class SensorController {
     this.status = 'paused'; this.hint = 'Capture paused · stale data discarded'; this.publish();
   }
   async resume(): Promise<void> { await this.start(this.mode, true); }
-  async dispose(): Promise<void> { this.disposed = true; this.generation++; this.listeners.clear(); await this.stopResources(); }
+  async dispose(): Promise<void> { this.disposed = true; this.generation++; this.listeners.clear(); this.wellnessListeners.clear(); await this.stopResources(); }
 }
