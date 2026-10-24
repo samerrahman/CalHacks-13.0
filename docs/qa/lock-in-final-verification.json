@@ -1,0 +1,41 @@
+{
+  "application": "LOCK IN",
+  "verifiedAt": "2026-10-24T06:15:11.690656+00:00",
+  "checks": {
+    "npm run check": {
+      "passed": true,
+      "tests": 75,
+      "typecheck": true,
+      "webBuild": true,
+      "electronBuild": true
+    },
+    "assetValidation": {
+      "passed": true,
+      "hashes": 53,
+      "models": 10,
+      "clips": 11,
+      "monoWavs": 27,
+      "cctvImages": 4,
+      "decals": 7
+    },
+    "referenceTests": {
+      "passed": true,
+      "tests": 31
+    }
+  },
+  "uiEvidence": [
+    "artifacts/lock-in-playthrough.json",
+    "artifacts/lock-in-second-playthrough.json",
+    "artifacts/lock-in-loss-evidence.json",
+    "artifacts/lock-in-layout.json",
+    "docs/qa/lock-in-electron-smoke.json"
+  ],
+  "liveEvidence": "docs/INTEGRATION_STATUS.md",
+  "notes": [
+    "Root dev and desktop entries now launch LOCK IN",
+    "Environment files preserved",
+    "Browser test Vite process stopped after verification",
+    "Large client chunk warning is nonfatal",
+    "No packaging/signing/public deployment claimed"
+  ]
+}

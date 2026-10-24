@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "results": [
+    "Mobile fresh render has one header, visible radio/sound captions, emergency controls and station footer",
+    "Escape works while a judge checkbox holds keyboard focus",
+    "Camera B/C and physical equipment station respond through visible buttons"
+  ],
+  "errors": []
+}

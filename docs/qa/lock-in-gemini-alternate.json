@@ -1,0 +1,106 @@
+{
+  "application": "LOCK IN",
+  "checkedAt": "2026-10-24T06:08:27.335Z",
+  "platform": "darwin/arm64",
+  "processOnlyModelOverride": true,
+  "result": {
+    "status": "passed",
+    "checkedAt": "2026-10-24T06:08:27.335Z",
+    "scope": "structured probe; actual game proof separate",
+    "model": "gemini-3.5-flash-lite",
+    "detail": "Real LOCK IN proposal passed the full current-state validator",
+    "latencyMs": 711,
+    "requestId": "lock-in-smoke-1792822107336",
+    "providerRequestId": "W0vcap3kLeKU_uMPloq2kQM",
+    "source": "gemini",
+    "validation": "ACCEPTED",
+    "observation": {
+      "requestId": "lock-in-smoke-1792822107336",
+      "stateVersion": 2,
+      "issuedAtGameMs": 2000,
+      "expiresAtGameMs": 10000,
+      "allowedTactics": [
+        "WAIT",
+        "TAUNT",
+        "RETREAT",
+        "INVESTIGATE_SOUND"
+      ],
+      "allowedTargets": [
+        "NONE",
+        "SHELTER"
+      ],
+      "allowedTauntIds": [
+        "NONE",
+        "AFTER_MISTAKE"
+      ],
+      "allowedPairs": [
+        {
+          "tactic": "WAIT",
+          "target": "NONE"
+        },
+        {
+          "tactic": "TAUNT",
+          "target": "NONE"
+        },
+        {
+          "tactic": "RETREAT",
+          "target": "NONE"
+        },
+        {
+          "tactic": "INVESTIGATE_SOUND",
+          "target": "SHELTER"
+        }
+      ],
+      "publicEventIds": [
+        "e1",
+        "e2",
+        "e3"
+      ],
+      "events": [
+        {
+          "id": "e1",
+          "seq": 1,
+          "time": 0,
+          "type": "RUN_STARTED",
+          "detail": "demo"
+        },
+        {
+          "id": "e2",
+          "seq": 2,
+          "time": 0.033,
+          "type": "APPROACH",
+          "detail": "SHELTER"
+        },
+        {
+          "id": "e3",
+          "seq": 3,
+          "time": 2,
+          "type": "WRONG_INPUT",
+          "detail": "FAULT"
+        }
+      ],
+      "observations": {
+        "equipmentState": "on",
+        "researchStage": 1,
+        "creatureNode": "NEAR_PATH",
+        "sedationBand": "SEDATED",
+        "machineryClue": 0.35,
+        "transientClue": 0.8,
+        "physiologyClue": 0,
+        "sensor": {
+          "source": "manual",
+          "quality": "unknown",
+          "trend": "UNKNOWN"
+        },
+        "earnedLure": null
+      }
+    },
+    "selectedTactic": "INVESTIGATE_SOUND",
+    "selectedTarget": "SHELTER",
+    "evidenceEventIds": [
+      "e2",
+      "e3"
+    ],
+    "tauntId": "NONE"
+  }
+}

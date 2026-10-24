@@ -1,260 +1,444 @@
 {
-  "schemaVersion": 1,
-  "source": "night-relay-kit",
+  "name": "LOCK IN playable runtime assets",
   "counts": {
-    "models": 8,
-    "audio": 9,
-    "decals": 5
-  },
-  "license": {
-    "id": "LicenseRef-Night-Relay-Kit",
-    "path": "public/assets/LICENSE.txt",
-    "source": "night-relay-kit/LICENSE.txt",
-    "sha256": "7f61b8f1ff1bb57e215acc3aff52da27b175ec004762a556c3b5c50187ca59fb",
-    "notice": "Retain this notice with redistributed source or asset packs."
+    "models": 10,
+    "audio": 27,
+    "cctvBackgrounds": 4,
+    "decals": 7
   },
   "assets": [
     {
-      "path": "public/assets/models/booth.glb",
-      "url": "/assets/models/booth.glb",
-      "source": "night-relay-kit/assets/models/booth.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 27840,
-      "sha256": "dcb8a7ecc060d3a9b2ef71672d911d01c8719f770c28f773a616d58bd27d71c8",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/LICENSE.txt",
+      "url": "/assets/LICENSE.txt",
+      "bytes": 1701,
+      "sha256": "da7b1e1e36ee016c1214558612b51ee6376cb698fdef17b2df47fd0f95169ef3",
+      "source": "lock-in-kit/LICENSE.txt",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/models/console.glb",
-      "url": "/assets/models/console.glb",
-      "source": "night-relay-kit/assets/models/console.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 9324,
-      "sha256": "c0fd48f79f44bce2a9daf67ad105a3561a2d814e06e977ae7fce054663534c5f",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/NIGHT_RELAY_LICENSE.txt",
+      "url": "/assets/NIGHT_RELAY_LICENSE.txt",
+      "bytes": 900,
+      "sha256": "7f61b8f1ff1bb57e215acc3aff52da27b175ec004762a556c3b5c50187ca59fb",
+      "source": "lock-in-kit/source/NIGHT_RELAY_LICENSE.txt",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/models/floodlight.glb",
-      "url": "/assets/models/floodlight.glb",
-      "source": "night-relay-kit/assets/models/floodlight.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 6608,
-      "sha256": "8b708ef651ab3b8aba8d5d997a146f3d17c47838e23455a5503332b37b4c5258",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/audio-manifest.json",
+      "url": "/assets/audio/audio-manifest.json",
+      "bytes": 12777,
+      "sha256": "5a1b0bee069c3be893275efbb65cb5c06969d1ef2ea043294dfec44c8fb472c6",
+      "source": "lock-in-kit/assets/audio/audio-manifest.json",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/models/fuse.glb",
-      "url": "/assets/models/fuse.glb",
-      "source": "night-relay-kit/assets/models/fuse.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 5336,
-      "sha256": "394a6bdfb008f945e59722ce9a5960ddb899d49455806c77826e39927d8d2ff9",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/blackout.wav",
+      "url": "/assets/audio/blackout.wav",
+      "bytes": 61784,
+      "sha256": "58c68254017452a84aa19756c92ce6ef2aada27c0f2bc2e229be6416b905cd6e",
+      "source": "lock-in-kit/assets/audio/blackout.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/models/mimic.glb",
-      "url": "/assets/models/mimic.glb",
-      "source": "night-relay-kit/assets/models/mimic.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 18384,
-      "sha256": "61cb1984867f0e5ba009f45a00ff759cfbf31dbba74009dfa9f995d5c24c0930",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/breach_impact.wav",
+      "url": "/assets/audio/breach_impact.wav",
+      "bytes": 79424,
+      "sha256": "cbe4bb45ddb3ffd988d612a6d4c215157f13bee3d8b2b3ea7027117b96cebf7d",
+      "source": "lock-in-kit/assets/audio/breach_impact.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/models/radio.glb",
-      "url": "/assets/models/radio.glb",
-      "source": "night-relay-kit/assets/models/radio.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 11980,
-      "sha256": "4b42df673eb5356e3236c1437d4c3ccbcd5f226d51e6cd869dede83575ccb682",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/breach_warning.wav",
+      "url": "/assets/audio/breach_warning.wav",
+      "bytes": 141164,
+      "sha256": "1f437c0ab610251f2a86c3a7a52a7e284299f038cfcc49f903174dfae9931c98",
+      "source": "lock-in-kit/assets/audio/breach_warning.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/models/relay.glb",
-      "url": "/assets/models/relay.glb",
-      "source": "night-relay-kit/assets/models/relay.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 10628,
-      "sha256": "b2b5033f877fd033a89c6cc734c09d49b1340be7f7b4ca852d2335342c5898c9",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/containment_success.wav",
+      "url": "/assets/audio/containment_success.wav",
+      "bytes": 110294,
+      "sha256": "36054df28ea5d39da104ca29483a59c1ae2fe2f2dd5e2cc75391c30b5598513f",
+      "source": "lock-in-kit/assets/audio/containment_success.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/models/shutter.glb",
-      "url": "/assets/models/shutter.glb",
-      "source": "night-relay-kit/assets/models/shutter.glb",
-      "mediaType": "model/gltf-binary",
-      "bytes": 16512,
-      "sha256": "1b314af555bf662fd71a15db6d27a4d5db1f85ff716c35ba838e0079ea1f46b6",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/door_slam.wav",
+      "url": "/assets/audio/door_slam.wav",
+      "bytes": 79424,
+      "sha256": "94c08beb76c237e43fc3d4157046ac95ae043051f774055a928b3e0090c1e1ee",
+      "source": "lock-in-kit/assets/audio/door_slam.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/audio/knock.wav",
-      "url": "/assets/audio/knock.wav",
-      "source": "night-relay-kit/assets/audio/knock.wav",
-      "mediaType": "audio/wav",
-      "bytes": 48554,
-      "sha256": "a48050a21ff636da58d088c74719587a097dbe39723d88af9d15e9a512f27f11",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/fault_rattle.wav",
+      "url": "/assets/audio/fault_rattle.wav",
+      "bytes": 88244,
+      "sha256": "c96d0fda56215be76263684517480c02fefe6203513b7ca220a11d2108b1b8b0",
+      "source": "lock-in-kit/assets/audio/fault_rattle.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/audio/mimic_rustle.wav",
-      "url": "/assets/audio/mimic_rustle.wav",
-      "source": "night-relay-kit/assets/audio/mimic_rustle.wav",
-      "mediaType": "audio/wav",
-      "bytes": 70604,
-      "sha256": "b60271843c05f1d7842434c209f04b642f9dd50c5362f1587445e5accce654ba",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/fault_silenced.wav",
+      "url": "/assets/audio/fault_silenced.wav",
+      "bytes": 18566,
+      "sha256": "c4bdf20f4a1eea0681cfc6695f586d8d0662e4606a95b594a97834ded23dbbd7",
+      "source": "lock-in-kit/assets/audio/fault_silenced.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/forest_run.wav",
+      "url": "/assets/audio/forest_run.wav",
+      "bytes": 167624,
+      "sha256": "427ff492ea8fc1d721eca8615365511f3c9977fc5c09873cc9836542171a217e",
+      "source": "lock-in-kit/assets/audio/forest_run.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/intro_alarm.wav",
+      "url": "/assets/audio/intro_alarm.wav",
+      "bytes": 176444,
+      "sha256": "c4d3af91d0c5cfa207562b4cd80c068f0a1bc259121dfaa9457fee8b65a6bc3f",
+      "source": "lock-in-kit/assets/audio/intro_alarm.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/lure_heartbeat.wav",
+      "url": "/assets/audio/lure_heartbeat.wav",
+      "bytes": 176444,
+      "sha256": "956a9d2bed6acb2915aba7e4daa73f74e4aefdfd871b64d2fba6e3728b519830",
+      "source": "lock-in-kit/assets/audio/lure_heartbeat.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/lure_transmit.wav",
+      "url": "/assets/audio/lure_transmit.wav",
+      "bytes": 57374,
+      "sha256": "ade52e7d71ae0699e71d52945e54c5c3077e9b80ab16c9f3f5c4ca2c28e8d07b",
+      "source": "lock-in-kit/assets/audio/lure_transmit.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/machine_mistake.wav",
+      "url": "/assets/audio/machine_mistake.wav",
+      "bytes": 55168,
+      "sha256": "6f6428e23f78d5d3aec46f0aede571bcfd54a3b1ec6bea5e2ae115d512f04760",
+      "source": "lock-in-kit/assets/audio/machine_mistake.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/monitor_interrupt.wav",
+      "url": "/assets/audio/monitor_interrupt.wav",
+      "bytes": 35324,
+      "sha256": "42c277d90bc034ab7b37e92569414358f5e50b3c9b47dd14099db571f3ee0bb0",
+      "source": "lock-in-kit/assets/audio/monitor_interrupt.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/power_restart.wav",
+      "url": "/assets/audio/power_restart.wav",
+      "bytes": 97064,
+      "sha256": "e7012831dcce58e264d8c021782e43e0269eb68804c92e6f95ba7848f47adc62",
+      "source": "lock-in-kit/assets/audio/power_restart.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
       "path": "public/assets/audio/radio_chime.wav",
       "url": "/assets/audio/radio_chime.wav",
-      "source": "night-relay-kit/assets/audio/radio_chime.wav",
-      "mediaType": "audio/wav",
       "bytes": 28708,
-      "sha256": "2d27bbdedfa72e6249efe5ea7b1cda18621b8e242b2ce141b5a542741648b362",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "sha256": "d8d507167513739c774fc059567ef0259c07d4234d68b7b556aca45605c4c1ee",
+      "source": "lock-in-kit/assets/audio/radio_chime.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
       "path": "public/assets/audio/radio_static.wav",
       "url": "/assets/audio/radio_static.wav",
-      "source": "night-relay-kit/assets/audio/radio_static.wav",
-      "mediaType": "audio/wav",
-      "bytes": 52964,
-      "sha256": "1489b155ec015e6644e0398faa1d90342f0491c1d5ba0957516c839d2b23288f",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "bytes": 88244,
+      "sha256": "8a43f58ebe0f13d9852764e477680691838b3fd4844fe715923345b786c3420d",
+      "source": "lock-in-kit/assets/audio/radio_static.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/audio/relay_click.wav",
-      "url": "/assets/audio/relay_click.wav",
-      "source": "night-relay-kit/assets/audio/relay_click.wav",
-      "mediaType": "audio/wav",
-      "bytes": 11068,
-      "sha256": "08b1dde6c49046b09532856bc9366a07e499b84bd642bfcc2d4c3b3551dbc5a9",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/relay_confirm.wav",
+      "url": "/assets/audio/relay_confirm.wav",
+      "bytes": 26504,
+      "sha256": "6932db7bdf47e89ff7b621fcfce9cfdda32438075935adc0f18f5f87f7f83415",
+      "source": "lock-in-kit/assets/audio/relay_confirm.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
       "path": "public/assets/audio/room_hum.wav",
       "url": "/assets/audio/room_hum.wav",
-      "source": "night-relay-kit/assets/audio/room_hum.wav",
-      "mediaType": "audio/wav",
       "bytes": 264644,
-      "sha256": "91375ca3dcb700ff0d26d76513d64d540e101562503f144b19798df11ea47809",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "sha256": "655ec01cc9c1ec544f84bf7138236858f825bd8218c5e19abbf18f19d0dddcf7",
+      "source": "lock-in-kit/assets/audio/room_hum.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/audio/shutter_motor.wav",
-      "url": "/assets/audio/shutter_motor.wav",
-      "source": "night-relay-kit/assets/audio/shutter_motor.wav",
-      "mediaType": "audio/wav",
-      "bytes": 48554,
-      "sha256": "0ec353655a77ff52870e745b6b8f52c02dcbf3912f6e6c171a44663166f70995",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/sequence_tone_1.wav",
+      "url": "/assets/audio/sequence_tone_1.wav",
+      "bytes": 18566,
+      "sha256": "24c8bf3164c1b703fe473564ba72ae8fe9daceb44f4991994536c21492d34643",
+      "source": "lock-in-kit/assets/audio/sequence_tone_1.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/audio/success.wav",
-      "url": "/assets/audio/success.wav",
-      "source": "night-relay-kit/assets/audio/success.wav",
-      "mediaType": "audio/wav",
-      "bytes": 61782,
-      "sha256": "fce3f3d55d8fe4968b49c42d3f5d7932f8a601372afd322edc8c14729fe255bd",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/sequence_tone_2.wav",
+      "url": "/assets/audio/sequence_tone_2.wav",
+      "bytes": 18566,
+      "sha256": "73f766685ace94bf997dced0fd7cb1678b2ac1710c23bffbf867e6a0ce8966e5",
+      "source": "lock-in-kit/assets/audio/sequence_tone_2.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/audio/warning_pulse.wav",
-      "url": "/assets/audio/warning_pulse.wav",
-      "source": "night-relay-kit/assets/audio/warning_pulse.wav",
-      "mediaType": "audio/wav",
-      "bytes": 52964,
-      "sha256": "b42acba980d5227db1f5d874ac215888c063a9b0e7345978d8c86cf0232c4aec",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/sequence_tone_3.wav",
+      "url": "/assets/audio/sequence_tone_3.wav",
+      "bytes": 18566,
+      "sha256": "975e0195311ce9311193ffc417edc8ba7543237c2a6d83c62e6641450b654df6",
+      "source": "lock-in-kit/assets/audio/sequence_tone_3.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/decals/challenge_card.svg",
-      "url": "/assets/decals/challenge_card.svg",
-      "source": "night-relay-kit/assets/decals/challenge_card.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 673,
-      "sha256": "2db2902fd4ecfc399978ff25ee9a8df7116a5ae231ade50bd77b613465274b0c",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/sequence_tone_4.wav",
+      "url": "/assets/audio/sequence_tone_4.wav",
+      "bytes": 18566,
+      "sha256": "5d8e0442596732b1855f74934bf723224b434f1358798c392021c923a9a712e8",
+      "source": "lock-in-kit/assets/audio/sequence_tone_4.wav",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/decals/rules_card.svg",
-      "url": "/assets/decals/rules_card.svg",
-      "source": "night-relay-kit/assets/decals/rules_card.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 758,
-      "sha256": "a27129bd15d603c5b772e5265827d061e636468dde91b6418e660de23619bd08",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/audio/steps_approaching.wav",
+      "url": "/assets/audio/steps_approaching.wav",
+      "bytes": 220544,
+      "sha256": "3ae2efd0e74f60dc37cef658dbd00bfe48dcbcd93fa4a12d95a8a7481b222bc6",
+      "source": "lock-in-kit/assets/audio/steps_approaching.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/steps_receding.wav",
+      "url": "/assets/audio/steps_receding.wav",
+      "bytes": 220544,
+      "sha256": "f5a1426fb764830a5969eeecd0d0207a5fe7a2a41072aaff3054808289029b5e",
+      "source": "lock-in-kit/assets/audio/steps_receding.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/terminal_press.wav",
+      "url": "/assets/audio/terminal_press.wav",
+      "bytes": 6218,
+      "sha256": "1fa792f748c248fd67420b0d325c348166783c8a8b94cdb2cf03bcb3bc4d4b59",
+      "source": "lock-in-kit/assets/audio/terminal_press.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/wall_breath.wav",
+      "url": "/assets/audio/wall_breath.wav",
+      "bytes": 176444,
+      "sha256": "8292c92bb7a8df76a705ad27ba62f53af70b414bb26579e8266aac6b499be8a1",
+      "source": "lock-in-kit/assets/audio/wall_breath.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/audio/wall_scrape.wav",
+      "url": "/assets/audio/wall_scrape.wav",
+      "bytes": 123524,
+      "sha256": "81cd82e6da205c41e13be438555fc6533e2e263693a0666dcaf2c6d3a0988daa",
+      "source": "lock-in-kit/assets/audio/wall_scrape.wav",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/cameras/cam_a_clearing.png",
+      "url": "/assets/cameras/cam_a_clearing.png",
+      "bytes": 2325817,
+      "sha256": "0b3ce3d96368ba5334f72fbf06386ae19fbeff8898b798fd155445990be34283",
+      "source": "lock-in-kit/assets/cameras/cam_a_clearing.png",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/cameras/cam_b_path.png",
+      "url": "/assets/cameras/cam_b_path.png",
+      "bytes": 2130414,
+      "sha256": "b189c436ebcae516a4db5f44441a96d1116b780e62626d947718c8e7beeb462f",
+      "source": "lock-in-kit/assets/cameras/cam_b_path.png",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/cameras/cam_c_containment.png",
+      "url": "/assets/cameras/cam_c_containment.png",
+      "bytes": 2255808,
+      "sha256": "2655313336e5c2131f5490f06ff5a78d4a2499f86c0a434f4677371ac705b4f4",
+      "source": "lock-in-kit/assets/cameras/cam_c_containment.png",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/cameras/cam_c_sealed.png",
+      "url": "/assets/cameras/cam_c_sealed.png",
+      "bytes": 2151611,
+      "sha256": "b74eb9f28138c2262191994824d38d8a8706af1e7af173683b944c72457cf120",
+      "source": "lock-in-kit/assets/cameras/cam_c_sealed.png",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/cameras/camera-manifest.json",
+      "url": "/assets/cameras/camera-manifest.json",
+      "bytes": 2176,
+      "sha256": "e63bdd52db7320b4a766917a3c81ae236f99964510cbfb9772a72de6cbf2a6b6",
+      "source": "lock-in-kit/assets/cameras/camera-manifest.json",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/decals/camera_notice.svg",
+      "url": "/assets/decals/camera_notice.svg",
+      "bytes": 653,
+      "sha256": "73521bb87df5cc5f16f0d2c4dc763b34fb1b9c2e7041764f3e43d66a153af824",
+      "source": "lock-in-kit/assets/decals/camera_notice.svg",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/decals/door_label.svg",
+      "url": "/assets/decals/door_label.svg",
+      "bytes": 684,
+      "sha256": "4554b4b5f11dc85202b08b93770ac41b43372050e6709af635b0d8f14e8caf34",
+      "source": "lock-in-kit/assets/decals/door_label.svg",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/decals/emergency_switch.svg",
+      "url": "/assets/decals/emergency_switch.svg",
+      "bytes": 658,
+      "sha256": "2827670c3796ba5018989adadb1729bda04670df0ed892dd8e464b419a13f09b",
+      "source": "lock-in-kit/assets/decals/emergency_switch.svg",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/decals/feed_offline.svg",
+      "url": "/assets/decals/feed_offline.svg",
+      "bytes": 1206,
+      "sha256": "3370c7e6b4f29ccab643a4607df684b159bd5b311f3d70e7a3f7bfd65dffb741",
+      "source": "lock-in-kit/assets/decals/feed_offline.svg",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/decals/protocol_card.svg",
+      "url": "/assets/decals/protocol_card.svg",
+      "bytes": 1465,
+      "sha256": "5fa1122f3e1e7dff7561c7f0908dbb308fdc881adfb2b7ea32b98e076239bb00",
+      "source": "Runtime-authored variation of lock-in-kit/assets/decals/protocol_card.svg",
+      "license": "public/assets/LICENSE.txt",
+      "modification": "Harder runtime protocol: eight faults, five-pulse A, twelve faults, six-pulse B; original kit asset preserved."
+    },
+    {
+      "path": "public/assets/decals/sensor_notice.svg",
+      "url": "/assets/decals/sensor_notice.svg",
+      "bytes": 676,
+      "sha256": "6f60479c465c99aee4eb752a4fdf25cda8b04d9234dd86c25092ae55d88d8441",
+      "source": "lock-in-kit/assets/decals/sensor_notice.svg",
+      "license": "public/assets/LICENSE.txt"
     },
     {
       "path": "public/assets/decals/title.svg",
       "url": "/assets/decals/title.svg",
-      "source": "night-relay-kit/assets/decals/title.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 550,
-      "sha256": "64904ac4ac286abb4c2ccacd525800a86beac1d6dac760b12c39780d1c8be39d",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "bytes": 491,
+      "sha256": "1662ecbce6310b961dddab295a69f704c7411ed6ea06e65c4f6a2a008e16a823",
+      "source": "lock-in-kit/assets/decals/title.svg",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/decals/warning.svg",
-      "url": "/assets/decals/warning.svg",
-      "source": "night-relay-kit/assets/decals/warning.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 598,
-      "sha256": "0f9c83178190864cc2d250c0fd8383d7a36215d6e1c4b8b2f167ce4eac2dcddd",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/models/creature_cctv.glb",
+      "url": "/assets/models/creature_cctv.glb",
+      "bytes": 32488,
+      "sha256": "b5db660dbc0d93caec552eff47d3fb6a7cf01955f718b267e7ed063f287a5f71",
+      "source": "lock-in-kit/assets/models/creature_cctv.glb",
+      "license": "public/assets/LICENSE.txt"
     },
     {
-      "path": "public/assets/decals/work_order.svg",
-      "url": "/assets/decals/work_order.svg",
-      "source": "night-relay-kit/assets/decals/work_order.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 755,
-      "sha256": "42b4c46faa391aaf24ad54cfcd6109c737b9c92dcbd96000eae9d95bb64fc91c",
-      "license": "LicenseRef-Night-Relay-Kit",
-      "licensePath": "public/assets/LICENSE.txt",
-      "modified": false
+      "path": "public/assets/models/emergency_switch.glb",
+      "url": "/assets/models/emergency_switch.glb",
+      "bytes": 17252,
+      "sha256": "83a5a446db8b166c1e3c32e65db8963b4970b68f66c5adfce5cd7f18ae0f219b",
+      "source": "lock-in-kit/assets/models/emergency_switch.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/machine_rack.glb",
+      "url": "/assets/models/machine_rack.glb",
+      "bytes": 112200,
+      "sha256": "01523b3fcfc32b116b092524d258f001b9585761713a764928d43385a0cf8d74",
+      "source": "lock-in-kit/assets/models/machine_rack.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/model-manifest.json",
+      "url": "/assets/models/model-manifest.json",
+      "bytes": 3055,
+      "sha256": "f1020e386fb5bf345cfb10cafd3d86eb2a6028a1810ecaa665c86e5f10206420",
+      "source": "lock-in-kit/assets/models/model-manifest.json",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/proximity_detector.glb",
+      "url": "/assets/models/proximity_detector.glb",
+      "bytes": 21172,
+      "sha256": "b59c1670ad266af5f00f9f4548f7a13d3130423f43cd4619c7db0d5f7584e08b",
+      "source": "lock-in-kit/assets/models/proximity_detector.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/radio_speaker.glb",
+      "url": "/assets/models/radio_speaker.glb",
+      "bytes": 26140,
+      "sha256": "d93783202dcd77d377520e206083a17efc7b82069bab377e30c00d6db8c1ada9",
+      "source": "lock-in-kit/assets/models/radio_speaker.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/sealed_door.glb",
+      "url": "/assets/models/sealed_door.glb",
+      "bytes": 58420,
+      "sha256": "9260b5719b63bac049192e305fb9670bcdbd8c4628734b5ed3f66827e4341ea4",
+      "source": "lock-in-kit/assets/models/sealed_door.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/security_monitor.glb",
+      "url": "/assets/models/security_monitor.glb",
+      "bytes": 17744,
+      "sha256": "d660e52e05c8373be563d510476a0a7e8a66d6245119c222f5d95c0133a12f91",
+      "source": "lock-in-kit/assets/models/security_monitor.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/shelter.glb",
+      "url": "/assets/models/shelter.glb",
+      "bytes": 89428,
+      "sha256": "c07ae6ea2509600a4d0c795d535036519f73c987a096b47d7f0483f6ffe4fa88",
+      "source": "lock-in-kit/assets/models/shelter.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/terminal.glb",
+      "url": "/assets/models/terminal.glb",
+      "bytes": 42496,
+      "sha256": "2ee7ed6e4467fa2c7e6820931303b71fcf62c047e58f86f65cfb62934db5d344",
+      "source": "lock-in-kit/assets/models/terminal.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/models/workdesk.glb",
+      "url": "/assets/models/workdesk.glb",
+      "bytes": 19340,
+      "sha256": "54103e88cc1e9f3efd065382471e9eec23dc338c8927f5dd813e7d9989f573b3",
+      "source": "lock-in-kit/assets/models/workdesk.glb",
+      "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/scares/breach-creature.png",
+      "url": "/assets/scares/breach-creature.png",
+      "bytes": 1949702,
+      "sha256": "6e6e7025b7e9f335d61f18e0529bb048969b1dad9e4bd33712a94c587b481452",
+      "source": "OpenAI built-in image_gen; original LOCK IN breach image generated2026-10-23",
+      "license": "Generated for this project; see docs/ASSETS.md"
     }
   ]
 }

@@ -1,156 +1,260 @@
 {
-  "checkedAt": "2026-10-24T03:27:42.137Z",
+  "application": "LOCK IN",
+  "checkedAt": "2026-10-24T06:12:07.598558+00:00",
   "platform": "darwin/arm64",
   "results": {
     "presage": {
       "status": "blocked",
-      "detail": "SDK 3.4.0 native import passed on darwin/arm64. PRESAGE_API_KEY absent; live camera capture not tested.",
-      "checkedAt": "2026-10-24T03:03:40.278Z"
+      "checkedAt": "2026-10-24T06:06:17.011Z",
+      "nativeImport": "passed",
+      "sdkVersion": "3.4.0",
+      "detail": "Actual Electron camera attempt returned camera-not-found; macOS enumerated zero camera devices. Capture stopped through UI; baseline unavailable.",
+      "category": "CAMERA_NOT_FOUND",
+      "cameraRequested": true,
+      "acceptedBaselineSeconds": 0,
+      "macOSCameraDeviceCount": 0,
+      "evidence": "qa/lock-in-presage-live.json",
+      "keyAccessVerified": false
     },
     "gemini": {
-      "status": "passed",
-      "checkedAt": "2026-10-24T03:27:42.137Z",
-      "model": "gemini-3.5-flash-lite",
-      "source": "gemini",
-      "detail": "Model availability, a real structured proposal checked by the full current-state validator, and an accepted proposal in the actual Electron game all passed. The user approved selecting this model after the original model exceeded the response budget.",
-      "validation": "ACCEPTED_IN_ACTUAL_GAME",
-      "latencyMs": 2882,
-      "requestId": "request-1",
-      "selectedTactic": "PROBE_LEFT",
-      "evidenceEventIds": [
-        "e3",
-        "e4"
-      ],
-      "actualGame": {
-        "checkedAt": "2026-10-24T03:27:42.137Z",
-        "evidenceFile": "docs/qa/electron-live-providers.json",
-        "screenshot": "docs/qa/electron-live-providers.png",
-        "source": "gemini",
-        "latencyMs": 2882,
-        "observedRequestToOutcomeMs": 2835,
-        "events": [
+      "status": "failed",
+      "checkedAt": "2026-10-24T06:02:59.788Z",
+      "scope": "structured probe; actual game proof separate",
+      "model": "gemini-3.8-flash",
+      "detail": "Gemini timeout",
+      "latencyMs": 8006,
+      "requestId": "lock-in-smoke-1792821779788",
+      "source": "fallback",
+      "validation": "PROVIDER_FAILED",
+      "observation": {
+        "requestId": "lock-in-smoke-1792821779788",
+        "stateVersion": 2,
+        "issuedAtGameMs": 2000,
+        "expiresAtGameMs": 10000,
+        "allowedTactics": [
+          "WAIT",
+          "TAUNT",
+          "RETREAT",
+          "INVESTIGATE_SOUND"
+        ],
+        "allowedTargets": [
+          "NONE",
+          "SHELTER"
+        ],
+        "allowedTauntIds": [
+          "NONE",
+          "AFTER_MISTAKE"
+        ],
+        "allowedPairs": [
           {
-            "time": "14.9s",
-            "identity": "e7 / DIRECTOR_APPLIED",
-            "detail": "GEMINI selected PROBE_LEFT; evidence e3, e4."
+            "tactic": "WAIT",
+            "target": "NONE"
           },
           {
-            "time": "12.0s",
-            "identity": "e5 / DIRECTOR_REQUEST",
-            "detail": "request-1; allowed WAIT, PROBE_LEFT, PROBE_RIGHT, FEINT; trend UNKNOWN."
+            "tactic": "TAUNT",
+            "target": "NONE"
           },
           {
-            "time": "0.2s",
-            "identity": "e4 / DOOR",
-            "detail": "left shutter closed."
+            "tactic": "RETREAT",
+            "target": "NONE"
           },
           {
-            "time": "0.2s",
-            "identity": "e3 / DOOR",
-            "detail": "left shutter open."
+            "tactic": "INVESTIGATE_SOUND",
+            "target": "SHELTER"
           }
         ],
-        "errors": [],
-        "cameraRequested": false,
-        "traceSharingEnabled": false,
-        "providerRequestIdCaptured": false
-      },
-      "structuredProbe": {
-        "checkedAt": "2026-10-24T03:27:05.432Z",
-        "evidenceFile": "docs/qa/gemini-live-lite.json",
-        "modelAvailability": "passed",
-        "source": "gemini",
-        "latencyMs": 3887,
-        "requestId": "lite-probe-1792812420965",
-        "providerRequestId": "hSXcate0Kvie_uMPpcWh8QU",
-        "validation": "ACCEPTED",
-        "selectedTactic": "WAIT",
-        "evidenceEventIds": [
+        "publicEventIds": [
+          "e1",
           "e2",
-          "e3",
-          "e5"
+          "e3"
         ],
+        "events": [
+          {
+            "id": "e1",
+            "seq": 1,
+            "time": 0,
+            "type": "RUN_STARTED",
+            "detail": "demo"
+          },
+          {
+            "id": "e2",
+            "seq": 2,
+            "time": 0.033,
+            "type": "APPROACH",
+            "detail": "SHELTER"
+          },
+          {
+            "id": "e3",
+            "seq": 3,
+            "time": 2,
+            "type": "WRONG_INPUT",
+            "detail": "FAULT"
+          }
+        ],
+        "observations": {
+          "equipmentState": "on",
+          "researchStage": 1,
+          "creatureNode": "NEAR_PATH",
+          "sedationBand": "SEDATED",
+          "machineryClue": 0.35,
+          "transientClue": 0.8,
+          "physiologyClue": 0,
+          "sensor": {
+            "source": "manual",
+            "quality": "unknown",
+            "trend": "UNKNOWN"
+          },
+          "earnedLure": null
+        }
+      },
+      "configuredModelUnchanged": true,
+      "configuredGameEvidence": "qa/lock-in-electron-live-providers.json",
+      "testedAlternative": {
+        "status": "passed",
+        "checkedAt": "2026-10-24T06:08:27.335Z",
+        "scope": "structured probe; actual game proof separate",
+        "model": "gemini-3.5-flash-lite",
+        "detail": "Real LOCK IN proposal passed the full current-state validator",
+        "latencyMs": 711,
+        "requestId": "lock-in-smoke-1792822107336",
+        "providerRequestId": "W0vcap3kLeKU_uMPloq2kQM",
+        "source": "gemini",
+        "validation": "ACCEPTED",
         "observation": {
-          "requestId": "lite-probe-1792812420965",
-          "stateVersion": 4,
+          "requestId": "lock-in-smoke-1792822107336",
+          "stateVersion": 2,
+          "issuedAtGameMs": 2000,
+          "expiresAtGameMs": 10000,
           "allowedTactics": [
             "WAIT",
-            "RETREAT"
+            "TAUNT",
+            "RETREAT",
+            "INVESTIGATE_SOUND"
           ],
-          "trend": "UNKNOWN",
+          "allowedTargets": [
+            "NONE",
+            "SHELTER"
+          ],
+          "allowedTauntIds": [
+            "NONE",
+            "AFTER_MISTAKE"
+          ],
+          "allowedPairs": [
+            {
+              "tactic": "WAIT",
+              "target": "NONE"
+            },
+            {
+              "tactic": "TAUNT",
+              "target": "NONE"
+            },
+            {
+              "tactic": "RETREAT",
+              "target": "NONE"
+            },
+            {
+              "tactic": "INVESTIGATE_SOUND",
+              "target": "SHELTER"
+            }
+          ],
+          "publicEventIds": [
+            "e1",
+            "e2",
+            "e3"
+          ],
           "events": [
             {
               "id": "e1",
               "seq": 1,
               "time": 0,
-              "type": "SHIFT_STARTED",
-              "detail": ""
+              "type": "RUN_STARTED",
+              "detail": "demo"
             },
             {
               "id": "e2",
               "seq": 2,
-              "time": 0,
-              "type": "RADIO_CALL",
-              "detail": ""
+              "time": 0.033,
+              "type": "APPROACH",
+              "detail": "SHELTER"
             },
             {
               "id": "e3",
               "seq": 3,
-              "time": 0,
-              "type": "DOOR",
-              "detail": "right shutter open."
-            },
-            {
-              "id": "e4",
-              "seq": 4,
-              "time": 0,
-              "type": "DOOR",
-              "detail": "left shutter closed."
-            },
-            {
-              "id": "e5",
-              "seq": 5,
-              "time": 0,
-              "type": "APPROACH",
-              "detail": "left"
+              "time": 2,
+              "type": "WRONG_INPUT",
+              "detail": "FAULT"
             }
           ],
+          "observations": {
+            "equipmentState": "on",
+            "researchStage": 1,
+            "creatureNode": "NEAR_PATH",
+            "sedationBand": "SEDATED",
+            "machineryClue": 0.35,
+            "transientClue": 0.8,
+            "physiologyClue": 0,
+            "sensor": {
+              "source": "manual",
+              "quality": "unknown",
+              "trend": "UNKNOWN"
+            },
+            "earnedLure": null
+          }
+        },
+        "selectedTactic": "INVESTIGATE_SOUND",
+        "selectedTarget": "SHELTER",
+        "evidenceEventIds": [
+          "e2",
+          "e3"
+        ],
+        "tauntId": "NONE",
+        "processOnlyModelOverride": true,
+        "probeEvidence": "qa/lock-in-gemini-alternate.json",
+        "actualGame": {
+          "status": "passed",
+          "checkedAt": "2026-10-24T06:10:45.184Z",
+          "latencyMs": 928,
+          "selectedTactic": "WAIT",
+          "selectedTarget": "NONE",
           "evidenceEventIds": [
-            "e1",
-            "e2",
-            "e3",
-            "e4",
-            "e5"
+            "e8"
           ],
-          "expiresAt": 8
+          "errors": [],
+          "evidence": "qa/lock-in-electron-live-providers-alternate.json",
+          "screenshot": "qa/lock-in-electron-live-providers-alternate.png",
+          "controls": "Visible mistake, Q at breach warning, F after clear window; no state injection"
         }
-      },
-      "earlierModelEvidence": [
-        "docs/qa/gemini-diagnosis.json",
-        "docs/qa/gemini-live-8s.json"
-      ]
+      }
     },
     "elevenlabs": {
-      "status": "blocked",
-      "detail": "ElevenLabs key, voice ID and/or model ID absent",
-      "checkedAt": "2026-10-24T03:03:40.278Z"
+      "status": "passed",
+      "checkedAt": "2026-10-24T06:03:22.993Z",
+      "detail": "Configured voice/model and real authored speech generated; actual Electron Web Audio decode and source.start verified with running context",
+      "source": "elevenlabs",
+      "latencyMs": 558,
+      "requestId": "lock-in-speech-1792821803875",
+      "providerRequestId": "EmTf62kpHONc7DRpgbM6",
+      "caption": "Machines quiet. It may still investigate the last sound. Prepare emitter A.",
+      "audioBytes": 96592,
+      "actualGame": {
+        "checkedAt": "2026-10-24T06:10:45.184Z",
+        "evidence": "qa/lock-in-electron-live-providers-alternate.json",
+        "latencyMs": 475,
+        "decodedSpeech": 1,
+        "startedSpeech": 1,
+        "playbackErrors": 0,
+        "contextState": "running",
+        "speechPlaybackVerified": true
+      }
     },
     "convex": {
       "status": "blocked",
-      "detail": "VITE_CONVEX_URL absent; no deployment created",
-      "checkedAt": "2026-10-24T03:03:40.278Z"
+      "checkedAt": "2026-10-24T06:09:04.278Z",
+      "category": "FUNCTIONS_NOT_PROVISIONED",
+      "detail": "Existing deployment lacks compatible LOCK IN functions. Human provisioning required; no dev/env/deploy CLI commands were run.",
+      "missingFunction": "sessions:version",
+      "networkReached": true,
+      "sessionCreated": false
     }
-  },
-  "note": "Per-provider timestamps identify checks performed separately. Gemini combines existing real structured-probe and actual-game evidence; this report merge made no provider requests. The provider response ID belongs to the structured probe, while the actual game has its own local request/event IDs.",
-  "configurationCheckedAt": "2026-10-24T03:30:12.731Z",
-  "configurationPresence": {
-    "GEMINI_API_KEY": true,
-    "GEMINI_MODEL": true,
-    "ELEVENLABS_API_KEY": false,
-    "ELEVENLABS_VOICE_ID": false,
-    "ELEVENLABS_MODEL_ID": false,
-    "PRESAGE_API_KEY": false,
-    "VITE_CONVEX_URL": false,
-    "CONVEX_DEPLOYMENT": false
   }
 }

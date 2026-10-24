@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SpeechQueue, type SpeechRequest } from './queue';
 
-const line = (id: string, extra: Partial<SpeechRequest> = {}): SpeechRequest => ({ id, text: 'Open the current service hatch.', expiresAt: 20, priority: 1, ...extra });
+const line = (id: string, extra: Partial<SpeechRequest> = {}): SpeechRequest => ({ id, text: 'Silence the marked faulty unit.', expiresAt: 20, priority: 1, ...extra });
 
 test('expired and repeated instructions never replay', () => {
   const queue = new SpeechQueue();

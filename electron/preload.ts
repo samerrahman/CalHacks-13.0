@@ -1,9 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-contextBridge.exposeInMainWorld('nightRelay', {
-  status: () => ipcRenderer.invoke('night-relay:status'),
-  director: (request: unknown) => ipcRenderer.invoke('night-relay:director', request),
-  speech: (request: unknown) => ipcRenderer.invoke('night-relay:speech', request),
+contextBridge.exposeInMainWorld('lockIn', {
+  status: () => ipcRenderer.invoke('lock-in:status'),
+  director: (request: unknown) => ipcRenderer.invoke('lock-in:director', request),
+  speech: (request: unknown) => ipcRenderer.invoke('lock-in:speech', request),
 });
 
 // Narrow compatibility surface required by the installed renderer SDK. The
@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('__smartspectraBridge', {
     const channel = new MessageChannel();
     port = channel.port1;
     port.onmessage = e => onMessage?.(e.data);
-    ipcRenderer.postMessage('night-relay:sensor-attach', null, [channel.port2]);
+    ipcRenderer.postMessage('lock-in:sensor-attach', null, [channel.port2]);
     port.start();
   },
   postMessage(message: { kind?: string }) {

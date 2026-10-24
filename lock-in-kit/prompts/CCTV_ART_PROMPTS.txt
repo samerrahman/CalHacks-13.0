@@ -1,0 +1,39 @@
+Three original generated background plates for fictional facility CCTV only.
+No player-camera footage, people, creature silhouettes, UI, timestamps, letters or logos.
+Style shared by all: low-poly late-1990s survival horror, flat shaded angular geometry,
+dirty dark teal industrial steel, desaturated pine forest, muted cream practical lights,
+restrained amber signal lamps, dense fog, readable large forms, subtle grain.
+Use as fixed 16:9 camera plates. Draw camera IDs/status and the authority-driven creature
+silhouette separately at runtime. Do not infer creature position from these backgrounds.
+
+CAM A / EMITTER CLEARING
+Wide elevated fixed security camera looking down into a small pine-forest clearing at
+night. A concrete pad with a waist-high industrial remote acoustic emitter: boxy dark-teal
+housing, four small cream speaker horns and a single muted amber lamp. Two large angular
+pine trees frame the edges; chain-link fence far behind; damp gravel path arrives from
+bottom-right. Empty and silent. Camera points diagonally across clearing, no dramatic
+cinematic depth of field. No lettering or characters. 16:9 landscape.
+
+CAM B / SERVICE PATH
+Wide elevated fixed security camera looking down a narrow service path through angular
+pine trunks at night. Near-left a squat dark-teal utility junction and one muted amber
+lamp; right edge a chain-link fence; a small low-poly remote speaker sits halfway down
+path. Cream work light at distant bend, mist obscures forest beyond. Empty scene with
+clear floor space for a separately rendered silhouette. No lettering or characters.
+16:9 landscape.
+
+CAM C / CONTAINMENT BAY
+Wide fixed high corner security camera inside an empty concrete containment loading bay,
+industrial dark-teal bulkhead walls, flat shaded surfaces, worn cream floor markings,
+large reinforced containment gate at rear, two amber beacons, a small remote acoustic
+emitter in front of the gate. Gate is visibly open into a pitch-dark holding recess,
+no living creature. Sparse utilitarian geometry, readable silhouette, deep cold shadows,
+subtle sensor grain. No lettering or characters. 16:9 landscape. This open-gate plate
+is used during routing; final gate closure is an authored overlay/cut-to-black event.
+
+CAM C / SEALED VARIANT (image edit)
+Reference: assets/cameras/cam_c_containment.png.
+Preserve exact camera, lighting, foreground, geometry and art style. Change only rear
+open gate to a heavy ribbed dark-teal metal slab fully sealing the opening. No creature,
+text or UI. Saved as cam_c_sealed.png. Original outputs copied into this kit; no external
+image URL or generated-images folder is required at runtime.

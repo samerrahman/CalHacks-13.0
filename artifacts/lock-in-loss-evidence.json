@@ -1,0 +1,26 @@
+{
+  "game": "LOCK IN",
+  "mode": "offline browser, manual physiology, trace consent off",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "checks": [
+    "A visible directional caption and countdown warn before any loss, with Q available",
+    "Pause freezes the active breach countdown and physical proximity",
+    "Ignoring the entire delivered warning causes the explained loss; no physiology is invented",
+    "Replay starts a clean seed and the new run pauses through the keyboard",
+    "No console errors, missing resources, or external provider requests without trace consent"
+  ],
+  "errors": [],
+  "failedResources": [],
+  "externalRequests": [],
+  "passed": true,
+  "loss": {
+    "initialWarningSeconds": 9.7,
+    "remainingAtResume": 9.4,
+    "observedSecondsAfterResume": 9.43,
+    "observedWallSecondsSinceWarning": 11.24,
+    "resultText": "FIELD RESEARCH / RUN REPORT\n⊘\nThe shelter fell silent.\n\nThe full breach warning expired while the machinery remained audible.\n\n0/4\nRESEARCH STAGES\n20s\nELAPSED\n0\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  }
+}

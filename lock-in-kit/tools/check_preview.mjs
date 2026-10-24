@@ -1,0 +1,38 @@
+import { chromium } from 'playwright';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_BROWSER==='chromium'?{}:{channel:'chrome'})});
+const errors=[],failed=[];
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+ page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)failed.push({url:r.url(),status:r.status()});});
+ await page.goto(process.env.LOCK_IN_PREVIEW_URL||'http://127.0.0.1:5186');
+ await page.waitForFunction(()=>window.assetPreview?.ready,{timeout:20000});
+ const assets=await page.evaluate(()=>window.assetPreview);
+ if(assets.loaded.length!==10||assets.clips.length!==11||assets.errors.length)throw new Error('Model/clip load verification failed');
+ const sounds=await page.locator('audio').count();if(sounds!==27)throw new Error('Sound catalogue incomplete');
+ mkdirSync(resolve(root,'assets/previews'),{recursive:true});
+ await page.locator('#room').screenshot({path:resolve(root,'assets/previews/shelter-preview.png')});
+ await page.getByRole('button',{name:'Show tutorial arrow'}).click();
+ await page.locator('#tutorial-note').waitFor({state:'visible'});
+ await page.locator('#room').screenshot({path:resolve(root,'assets/previews/tutorial-preview.png')});
+ await page.getByRole('button',{name:'Got it',exact:true}).click();
+ await page.getByRole('button',{name:'Emergency switch',exact:true}).click();
+ await page.waitForTimeout(150);
+ await page.locator('#room').screenshot({path:resolve(root,'assets/previews/door-preview.png')});
+ await page.getByRole('button',{name:'Blackout preview',exact:true}).click();
+ await page.waitForTimeout(150);
+ await page.locator('#room').screenshot({path:resolve(root,'assets/previews/blackout-preview.png')});
+ if(!await page.locator('#emergency-quiet').isVisible())throw new Error('Emergency control hidden');
+ await page.getByRole('button',{name:'Restore preview',exact:true}).click();
+ await page.getByRole('button',{name:'Terminal',exact:true}).click();
+ await page.setViewportSize({width:1280,height:720});
+ await page.waitForTimeout(150);
+ const clipped=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+ if(clipped)throw new Error('Laptop horizontal clipping');
+ const result={checkedAt:new Date().toISOString(),scope:'Asset viewer and UI storyboard only; not completed game verification',models:assets.loaded,clips:assets.clips,sounds,laptopHorizontalClipping:clipped,errors,failedResources:failed};
+ writeFileSync(resolve(root,'docs/PREVIEW_CHECK.json'),JSON.stringify(result,null,2)+'\n');
+ console.log(JSON.stringify(result,null,2));if(errors.length||failed.length)process.exitCode=1;
+}finally{await browser.close();}

@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5180",
+  "checks": [
+    "Mobile inspection, captions and emergency controls fit; Q exits equipment inspection",
+    "Camera settings blocks gameplay input; Escape closes it and resumes even with the camera SELECT focused",
+    "Escape remains global while a judge checkbox has focus",
+    "Monitor B/C and isolation equipment require explicit use; Space leaves inspection"
+  ],
+  "errors": [],
+  "failedResources": []
+}

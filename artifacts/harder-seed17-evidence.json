@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5180",
+  "seed": 17,
+  "checks": [
+    "Physical-equipment E interaction and all seven nonlethal tutorial steps completed through visible controls",
+    "Seed17 won all8/5/12/6 research stages and physical containment using early Q and observed sequence cues"
+  ],
+  "errors": [],
+  "failedResources": [],
+  "observations": {
+    "defenses": 2,
+    "blackouts": 0,
+    "sequenceLengths": [
+      4,
+      5,
+      6
+    ],
+    "stages": [
+      "Silence the machines.",
+      "Transmit a false heartbeat.",
+      "Clear the overload.",
+      "Lead it toward containment.",
+      "Bring it back inside."
+    ],
+    "alarmSeenAt": null
+  },
+  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n84s\nELAPSED\n2\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+}

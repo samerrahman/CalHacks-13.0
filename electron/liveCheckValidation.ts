@@ -1,16 +1,14 @@
-import { createGame, dispatch } from '../src/game/reducer';
-import { startProbe } from '../src/game/creature';
+import { createGame, dispatch, step } from '../src/game/reducer';
 import { buildDirectorRequest, validateProposal } from '../src/game/directorValidation';
 import type { GameState } from '../src/game/state';
 import { publicDirectorRequest } from '../src/integrations/contracts';
 
-/** Synthetic local authority for the live sponsor probe. It supplies actual
- * legal WAIT/RETREAT choices and observable door history, never a private card. */
+/** Labeled synthetic LOCK IN authority, separate from an actual UI playthrough.
+ * A visible quiet-box mistake supplies sound evidence, never memory answers. */
 export function createDirectorProbe(requestId: string) {
-  let state = createGame(17, 'demo');
-  state = dispatch(state, { type: 'door', side: 'right', open: true });
-  state = dispatch(state, { type: 'door', side: 'left', open: false });
-  if (!startProbe(state, 'left')) throw new Error('Smoke scenario cannot start its authored probe');
+  let state = step(createGame(17, 'demo'), 2);
+  const quietBox = [0, 1, 2, 3].find(index => !state.tasks.faults.active.includes(index))!;
+  state = dispatch(state, { type: 'input', value: quietBox + 1 });
   const request = publicDirectorRequest({ ...buildDirectorRequest(state), requestId });
   state.director.request = request;
   return { state, request };

@@ -1,9 +1,18 @@
-# /src/ui, /src/audio/engine.ts, /public/assets — Lea (Person 3: art, audio & UI)
+# /src/ui — Lea (art, audio & UI)
 
-React menus, setup, HUD, pause and judge view (`style.css`, `icons.tsx`). The audio engine handles positional effects, master volume, mute and the radio filter. Assets: 8 GLBs, 9 WAVs and 5 SVG decals in `public/assets/`, listed in `manifest.json` (a team contract). Every entry has a path, byte count and `sha256`, so update all three when art changes. `docs/ASSETS.md` records provenance, licenses and how each asset is used at runtime; keep it current.
+React presentation for LOCK IN: shelter setup, short dark opening, seven-step guided practice, task HUD, quiet/restore controls, station navigation, captions, pause, judge trace and end-of-run pulse report. Three.js scene lifetime belongs to `src/render`; the deterministic simulation belongs to `src/game`. App adapts authoritative state into those presentation APIs without waiting on provider calls.
 
-- React handles menus and overlays only. The Three.js scene is not re-rendered by React.
-- Every spoken line has an exact caption, and normal captions say RADIO for both Mara and the fake. Never signal true or false information by color alone. Keep reduced motion, master volume and mute working.
-- Models are GLB, in meters, Y up. The game looks up node and clip names (`shutter_leaf`, `idle`/`listen`/`reach`), so don't rename them. Add new keys to the manifest instead of renaming existing ones.
-- The look comes from the spec: dirty teal steel, warm desk light, muted cream labels, restrained orange warnings. No full-screen flashes.
-- The speech queue (`src/audio/queue.ts`) is Lucy's.
+- The current runtime ships 10 GLBs, 27 synthesized WAVs, four fictional CCTV PNGs and seven SVGs. `public/assets/manifest.json` contains file paths, sizes and SHA-256 hashes; `docs/ASSETS.md` records source/license/runtime use. Preserve the independent build kits.
+- The game is a sealed, windowless shelter with an unseen exterior creature. Tasks silence faults, calibrate five/six-number sequences (four in guided practice) and transmit remote lures. The reinforced door does not open. Remove obsolete hatch, shutter, shift-supervisor or order-verification assumptions from new UI work.
+- `1–4` enter task choices, `R` replays the sequence, `T` transmits, `Q` isolates equipment but cannot cancel a committed close-range attack and holding `F` restores when allowed. Keep accessible buttons and keyboard behavior equivalent. Tutorial arrows must identify actual controls without covering the sound caption or emergency inputs.
+- Distance, danger and CCTV displays are unavailable while equipment is quiet or blacked out. Puzzle progress persists. Sound captions use the same creature movement/warning state as audio; never reveal hidden exact distance in an audio-only state.
+- Personal camera sensing is separate from fictional facility CCTV. Explicit opt-in, neutral manual play, labelled simulation, quality/staleness handling, visible stop controls and local pulse-report consent must remain clear. Camera frames, raw physiology and secrets must not enter shared judge traces.
+- Optional provider work stays asynchronous and run-scoped. Validate proposals in the game layer, discard stale responses and cancel obsolete speech. Every spoken line has an exact caption. Live, cached, fallback and simulated labels require actual evidence; no fabricated live success.
+- React renders menus and overlays, not a new Three.js scene each frame. On restart/unmount, release listeners, timers, capture, audio, scene and subscriptions; preserve pause semantics.
+- Keep near-black corroded steel, sparse amber desk lighting, cream labels and restrained red alarm lighting. Maintain readable captions, keyboard focus, reduced motion, softer impacts, master volume and mute. No full-screen flashes.
+- Keys remain in Node-side Vite middleware, the Electron main process or provider backend, never Vite variables or renderer code. Do not send messages, deploy services or make paid provider requests just to improve presentation.
+- Check the actual UI at desktop and narrow sizes, including quiet/blackout, tutorial arrows, sequence playback, pause and results. Unit/asset parser success is not rendered-game verification.
+
+- Tasks appear only after clicking actual equipment or pressing E while facing it. Space closes inspection; station navigation only turns the view. Do not restore a permanent task sidebar. Never show an advance breach banner/countdown; accessible captions describe sounds only.
+- Camera setup uses the controller-owned stream for its mirrored local preview and device selector. It needs explicit activation and native desktop support. Calibration may run while the game is deliberately paused in its camera dialog; hiding the app stops capture.
+- Creature speech follows the exterior creature position and remains eligible during quiet equipment. Exact authored FIRST_APPROACH dialogue is requested on the first alarm, with bounded later taunts and cancellation/expiry checks.

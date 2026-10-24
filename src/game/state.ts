@@ -1,87 +1,121 @@
-export type Side = 'left' | 'right';
-export type Station = 'console' | Side | 'relay';
+export type Vec3 = [number, number, number];
+export type Station = 'terminal' | 'cameras' | 'equipment';
+export type CameraFeed = 'A' | 'B' | 'C';
 export type Trend = 'UNKNOWN' | 'STEADY' | 'ELEVATED' | 'RECOVERED';
-export type Tactic = 'WAIT' | 'PROBE_LEFT' | 'PROBE_RIGHT' | 'REPLAY_ORDER' | 'WRONG_HATCH' | 'FEINT' | 'RETREAT';
-export type OrderAction = 'SYNC_CARRIER' | 'OPEN_LEFT' | 'OPEN_RIGHT' | 'COMPLETE';
+export type SensorSource = 'presage' | 'simulated' | 'manual';
+export type SensorQuality = 'accepted' | 'rejected' | 'unknown';
+export type Equipment = 'on' | 'quiet' | 'blackout';
+export type Stage = 1 | 2 | 3 | 4 | 5 | 6;
+export type NodeId = 'SHELTER_WALL' | 'WEST_WALL' | 'EAST_WALL' | 'NEAR_PATH' | 'JUNCTION' | 'EMITTER_A' | 'EMITTER_B' | 'CONTAINMENT';
+export type Tactic = 'INVESTIGATE_SOUND' | 'CIRCLE_SHELTER' | 'LISTEN_NEAR' | 'FOLLOW_LURE' | 'WAIT' | 'TAUNT' | 'RETREAT';
+export type Target = 'SHELTER' | 'EMITTER_A' | 'EMITTER_B' | 'CONTAINMENT' | 'NONE';
+export type LureTarget = 'EMITTER_A' | 'EMITTER_B' | 'CONTAINMENT';
+export type TauntId = 'NONE' | 'AFTER_MISTAKE' | 'MACHINES_QUIET' | 'HEARD_RHYTHM' | 'LURE_FOLLOWED';
+export type ReasonCode = 'RECENT_SOUND' | 'PATTERN_OF_MISTAKES' | 'QUIET_AFTER_NOISE' | 'SUSTAINED_NEARBY_TREND' | 'EARNED_LURE' | 'RECOVERY' | 'VARY_PRESSURE' | 'NO_VALID_SIGNAL';
 export type ProposalSource = 'GEMINI' | 'FALLBACK';
 export interface PublicEvent { id: string; seq: number; time: number; type: string; detail: string }
-export interface WorkOrder { id: string; action: OrderAction; instructions: string }
-export interface RadioCall {
-  id: string;
-  text: string;
-  orderId: string;
-  action: OrderAction;
-  expiresAt: number;
-  authenticated: boolean;
-  response?: string;
-  verification?: 'MATCH' | 'MISMATCH';
-  evidence: string[];
-  inspected: boolean;
-  rejected: boolean;
-  /** Private local authority data. Never include this object in provider/event payloads. */
-  origin: 'boss' | 'mimic';
-  fakeAnswer?: string;
-}
+export interface SensorState { source: SensorSource; quality: SensorQuality; trend: Trend }
+export interface DirectorPair { tactic: Tactic; target: Target }
 export interface DirectorRequest {
   requestId: string;
   stateVersion: number;
+  issuedAtGameMs: number;
+  expiresAtGameMs: number;
   allowedTactics: Tactic[];
-  trend: Trend;
+  allowedTargets: Target[];
+  allowedTauntIds: TauntId[];
+  allowedPairs: DirectorPair[];
+  publicEventIds: string[];
   events: PublicEvent[];
-  evidenceEventIds: string[];
-  expiresAt: number;
+  observations: {
+    equipmentState: Equipment;
+    researchStage: Stage;
+    creatureNode: NodeId;
+    sedationBand: 'SEDATED' | 'RECOVERING' | 'ALERT';
+    machineryClue: number;
+    transientClue: number;
+    physiologyClue: number;
+    sensor: SensorState;
+    earnedLure: { target: LureTarget; protectedUntilGameMs: number } | null;
+  };
 }
 export interface DirectorProposal {
   requestId: string;
   stateVersion: number;
   tactic: Tactic;
+  target: Target;
   evidenceEventIds: string[];
-  reasonCode: 'UNVERIFIED_OBEDIENCE' | 'REPEATED_DOOR_PATTERN' | 'VERIFIES_CALLS' | 'RECOVERY_NEEDED' | 'VARY_ENCOUNTER' | 'NO_VALID_SIGNAL';
+  reasonCode: ReasonCode;
+  tauntId: TauntId;
+}
+export interface MemoryState {
+  /** Private local puzzle state. Never include in provider requests or public events. */
+  sequence: number[];
+  input: number[];
+  playbackIndex: number;
+  cue: number | null;
+  playbackElapsed: number;
+  playing: boolean;
+  tempo: number;
+  responseElapsed: number;
+  armed: boolean;
+  needsReplay: boolean;
 }
 export interface GameState {
   seed: number;
-  mode: 'shift' | 'demo';
+  mode: 'standard' | 'demo' | 'tutorial';
   time: number;
-  deadline: number;
   status: 'playing' | 'won' | 'lost';
   paused: boolean;
   lossReason?: string;
   version: number;
   station: Station;
-  doors: Record<Side, boolean>;
-  energy: number;
-  blackoutRemaining: number | null;
+  cameraFeed: CameraFeed;
+  equipment: Equipment;
   tasks: {
-    stage: 1 | 2 | 3 | 4;
-    dials: number[];
-    targets: number[];
-    sync: number;
-    cartridgeHold: number;
-    insertHold: number;
-    hasCartridge: boolean;
-    inserted: boolean;
-    bars: number[];
-    barTargets: number[];
-    upload: number;
-    uploadCheckpoint: number;
+    stage: Stage;
     stageStarted: number;
+    completedStages: number[];
+    faults: { active: number[]; completed: number; required: number; spawned: number; spawnElapsed: number; maximumActive: number };
+    memory: MemoryState;
+    finalTransmitted: boolean;
   };
   creature: {
-    phase: 'dormant' | 'approach' | 'threshold' | 'retreat' | 'recover';
-    side: Side | null;
+    position: Vec3;
+    /** Last node physically reached; route[0] is the next connected node. */
+    node: NodeId;
+    route: NodeId[];
+    target: Target;
+    phase: 'search' | 'approach' | 'circle' | 'listen' | 'retreat' | 'lured' | 'containment' | 'breach';
+    distance: number;
+    confidence: number;
+    approachStarted: number | null;
     phaseStarted: number;
+    phaseUntil: number;
     recoveryUntil: number;
-    lastSide: Side | null;
-    dormantSince: number;
-    attacks: number[];
+    restoreProtectionUntil: number;
+    lastAudibleAt: number;
+    lastAudibleStrength: number;
+    /** Irreversible committed attack; deadline is internal and never a rescue countdown. */
+    warning: { started: number; deadline: number; duration: number } | null;
+    alarmLatched: boolean;
+    warningStarts: number[];
+    lure: { target: LureTarget; issuedAt: number; protectedUntil: number; arrivedAt: number | null } | null;
+    containmentStarted: number | null;
+    lastMotion: 'approaching' | 'receding' | 'stationary' | 'circling';
   };
-  safeUntil: Record<Side, number>;
-  sweepReadyAt: number;
-  call: RadioCall | null;
-  /** Private and local: exclude from logs, shared state, and model inputs. */
-  privateChallenge: { prompt: string; answer: string; previousAnswer: string; generation: number };
-  order: WorkOrder;
-  orderHistory: WorkOrder[];
+  quiet: { phase: 'listening' | 'retreat' | 'ready'; started: number; retreatStarted: number | null; movedAway: boolean } | null;
+  scare: { id: number; at: number; kind: 'impact' | 'monitor' | 'breach' } | null;
+  scareCount: number;
+  restoreHeld: boolean;
+  restoreHold: number;
+  blackout: { count: number; lastAt: number; nextAt: number; startedAt: number | null };
+  clues: { machinery: number; transient: number; physiology: number };
+  transients: { at: number; strength: number; duration: number }[];
+  sensor: SensorState;
+  /** Alias for concise HUDs; always identical to sensor.trend. */
+  trend: Trend;
+  fixedMemoryTempo: boolean;
   events: PublicEvent[];
   eventSequence: number;
   director: {
@@ -91,41 +125,42 @@ export interface GameState {
     requestSequence: number;
     usedRequestIds: string[];
     lastTactic: Tactic;
+    lastTarget: Target;
     source: ProposalSource;
     lastOutcome: string;
     lastEvidenceIds: string[];
     fallbackCount: number;
+    tauntId: TauntId;
+    lastTauntAt: number;
+    tauntCount: number;
   };
-  trend: Trend;
-  holding: boolean;
   notice: string;
-  inspected: boolean;
-  fakeDelivered: boolean;
-  fakeRejected: number;
-  verifiedCalls: number;
+  caption: string;
   rng: number;
+  /** Fixed-step remainder; callers may step at any frame rate. */
+  accumulator: number;
 }
 export type GameAction =
   | { type: 'station'; station: Station }
-  | { type: 'door'; side: Side; open?: boolean }
-  | { type: 'dial'; index: number; value: number }
-  | { type: 'bar'; index: number; value: number }
-  | { type: 'interact'; held: boolean }
-  | { type: 'sweep'; side: Side }
-  | { type: 'authenticate' }
-  | { type: 'inspect' }
-  | { type: 'reject' }
+  | { type: 'camera'; feed: CameraFeed }
+  | { type: 'input'; value: number }
+  | { type: 'practice-memory' }
+  | { type: 'replay' }
+  | { type: 'transmit' }
+  | { type: 'quiet' }
+  | { type: 'restore'; held: boolean }
   | { type: 'pause'; paused?: boolean }
+  | { type: 'sensor'; source: SensorSource; quality: SensorQuality; trend: Trend }
   | { type: 'trend'; trend: Trend }
+  | { type: 'accessibility'; fixedMemoryTempo: boolean }
   | { type: 'proposal'; proposal: unknown; source: ProposalSource };
 export type Action = GameAction;
 
-export function emit(state: GameState, type: string, detail: string): void {
+export function emit(state: GameState, type: string, detail = ''): void {
   const seq = ++state.eventSequence;
   state.events.push({ id: `e${seq}`, seq, time: Math.round(state.time * 1000) / 1000, type, detail });
-  if (state.events.length > 200) state.events.shift();
+  if (state.events.length > 300) state.events.shift();
 }
-
 export function random(state: GameState): number {
   state.rng = (Math.imul(state.rng, 1664525) + 1013904223) >>> 0;
   return state.rng / 4294967296;

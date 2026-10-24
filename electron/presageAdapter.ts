@@ -67,6 +67,6 @@ export function bindPresage(window: BrowserWindow): () => void {
     port.on('close', () => { ports.delete(port); retire(); });
     port.start();
   };
-  ipcMain.on('night-relay:sensor-attach', listener);
-  return () => { ipcMain.removeListener('night-relay:sensor-attach', listener); for (const port of ports) port.close(); };
+  ipcMain.on('lock-in:sensor-attach', listener);
+  return () => { ipcMain.removeListener('lock-in:sensor-attach', listener); for (const port of ports) port.close(); };
 }

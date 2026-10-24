@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "practiceOnly": true,
+  "threatPaused": true,
+  "targetDurationSeconds": [
+    35,
+    45
+  ],
+  "skipAllowed": true,
+  "steps": [
+    {
+      "id": "fault",
+      "anchor": "fault-box-1",
+      "text": "Press 1 or click the box marked FAULT.",
+      "completeOn": "PRACTICE_FAULT_CLEARED"
+    },
+    {
+      "id": "quiet",
+      "anchor": "emergency-quiet",
+      "text": "Press Q to make the shelter quiet.",
+      "completeOn": "QUIET"
+    },
+    {
+      "id": "listen",
+      "anchor": "sound-caption",
+      "text": "Listen for receding footsteps. Captions carry the same clue.",
+      "completeOn": "PRACTICE_RECEDING_ACKNOWLEDGED"
+    },
+    {
+      "id": "restore",
+      "anchor": "emergency-restore",
+      "text": "Hold F for one second to restore equipment.",
+      "completeOn": "POWER_RESTORED"
+    },
+    {
+      "id": "watch",
+      "anchor": "replay-sequence",
+      "text": "Press R. Watch four pulses.",
+      "completeOn": "PRACTICE_PLAYBACK_FINISHED"
+    },
+    {
+      "id": "repeat",
+      "anchor": "sequence-buttons",
+      "text": "Repeat the four numbers. R replays them.",
+      "completeOn": "PRACTICE_SEQUENCE_CORRECT"
+    },
+    {
+      "id": "transmit",
+      "anchor": "transmit",
+      "text": "Press T to send the signal away from you.",
+      "completeOn": "PRACTICE_LURE_SENT"
+    }
+  ]
+}

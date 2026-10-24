@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-24T05:20:58.973Z",
+  "scope": "Asset viewer and UI storyboard only; not completed game verification",
+  "models": [
+    "shelter",
+    "sealed_door",
+    "workdesk",
+    "terminal",
+    "security_monitor",
+    "proximity_detector",
+    "radio_speaker",
+    "machine_rack",
+    "emergency_switch",
+    "creature_cctv"
+  ],
+  "clips": [
+    "sealed_door:impact",
+    "sealed_door:dent",
+    "machine_rack:fault_01",
+    "machine_rack:fault_02",
+    "machine_rack:fault_03",
+    "machine_rack:fault_04",
+    "emergency_switch:flip_off",
+    "emergency_switch:flip_on",
+    "creature_cctv:idle",
+    "creature_cctv:listen",
+    "creature_cctv:recoil"
+  ],
+  "sounds": 27,
+  "laptopHorizontalClipping": false,
+  "errors": [],
+  "failedResources": []
+}

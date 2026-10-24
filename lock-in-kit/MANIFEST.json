@@ -1,0 +1,555 @@
+{
+  "format": "lock-in-kit-manifest-v1",
+  "algorithm": "sha256",
+  "exclusions": [
+    "manifest itself",
+    "node_modules/",
+    ".git/",
+    "Python caches",
+    ".DS_Store",
+    "*.zip",
+    ".env* except .env.example"
+  ],
+  "files": [
+    {
+      "path": ".env.example",
+      "bytes": 145,
+      "sha256": "363a90a8890b61f7366cc94e81b23998468a99634012eddef4f2d4a18f23b78b"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 64,
+      "sha256": "f1cf347d1eef44bda8d56d6c1b3feef9f7d65265d7e1b522e271760014534e02"
+    },
+    {
+      "path": "LICENSE.txt",
+      "bytes": 1701,
+      "sha256": "da7b1e1e36ee016c1214558612b51ee6376cb698fdef17b2df47fd0f95169ef3"
+    },
+    {
+      "path": "README.md",
+      "bytes": 9261,
+      "sha256": "d6befb35a7a7b72c0090b37e9a7f13943bffb2785835145683cefc7c2c2ffa46"
+    },
+    {
+      "path": "assets/audio/audio-manifest.json",
+      "bytes": 12777,
+      "sha256": "5a1b0bee069c3be893275efbb65cb5c06969d1ef2ea043294dfec44c8fb472c6"
+    },
+    {
+      "path": "assets/audio/blackout.wav",
+      "bytes": 61784,
+      "sha256": "58c68254017452a84aa19756c92ce6ef2aada27c0f2bc2e229be6416b905cd6e"
+    },
+    {
+      "path": "assets/audio/breach_impact.wav",
+      "bytes": 79424,
+      "sha256": "cbe4bb45ddb3ffd988d612a6d4c215157f13bee3d8b2b3ea7027117b96cebf7d"
+    },
+    {
+      "path": "assets/audio/breach_warning.wav",
+      "bytes": 141164,
+      "sha256": "1f437c0ab610251f2a86c3a7a52a7e284299f038cfcc49f903174dfae9931c98"
+    },
+    {
+      "path": "assets/audio/containment_success.wav",
+      "bytes": 110294,
+      "sha256": "36054df28ea5d39da104ca29483a59c1ae2fe2f2dd5e2cc75391c30b5598513f"
+    },
+    {
+      "path": "assets/audio/door_slam.wav",
+      "bytes": 79424,
+      "sha256": "94c08beb76c237e43fc3d4157046ac95ae043051f774055a928b3e0090c1e1ee"
+    },
+    {
+      "path": "assets/audio/fault_rattle.wav",
+      "bytes": 88244,
+      "sha256": "c96d0fda56215be76263684517480c02fefe6203513b7ca220a11d2108b1b8b0"
+    },
+    {
+      "path": "assets/audio/fault_silenced.wav",
+      "bytes": 18566,
+      "sha256": "c4bdf20f4a1eea0681cfc6695f586d8d0662e4606a95b594a97834ded23dbbd7"
+    },
+    {
+      "path": "assets/audio/forest_run.wav",
+      "bytes": 167624,
+      "sha256": "427ff492ea8fc1d721eca8615365511f3c9977fc5c09873cc9836542171a217e"
+    },
+    {
+      "path": "assets/audio/intro_alarm.wav",
+      "bytes": 176444,
+      "sha256": "c4d3af91d0c5cfa207562b4cd80c068f0a1bc259121dfaa9457fee8b65a6bc3f"
+    },
+    {
+      "path": "assets/audio/lure_heartbeat.wav",
+      "bytes": 176444,
+      "sha256": "956a9d2bed6acb2915aba7e4daa73f74e4aefdfd871b64d2fba6e3728b519830"
+    },
+    {
+      "path": "assets/audio/lure_transmit.wav",
+      "bytes": 57374,
+      "sha256": "ade52e7d71ae0699e71d52945e54c5c3077e9b80ab16c9f3f5c4ca2c28e8d07b"
+    },
+    {
+      "path": "assets/audio/machine_mistake.wav",
+      "bytes": 55168,
+      "sha256": "6f6428e23f78d5d3aec46f0aede571bcfd54a3b1ec6bea5e2ae115d512f04760"
+    },
+    {
+      "path": "assets/audio/monitor_interrupt.wav",
+      "bytes": 35324,
+      "sha256": "42c277d90bc034ab7b37e92569414358f5e50b3c9b47dd14099db571f3ee0bb0"
+    },
+    {
+      "path": "assets/audio/power_restart.wav",
+      "bytes": 97064,
+      "sha256": "e7012831dcce58e264d8c021782e43e0269eb68804c92e6f95ba7848f47adc62"
+    },
+    {
+      "path": "assets/audio/radio_chime.wav",
+      "bytes": 28708,
+      "sha256": "d8d507167513739c774fc059567ef0259c07d4234d68b7b556aca45605c4c1ee"
+    },
+    {
+      "path": "assets/audio/radio_static.wav",
+      "bytes": 88244,
+      "sha256": "8a43f58ebe0f13d9852764e477680691838b3fd4844fe715923345b786c3420d"
+    },
+    {
+      "path": "assets/audio/relay_confirm.wav",
+      "bytes": 26504,
+      "sha256": "6932db7bdf47e89ff7b621fcfce9cfdda32438075935adc0f18f5f87f7f83415"
+    },
+    {
+      "path": "assets/audio/room_hum.wav",
+      "bytes": 264644,
+      "sha256": "655ec01cc9c1ec544f84bf7138236858f825bd8218c5e19abbf18f19d0dddcf7"
+    },
+    {
+      "path": "assets/audio/sequence_tone_1.wav",
+      "bytes": 18566,
+      "sha256": "24c8bf3164c1b703fe473564ba72ae8fe9daceb44f4991994536c21492d34643"
+    },
+    {
+      "path": "assets/audio/sequence_tone_2.wav",
+      "bytes": 18566,
+      "sha256": "73f766685ace94bf997dced0fd7cb1678b2ac1710c23bffbf867e6a0ce8966e5"
+    },
+    {
+      "path": "assets/audio/sequence_tone_3.wav",
+      "bytes": 18566,
+      "sha256": "975e0195311ce9311193ffc417edc8ba7543237c2a6d83c62e6641450b654df6"
+    },
+    {
+      "path": "assets/audio/sequence_tone_4.wav",
+      "bytes": 18566,
+      "sha256": "5d8e0442596732b1855f74934bf723224b434f1358798c392021c923a9a712e8"
+    },
+    {
+      "path": "assets/audio/steps_approaching.wav",
+      "bytes": 220544,
+      "sha256": "3ae2efd0e74f60dc37cef658dbd00bfe48dcbcd93fa4a12d95a8a7481b222bc6"
+    },
+    {
+      "path": "assets/audio/steps_receding.wav",
+      "bytes": 220544,
+      "sha256": "f5a1426fb764830a5969eeecd0d0207a5fe7a2a41072aaff3054808289029b5e"
+    },
+    {
+      "path": "assets/audio/terminal_press.wav",
+      "bytes": 6218,
+      "sha256": "1fa792f748c248fd67420b0d325c348166783c8a8b94cdb2cf03bcb3bc4d4b59"
+    },
+    {
+      "path": "assets/audio/wall_breath.wav",
+      "bytes": 176444,
+      "sha256": "8292c92bb7a8df76a705ad27ba62f53af70b414bb26579e8266aac6b499be8a1"
+    },
+    {
+      "path": "assets/audio/wall_scrape.wav",
+      "bytes": 123524,
+      "sha256": "81cd82e6da205c41e13be438555fc6533e2e263693a0666dcaf2c6d3a0988daa"
+    },
+    {
+      "path": "assets/cameras/cam_a_clearing.png",
+      "bytes": 2325817,
+      "sha256": "0b3ce3d96368ba5334f72fbf06386ae19fbeff8898b798fd155445990be34283"
+    },
+    {
+      "path": "assets/cameras/cam_b_path.png",
+      "bytes": 2130414,
+      "sha256": "b189c436ebcae516a4db5f44441a96d1116b780e62626d947718c8e7beeb462f"
+    },
+    {
+      "path": "assets/cameras/cam_c_containment.png",
+      "bytes": 2255808,
+      "sha256": "2655313336e5c2131f5490f06ff5a78d4a2499f86c0a434f4677371ac705b4f4"
+    },
+    {
+      "path": "assets/cameras/cam_c_sealed.png",
+      "bytes": 2151611,
+      "sha256": "b74eb9f28138c2262191994824d38d8a8706af1e7af173683b944c72457cf120"
+    },
+    {
+      "path": "assets/cameras/camera-manifest.json",
+      "bytes": 2176,
+      "sha256": "e63bdd52db7320b4a766917a3c81ae236f99964510cbfb9772a72de6cbf2a6b6"
+    },
+    {
+      "path": "assets/decals/camera_notice.svg",
+      "bytes": 653,
+      "sha256": "73521bb87df5cc5f16f0d2c4dc763b34fb1b9c2e7041764f3e43d66a153af824"
+    },
+    {
+      "path": "assets/decals/door_label.svg",
+      "bytes": 684,
+      "sha256": "4554b4b5f11dc85202b08b93770ac41b43372050e6709af635b0d8f14e8caf34"
+    },
+    {
+      "path": "assets/decals/emergency_switch.svg",
+      "bytes": 658,
+      "sha256": "2827670c3796ba5018989adadb1729bda04670df0ed892dd8e464b419a13f09b"
+    },
+    {
+      "path": "assets/decals/feed_offline.svg",
+      "bytes": 1206,
+      "sha256": "3370c7e6b4f29ccab643a4607df684b159bd5b311f3d70e7a3f7bfd65dffb741"
+    },
+    {
+      "path": "assets/decals/protocol_card.svg",
+      "bytes": 745,
+      "sha256": "63daff998299c0d634454f219e9973d633e724090b35961fa1ec13a649bb08ed"
+    },
+    {
+      "path": "assets/decals/sensor_notice.svg",
+      "bytes": 676,
+      "sha256": "6f60479c465c99aee4eb752a4fdf25cda8b04d9234dd86c25092ae55d88d8441"
+    },
+    {
+      "path": "assets/decals/title.svg",
+      "bytes": 491,
+      "sha256": "1662ecbce6310b961dddab295a69f704c7411ed6ea06e65c4f6a2a008e16a823"
+    },
+    {
+      "path": "assets/models/creature_cctv.glb",
+      "bytes": 32488,
+      "sha256": "b5db660dbc0d93caec552eff47d3fb6a7cf01955f718b267e7ed063f287a5f71"
+    },
+    {
+      "path": "assets/models/emergency_switch.glb",
+      "bytes": 17252,
+      "sha256": "83a5a446db8b166c1e3c32e65db8963b4970b68f66c5adfce5cd7f18ae0f219b"
+    },
+    {
+      "path": "assets/models/machine_rack.glb",
+      "bytes": 112200,
+      "sha256": "01523b3fcfc32b116b092524d258f001b9585761713a764928d43385a0cf8d74"
+    },
+    {
+      "path": "assets/models/model-manifest.json",
+      "bytes": 3055,
+      "sha256": "f1020e386fb5bf345cfb10cafd3d86eb2a6028a1810ecaa665c86e5f10206420"
+    },
+    {
+      "path": "assets/models/proximity_detector.glb",
+      "bytes": 21172,
+      "sha256": "b59c1670ad266af5f00f9f4548f7a13d3130423f43cd4619c7db0d5f7584e08b"
+    },
+    {
+      "path": "assets/models/radio_speaker.glb",
+      "bytes": 26140,
+      "sha256": "d93783202dcd77d377520e206083a17efc7b82069bab377e30c00d6db8c1ada9"
+    },
+    {
+      "path": "assets/models/sealed_door.glb",
+      "bytes": 58420,
+      "sha256": "9260b5719b63bac049192e305fb9670bcdbd8c4628734b5ed3f66827e4341ea4"
+    },
+    {
+      "path": "assets/models/security_monitor.glb",
+      "bytes": 17744,
+      "sha256": "d660e52e05c8373be563d510476a0a7e8a66d6245119c222f5d95c0133a12f91"
+    },
+    {
+      "path": "assets/models/shelter.glb",
+      "bytes": 89428,
+      "sha256": "c07ae6ea2509600a4d0c795d535036519f73c987a096b47d7f0483f6ffe4fa88"
+    },
+    {
+      "path": "assets/models/terminal.glb",
+      "bytes": 42496,
+      "sha256": "2ee7ed6e4467fa2c7e6820931303b71fcf62c047e58f86f65cfb62934db5d344"
+    },
+    {
+      "path": "assets/models/workdesk.glb",
+      "bytes": 19340,
+      "sha256": "54103e88cc1e9f3efd065382471e9eec23dc338c8927f5dd813e7d9989f573b3"
+    },
+    {
+      "path": "assets/previews/blackout-preview.png",
+      "bytes": 22790,
+      "sha256": "14e97b2ceddb68f99db8cf44440281176e39ae5a3e3754b1dd723d0e71fd4b23"
+    },
+    {
+      "path": "assets/previews/creature_cctv.geometry.json",
+      "bytes": 32228,
+      "sha256": "e65baee57276667283696142e0db92471a4846c74eaac39df42efb982adc7ad7"
+    },
+    {
+      "path": "assets/previews/door-preview.png",
+      "bytes": 159904,
+      "sha256": "a429761ead4b30944896fba9ad070d34107b11eece90c96a59e672390d1cb104"
+    },
+    {
+      "path": "assets/previews/emergency_switch.geometry.json",
+      "bytes": 10760,
+      "sha256": "21164b44159461ad1e30e7bdfea912ceae330998a9f86b85c57f9ddfb39c6737"
+    },
+    {
+      "path": "assets/previews/machine_rack.geometry.json",
+      "bytes": 85716,
+      "sha256": "d917b278fefce9ab17c656d349f7953cc3d25d5c7eafa5522bdc1fdf21182b04"
+    },
+    {
+      "path": "assets/previews/proximity_detector.geometry.json",
+      "bytes": 16389,
+      "sha256": "34d91fb1856b58b4ea87fa062540120aef5603624e772a28d1849147e49ba8bb"
+    },
+    {
+      "path": "assets/previews/radio_speaker.geometry.json",
+      "bytes": 21459,
+      "sha256": "8770db6dbfdcdf0ac9fd118819df874c5b542c713210ce485095d232a7554231"
+    },
+    {
+      "path": "assets/previews/sealed_door.geometry.json",
+      "bytes": 45600,
+      "sha256": "36998b6436095065fe8cdd7d7297b412bc87034a620a94515a0aa90ecccacc7f"
+    },
+    {
+      "path": "assets/previews/security_monitor.geometry.json",
+      "bytes": 12461,
+      "sha256": "60ad06f248322d8c989327f23b56e3bcecb08b32b42162c23c5cb28b380a3884"
+    },
+    {
+      "path": "assets/previews/shelter-preview.png",
+      "bytes": 292857,
+      "sha256": "85c93872fe3335fe8b8798e9eda2cad4b1f5d930651431dec158a7c522b713c4"
+    },
+    {
+      "path": "assets/previews/shelter.geometry.json",
+      "bytes": 58988,
+      "sha256": "506fce04b911d26aea8386afb6f4baf749de15cb818a5969e00fbd6a88f5e003"
+    },
+    {
+      "path": "assets/previews/terminal.geometry.json",
+      "bytes": 29987,
+      "sha256": "aed949af9346dd3e2999bcc559dfd6529f402df3d74bc3dfdd88d31d730e2e5d"
+    },
+    {
+      "path": "assets/previews/tutorial-preview.png",
+      "bytes": 287114,
+      "sha256": "5b8328f0557224d927e0d7ec80ea0cadbf7af66319887c268a115a52c8a94bf3"
+    },
+    {
+      "path": "assets/previews/workdesk.geometry.json",
+      "bytes": 10898,
+      "sha256": "06e2574c6ad5eb3f6e82e45fde1a2db63264726f5a74c170f3e5cf18ae95bdb9"
+    },
+    {
+      "path": "design/GAME_SPEC.md",
+      "bytes": 24785,
+      "sha256": "de30e794bb5f8bc85455be03f058a921173c88c5c354c32edb0fbd74bf1042c1"
+    },
+    {
+      "path": "design/config.json",
+      "bytes": 6571,
+      "sha256": "2d641fa4a7c8bb0aa4aeea9a0b10c57e793dd2441092eeb5005ee744f8951833"
+    },
+    {
+      "path": "design/dialogue.json",
+      "bytes": 7782,
+      "sha256": "1715bd841e0870aaab5e11701f60060309aade5a1ca3c7d4cb7ea4b567021b90"
+    },
+    {
+      "path": "design/tutorial.json",
+      "bytes": 1346,
+      "sha256": "881e9036bbc25d5195355366f65778d3f23343a653512428da2b991337ad7e82"
+    },
+    {
+      "path": "docs/ASSETS.md",
+      "bytes": 16870,
+      "sha256": "82727b0386917d5ecf982b774941d25e85123b77a4a02edd117c693ff3595eb3"
+    },
+    {
+      "path": "docs/ASSET_VALIDATION.json",
+      "bytes": 10740,
+      "sha256": "8f0076ee291a9b59b312afb60cdf39d678e9428d066e5fa56103a4bca0a8b4e7"
+    },
+    {
+      "path": "docs/INTEGRATIONS.md",
+      "bytes": 26910,
+      "sha256": "7c36bbe5eaea5f55bd245d5bdc650145804e0ab34bf89b2a142868a2164d340f"
+    },
+    {
+      "path": "docs/KIT_VERIFICATION.md",
+      "bytes": 2305,
+      "sha256": "2ffaf6731798b122ea18bc704b30c367a9b18017ff773e8073207d1097161ab9"
+    },
+    {
+      "path": "docs/PHYSIOLOGY_REPORT.md",
+      "bytes": 5626,
+      "sha256": "54d669dc04af368196f1e07fd44bb81d64e19b83abf5803ec171ba87d14dc65a"
+    },
+    {
+      "path": "docs/PLAYTEST_PLAN.md",
+      "bytes": 13372,
+      "sha256": "147e6dc5d0164f12f94f119ada209b6771edb43f394fcc9b8a4c6f35dd81adc4"
+    },
+    {
+      "path": "docs/PREVIEW_CHECK.json",
+      "bytes": 773,
+      "sha256": "88a45ddc1dff7c706c713eb3154bcd8bde8ca5aa4ccd3c26095d097c028ad050"
+    },
+    {
+      "path": "docs/REFERENCE_TESTS.txt",
+      "bytes": 8104,
+      "sha256": "df87e142dd0957516f57f9c48eeab2ec03c60130d97d4ed8b6f5e77f480c78d8"
+    },
+    {
+      "path": "docs/RESEARCH_SOURCES.md",
+      "bytes": 11986,
+      "sha256": "d030cd782b3fd81009b6870975e62e00eba3c5f9b8d25b05edb30ded30836cb7"
+    },
+    {
+      "path": "docs/TRACKS_AND_DEMO.md",
+      "bytes": 20586,
+      "sha256": "7529c4bccc7e8bcfe92bf7396a04edf6a874713be29530aa3641de80cb09594c"
+    },
+    {
+      "path": "docs/UI_AND_TUTORIAL.md",
+      "bytes": 8970,
+      "sha256": "2b11b021d3fd7e4b0d53a0226fb3f85c1752e26b19ddb940d7f1e6fcd279643f"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 1588,
+      "sha256": "a071b39287a8672d48ed48f8a29de5149d59574c0e697d41d761deb7bad3c051"
+    },
+    {
+      "path": "package.json",
+      "bytes": 671,
+      "sha256": "968a5d7e33a2f7eea81c2b942037e6efdb954506a89e4ebed394dcc5dc8c9985"
+    },
+    {
+      "path": "preview.css",
+      "bytes": 4501,
+      "sha256": "b6184ee0922eb957ab4c5b98e3fdf75ca967603a9ce08dbc549d7407ac90d00f"
+    },
+    {
+      "path": "preview.html",
+      "bytes": 3523,
+      "sha256": "5f2da67b4c0a16904afb7d65cd98710fd2a19509781eb7f1fa91dfccef001400"
+    },
+    {
+      "path": "preview.mjs",
+      "bytes": 6518,
+      "sha256": "0241b31d2b97d8afde0a37cf01e7871ab775ae224e024f8b4ff4cf5778a407a5"
+    },
+    {
+      "path": "prompts/CCTV_ART_PROMPTS.txt",
+      "bytes": 2649,
+      "sha256": "7b4f15034905fc8f685003a263e24717c888d6c51ee800bd2317e43eb9197a05"
+    },
+    {
+      "path": "prompts/CODEX_BUILD_PROMPT.txt",
+      "bytes": 19729,
+      "sha256": "78813dc057aaa18393ef235723f1d78029d5dd67ae660c52b42c428f09b5d95c"
+    },
+    {
+      "path": "prompts/MONSTER_DIRECTOR.txt",
+      "bytes": 1928,
+      "sha256": "c6106fe3e91b9d4b4aff6705b3100e4d4e72f5e5aa271d9fc5d1cdb720c9d0d5"
+    },
+    {
+      "path": "reference/director.schema.json",
+      "bytes": 1309,
+      "sha256": "0617a1528bb274aef74bb05cf3becb7eb13ff13fe92605c06eb5ee5fe8995e51"
+    },
+    {
+      "path": "reference/report.mjs",
+      "bytes": 5137,
+      "sha256": "627807a2d19f47135b5d8a7e7f7e08e923552a7706f54c73d4d5c77f7d3c0702"
+    },
+    {
+      "path": "reference/report.test.mjs",
+      "bytes": 2583,
+      "sha256": "65fb1aeb45dd6760b460e0ea1988ac6cd94a409ae3ba9ebdf773110a8092a3d7"
+    },
+    {
+      "path": "reference/rules.mjs",
+      "bytes": 21384,
+      "sha256": "48b61c42e9ff01cd73df995189e86c5938c56c0790ec6bc12492f62ab3852e1f"
+    },
+    {
+      "path": "reference/rules.test.mjs",
+      "bytes": 20512,
+      "sha256": "4dc24990b073e88582c016b8ba7642283c8b1f2e8a9c137cd83e04d05ee6a63e"
+    },
+    {
+      "path": "reference/sensor.schema.json",
+      "bytes": 1836,
+      "sha256": "c9d24c3972ecfa78912a9533c24a54a211c2c01915d1b5b62675e0f9608011e5"
+    },
+    {
+      "path": "source/NIGHT_RELAY_LICENSE.txt",
+      "bytes": 900,
+      "sha256": "7f61b8f1ff1bb57e215acc3aff52da27b175ec004762a556c3b5c50187ca59fb"
+    },
+    {
+      "path": "source/USER_BRIEF.txt",
+      "bytes": 49066,
+      "sha256": "9cf45f53c15daccd5d43fb1de25a1c7d5080b3c2eef8e5b7f0ebb38a8d1d3dd6"
+    },
+    {
+      "path": "tools/build_manifest.py",
+      "bytes": 3345,
+      "sha256": "2be8006a82d3a62bd88ffeab803dbd20baf0f60ae4fd8051b48adf0d9e7f0f4d"
+    },
+    {
+      "path": "tools/check_models.mjs",
+      "bytes": 2373,
+      "sha256": "a107e95bf645b187d02e7a88db1871d1211b4ad29660cca2682bce523f23331e"
+    },
+    {
+      "path": "tools/check_preview.mjs",
+      "bytes": 2926,
+      "sha256": "f91b15ba06ae0f34d0d96e48bf86bcd8e39c2c4e393aa6622163a4a17375b163"
+    },
+    {
+      "path": "tools/generate_assets.py",
+      "bytes": 28895,
+      "sha256": "2c3d85dbf26ac638ffe6e2a60a1811246dedee1fe4d6a5bcaa0da9af766ca1a3"
+    },
+    {
+      "path": "tools/generate_voices.py",
+      "bytes": 12700,
+      "sha256": "b60617275485abe25097991b8f6cb7cdbeb0ad86e34f041a63c47e9f0b705337"
+    },
+    {
+      "path": "tools/package_kit.py",
+      "bytes": 1725,
+      "sha256": "40d3564de71a0e954018079611d8c1af3aba0d90c134717a7e6cbc1f7b1bf53a"
+    },
+    {
+      "path": "tools/serve_preview.mjs",
+      "bytes": 1892,
+      "sha256": "09d688261d50ae55e25b0648e16fffa9ee60c135d7a2d5b009897f08e7b5df92"
+    },
+    {
+      "path": "tools/validate_assets.py",
+      "bytes": 25605,
+      "sha256": "fccd9573bf737554938acc07a0f780510cc42077f037138000753078360ee636"
+    }
+  ]
+}

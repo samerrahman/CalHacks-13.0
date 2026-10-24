@@ -1,0 +1,89 @@
+{
+  "configuredModel": "gemini-3.8-flash",
+  "application": "LOCK IN",
+  "checkedAt": "2026-10-24T06:07:18.518Z",
+  "method": "Actual Electron game, visible manual controls, sanitized judge DOM",
+  "cameraRequested": false,
+  "traceSharingEnabled": false,
+  "status": "failed",
+  "errors": [],
+  "configured": {
+    "desktop": true,
+    "offline": false,
+    "presage": true,
+    "gemini": true,
+    "elevenlabs": true,
+    "convex": true,
+    "reasons": []
+  },
+  "visibilityPausesResumed": 0,
+  "judge": {
+    "providers": {
+      "GEMINI": "FALLBACK · deterministic director",
+      "ELEVENLABS": "LIVE · 385ms",
+      "PRESAGE": "PULSE INPUT OFF · NEUTRAL",
+      "CONVEX": "Trace sharing off"
+    },
+    "events": [
+      {
+        "time": "31.5s",
+        "identity": "e12 / DIRECTOR_APPLIED",
+        "detail": "FALLBACK WAIT NONE"
+      },
+      {
+        "time": "23.5s",
+        "identity": "e8 / DIRECTOR_REQUESTED",
+        "detail": ""
+      },
+      {
+        "time": "0.0s",
+        "identity": "e3 / WRONG_INPUT",
+        "detail": "FAULT"
+      }
+    ],
+    "tactic": "Tactic: WAIT → NONEOutcome: FALLBACK · WAIT · TIMEOUTEvidence: e3",
+    "audio": {
+      "status": "ready",
+      "loadedEffects": [
+        "relay_confirm",
+        "fault_silenced",
+        "sequence_tone_1",
+        "machine_mistake",
+        "sequence_tone_4",
+        "lure_transmit",
+        "terminal_press",
+        "sequence_tone_3",
+        "sequence_tone_2",
+        "intro_alarm",
+        "door_slam",
+        "forest_run",
+        "lure_heartbeat",
+        "steps_receding",
+        "radio_chime",
+        "monitor_interrupt",
+        "fault_rattle",
+        "blackout",
+        "wall_scrape",
+        "room_hum",
+        "breach_warning",
+        "steps_approaching",
+        "containment_success",
+        "breach_impact",
+        "power_restart",
+        "radio_static",
+        "wall_breath"
+      ],
+      "speech": "idle",
+      "error": null,
+      "decodedSpeech": 1,
+      "startedSpeech": 1,
+      "playbackErrors": 0,
+      "contextState": "running"
+    }
+  },
+  "observedRequestToOutcomeMs": 7926,
+  "providerLatencyMs": null,
+  "speechGenerated": true,
+  "speechPlaybackVerified": true,
+  "reason": "No accepted live proposal in bounded first-request window"
+}

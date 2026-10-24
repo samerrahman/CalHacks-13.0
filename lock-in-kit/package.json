@@ -1,0 +1,24 @@
+{
+  "name": "lock-in-build-kit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "LOCK IN assets, reference rules, tutorial storyboard and implementation brief; not the game.",
+  "scripts": {
+    "test": "node --test reference/*.test.mjs",
+    "validate": "python3 tools/validate_assets.py",
+    "check:models": "node tools/check_models.mjs",
+    "preview": "node tools/serve_preview.mjs",
+    "manifest": "python3 tools/build_manifest.py",
+    "check:preview": "node tools/check_preview.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

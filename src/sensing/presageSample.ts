@@ -11,14 +11,14 @@ export function normalizePresage(metrics: NativeMetrics, receiveMs: number, wall
   const stamp = typeof pulse?.timestamp === 'number' ? pulse.timestamp : pulse?.timestamp?.toNumber() ?? null;
   // SDK protobuf timestamp is Unix microseconds. Map age to the receiving app's
   // monotonic clock; never directly compare an epoch with performance.now().
-  const measuredAtMs = stamp !== null && Number.isFinite(stamp) && stamp > 0 ? receiveMs - (wallMs - stamp / 1000) : null;
+  const measuredMonotonicMs = stamp !== null && Number.isFinite(stamp) && stamp > 0 ? receiveMs - (wallMs - stamp / 1000) : null;
   const reasons: string[] = [];
   if (!pulse || typeof pulse.value !== 'number' || !Number.isFinite(pulse.value)) reasons.push('Waiting for pulse estimate');
   else if (pulse.value < 40 || pulse.value > 110) reasons.push('Outside supported pulse range (40–110 BPM)');
   if (receiveMs - warmupStartedMs < 12_000) reasons.push('Warming up: pulse uses a 12-second average');
   if (validation.code !== 0) reasons.push(validation.hint || 'Capture quality has not been validated');
   if (pulse?.stable !== true) reasons.push('Capture is not stable');
-  if (typeof pulse?.confidence !== 'number' || pulse.confidence < 80 || pulse.confidence > 100) reasons.push('Confidence below game acceptance threshold');
-  if (measuredAtMs === null || receiveMs - measuredAtMs > 5000 || measuredAtMs > receiveMs + 1000) reasons.push('Missing or stale measurement timestamp');
-  return { source: 'presage', receivedAtMs: receiveMs, measuredAtMs, pulseBpm: pulse?.value ?? null, breathingBpm: null, quality: reasons.length ? 'rejected' : 'accepted', qualityReasons: reasons, nativeConfidence: pulse?.confidence ?? null };
+  if (typeof pulse?.confidence !== 'number' || !Number.isFinite(pulse.confidence) || pulse.confidence < 80 || pulse.confidence > 100) reasons.push('Confidence below game acceptance threshold');
+  if (measuredMonotonicMs === null || receiveMs - measuredMonotonicMs > 5000 || measuredMonotonicMs > receiveMs + 1000) reasons.push('Missing or stale measurement timestamp');
+  return { source: 'presage', receivedMonotonicMs: receiveMs, measuredMonotonicMs, pulseBpm: pulse?.value ?? null, quality: reasons.length ? 'rejected' : 'accepted', qualityReasons: reasons, nativeConfidence: pulse?.confidence ?? null, validationCode: validation.code };
 }

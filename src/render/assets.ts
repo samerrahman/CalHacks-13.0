@@ -1,7 +1,7 @@
 import { AnimationClip, Group, Mesh, MeshStandardMaterial, Object3D, Texture } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-export const MODEL_NAMES = ['booth', 'console', 'radio', 'relay', 'fuse', 'floodlight', 'shutter', 'mimic'] as const;
+export const MODEL_NAMES = ['shelter', 'sealed_door', 'workdesk', 'terminal', 'security_monitor', 'proximity_detector', 'radio_speaker', 'machine_rack', 'emergency_switch', 'creature_cctv'] as const;
 export type ModelName = typeof MODEL_NAMES[number];
 export interface ModelAsset { scene: Group; animations: AnimationClip[] }
 
@@ -11,20 +11,13 @@ export async function loadModels(onLoaded: (name: string) => void): Promise<Reco
     const gltf = await loader.loadAsync(`/assets/models/${name}.glb`);
     gltf.scene.traverse(object => {
       if (object instanceof Mesh) {
-        object.castShadow = name !== 'booth';
+        object.castShadow = name !== 'shelter';
         object.receiveShadow = true;
         const materials = Array.isArray(object.material) ? object.material : [object.material];
         for (const material of materials) {
           if (material instanceof MeshStandardMaterial) {
             material.roughness = .84;
-            if (name === 'booth' && material.name === 'wall') {
-              // The kit's neutral wall is intentionally recolored for the teal booth.
-              material.color.setHex(0x44655d);
-            }
-            if (material.name === 'green') {
-              material.emissive.setHex(0x43bd8a);
-              material.emissiveIntensity = .48;
-            }
+            if (name === 'shelter' && material.name === 'wall_teal') material.color.setHex(0x35534a);
           }
         }
       }

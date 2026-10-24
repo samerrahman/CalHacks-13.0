@@ -8,6 +8,9 @@ export interface SpeechRequest {
   audioBase64?: string;
   mimeType?: string;
   stateVersion?: number;
+  source?: 'live' | 'cached';
+  position?: [number, number, number];
+  followCreature?: boolean;
 }
 
 /** No timing or provider side effects: eligibility is rechecked before playback. */

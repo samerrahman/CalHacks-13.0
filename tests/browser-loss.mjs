@@ -1,17 +1,56 @@
-import {chromium,expect} from '@playwright/test';
-import {writeFile} from 'node:fs/promises';
-const browser=await chromium.launch({channel:'chrome',headless:true});
-try{
-const page=await browser.newPage({viewport:{width:1280,height:720}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://127.0.0.1:5173');await page.getByRole('button',{name:'Take the night shift'}).click();
-await expect(page.locator('.radio-caption')).toContainText('Night operator, this is Mara.');
-await page.screenshot({path:'artifacts/final-laptop.png'});
-await page.getByRole('button',{name:'Open left shutter',exact:true}).click();
-await expect(page.getByRole('heading',{name:'The line went quiet.',exact:true})).toBeVisible({timeout:45000});
-const reason=await page.getByRole('dialog',{name:'Shift results'}).innerText();await page.screenshot({path:'artifacts/loss.png'});
-await page.getByRole('button',{name:'Replay this seed',exact:true}).click();
-await expect(page.getByRole('heading',{name:'Synchronize carrier',exact:true})).toBeVisible();
-await expect(page.locator('.top-power strong')).toHaveText('100%');
-await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'Shift paused'})).toBeVisible();
-await writeFile('artifacts/loss-test.json',JSON.stringify({passed:true,reason,restartPassed:true,errors},null,2));console.log(JSON.stringify({passed:true,restartPassed:true,errors}));
-}finally{await browser.close();}
+import { chromium, expect } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { begin, openTerminal, collectBrowserEvidence, TEST_URL } from './lock-in-browser-helpers.mjs';
+await mkdir('artifacts', { recursive: true });
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const evidence = { passed: false, url: TEST_URL, mode: 'offline, manual pulse, trace sharing off', checks: [], errors: [], failedResources: [], externalRequests: [] }; let page;
+try {
+  page = await browser.newPage({ viewport: { width: 1280, height: 720 } }); collectBrowserEvidence(page, evidence);
+  page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['127.0.0.1', 'localhost'].includes(url.hostname)) evidence.externalRequests.push(`${url.origin}${url.pathname}`); });
+  await begin(page); await openTerminal(page);
+  await expect(page.locator('.task-progress')).toContainText('0 / 8');
+  await page.getByRole('button', { name: 'Mute', exact: true }).click();
+  await expect(page.locator('.sound-caption')).toContainText('PROXIMITY ALARM', { timeout: 10000 });
+  await expect(page.locator('.breach-banner')).toHaveCount(0);
+  await page.screenshot({ path: 'artifacts/harder-alarm-active.png' });
+  await page.keyboard.press('j');
+  evidence.alarmAudio = JSON.parse(await page.getByTestId('audio-diagnostics').innerText());
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Game paused' })).toBeVisible();
+  const pausedTrace = await page.locator('.trace-list').innerText();
+  const pausedCaption = await page.locator('.sound-caption').innerText();
+  await page.waitForTimeout(8000);
+  await expect.poll(() => page.locator('.trace-list').innerText()).toBe(pausedTrace);
+  await expect.poll(() => page.locator('.sound-caption').innerText()).toBe(pausedCaption);
+  await expect(page.locator('.jump-scare.breach')).toHaveCount(0);
+  evidence.checks.push('Alarm has sound-equivalent captions and no visible breach countdown; pause freezes public event times and threat beyond the normal loss interval');
+  await page.screenshot({ path: 'artifacts/harder-loss-paused.png' });
+  await page.getByRole('button', { name: 'Resume protocol →' }).click();
+  // The judge trace is a player-visible diagnostic, not hidden simulation state.
+  await expect(page.locator('.trace-list')).toContainText('ATTACK_COMMITTED', { timeout: 10000 });
+  evidence.committedEvent = await page.locator('.trace-list > div').filter({ hasText: 'ATTACK_COMMITTED' }).innerText();
+  await page.keyboard.press('q');
+  await expect(page.locator('.sound-caption')).toContainText('Isolation relay disengaged.');
+  await expect(page.locator('.jump-scare.breach')).toBeVisible({ timeout: 4000 });
+  await page.screenshot({ path: 'artifacts/harder-breach-scare-active.png' });
+  await expect(page.getByRole('heading', { name: 'The shelter fell silent.', exact: true })).toBeVisible({ timeout: 4000 });
+  const result = page.getByRole('dialog', { name: 'Run results' });
+  await expect(result).toContainText('The creature reached the wall before isolation.');
+  await expect(result).toContainText('Physiological statistics unrecorded.');
+  await page.screenshot({ path: 'artifacts/harder-loss-result.png' });
+  evidence.result = await result.innerText();
+  evidence.checks.push('Q after the publicly recorded commitment cannot rescue the run; an actual breach scare precedes the explained loss');
+  await page.getByRole('button', { name: 'Replay this seed', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Research terminal' })).toHaveCount(0);
+  await openTerminal(page);
+  await expect(page.locator('.task-progress')).toContainText('0 / 8');
+  await expect(page.locator('.protocol-progress b')).toHaveText('0 / 4');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Game paused' })).toBeVisible();
+  evidence.checks.push('Replay resets research and returns to equipment interaction; keyboard pause remains available');
+  if (evidence.errors.length || evidence.failedResources.length || evidence.externalRequests.length) throw Error('Unexpected browser error, missing asset, or external request');
+  evidence.passed = true;
+} catch (error) {
+  evidence.failure = String(error); process.exitCode = 1;
+  if (page) { await page.screenshot({ path: 'artifacts/harder-loss-failure.png' }); evidence.visibleTextAtFailure = await page.locator('body').innerText(); }
+} finally { await writeFile('artifacts/harder-loss-evidence.json', JSON.stringify(evidence, null, 2)); console.log(JSON.stringify(evidence)); await browser.close(); }
