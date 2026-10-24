@@ -9,6 +9,10 @@ export type SensorDiagnosticMetric = {
   eligible: boolean;
   state: 'waiting' | 'warming-up' | 'accepted' | 'rejected' | 'stale';
   reasons: string[];
+  requiredConfidence?: number;
+  receivedAgeMs?: number | null;
+  updateIntervalMs?: number | null;
+  sampleCount?: number;
 };
 export type SensorDiagnostics = {
   captureState: 'off' | 'acquiring' | 'live';
@@ -27,6 +31,7 @@ export type SensorDiagnostics = {
   pulse: SensorDiagnosticMetric;
   breathing: SensorDiagnosticMetric;
   blocker: string | null;
+  lastFrameAgeMs?: number | null;
 };
 export type SensorSample = {
   source: 'presage' | 'simulated';

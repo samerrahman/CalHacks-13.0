@@ -37,6 +37,10 @@ export interface DirectorRequest {
     physiologyClue: number;
     sensor: SensorState;
     earnedLure: { target: LureTarget; protectedUntilGameMs: number } | null;
+    linePosition: number;
+    lineLength: number;
+    danger: number;
+    quietChargesRemaining: number;
   };
 }
 export interface DirectorProposal {
@@ -61,6 +65,7 @@ export interface MemoryState {
   armed: boolean;
   needsReplay: boolean;
 }
+export interface WireState { targetOrder: number[]; connections: number[] }
 export interface GameState {
   seed: number;
   mode: 'standard' | 'demo' | 'tutorial';
@@ -72,15 +77,28 @@ export interface GameState {
   station: Station;
   cameraFeed: CameraFeed;
   equipment: Equipment;
+  danger: number;
+  pressure: number;
+  shutdown: { chargesRemaining: number; used: number; activeUntil: number; cooldownUntil: number };
   tasks: {
     stage: Stage;
     stageStarted: number;
     completedStages: number[];
     faults: { active: number[]; completed: number; required: number; spawned: number; spawnElapsed: number; maximumActive: number };
     memory: MemoryState;
+    wires: WireState;
     finalTransmitted: boolean;
   };
   creature: {
+    linePosition: number;
+    nextMoveAt: number;
+    lastStep: number;
+    tacticBias: number;
+    biasUntil: number;
+    nearSince: number | null;
+    movementRng: number;
+    sensorDistance: number | null;
+    sensorSampleAt: number;
     position: Vec3;
     /** Last node physically reached; route[0] is the next connected node. */
     node: NodeId;
@@ -144,6 +162,7 @@ export type GameAction =
   | { type: 'station'; station: Station }
   | { type: 'camera'; feed: CameraFeed }
   | { type: 'input'; value: number }
+  | { type: 'wire'; from: number; to: number }
   | { type: 'practice-memory' }
   | { type: 'replay' }
   | { type: 'transmit' }

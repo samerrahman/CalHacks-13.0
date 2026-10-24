@@ -1,6 +1,6 @@
 import { chromium, expect } from '@playwright/test';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { begin, openTerminal, watchSequence, restore, solve, evidenceFor, collectBrowserEvidence, TEST_URL } from './lock-in-browser-helpers.mjs';
+import { begin, openTerminal, watchSequence, restore, defend, resources, solve, evidenceFor, collectBrowserEvidence, TEST_URL } from './lock-in-browser-helpers.mjs';
 await mkdir('artifacts', { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const evidence = { passed: false, url: TEST_URL, seed: 17, checks: [], errors: [], failedResources: [] }; let page;
@@ -24,16 +24,21 @@ try {
   await expect(page.locator('.tutorial-card')).toHaveCount(0);
   await expect(page.getByRole('dialog', { name: 'Research terminal' })).toHaveCount(0);
   evidence.checks.push('Physical-equipment E interaction and all seven nonlethal tutorial steps completed through visible controls');
+  const initial = await resources(page);
+  if (initial.cells !== 4 || !/^4:5[0-9]$|^5:00$/.test(initial.deadline)) throw Error('New run did not reset four cells and five-minute deadline');
+  await defend(page);
+  evidence.checks.push('One visible isolation cell is consumed; equipment returns automatically after ten seconds and cooldown prevents immediate reuse');
   await openTerminal(page); await page.screenshot({ path: 'artifacts/harder-terminal.png' });
   await solve(page);
   const result = page.getByRole('dialog', { name: 'Run results' });
   await expect(result).toContainText('4/4');
   await expect(result).toContainText('Physiological statistics unrecorded.');
   await page.screenshot({ path: 'artifacts/harder-seed17-win.png' });
-  evidence.checks.push('Seed17 won all8/5/12/6 research stages and physical containment using early Q and observed sequence cues');
+  evidence.checks.push('Seed17 won eight faults + wiring, five pulses, twelve faults + wiring, six pulses, and containment through observed controls');
   evidence.observations = evidenceFor(page); evidence.result = await result.innerText();
   if (!evidence.observations.sequenceLengths.includes(5) || !evidence.observations.sequenceLengths.includes(6)) throw Error('Longer real sequence lengths were not observed');
   if (!evidence.observations.defenses) throw Error('No early defense exercised');
+  if (evidence.observations.wireBoards !== 2 || evidence.observations.wireDrags < 1 || evidence.observations.wireClicks < 1) throw Error('Both wire boards and real drag/click controls were not exercised');
   if (evidence.errors.length || evidence.failedResources.length) throw Error('Browser errors or missing resources');
   evidence.passed = true;
 } catch (error) {

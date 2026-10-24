@@ -1,10 +1,51 @@
 {
-  "passed": false,
-  "url": "http://127.0.0.1:5182",
+  "passed": true,
+  "url": "http://127.0.0.1:5180",
   "seed": 17,
-  "checks": [],
+  "checks": [
+    "Physical-equipment E interaction and all seven nonlethal tutorial steps completed through visible controls",
+    "One visible isolation cell is consumed; equipment returns automatically after ten seconds and cooldown prevents immediate reuse",
+    "Seed17 won eight faults + wiring, five pulses, twelve faults + wiring, six pulses, and containment through observed controls"
+  ],
   "errors": [],
   "failedResources": [],
-  "failure": "Error: expect(locator).toContainText(expected) failed\n\nLocator: locator('.tutorial-card')\nExpected substring: \"Hold F\"\nTimeout: 20000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" locator('.tutorial-card') with timeout 20000ms\n  - waiting for locator('.tutorial-card')\n    16 × locator resolved to <aside aria-live=\"polite\" class=\"tutorial-card\">…</aside>\n       - unexpected value \"GUIDED PRACTICE · 3 / 7Listen for receding footsteps. Captions carry the same clue.Threat is paused during practice.I heard it →Skip guidance\"\n",
-  "visibleTextAtFailure": "▏ FIELD RESEARCH / EMERGENCY PROTOCOL\nLOCK IN.\n\nSomething outside is listening.\n\nSilence the shelter. Send a false heartbeat into the forest. Lead it back into containment.\n\nBegin with guidance\n↗\nSkip guidance & start\n\nListen for the alarm. If it reaches the wall, cutting power is too late.\n\n◎ Camera & pulse setup\n+\n\nMonster speech unavailable · captions remain on\n\nOperator settings\n+\nSHELTER 04 / FOREST RESEARCH FACILITY\nHeadphones optional · Captions always available"
+  "observations": {
+    "defenses": 1,
+    "automaticRestores": 1,
+    "blackouts": 0,
+    "sequenceLengths": [
+      4,
+      5,
+      6
+    ],
+    "wireBoards": 2,
+    "wireDrags": 1,
+    "wireClicks": 7,
+    "stages": [
+      "Silence the machines.",
+      "Reconnect the relay.",
+      "Transmit a false heartbeat.",
+      "Clear the overload.",
+      "Lead it toward containment.",
+      "Bring it back inside."
+    ],
+    "resourceSamples": [
+      {
+        "cells": 4,
+        "danger": 18,
+        "deadline": "5:00"
+      },
+      {
+        "cells": 4,
+        "danger": 18,
+        "deadline": "5:00"
+      },
+      {
+        "cells": 3,
+        "danger": null,
+        "deadline": "5:00"
+      }
+    ]
+  },
+  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n48s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
 }

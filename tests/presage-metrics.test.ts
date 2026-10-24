@@ -46,8 +46,8 @@ test('NoData stays unknown while a real degraded pulse remains rejected', () => 
   assert.equal(view.pulse.bpm, 72, 'actual unaccepted estimate can be labeled by UI');
   assert.equal(view.pulse.confidence, 31); assert.equal(view.pulse.stable, false);
   assert.equal(view.pulse.eligible, false); assert.equal(view.pulse.state, 'rejected');
-  stream.validation = { code: 7, hint: 'Place more chest in view' };
-  assert.equal(stream.view(20_000, 'live').blocker, 'Place more chest in view');
+  stream.validation = { code: 5, hint: 'More light needed' };
+  assert.equal(stream.view(20_000, 'live').blocker, 'More light needed');
 });
 
 test('warmups begin at real sent-frame event; raw values remain hidden until their analysis windows', () => {
@@ -78,7 +78,7 @@ test('quality recovery does not relabel the old rejected reading as accepted bef
   const stream = native();
   stream.ingest({ cardio: { pulseRate: [value(20_000)] } }, 20_000, epoch + 20_000);
   assert.equal(stream.view(20_000, 'live').pulse.eligible, true);
-  stream.setValidation(7, 'Place more chest in view');
+  stream.setValidation(5, 'More light needed');
   stream.setValidation(0, 'Capture validated');
   assert.equal(stream.view(20_500, 'live').pulse.eligible, false);
   stream.ingest({ cardio: { pulseRate: [value(21_000)] } }, 21_000, epoch + 21_000);

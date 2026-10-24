@@ -10,12 +10,14 @@ import { buildDirectorRequest } from '../src/game/directorValidation';
 import { generateMonster, DEFAULT_DIALOGUE_MODEL } from '../src/integrations/providers';
 import { monsterFallbackCaption, publicDirectorRequest, type MonsterRequest } from '../src/integrations/contracts';
 
+if (!process.argv.includes('--live')) throw new Error('Requires explicit --live');
 for (const path of ['.env', '.env.local']) if (existsSync(path)) process.loadEnvFile(path);
 const narrativeCheck = process.argv.includes('--narrative-check');
 let context = createDirectorProbe('live-monster-context').request;
 if (narrativeCheck) {
   let state = createGame(17, 'standard');
-  for (let tick = 0; tick < 100 && !state.events.some(event => event.type === 'PROXIMITY_ALARM'); tick++) state = step(state, .1);
+  for (let tick = 0; tick < 3000 && state.status === 'playing' && !state.events.some(event => event.type === 'PROXIMITY_ALARM'); tick++) state = step(state, .1);
+  if (!state.events.some(event => event.type === 'PROXIMITY_ALARM')) throw new Error('Synthetic probe did not reach a supported proximity event');
   context = publicDirectorRequest(buildDirectorRequest(state));
 }
 const request: MonsterRequest = { requestId: `live-monster-${Date.now()}`, context, fallbackId: narrativeCheck ? 'FIRST_APPROACH' : 'AFTER_MISTAKE', expiresAtMs: Date.now() + 25000 };

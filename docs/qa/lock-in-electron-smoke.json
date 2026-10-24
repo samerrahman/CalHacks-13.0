@@ -1,25 +1,17 @@
 {
   "application": "LOCK IN",
-  "checkedAt": "2026-10-24T07:04:04.707Z",
+  "checkedAt": "2026-10-24T08:36:21.430Z",
   "mode": "offline",
   "cameraRequested": false,
   "providerCallsEnabled": false,
   "errors": [],
   "resources": [
     {
-      "path": "/assets/models/shelter.glb",
-      "status": 200
-    },
-    {
       "path": "/assets/models/sealed_door.glb",
       "status": 200
     },
     {
-      "path": "/assets/models/emergency_switch.glb",
-      "status": 200
-    },
-    {
-      "path": "/assets/models/terminal.glb",
+      "path": "/assets/models/shelter.glb",
       "status": 200
     },
     {
@@ -27,7 +19,15 @@
       "status": 200
     },
     {
+      "path": "/assets/models/security_monitor.glb",
+      "status": 200
+    },
+    {
       "path": "/assets/models/proximity_detector.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/emergency_switch.glb",
       "status": 200
     },
     {
@@ -35,7 +35,11 @@
       "status": 200
     },
     {
-      "path": "/assets/models/security_monitor.glb",
+      "path": "/assets/models/creature_cctv.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/terminal.glb",
       "status": 200
     },
     {
@@ -43,11 +47,7 @@
       "status": 200
     },
     {
-      "path": "/assets/models/creature_cctv.glb",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/door_slam.wav",
+      "path": "/assets/audio/forest_run.wav",
       "status": 200
     },
     {
@@ -55,7 +55,7 @@
       "status": 200
     },
     {
-      "path": "/assets/audio/forest_run.wav",
+      "path": "/assets/audio/door_slam.wav",
       "status": 200
     },
     {
@@ -63,31 +63,7 @@
       "status": 200
     },
     {
-      "path": "/assets/audio/fault_rattle.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/machine_mistake.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/sequence_tone_3.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/terminal_press.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/sequence_tone_2.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/sequence_tone_4.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/sequence_tone_1.wav",
+      "path": "/assets/audio/fault_silenced.wav",
       "status": 200
     },
     {
@@ -95,35 +71,7 @@
       "status": 200
     },
     {
-      "path": "/assets/audio/wall_scrape.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/fault_silenced.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/relay_confirm.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/lure_transmit.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/blackout.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/radio_static.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/containment_success.wav",
-      "status": 200
-    },
-    {
-      "path": "/assets/audio/breach_warning.wav",
+      "path": "/assets/audio/machine_mistake.wav",
       "status": 200
     },
     {
@@ -131,11 +79,23 @@
       "status": 200
     },
     {
-      "path": "/assets/audio/lure_heartbeat.wav",
+      "path": "/assets/audio/sequence_tone_1.wav",
       "status": 200
     },
     {
-      "path": "/assets/audio/power_restart.wav",
+      "path": "/assets/audio/relay_confirm.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/fault_rattle.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/sequence_tone_4.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/lure_heartbeat.wav",
       "status": 200
     },
     {
@@ -143,7 +103,23 @@
       "status": 200
     },
     {
-      "path": "/assets/audio/radio_chime.wav",
+      "path": "/assets/audio/terminal_press.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/containment_success.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/wall_scrape.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/sequence_tone_2.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/breach_warning.wav",
       "status": 200
     },
     {
@@ -151,7 +127,31 @@
       "status": 200
     },
     {
+      "path": "/assets/audio/radio_static.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/sequence_tone_3.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/radio_chime.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/blackout.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/lure_transmit.wav",
+      "status": 200
+    },
+    {
       "path": "/assets/audio/monitor_interrupt.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/power_restart.wav",
       "status": 200
     }
   ],
@@ -166,6 +166,14 @@
     "reasons": [
       "Presage key not configured"
     ]
+  },
+  "monsterBridgeType": "function",
+  "offlineMonster": {
+    "textSource": "authored-fallback",
+    "speechSource": "fallback",
+    "hasAudio": false,
+    "caption": "I can hear you working.",
+    "reason": "Offline mode · authored monster dialogue"
   },
   "desktopCameraPanelVerified": true,
   "cameraPreviewStreamAttached": false,

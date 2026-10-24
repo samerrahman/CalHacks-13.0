@@ -1,7 +1,7 @@
 export type CameraFeed = 'A' | 'B' | 'C';
 export type WorldPosition = [number, number, number];
 const COVERAGE: Record<CameraFeed, { start: WorldPosition; end: WorldPosition; anchors: [number, number][] }> = {
-  A: { start: [0, 0, -26], end: [-16, 0, -34], anchors: [[.79, .71], [.53, .58], [.37, .52]] },
+  A: { start: [0, 0, -12], end: [0, 0, -26], anchors: [[.79, .71], [.53, .58], [.37, .52]] },
   B: { start: [0, 0, -26], end: [14, 0, -46], anchors: [[.54, .78], [.56, .59], [.64, .42]] },
   C: { start: [14, 0, -46], end: [14, 0, -62], anchors: [[.49, .82], [.58, .57], [.59, .34]] },
 };

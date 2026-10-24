@@ -12,7 +12,7 @@ export interface RenderState {
   sequenceLength?: number;
   entered?: number[];
   armed?: boolean;
-  creature: { position: WorldPosition; phase: string; distance: number };
+  creature: { position: WorldPosition; phase: string; distance: number; sensorDistance?: number | null; sensorSampleAt?: number };
   cameraFeed?: CameraFeed;
   status?: 'playing' | 'won' | 'lost';
   warningRemaining?: number | null;

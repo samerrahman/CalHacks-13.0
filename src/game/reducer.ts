@@ -1,7 +1,7 @@
 import { config, currentSedation, finite, FIXED_DT, NODES } from './config';
-import { cameraVisible, canRestore, commitIfEligible, enterQuiet, proximityAlarm, triggerScare, lureProtected, restoreEquipment, tickCreature, updateCaption, updateClues, warningRemaining } from './creature';
+import { cameraVisible, canRestore, commitIfEligible, enterQuiet, proximityAlarm, triggerScare, lureProtected, projectCreature, restoreEquipment, tickCreature, updateCaption, updateClues, updateDanger, updateDistanceSensor, warningRemaining } from './creature';
 import { receiveProposal, tickDirector } from './directorValidation';
-import { emptyMemory, replayMemory, startStage, taskInput, tickTasks, transmit } from './tasks';
+import { connectWire, emptyMemory, emptyWires, replayMemory, startStage, taskInput, tickTasks, transmit } from './tasks';
 import { emit, random, type GameAction, type GameState, type SensorState } from './state';
 
 export { config, currentSedation, cameraVisible, canRestore, lureProtected, warningRemaining, proximityAlarm };
@@ -10,8 +10,10 @@ export function createGame(seed = 17, mode: GameState['mode'] = 'standard'): Gam
   const state: GameState = {
     seed: safeSeed, mode, time: 0, status: 'playing', paused: false, version: 0,
     station: 'terminal', cameraFeed: 'A', equipment: 'on',
-    tasks: { stage: 1, stageStarted: 0, completedStages: [], faults: { active: [], completed: 0, required: 5, spawned: 0, spawnElapsed: 0, maximumActive: 1 }, memory: emptyMemory(), finalTransmitted: false },
+    danger: config.danger.base, pressure: 0, shutdown: { chargesRemaining: config.shutdown.charges, used: 0, activeUntil: 0, cooldownUntil: 0 },
+    tasks: { stage: 1, stageStarted: 0, completedStages: [], faults: { active: [], completed: 0, required: 5, spawned: 0, spawnElapsed: 0, maximumActive: 1 }, memory: emptyMemory(), wires: emptyWires(), finalTransmitted: false },
     creature: {
+      linePosition: config.line.start, nextMoveAt: config.line.graceSeconds + config.line.stepSeconds, lastStep: 0, tacticBias: 0, biasUntil: 0, nearSince: null, movementRng: (safeSeed ^ 0x9e3779b9) >>> 0, sensorDistance: config.line.start, sensorSampleAt: 0,
       position: [...NODES.NEAR_PATH], node: 'NEAR_PATH', route: [], target: 'NONE', phase: 'search', distance: 12,
       confidence: .25, approachStarted: null, phaseStarted: 0, phaseUntil: 0, recoveryUntil: 0, restoreProtectionUntil: 0,
       lastAudibleAt: -1000, lastAudibleStrength: 0, warning: null, alarmLatched: false, warningStarts: [], lure: null, containmentStarted: null, lastMotion: 'stationary',
@@ -27,6 +29,7 @@ export function createGame(seed = 17, mode: GameState['mode'] = 'standard'): Gam
   startStage(state, 1);
   state.blackout.nextAt += Math.floor(random(state) * 10);
   emit(state, 'RUN_STARTED', mode);
+  projectCreature(state); updateDanger(state, 0);
   updateClues(state, 0);
   return state;
 }
@@ -36,19 +39,24 @@ function tickBlackout(state: GameState): void {
   state.equipment = 'blackout'; state.blackout.count++; state.blackout.lastAt = state.time; state.blackout.startedAt = state.time;
   state.blackout.nextAt = state.time + config.blackout.minimumCooldownSeconds + Math.floor(random(state) * 15);
   state.restoreHeld = false; state.restoreHold = 0;
-  state.notice = 'Power lost. Research is preserved. Press Q, wait for the restore window, then hold F.';
+  state.notice = 'Power lost. Research is preserved. Hold F to restore without spending isolation.';
   emit(state, 'BLACKOUT_STARTED'); triggerScare(state, 'monitor'); state.version++;
 }
 function tick(state: GameState): void {
   state.time += FIXED_DT;
-  if (state.restoreHeld && state.equipment !== 'on') {
+  if (state.restoreHeld && canRestore(state)) {
     state.restoreHold += FIXED_DT;
     if (state.restoreHold >= config.quiet.restoreHoldSeconds - 1e-8) restoreEquipment(state);
   }
   tickTasks(state, FIXED_DT);
+  updateDanger(state, FIXED_DT);
   updateClues(state, FIXED_DT);
   tickCreature(state, FIXED_DT);
   if (state.status === 'playing') { tickBlackout(state); tickDirector(state); }
+  if (state.mode !== 'tutorial' && state.status === 'playing' && state.time >= config.line.deadlineSeconds - 1e-8) {
+    state.status = 'lost'; state.restoreHeld = false; state.lossReason = 'The five-minute protocol window expired.'; state.notice = 'Complete the research and final containment before the deadline.'; emit(state, 'TIMEOUT'); emit(state, 'LOST', 'TIMEOUT'); state.version++;
+  }
+  updateDistanceSensor(state);
   updateCaption(state);
 }
 /** Pure deterministic fixed-step simulation. Nothing here awaits a live provider. */
@@ -72,7 +80,7 @@ function sensorChange(state: GameState, sensor: SensorState): void {
   emit(state, 'SENSOR_TREND', `source=${source} quality=${quality} trend=${trend}`);
   // It changes model eligibility (near physiology reason), but never a live puzzle's tempo.
   state.version++;
-  updateClues(state, 0);
+  updateClues(state, 0); updateDanger(state, 0);
 }
 export function dispatch(previous: GameState, action: GameAction): GameState {
   const state = structuredClone(previous);
@@ -96,16 +104,17 @@ export function dispatch(previous: GameState, action: GameAction): GameState {
       break;
     case 'camera': if (['A', 'B', 'C'].includes(action.feed)) state.cameraFeed = action.feed; break;
     case 'input': taskInput(state, action.value); break;
+    case 'wire': connectWire(state, action.from, action.to); break;
     case 'practice-memory': if (state.mode === 'tutorial') startStage(state, 2); break;
     case 'replay': if (state.station === 'terminal') replayMemory(state); break;
     case 'transmit': transmit(state); break;
     case 'quiet': enterQuiet(state); break;
     case 'restore':
-      state.restoreHeld = action.held && state.equipment !== 'on';
+      state.restoreHeld = action.held && canRestore(state);
       if (!state.restoreHeld) state.restoreHold = 0;
       break;
     case 'proposal': receiveProposal(state, action.proposal, action.source); break;
   }
-  updateClues(state, 0); updateCaption(state);
+  updateClues(state, 0); updateDanger(state, 0); updateDistanceSensor(state); updateCaption(state);
   return state;
 }

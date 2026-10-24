@@ -5,8 +5,15 @@
     "Mobile inspection, captions and emergency controls fit; Q exits equipment inspection",
     "Camera settings blocks gameplay input; Escape closes it and resumes even with the camera SELECT focused",
     "Escape remains global while a judge checkbox has focus",
-    "Monitor B/C and isolation equipment require explicit use; Space leaves inspection"
+    "Monitor B/C and isolation equipment require explicit use; Space leaves inspection",
+    "Actual stage-one wiring board rendered at laptop and mobile sizes after eight visible fault repairs; mobile danger meter remains uncovered"
   ],
   "errors": [],
-  "failedResources": []
+  "failedResources": [],
+  "mobileResources": {
+    "cells": 4,
+    "danger": 18,
+    "deadline": "5:00"
+  },
+  "displayedDistance": "18"
 }

@@ -59,11 +59,13 @@ export function drawTerminal(display: Display, state: RenderState): void {
 export function drawProximity(display: Display, state: RenderState): void {
   const on = state.power === 'on', ctx = display.context;
   ctx.fillStyle = '#0b0d07'; ctx.fillRect(0, 0, 512, 384); ctx.textAlign = 'center';
-  ctx.fillStyle = on ? '#b0a97c' : '#262b21'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY', 256, 57);
-  ctx.font = 'bold 104px monospace'; ctx.fillText(on && Number.isFinite(state.creature.distance) ? `${Math.round(state.creature.distance)}` : '—', 256, 202);
-  ctx.font = '24px monospace'; ctx.fillText(on ? 'METRES / APPROX.' : 'DISPLAY OFFLINE', 256, 252);
+  if (!on) { display.texture.needsUpdate = true; return; }
+  ctx.fillStyle = '#b0a97c'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY', 256, 57);
+  const sampled = state.creature.sensorDistance;
+  ctx.font = 'bold 104px monospace'; ctx.fillText(typeof sampled === 'number' && Number.isFinite(sampled) ? `${sampled}` : '—', 256, 202);
+  ctx.font = '24px monospace'; ctx.fillText('LINE UNITS / LAST SAMPLE', 256, 252);
   ctx.fillStyle = '#6c704e'; ctx.font = '23px monospace';
-  ctx.fillText(on ? 'PASSIVE ACOUSTIC RANGE' : 'USE SOUND / CAPTIONS', 256, 325);
+  ctx.fillText('SAMPLE INTERVAL 4 SECONDS', 256, 325);
   wornGlass(display, 512, 384); display.texture.needsUpdate = true;
 }
 export function drawCameraOverlay(display: Display, state: RenderState, corruption = 0, reducedMotion = false): void {

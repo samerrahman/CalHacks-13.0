@@ -1,4 +1,5 @@
 import type { DirectorRequest, PublicEvent } from '../game/state';
+import { config } from '../game/config';
 import dialogue from '../game/dialogue.json';
 
 export type DirectorResult = { proposal: unknown | null; source: 'gemini' | 'fallback'; latencyMs: number; reason?: string; providerRequestId?: string };
@@ -10,6 +11,7 @@ export type MonsterFallbackId = typeof MONSTER_FALLBACK_IDS[number];
 export const MONSTER_TEXT_TIMEOUT_MS = 5000;
 export const MONSTER_TOTAL_TIMEOUT_MS = 12000;
 export const MONSTER_MIN_INTERVAL_MS = 18000;
+export const TRACE_SCHEMA_VERSION = 'lock-in-v2';
 export type MonsterRequest = { requestId: string; context: DirectorRequest; fallbackId: MonsterFallbackId; expiresAtMs: number };
 export type MonsterResult = { requestId: string; caption: string; textSource: 'gemini' | 'authored-fallback'; textLatencyMs: number; textReason?: string; textProviderRequestId?: string; evidenceEventIds: string[]; speech: SpeechResult; totalLatencyMs: number };
 export type IntegrationStatus = { desktop: boolean; offline?: boolean; presage: boolean; gemini: boolean; elevenlabs: boolean; convex: boolean; reasons: string[] };
@@ -45,7 +47,7 @@ export const TAUNTS = ['NONE', 'AFTER_MISTAKE', 'MACHINES_QUIET', 'HEARD_RHYTHM'
 export const REASONS = ['RECENT_SOUND', 'PATTERN_OF_MISTAKES', 'QUIET_AFTER_NOISE', 'SUSTAINED_NEARBY_TREND', 'EARNED_LURE', 'RECOVERY', 'VARY_PRESSURE', 'NO_VALID_SIGNAL'] as const;
 const NODES = ['SHELTER_WALL', 'WEST_WALL', 'EAST_WALL', 'NEAR_PATH', 'JUNCTION', 'EMITTER_A', 'EMITTER_B', 'CONTAINMENT'] as const;
 const TRENDS = ['UNKNOWN', 'STEADY', 'ELEVATED', 'RECOVERED'] as const;
-const EVENT_TYPES = new Set(['NEAR_LISTEN', 'TAUNT', 'DIRECTOR_APPLIED', 'DIRECTOR_REJECTED', 'DIRECTOR_REQUESTED', 'MEMORY_REPLAY', 'TASK_COMPLETE', 'WRONG_INPUT', 'FAULT_CLEARED', 'MEMORY_ARMED', 'FINAL_BROADCAST', 'FAULT_STARTED', 'MEMORY_READY', 'MEMORY_EXPIRED', 'LURE_TRANSMITTED', 'QUIET_ENTERED', 'RESTORED', 'APPROACH', 'LURE_ARRIVED', 'WON', 'LURE_RELEASED', 'QUIET_RETREAT', 'RESTORE_WINDOW', 'BREACH_WARNING', 'LOST', 'RUN_STARTED', 'BLACKOUT_STARTED', 'SENSOR_TREND', 'PAUSED', 'RESUMED', 'PROXIMITY_ALARM', 'ATTACK_COMMITTED', 'SCARE']);
+const EVENT_TYPES = new Set(['NEAR_LISTEN', 'TAUNT', 'DIRECTOR_APPLIED', 'DIRECTOR_REJECTED', 'DIRECTOR_REQUESTED', 'MEMORY_REPLAY', 'TASK_COMPLETE', 'WRONG_INPUT', 'FAULT_CLEARED', 'MEMORY_ARMED', 'FINAL_BROADCAST', 'FAULT_STARTED', 'MEMORY_READY', 'MEMORY_EXPIRED', 'LURE_TRANSMITTED', 'QUIET_ENTERED', 'RESTORED', 'APPROACH', 'LURE_ARRIVED', 'WON', 'LURE_RELEASED', 'QUIET_RETREAT', 'RESTORE_WINDOW', 'BREACH_WARNING', 'LOST', 'RUN_STARTED', 'BLACKOUT_STARTED', 'SENSOR_TREND', 'PAUSED', 'RESUMED', 'PROXIMITY_ALARM', 'ATTACK_COMMITTED', 'SCARE', 'MONSTER_STEP', 'QUIET_EXHAUSTED', 'QUIET_COOLDOWN', 'TIMEOUT', 'WIRE_CONNECTED']);
 export const DIRECTOR_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['requestId', 'stateVersion', 'tactic', 'target', 'evidenceEventIds', 'reasonCode', 'tauntId'],
@@ -64,6 +66,11 @@ function finite(value: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): number 
   if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) throw new Error('Invalid public number');
   return value;
 }
+function integer(value: unknown, min: number, max: number): number {
+  const number = finite(value, min, max);
+  if (!Number.isSafeInteger(number)) throw new Error('Invalid public integer');
+  return number;
+}
 function identity(value: unknown, limit = 160): string {
   if (typeof value !== 'string' || !value.length || value.length > limit || !/^[A-Za-z0-9][A-Za-z0-9_.:-]*$/.test(value)) throw new Error('Invalid public identity');
   return value;
@@ -77,7 +84,7 @@ export function publicEvent(event: PublicEvent): PublicEvent {
   if (type === 'RUN_STARTED' && /^(standard|demo|tutorial)$/.test(value)) detail = value;
   else if (type === 'FAULT_CLEARED' && /^(1|3)$/.test(value)) detail = value;
   else if (type === 'TASK_COMPLETE' && /^[1-4]$/.test(value)) detail = value;
-  else if (type === 'WRONG_INPUT' && /^(FAULT|MEMORY)$/.test(value)) detail = value;
+  else if (type === 'WRONG_INPUT' && /^(FAULT|MEMORY|WIRE)$/.test(value)) detail = value;
   else if (['LURE_TRANSMITTED', 'LURE_ARRIVED'].includes(type) && /^(EMITTER_A|EMITTER_B|CONTAINMENT)$/.test(value)) detail = value;
   else if (type === 'APPROACH' && value === 'SHELTER') detail = value;
   else if (type === 'BREACH_WARNING' && /^(6|8|10)$/.test(value)) detail = value;
@@ -87,6 +94,13 @@ export function publicEvent(event: PublicEvent): PublicEvent {
   else if (type === 'DIRECTOR_REJECTED' && /^(BAD_SHAPE|DUPLICATE|WRONG_REQUEST|EXPIRED|STALE_STATE|ILLEGAL_PHASE|ILLEGAL_PAIR|ILLEGAL_TAUNT|UNKNOWN_EVIDENCE|UNSUPPORTED_REASON)$/.test(value)) detail = value;
   else if (type === 'TAUNT' && (TAUNTS as readonly string[]).includes(value)) detail = value;
   else if (type === 'SCARE' && /^(impact|monitor|breach)$/.test(value)) detail = value;
+  else if (type === 'MONSTER_STEP') {
+    const match = /^from=(\d{1,2}) to=(\d{1,2}) step=(-?\d)$/.exec(value);
+    if (match) {
+      const from = Number(match[1]), to = Number(match[2]), step = Number(match[3]);
+      if (from <= config.line.length && to <= config.line.length && Math.abs(step) <= config.line.maximumStep && to - from === step) detail = `from=${from} to=${to} step=${step}`;
+    }
+  }
   return { id: identity(event.id), seq: finite(event.seq, 1), time: finite(event.time), type, detail };
 }
 
@@ -109,6 +123,7 @@ export function publicDirectorRequest(raw: DirectorRequest): DirectorRequest {
     observations: {
       equipmentState: member(observed.equipmentState, ['on', 'quiet', 'blackout']), researchStage: researchStage as DirectorRequest['observations']['researchStage'],
       creatureNode: member(observed.creatureNode, NODES), sedationBand: member(observed.sedationBand, ['SEDATED', 'RECOVERING', 'ALERT']),
+      linePosition: integer(observed.linePosition, 0, config.line.length), lineLength: integer(observed.lineLength, config.line.length, config.line.length), danger: finite(observed.danger, 0, 100), quietChargesRemaining: integer(observed.quietChargesRemaining, 0, config.shutdown.charges),
       machineryClue: finite(observed.machineryClue, 0, 1), transientClue: finite(observed.transientClue, 0, 1), physiologyClue: finite(observed.physiologyClue, 0, 0.18),
       sensor: { source: member(observed.sensor.source, ['presage', 'simulated', 'manual']), quality: member(observed.sensor.quality, ['accepted', 'rejected', 'unknown']), trend: member(observed.sensor.trend, TRENDS) },
       earnedLure: observed.earnedLure ? { target: member(observed.earnedLure.target, ['EMITTER_A', 'EMITTER_B', 'CONTAINMENT']), protectedUntilGameMs: finite(observed.earnedLure.protectedUntilGameMs) } : null,

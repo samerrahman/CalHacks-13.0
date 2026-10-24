@@ -40,9 +40,12 @@ test('visual scares require a current authoritative event and respect comfort se
 test('physical displays expose no breach warning or countdown text', () => {
   const lines: string[] = [], context = { fillRect() {}, clearRect() {}, fillText(text: string) { lines.push(text); }, createRadialGradient() { return { addColorStop() {} }; } };
   const display = { context, texture: { needsUpdate: false } } as unknown as Display;
-  const state: RenderState = { time: 10, power: 'on', stage: 1, faults: [], creature: { position: [0, 0, -3], distance: 3, phase: 'breach' }, warningRemaining: 1.25, alarm: { active: true, urgency: 1 }, cameraFeed: 'C' };
+  const state: RenderState = { time: 10, power: 'on', stage: 1, faults: [], creature: { position: [0, 0, -3], distance: 3, sensorDistance: 8, sensorSampleAt: 8, phase: 'breach' }, warningRemaining: 1.25, alarm: { active: true, urgency: 1 }, cameraFeed: 'C' };
   drawProximity(display, state); drawCameraOverlay(display, state);
-  assert.ok(lines.includes('3'), 'actual powered proximity remains visible');
+  assert.ok(lines.includes('8'), 'the last sampled distance is displayed');
+  assert.ok(!lines.includes('3'), 'the hidden current position is not leaked between samples');
   assert.doesNotMatch(lines.join(' '), /breach|warning|countdown|1\.25/i);
-  lines.length = 0; drawProximity(display, { ...state, power: 'blackout' }); assert.ok(!lines.includes('3'), 'blackout conceals the exact distance');
+  for (const power of ['blackout', 'quiet'] as const) {
+    lines.length = 0; drawProximity(display, { ...state, power }); assert.deepEqual(lines, [], 'unpowered detector is completely dark');
+  }
 });

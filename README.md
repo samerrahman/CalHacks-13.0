@@ -2,7 +2,7 @@
 
 LOCK IN is the root application. `npm run dev` opens this game; NIGHT RELAY remains only in its archived build kit and historical evidence.
 
-You are inside a sealed research shelter. Silence malfunctioning machines, calibrate two remote heartbeat emitters, then send the final broadcast and lead the escaped creature physically into containment. Its location drives the proximity detector, spatial sound and fictional security feeds. Early isolation buys a physical retreat. Once the creature commits at the wall, cutting power is too late. Optional pulse input adds a bounded close-range clue.
+You have five active minutes to finish the research and contain the creature outside a sealed shelter. Repair faults, drag matching cables into sockets, memorize signal sequences, and broadcast remote lures. The creature takes seeded random steps along a 0–24 line; time, mistakes, isolation use and accepted baseline-relative pulse elevation change its approach probability. Four isolation cells buy short diversions. Once an attack commits at the wall, cutting power is too late.
 
 ## Run
 
@@ -19,7 +19,7 @@ GEMINI_MODEL=gemini-3.5-flash-lite npm run desktop  # tested live model; leaves 
 npm run check            # tests, typecheck, browser build, Electron build
 npm run assets:validate  # hashes, actual GLB clips, WAVs, CCTV and decals
 npm run test:reference   # kit reference invariants
-npm run test:browser     # real-control Chrome tests; requires npm run dev separately
+LOCK_IN_TEST_URL=http://127.0.0.1:5173 npm run test:browser  # with dev running
 npm run test:desktop     # isolated offline Electron smoke, including second screen
 ```
 
@@ -34,31 +34,34 @@ On a fresh checkout use `npm ci`. Dependencies are pinned; this build was verifi
 | 1–4 / numbered buttons | Enter task choices while using the computer |
 | R | Replay the same sequence freely |
 | T | Transmit a calibrated lure / final containment broadcast |
-| Q | Isolate equipment; act on the alarm before the attack commits |
-| Hold F for 1 second | Restore power; wait for receding footsteps / the clear window |
+| Drag cables / select cable then socket | Reconnect matching symbols after each fault stage |
+| Q | Spend one of four isolation cells; ten-second duration, then automatic restoration |
+| Hold F for 1 second | Restore a blackout freely, or end isolation in its final restore window |
 | Restore button | Accessible one-click equivalent with cancel |
 | Station buttons / drag | Face equipment / look around the room |
 | Escape | Pause game time, sound and capture |
 | J | Open sanitized judge trace |
 
-Four completed research stages enable the final broadcast. A completed stage stays complete. A successful lure protects its physical route and arrival; a model cannot cancel it. A loss needs a real approach and nonphysiological sound evidence. The proximity alarm gives an early audible cue; there is no visible breach alert or countdown. Once the attack commits, Q, restoring power and lures cannot cancel it. Time alone cannot win. Sedation wears off during active play.
+The run begins with a 25-second grace period. Guided practice is nonlethal and does not use the run's timer or cells. The regular run has a five-minute deadline, including time spent with equipment off. Every shutdown consumes a cell, adds persistent exposure and triggers a cooldown after power returns. Fault and cable progress persists.
 
-The fault stages now require eight and twelve repairs, with up to two and three concurrent failures. Memory stages require five and six pulses, faster playback and a twenty-second response window. The creature accelerates during the run. Early defense keeps slower play viable. Jump scares include monitor disturbances, impacts and a dedicated creature breach frame. The opening and tutorial are skippable. Captions, neutral sensing, reduced motion, softer impact sounds, fixed memory tempo, volume and mute are available.
+The detector refreshes every four seconds and goes completely dark without power. The monster moves every 2.5 seconds, at most three units per step. A nearby alarm and matching captions continue during isolation; the local rules guarantee at least 2.5 seconds of near warning before an irreversible attack can commit. The display never shows a breach countdown. Intermediate lures bias movement outward; the final broadcast brings it to position24 and a three-second seal.
+
+Fault stages require eight/twelve repairs followed by four cable connections each. Memory stages use five/six cues, 0.42-second flashes and a sixteen-second response window. Replaying is free but costs time. Captions, neutral sensing, reduced motion, softer impacts, fixed memory tempo, volume and mute remain available. The friend's opening cutscene files are unchanged by this overhaul. See [tuning and balance](docs/BALANCE.md) for defaults, probabilities, fairness bounds and measured simulation results.
 
 ## Optional integrations and privacy
 
 Keep existing credentials in ignored `.env` / `.env.local`; `.env.example` lists names. Never prefix secret keys with `VITE_`. Provider keys stay in Node-side Vite middleware, Electron main or Convex actions. Local `npm run dev` calls the loopback-only provider bridge directly; it does not need Convex trace consent for voice. Static production browser hosting still needs a compatible Convex backend for provider calls.
 
-Gemini chooses legal observable tactics; local rules validate every reply and use a seeded fallback after an eight-second deadline. ElevenLabs receives exact authored captions; newly generated, cached and fallback speech have distinct labels. Use **Camera & pulse setup** before a run or the pulse button during play to select a device, view its mirrored local preview, calibrate and stop capture. Presage requires deliberate webcam selection and usable calibration. The preview uses the same video stream as the native adapter; it does not open a second camera. Missing or rejected measurements immediately produce neutral UNKNOWN physiology. Neither the model nor the shared trace receives raw pulse, memory answers or webcam frames.
+Gemini chooses validated, bounded probability biases; it never directly sets the creature position. An eight-second deadline falls back locally. Monster text is separately generated from public game events, then its exact caption is sent to ElevenLabs. Generated text, authored fallback, live voice and cached voice are labelled separately. A serial speech scheduler prevents overlapping narration and creature dialogue. Use **Camera & pulse setup** before a run or the pulse button during play to select a device, view its mirrored local preview, calibrate and stop capture. After 30 usable calibration seconds, Start calibrated game reuses the active stream. A corner preview displays accepted pulse, breathing, baseline delta and the pulse bar. Breathing has its own 30-second warm-up and quality status. The preview uses the same video stream as the native adapter; it does not open a second camera. Missing or rejected measurements immediately produce neutral UNKNOWN physiology. Neither the model nor the shared trace receives raw pulse, memory answers or webcam frames.
 
 Pulse recording and sanitized trace sharing have separate, unchecked opt-ins. Local reports show accepted measurements with gaps, event timing and conservative supported change/recovery. Simulated reports say SIMULATED. They do not infer fear or diagnose anything. Run deletion clears in-memory history and attempts deletion of the consenting remote session; remote failure is reported.
 
-New live check: the monster’s ElevenLabs line generated in 185 ms and decoded/started during a real browser encounter. Earlier LOCK IN verification accepted a Gemini 3.5 Flash-Lite tactic in 928 ms; the saved 3.8 model timed out. The temporary launch override above uses the previously tested model. Presage remains blocked by CAMERA_NOT_FOUND (macOS reports zero camera devices), and the reachable Convex deployment lacks the public LOCK IN `sessions:version` function. Local/manual play and local judge sharing pass.
+The generated-monster pipeline was tested live before this overhaul: the final corrected narrative probe used Gemini in891ms and ElevenLabs in359ms, with decoded audio matching the exact generated caption. Those timings are historical evidence, not a new live test of this rule revision. The user reports successful Presage calibration; the latest reliability fixes have automated packet/lifecycle coverage but have not yet been verified against a fresh live camera session. The existing Convex deployment previously lacked the required LOCK IN functions; this revision prepares the v2 trace contract locally without deploying it.
 
 See [current integration status](docs/INTEGRATION_STATUS.md) and [verification handoff](docs/HANDOFF.md) for actual new-game evidence and external blockers. Old NIGHT RELAY results do not count as LOCK IN live tests. Do not run Convex provisioning/deployment automatically; use the existing project in your own terminal when required.
 
 ## Implementation and assets
 
-React handles menus and overlays; Three.js renders the sealed shelter. `src/game/` owns fixed-step authority, seeded faults/memory, logical routes, quiet/lure protections and validated director tactics. `src/report/` analyzes optional in-memory pulse history. `electron/` contains the isolated native/provider bridge; `convex/` contains consented sessions and capability-checked functions.
+React handles menus and overlays; Three.js renders the sealed shelter. `src/game/` owns fixed-step authority, seeded faults/wires/memory, integer movement probabilities, danger, deadline, finite isolation and validated director biases. `src/report/` analyzes optional in-memory pulse history. `electron/` contains the isolated native/provider bridge; `convex/` contains consented sessions and capability-checked functions.
 
 Runtime assets include 10 GLBs, 11 animation clips, 27 original mono WAV effects, 7 SVG decals, 4 generated CCTV backgrounds and one generated breach-scare image. Deterministic rust/grime textures and dim amber/red lighting give the room its darker industrial treatment. Their provenance, licenses and actual uses are documented in [ASSETS](docs/ASSETS.md). Creature geometry is CCTV-only. The security feed is fiction, distinct from optional webcam sensing. The kit and its ZIP remain available as design/reference archives.

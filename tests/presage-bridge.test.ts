@@ -11,6 +11,8 @@ async function harness() {
   let delayStop: Promise<void> = Promise.resolve();
   class FakeSDK {
     callbacks = new Map<string, (...args: unknown[]) => void>();
+    frameFailure: unknown = null;
+    frames = 0;
     constructor(readonly options: unknown) { instances.push(this); history.push('construct'); }
     on(name: string, callback: (...args: unknown[]) => void) { this.callbacks.set(name, callback); }
     emit(name: string, ...args: unknown[]) { this.callbacks.get(name)?.(...args); }
@@ -18,7 +20,7 @@ async function harness() {
     start() { history.push('start'); }
     stopAsync() { history.push('stop'); return delayStop; }
     async destroy() { history.push('destroy'); }
-    sendFrame() { return true; }
+    sendFrame() { this.frames++; if (this.frameFailure) throw this.frameFailure; return true; }
   }
   const fixture = { ipcMain, require: (name: string) => name.endsWith('/main') ? { bindSmartSpectraIpc() {} } : { SmartSpectraSDK: FakeSDK, MetricType: { PULSE_RATE: 15, BREATHING_RATE: 2 } } };
   const result = await build({ entryPoints: ['electron/presageAdapter.ts'], bundle: true, platform: 'node', format: 'cjs', write: false, logLevel: 'silent', plugins: [{ name: 'isolated-native-fixture', setup(builder) {
@@ -80,5 +82,23 @@ test('replacement on a new renderer port retires old SDK before constructing, ev
     assert.ok(h.history.indexOf('destroy') < h.history.lastIndexOf('construct'));
     const count = h.port.messages.length; h.instances[0]!.emit('processingStatus', 5);
     assert.equal(h.port.messages.length, count);
+  } finally { h.unbind(); await flush(); }
+});
+
+test('transient native frame timestamp rejection drops only that frame; actual processing error still terminates', async () => {
+  const h = await harness();
+  try {
+    h.send({ kind: 'configure' }); h.send({ kind: 'start', replyId: 1 }); await flush();
+    const sdk = h.instances[0]!;
+    const frame = (timestampUs: number) => ({ kind: 'frame', buffer: new ArrayBuffer(4), width: 1, height: 1, stride: 4, pixelFormat: 2, timestampUs });
+    sdk.frameFailure = Object.assign(new Error('Frame timestamp gap'), { code: 11 }); h.send(frame(1000));
+    sdk.frameFailure = Object.assign(new Error('Nonmonotonic frame timestamp'), { code: 10 }); h.send(frame(2000));
+    sdk.frameFailure = null; h.send(frame(3000));
+    assert.equal(sdk.frames, 3, 'capture remains active for the next valid frame');
+    assert.equal(h.port.messages.filter(packet => packet.kind === 'error').length, 0);
+    assert.equal(h.port.messages.filter(packet => packet.kind === 'frameSentThrough' && packet.sent === false).length, 2);
+    sdk.frameFailure = Object.assign(new Error('Native processing failed'), { code: 8 }); h.send(frame(4000)); h.send(frame(5000));
+    assert.equal(sdk.frames, 4, 'terminal errors still stop subsequent frame submission');
+    assert.equal(h.port.messages.find(packet => packet.kind === 'error')?.code, 8);
   } finally { h.unbind(); await flush(); }
 });

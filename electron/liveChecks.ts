@@ -7,6 +7,7 @@ import { makeFunctionReference } from 'convex/server';
 import { geminiProposal, elevenSpeech, providerFailure } from '../src/integrations/providers';
 import { createDirectorProbe, validateDirectorProbe } from './liveCheckValidation';
 import type { DirectorProposal } from '../src/game/state';
+import { TRACE_SCHEMA_VERSION } from '../src/integrations/contracts';
 
 const selected = process.argv.find(value => value.startsWith('--only='))?.slice(7) ?? 'native';
 if (!['native', 'gemini', 'elevenlabs', 'convex'].includes(selected)) throw new Error('Use --only=native|gemini|elevenlabs|convex');
@@ -66,7 +67,7 @@ if (selected === 'convex') {
     let sessionId: string | null = null;
     try {
       const version = await client.query(makeFunctionReference<'query'>('sessions:version'), {});
-      if (version?.schemaVersion !== 'lock-in-v1') throw new Error('Existing deployment needs LOCK IN provisioning');
+      if (version?.schemaVersion !== TRACE_SCHEMA_VERSION) throw new Error('Existing deployment needs current LOCK IN provisioning');
       sessionId = await client.mutation(makeFunctionReference<'mutation'>('sessions:create'), { ownerCapability, judgeCapability, consent: true, seed: 17, mode: 'integration-smoke' });
       await client.query(makeFunctionReference<'query'>('sessions:get'), { sessionId, capability: judgeCapability });
       let denied = false;
@@ -75,7 +76,7 @@ if (selected === 'convex') {
       results.convex = { status: 'passed', checkedAt, detail: 'Existing LOCK IN deployment version, consenting session, judge read and capability isolation passed. Reactive/reconnect UI proof separate.' };
     } catch (error) {
       // Inspect only to classify; never emit the remote error body or URL.
-      const missingFunctions = error instanceof Error && /Could not find public function|Could not find function|No function found|needs LOCK IN provisioning/.test(error.message);
+      const missingFunctions = error instanceof Error && /Could not find public function|Could not find function|No function found|needs (?:current )?LOCK IN provisioning/.test(error.message);
       results.convex = { status: 'blocked', checkedAt, category: missingFunctions ? 'FUNCTIONS_NOT_PROVISIONED' : 'DEPLOYMENT_UNAVAILABLE', detail: missingFunctions ? 'Existing deployment lacks compatible LOCK IN functions. Human provisioning required; no dev/env/deploy CLI commands were run.' : 'Existing deployment unavailable or incompatible. No dev/env/deploy CLI commands were run; local trace remains available.' };
     }
     finally { if (sessionId) try { await client.mutation(makeFunctionReference<'mutation'>('sessions:remove'), { sessionId, capability: ownerCapability }); } catch { results.convex = { status: 'failed', checkedAt, detail: 'Smoke session deletion failed; retry owner deletion before demo' }; } }

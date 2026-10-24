@@ -1,6 +1,18 @@
 import { config } from './config';
 import { applyLure, contextualTaunt } from './creature';
-import { emit, random, type GameState, type MemoryState, type Stage } from './state';
+import { emit, random, type GameState, type MemoryState, type Stage, type WireState } from './state';
+
+export function emptyWires(): WireState { return { targetOrder: [], connections: [] }; }
+function createWires(state: GameState): WireState {
+  const targetOrder = [0, 1, 2, 3];
+  for (let i = targetOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(random(state) * (i + 1));
+    [targetOrder[i], targetOrder[j]] = [targetOrder[j], targetOrder[i]];
+  }
+  // A straight-through board would reduce this to four horizontal gestures.
+  if (targetOrder.every((value, i) => value === i)) targetOrder.push(targetOrder.shift()!);
+  return { targetOrder, connections: [-1, -1, -1, -1] };
+}
 
 export function emptyMemory(): MemoryState {
   return { sequence: [], input: [], playbackIndex: 0, cue: null, playbackElapsed: 0, playing: false, tempo: 1, responseElapsed: 0, armed: false, needsReplay: false };
@@ -23,11 +35,13 @@ export function replayMemory(state: GameState, keepInput = false): void {
 }
 export function startStage(state: GameState, stage: Stage): void {
   state.tasks.stage = stage; state.tasks.stageStarted = state.time; state.version++;
+  state.tasks.wires = emptyWires();
   if (stage === 1 || stage === 3) {
     const settings = stage === 1 ? config.tasks.stage1 : config.tasks.stage3;
     state.tasks.faults = { active: [Math.floor(random(state) * 4)], completed: 0, required: settings.required, spawned: 1, spawnElapsed: 0, maximumActive: settings.maxActive };
     state.tasks.memory = emptyMemory();
-    state.notice = stage === 1 ? 'Silence eight faults. Use Q before the approach reaches the wall.' : 'Twelve overload faults. Up to three boxes can be active.';
+    state.tasks.wires = createWires(state);
+    state.notice = stage === 1 ? 'Clear eight faults, then reconnect the four cables. Q uses a limited isolation charge.' : 'Twelve overload faults, then a new wiring board. Listen while you work.';
   } else if (stage === 2 || stage === 4) {
     state.tasks.faults.active = [];
     state.tasks.memory = { ...emptyMemory(), sequence: sequenceFor(state) };
@@ -41,18 +55,35 @@ function completeStage(state: GameState): void {
   const stage = state.tasks.stage;
   if (state.tasks.completedStages.includes(stage)) return;
   state.tasks.completedStages.push(stage);
+  state.pressure = Math.max(0, state.pressure - config.danger.stageRelief);
   state.transients.push({ at: state.time, strength: config.tasks.completionStrength, duration: config.tasks.completionDecaySeconds });
   emit(state, 'TASK_COMPLETE', String(stage));
 }
-function mistake(state: GameState, kind: 'FAULT' | 'MEMORY'): void {
+function mistake(state: GameState, kind: 'FAULT' | 'MEMORY' | 'WIRE'): void {
   // Reducer rate limit covers rapid repeated buttons, not only keyboard repeat.
   const last = [...state.events].reverse().find(event => event.type === 'WRONG_INPUT');
   if (!last || state.time - last.time >= .25) {
     state.transients.push({ at: state.time, strength: config.tasks.mistakeStrength, duration: config.tasks.mistakeDecaySeconds });
     emit(state, 'WRONG_INPUT', kind);
+    state.pressure = Math.min(config.danger.pressureMaximum, state.pressure + config.danger.mistakePressure);
     contextualTaunt(state, 'AFTER_MISTAKE');
   }
-  state.notice = kind === 'FAULT' ? 'That box was quiet. Press a box marked FAULT.' : `Sequence mismatch. Repeat all ${state.tasks.memory.sequence.length} inputs. R replays for free.`;
+  state.notice = kind === 'FAULT' ? 'That box was quiet. Press a box marked FAULT.' : kind === 'WIRE' ? 'Wrong terminal. The relay sparked. Match each cable symbol to its socket.' : `Sequence mismatch. Repeat all ${state.tasks.memory.sequence.length} inputs. R replays for free.`;
+}
+/** Matching is validated here, including keyboard clicks and pointer drops. */
+export function connectWire(state: GameState, from: number, to: number): void {
+  if (state.equipment !== 'on' || state.station !== 'terminal' || ![1, 3].includes(state.tasks.stage)
+    || state.tasks.faults.completed < state.tasks.faults.required || !Number.isInteger(from) || !Number.isInteger(to)
+    || from < 0 || from > 3 || to < 0 || to > 3) return;
+  const wires = state.tasks.wires;
+  if (wires.connections[from] !== -1) return;
+  if (wires.targetOrder[to] !== from) { mistake(state, 'WIRE'); return; }
+  wires.connections[from] = to;
+  state.pressure = Math.max(0, state.pressure - config.danger.successRelief);
+  emit(state, 'WIRE_CONNECTED');
+  const complete = wires.connections.filter(value => value >= 0).length;
+  state.notice = `${complete} / 4 cables connected.`;
+  if (complete === 4) { const stage = state.tasks.stage; completeStage(state); startStage(state, stage === 1 ? 2 : 4); }
 }
 export function taskInput(state: GameState, value: number): void {
   if (state.equipment !== 'on' || state.station !== 'terminal' || !Number.isInteger(value) || value < 1 || value > 4) return;
@@ -62,9 +93,10 @@ export function taskInput(state: GameState, value: number): void {
     if (faults.completed >= faults.required) return;
     if (!faults.active.includes(index)) { mistake(state, 'FAULT'); return; }
     faults.active = faults.active.filter(fault => fault !== index); faults.completed++;
+    state.pressure = Math.max(0, state.pressure - config.danger.successRelief);
     emit(state, 'FAULT_CLEARED', String(stage));
     state.notice = `${faults.completed} / ${faults.required} faults resolved.`;
-    if (faults.completed >= faults.required) { completeStage(state); startStage(state, stage === 1 ? 2 : 4); }
+    if (faults.completed >= faults.required) state.notice = 'Faults cleared. Drag each cable to its matching symbol to restore the relay.';
     return;
   }
   if (stage !== 2 && stage !== 4) return;

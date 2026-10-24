@@ -88,7 +88,14 @@ export function bindPresage(window: BrowserWindow): () => void {
           // pixel formats, dimensions, timestamps, files or shell access.
           if (!(d.buffer instanceof ArrayBuffer) || !Number.isInteger(d.width) || !Number.isInteger(d.height) || d.width < 1 || d.width > 1920 || d.height < 1 || d.height > 1080 || d.stride !== d.width * 4 || d.pixelFormat !== 2 || d.buffer.byteLength !== d.stride * d.height || !Number.isSafeInteger(d.timestampUs) || d.timestampUs <= lastTimestamp) { post({ kind: 'frameSentThrough', sent: false, timestampUs: Number.isSafeInteger(d.timestampUs) ? d.timestampUs : 0 }); return; }
           lastTimestamp = d.timestampUs;
-          try { sdk.sendFrame(new Uint8Array(d.buffer), d.width, d.height, d.stride, 2, d.timestampUs); } catch (error) { post({ kind: 'frameSentThrough', sent: false, timestampUs: d.timestampUs }); fail(typeof (error as { code?: number })?.code === 'number' ? (error as { code: number }).code : 0, error); }
+          try { sdk.sendFrame(new Uint8Array(d.buffer), d.width, d.height, d.stride, 2, d.timestampUs); } catch (error) {
+            post({ kind: 'frameSentThrough', sent: false, timestampUs: d.timestampUs });
+            const code = typeof (error as { code?: number })?.code === 'number' ? (error as { code: number }).code : 0;
+            // Vendor 3.4 main bridge drops transient frame ordering failures.
+            // One delayed frame must not close capture and restart both metric
+            // analysis windows. Native terminal error events still use fail().
+            if (code !== 10 && code !== 11) fail(code, error);
+          }
         } else if (typeof d.replyId === 'number') ack(d.replyId, false, 'Unsupported sensor operation');
       } catch (error) { fail(0, error); ack(d.replyId, false, firstError ?? 'Sensor unavailable'); }
     });

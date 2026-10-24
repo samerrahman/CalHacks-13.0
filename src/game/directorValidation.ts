@@ -1,5 +1,5 @@
 import { config, currentSedation } from './config';
-import { beginApproach, lureProtected, routeTo, setPhase } from './creature';
+import { lureProtected } from './creature';
 import { emit, random, type DirectorPair, type DirectorProposal, type DirectorRequest, type GameState, type ReasonCode, type Tactic, type Target, type TauntId } from './state';
 
 export const DIRECTOR_TIMEOUT_MS = config.director.responseBudgetMs;
@@ -10,7 +10,7 @@ const REASONS: ReasonCode[] = ['RECENT_SOUND', 'PATTERN_OF_MISTAKES', 'QUIET_AFT
 const TAUNTS: TauntId[] = ['NONE', 'AFTER_MISTAKE', 'MACHINES_QUIET', 'HEARD_RHYTHM', 'LURE_FOLLOWED'];
 export function allowedPairs(state: GameState): DirectorPair[] {
   const pairs: DirectorPair[] = [{ tactic: 'WAIT', target: 'NONE' }];
-  if (state.mode === 'tutorial' || state.status !== 'playing' || state.paused) return pairs;
+  if (state.mode === 'tutorial' || state.time < config.line.graceSeconds || state.status !== 'playing' || state.paused) return pairs;
   const c = state.creature;
   if (c.warning) return pairs;
   const mayTaunt = state.director.tauntCount < 7 && state.time - state.director.lastTauntAt >= 25 && allowedTaunts(state).some(id => id !== 'NONE');
@@ -26,7 +26,7 @@ export function allowedPairs(state: GameState): DirectorPair[] {
 export function allowedTactics(state: GameState): Tactic[] { return [...new Set(allowedPairs(state).map(pair => pair.tactic))]; }
 export function allowedTaunts(state: GameState): TauntId[] {
   const ids: TauntId[] = ['NONE'];
-  if (state.creature.distance > 10 || state.creature.warning) return ids;
+  if (state.time < config.line.graceSeconds || state.creature.distance > 10 || state.creature.warning) return ids;
   if (state.events.some(event => event.type === 'WRONG_INPUT' && state.time - event.time < 30)) ids.push('AFTER_MISTAKE');
   if (state.equipment === 'quiet') ids.push('MACHINES_QUIET');
   if (state.clues.physiology > 0 && state.sensor.quality === 'accepted' && state.sensor.trend === 'ELEVATED' && state.creature.distance <= config.threat.nearPhysiologyRangeM && state.equipment !== 'quiet') ids.push('HEARD_RHYTHM');
@@ -53,6 +53,7 @@ export function buildDirectorRequest(state: GameState): DirectorRequest {
       sedationBand: currentSedation(state).band as DirectorRequest['observations']['sedationBand'],
       machineryClue: state.clues.machinery, transientClue: state.clues.transient, physiologyClue: state.clues.physiology,
       sensor: { ...state.sensor },
+      linePosition: state.creature.linePosition, lineLength: config.line.length, danger: state.danger, quietChargesRemaining: state.shutdown.chargesRemaining,
       earnedLure: state.creature.lure && lureProtected(state) ? { target: state.creature.lure.target, protectedUntilGameMs: Math.round(state.creature.lure.protectedUntil * 1000) } : null,
     },
   };
@@ -81,23 +82,17 @@ export function isDirectorProposal(value: unknown, state: GameState): value is D
 function commit(state: GameState, proposal: DirectorProposal, source: 'GEMINI' | 'FALLBACK'): void {
   const c = state.creature;
   switch (proposal.tactic) {
-    case 'INVESTIGATE_SOUND': beginApproach(state); break;
-    case 'CIRCLE_SHELTER':
-      c.approachStarted = null; setPhase(state, 'circle', 'SHELTER');
-      routeTo(state, c.node === 'WEST_WALL' ? 'EAST_WALL' : 'WEST_WALL'); break;
-    case 'LISTEN_NEAR': c.approachStarted = null; setPhase(state, 'listen', 'SHELTER', 4); emit(state, 'NEAR_LISTEN'); break;
-    case 'FOLLOW_LURE':
-      if (c.lure) { setPhase(state, 'lured', c.lure.target); routeTo(state, c.lure.target); } break;
-    case 'RETREAT':
-      c.approachStarted = null; c.recoveryUntil = Math.max(c.recoveryUntil, state.time + config.threat.minimumRecoverySeconds);
-      setPhase(state, 'retreat', 'NONE'); routeTo(state, c.distance < 12 ? 'NEAR_PATH' : 'JUNCTION'); break;
-    case 'WAIT':
-      if (state.equipment !== 'quiet' && !lureProtected(state) && !c.warning) { setPhase(state, 'search', 'NONE', 2); c.approachStarted = null; }
-      break;
+    case 'INVESTIGATE_SOUND': c.tacticBias = -config.lineBias.providerMaximum; break;
+    case 'CIRCLE_SHELTER': c.tacticBias = -config.lineBias.providerMaximum / 2; break;
+    case 'LISTEN_NEAR': c.tacticBias = -config.lineBias.providerMaximum / 4; emit(state, 'NEAR_LISTEN'); break;
+    case 'FOLLOW_LURE': c.tacticBias = config.lineBias.providerMaximum; break;
+    case 'RETREAT': c.tacticBias = config.lineBias.providerMaximum; break;
+    case 'WAIT': c.tacticBias = 0; break;
     case 'TAUNT':
       state.director.lastTauntAt = state.time; state.director.tauntCount++;
       emit(state, 'TAUNT', proposal.tauntId); break;
   }
+  if (proposal.tactic !== 'TAUNT') c.biasUntil = state.time + config.lineBias.providerDurationSeconds;
   state.director.lastTactic = proposal.tactic; state.director.lastTarget = proposal.target;
   state.director.lastEvidenceIds = [...proposal.evidenceEventIds]; state.director.tauntId = proposal.tauntId;
   state.director.source = source;

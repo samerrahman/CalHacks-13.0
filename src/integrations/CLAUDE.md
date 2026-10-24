@@ -6,6 +6,7 @@
 - Structured output: `config.responseMimeType: 'application/json'` plus `config.responseJsonSchema` (plain JSON Schema). Narrow the tactic enum to the legal set per request. The model only proposes; the reducer revalidates.
 - Don't send `temperature`/`topP`/`topK`, which newer models reject. Flash-Lite supports `thinkingLevel: MINIMAL`. Never set `thinkingLevel` and `thinkingBudget` together.
 - Timeouts reject with `AbortError`, and HTTP failures throw `ApiError` (`.status`). Every failure falls back to the seeded director and is labeled FALLBACK.
+- Number-line tactics only map to the local configured temporary probability bias. Never accept model positions, steps, probabilities, timers or attacks. Public observations add only `linePosition`, `lineLength`, `danger`, and `quietChargesRemaining`; danger is fictional difficulty. Project events through the finite whitelist and validate `MONSTER_STEP` arithmetic. Wire colors/endpoints/answers, movement RNG, detector sample clocks and raw physiology stay out.
 
 ## Contextual monster dialogue and speech
 - `requestMonster` sends only a known trigger and projected public game context. Gemini returns a structured sentence with actual public event IDs as evidence. Validate it before sending that exact caption to ElevenLabs inside the trusted process. Never expose an arbitrary-text TTS bypass to the renderer.
@@ -17,3 +18,4 @@
 
 ## Convex client
 - Always create it with `convexOptions` (`unsavedChangesWarning: false`). Otherwise its beforeunload handler can block closing the Electron window while a mutation is pending.
+- `TRACE_SCHEMA_VERSION` is now `lock-in-v2`: number-line position, danger and isolation charges replace the old metre-labelled trace distance. Client and server share this compatibility gate. This revision has not been deployed or verified remotely; do not run Convex provisioning CLI commands.

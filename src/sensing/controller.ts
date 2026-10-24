@@ -2,6 +2,7 @@ import { Baseline } from './baseline';
 import { TrendTracker } from './trend';
 import { NativeMetricStream } from './nativeMetrics';
 import { sanitizeSensorError } from './sensorError';
+import { validationBlocksMetric } from './metricPolicy';
 import { simulatedSample } from './simulated';
 import { acceptedPulse, type SensorMode, type SensorSample, type SensorView } from './types';
 import type { SmartSpectraSDK } from '@smartspectra/node-sdk/renderer';
@@ -62,6 +63,19 @@ export class SensorController {
     this.sampleListeners.forEach(listener => listener({ ...sample, qualityReasons: [...sample.qualityReasons] }, this.captureSegment));
     this.publish();
   }
+  private applyValidation(code: number, hint: string): void {
+    const changed = code !== this.native.validation.code || hint !== this.native.validation.hint;
+    this.native.setValidation(code, hint || (code === 0 ? 'Capture validated' : `Capture validation ${code}`));
+    if (validationBlocksMetric(code, 'pulse') && this.sample) {
+      this.sample = { ...this.sample, quality: 'rejected', qualityReasons: [this.native.validation.hint] };
+      this.baseline.discardContinuity();
+      // Immediately withhold the current reading, but don't erase historical
+      // accepted measurements for a single frame's validation warning. Only a
+      // new accepted metric may resume influence; rejected metrics and >5 s
+      // gaps still make TrendTracker return UNKNOWN for its whole window.
+    }
+    this.publishDiagnostics(changed);
+  }
   async start(mode: SensorMode, preserveBaseline = false): Promise<void> {
     if (this.disposed) return;
     const generation = ++this.generation;
@@ -105,10 +119,7 @@ export class SensorController {
       });
       sdk.on('validationStatus', (code, _timestamp, hint) => {
         if (generation !== this.generation) return;
-        const changed = code !== this.native.validation.code || hint !== this.native.validation.hint;
-        this.native.setValidation(code, hint || (code === 0 ? 'Capture validated' : `Capture validation ${code}`));
-        if (code !== 0 && this.sample) { this.sample = { ...this.sample, quality: 'rejected', qualityReasons: [this.native.validation.hint] }; this.trends.discard(); this.baseline.discardContinuity(); }
-        this.publishDiagnostics(changed);
+        this.applyValidation(code, hint);
       });
       sdk.on('metrics', buffer => {
         if (generation !== this.generation) return;

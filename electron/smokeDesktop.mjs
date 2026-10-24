@@ -15,6 +15,14 @@ try {
  await page.getByRole('button', { name: /Skip guidance & start/ }).waitFor({ state: 'visible', timeout: 30000 });
  result.bridge = await page.evaluate(() => window.lockIn.status());
  if (!result.bridge.offline || result.bridge.gemini || result.bridge.elevenlabs || result.bridge.presage) throw new Error('Offline transport gate did not apply');
+ result.monsterBridgeType = await page.evaluate(() => typeof window.lockIn.monster);
+ if (result.monsterBridgeType !== 'function') throw new Error('Contextual dialogue bridge missing');
+ // This exercises only the offline IPC route; it never mutates game state.
+ result.offlineMonster = await page.evaluate(async () => {
+  const value = await window.lockIn.monster({ requestId: 'offline-ipc-monster', fallbackId: 'FIRST_APPROACH', expiresAtMs: Date.now() + 25000, context: { requestId: 'offline-context', stateVersion: 0, issuedAtGameMs: 0, expiresAtGameMs: 8000, allowedTactics: ['WAIT'], allowedTargets: ['NONE'], allowedTauntIds: ['NONE'], allowedPairs: [{ tactic: 'WAIT', target: 'NONE' }], publicEventIds: ['e1'], events: [{ id: 'e1', seq: 1, time: 0, type: 'RUN_STARTED', detail: 'standard' }], observations: { equipmentState: 'on', researchStage: 1, creatureNode: 'NEAR_PATH', sedationBand: 'SEDATED', machineryClue: 0, transientClue: 0, physiologyClue: 0, linePosition: 18, lineLength: 24, danger: 18, quietChargesRemaining: 4, sensor: { source: 'manual', quality: 'unknown', trend: 'UNKNOWN' }, earnedLure: null } } });
+  return { textSource: value.textSource, speechSource: value.speech.source, hasAudio: value.speech.audioBase64 !== null, caption: value.caption, reason: value.textReason };
+ });
+ if (result.offlineMonster.textSource !== 'authored-fallback' || result.offlineMonster.speechSource !== 'fallback' || result.offlineMonster.hasAudio) throw new Error('Offline contextual dialogue gate failed');
  await page.getByRole('button', { name: /Camera & pulse setup/ }).click();
  const cameraPanel = page.getByRole('region', { name: 'Personal camera and pulse calibration' });
  await cameraPanel.getByText('Camera off', { exact: true }).waitFor();

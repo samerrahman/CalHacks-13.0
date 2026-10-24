@@ -20,14 +20,12 @@ try{
  const audio=page.getByTestId('audio-diagnostics');
  await expect(page.locator('.radio-caption')).toContainText('Eight faults.',{timeout:6000});
  result.initialInstruction=await page.locator('.radio-caption p').innerText();
- await expect(page.locator('.trace-list')).toContainText('PROXIMITY_ALARM',{timeout:6000});
+ await expect(page.locator('.radio-caption')).toHaveCount(0,{timeout:20000});
+ result.initialInstructionCompletedBeforeMonster=true;
+ await expect(page.locator('.trace-list')).toContainText('PROXIMITY_ALARM',{timeout:120000});
  await page.keyboard.press('q');
  await expect(page.locator('.trace-list')).toContainText('QUIET_ENTERED');
- await expect.poll(()=>result.monsterResponses.some(value=>value.textSource==='gemini'&&value.speech.source==='elevenlabs'),{timeout:8000}).toBe(true);
- await expect(page.locator('.radio-caption')).toContainText('Eight faults.');
- const duringInstruction=JSON.parse(await audio.textContent());
- expect(duringInstruction.startedSpeech).toBe(1);
- result.instructionProtectedWhileMonsterReady=true;result.audioWhileMonsterQueued=duringInstruction;
+ await expect.poll(()=>result.monsterResponses.some(value=>value.textSource==='gemini'&&value.speech.source==='elevenlabs'),{timeout:14000}).toBe(true);
  await expect(page.locator('.creature-voice')).toContainText('GEMINI GENERATED',{timeout:30000});
  await expect.poll(()=>result.monsterResponses.some(value=>value.textSource==='gemini'&&value.speech.source==='elevenlabs'),{timeout:1000}).toBe(true);
  const live=result.monsterResponses.find(value=>value.textSource==='gemini'&&value.speech.source==='elevenlabs');

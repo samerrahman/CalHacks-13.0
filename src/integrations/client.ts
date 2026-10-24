@@ -2,8 +2,9 @@ import { ConvexClient } from 'convex/browser';
 import { makeFunctionReference } from 'convex/server';
 import type { GameState, DirectorRequest, PublicEvent } from '../game/state';
 import type { SensorView } from '../sensing/types';
-import { publicDirectorRequest, publicEvent, publicMonsterRequest, authoredMonsterFallback, MONSTER_TOTAL_TIMEOUT_MS, type MonsterRequest, type MonsterResult, type DirectorResult, type SpeechRequest, type SpeechResult, type IntegrationStatus } from './contracts';
+import { publicDirectorRequest, publicEvent, publicMonsterRequest, authoredMonsterFallback, MONSTER_TOTAL_TIMEOUT_MS, TRACE_SCHEMA_VERSION, type MonsterRequest, type MonsterResult, type DirectorResult, type SpeechRequest, type SpeechResult, type IntegrationStatus } from './contracts';
 import { DIRECTOR_TIMEOUT_MS } from '../game/directorValidation';
+import { config } from '../game/config';
 
 // The default beforeunload guard silently cancels closing an Electron window while a write is pending.
 const convexOptions = { unsavedChangesWarning: false, logger: false };
@@ -65,10 +66,10 @@ export async function requestMonster(request: MonsterRequest): Promise<MonsterRe
   } catch { return authoredMonsterFallback(request, 'Contextual dialogue unavailable · authored fallback'); }
 }
 
-export type TraceSummary = { time: number; stage: number; status: string; equipment: string; creatureNode: string; creaturePhase: string; distanceM: number; tactic: string; target: string; proposalSource: string; sensorSource: string; sensorQuality: string; trend: string; sensorAgeMs: number | null };
+export type TraceSummary = { time: number; stage: number; status: string; equipment: string; creatureNode: string; creaturePhase: string; linePosition: number; lineLength: number; danger: number; quietChargesRemaining: number; tactic: string; target: string; proposalSource: string; sensorSource: string; sensorQuality: string; trend: string; sensorAgeMs: number | null };
 export type TraceSnapshot = { seed: number; mode: string; summary: TraceSummary; events: PublicEvent[]; transport: 'local' | 'convex' };
 export function sanitizedTrace(state: GameState, sensor: SensorView): TraceSnapshot {
-  return { seed: state.seed, mode: state.mode, summary: { time: state.time, stage: state.tasks.stage, status: state.status, equipment: state.equipment, creatureNode: state.creature.node, creaturePhase: state.creature.phase, distanceM: Math.round(state.creature.distance * 10) / 10, tactic: state.director.lastTactic, target: state.director.lastTarget, proposalSource: state.director.source, sensorSource: sensor.source, sensorQuality: sensor.quality, trend: state.trend, sensorAgeMs: sensor.ageMs === null ? null : Math.round(sensor.ageMs) }, events: state.events.slice(-100).map(publicEvent), transport: 'local' };
+  return { seed: state.seed, mode: state.mode, summary: { time: state.time, stage: state.tasks.stage, status: state.status, equipment: state.equipment, creatureNode: state.creature.node, creaturePhase: state.creature.phase, linePosition: state.creature.linePosition, lineLength: config.line.length, danger: Math.round(state.danger), quietChargesRemaining: state.shutdown.chargesRemaining, tactic: state.director.lastTactic, target: state.director.lastTarget, proposalSource: state.director.source, sensorSource: sensor.source, sensorQuality: sensor.quality, trend: state.trend, sensorAgeMs: sensor.ageMs === null ? null : Math.round(sensor.ageMs) }, events: state.events.slice(-100).map(publicEvent), transport: 'local' };
 }
 function token(): string { return Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join(''); }
 type JudgeAccess = { channel: string; sessionId?: string; capability?: string; convexUrl?: string };
@@ -102,7 +103,7 @@ export class TraceBridge {
       if (generation !== this.generation || this.disposed) return;
       this.client = new ConvexClient(url, convexOptions);
       const version = await this.client.query(makeFunctionReference<'query'>('sessions:version'), {});
-      if (version?.schemaVersion !== 'lock-in-v1') throw new Error('Deployment needs LOCK IN functions');
+      if (version?.schemaVersion !== TRACE_SCHEMA_VERSION) throw new Error('Deployment needs current LOCK IN functions');
       if (generation !== this.generation || this.disposed) return;
       this.sessionId = await this.client.mutation(makeFunctionReference<'mutation'>('sessions:create'), { ownerCapability: this.owner, judgeCapability: this.judge, consent: true, seed, mode });
       if (this.disposed || generation !== this.generation) { await this.deleteSession(); return; }

@@ -4,7 +4,7 @@ import { projectCreature, type CameraFeed, type WorldPosition } from './cctv';
 
 test('CCTV projects the actual graph position onto the corresponding authored feed anchors', () => {
   const cases: [CameraFeed, WorldPosition, number, number][] = [
-    ['A', [0, 0, -26], .79, .71], ['A', [-8, 0, -30], .53, .58], ['A', [-16, 0, -34], .37, .52],
+    ['A', [0, 0, -12], .79, .71], ['A', [0, 0, -19], .53, .58], ['A', [0, 0, -26], .37, .52],
     ['B', [7, 0, -36], .56, .59], ['C', [14, 0, -54], .58, .57], ['C', [14, 0, -62], .59, .34],
   ];
   for (const [feed, position, x, y] of cases) { const projection = projectCreature(feed, position)!; assert.ok(projection); assert.equal(projection.x, x); assert.equal(projection.y, y); }

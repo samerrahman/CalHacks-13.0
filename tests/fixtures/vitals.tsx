@@ -4,7 +4,10 @@ import CameraPanel from '../../src/ui/CameraPanel';
 import CornerVitals from '../../src/ui/CornerVitals';
 import { resumeSensorCapture } from '../../src/ui/sensorHandoff';
 import type { SensorView } from '../../src/sensing/types';
+import { NativeMetricStream } from '../../src/sensing/nativeMetrics';
+import WirePuzzle from '../../src/ui/WirePuzzle';
 import '../../src/ui/style.css';
+import '../../src/ui/survival.css';
 
 // Test-only entry point. It never imports App, starts the SDK, or requests a camera.
 const initial: SensorView = {
@@ -13,11 +16,19 @@ const initial: SensorView = {
   baselineBpm: null, pulseBpm: 72, ageMs: 0, acceptedSeconds: 29,
   canContinueManual: true, sampleAtMs: 1000, captureSegment: 1,
 };
+function metricFixture(ageMs = 0) {
+  const metrics = new NativeMetricStream(), wall = 1_790_000_000_000;
+  metrics.processing(3); metrics.setValidation(0, 'Test framing accepted'); metrics.frame(true, wall * 1000, 0);
+  metrics.ingest({ cardio: { pulseRate: [{ value: 84, confidence: 50, stable: true, timestamp: (wall + 30_000) * 1000 }] }, breathing: { rate: [{ value: 16, confidence: 50, stable: true, timestamp: (wall + 30_000) * 1000 }] } }, 30_000, wall + 30_000);
+  return metrics.view(30_000 + ageMs, 'live');
+}
 
 function VitalsFixture() {
   const [sensor, setSensor] = useState<SensorView>(initial);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [terminal, setTerminal] = useState(false);
+  const [wires, setWires] = useState({ targetOrder: [2, 0, 3, 1], connections: [-1, -1, -1, -1] });
   const [additionalStarts, setAdditionalStarts] = useState(0);
   const [handoffs, setHandoffs] = useState(0);
   const [stopped, setStopped] = useState(false);
@@ -63,12 +74,15 @@ function VitalsFixture() {
       <div className="fixture-actions">
         {!playing && <button onClick={() => setSensor(value => ({ ...value, status: 'ready', baselineBpm: 72, acceptedSeconds: 30, trend: 'STEADY' }))}>Complete 30-second test calibration</button>}
         {playing && <><button onClick={() => setSensor(value => ({ ...value, status: 'ready', quality: 'accepted', pulseBpm: 84, ageMs: 0, trend: 'ELEVATED', sampleAtMs: 2000 }))}>Inject accepted 84 BPM test sample</button>
-          <button onClick={() => setSensor(value => ({ ...value, quality: 'unknown', pulseBpm: null, ageMs: 6000, trend: 'UNKNOWN', sampleAtMs: null, hint: 'TEST FIXTURE — sample stale; no accepted reading' }))}>Expire test sample at 6 seconds</button>
+          <button onClick={() => setSensor(value => ({ ...value, diagnostics: metricFixture() }))}>Inject accepted 16 breaths/min test sample</button>
+          <button onClick={() => setSensor(value => ({ ...value, diagnostics: metricFixture(6000), quality: 'unknown', pulseBpm: null, ageMs: 6000, trend: 'UNKNOWN', sampleAtMs: null, hint: 'TEST FIXTURE — sample stale; no accepted reading' }))}>Expire test sample at 6 seconds</button>
           <button onClick={() => setPlaying(false)}>Return to test calibration</button>
+          <button onClick={() => setTerminal(true)}>Show terminal test panel</button>
           <button onClick={stop}>Stop synthetic stream</button></>}
       </div>
       {!playing && <CameraPanel sensor={sensor} stream={stream} desktop deviceId="" onDevice={() => {}} onStart={() => { void controller.current.start(); }} onStop={stop} onReadyStart={enter}/>} 
       {playing && <CornerVitals sensor={sensor} stream={stream} onOpen={() => setPlaying(false)}/>}
+      {playing && terminal && <section className="task-panel terminal-inspection" role="dialog" aria-label="Fixture terminal"><button className="inspection-close" onClick={() => setTerminal(false)}>Close terminal test panel</button><h2>Reconnect the relay.</h2><WirePuzzle wires={wires} connect={(from, to) => { if (wires.targetOrder[to] === from) setWires(value => ({ ...value, connections: value.connections.map((old, index) => index === from ? to : old) })); }}/></section>}
     </main>
   </div>;
 }

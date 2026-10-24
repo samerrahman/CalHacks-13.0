@@ -1,9 +1,10 @@
 import { v } from 'convex/values';
 import { mutation, query } from './server';
 import { authorize, authorizeOwnerDeletion, hashCapability } from './auth';
+import { TRACE_SCHEMA_VERSION } from '../src/integrations/contracts';
 
 // Read-only compatibility gate prevents a new client writing to an older game deployment.
-export const version = query({ args: {}, handler: async () => ({ application: 'LOCK IN', schemaVersion: 'lock-in-v1' }) });
+export const version = query({ args: {}, handler: async () => ({ application: 'LOCK IN', schemaVersion: TRACE_SCHEMA_VERSION }) });
 
 export const create = mutation({ args: { ownerCapability: v.string(), judgeCapability: v.string(), consent: v.boolean(), seed: v.number(), mode: v.string() }, handler: async (ctx, args) => {
   if (!args.consent) throw new Error('Trace sharing requires explicit consent');

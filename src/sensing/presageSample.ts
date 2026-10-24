@@ -1,9 +1,10 @@
 import type { SensorSample } from './types';
+import { METRIC_POLICY, validationBlocksMetric } from './metricPolicy';
 
 /** Narrow SDK payload adapter. Shape and epoch-microsecond timestamps verified
  * against @smartspectra/node-sdk 3.4.0 generated MeasurementWithConfidence types.
- * Confidence is documented 0..100, retained unchanged. >=80 is conservative
- * game tuning, not a provider accuracy guarantee or fear classification. */
+ * Confidence is documented 0..100, retained unchanged. The pulse field's
+ * documented confidence floor is 40, independently requiring stable=true. */
 export type NativeMeasurement = { value?: number | null; stable?: boolean | null; confidence?: number | null; timestamp?: number | { toNumber(): number } | null };
 export type NativeMetrics = { cardio?: { pulseRate?: NativeMeasurement[] | null } | null; breathing?: { rate?: NativeMeasurement[] | null } | null };
 export function measurementTimestamp(pulse: NativeMeasurement | undefined): number | null {
@@ -20,9 +21,9 @@ export function normalizePresage(metrics: NativeMetrics, receiveMs: number, wall
   if (!pulse || typeof pulse.value !== 'number' || !Number.isFinite(pulse.value)) reasons.push('Waiting for pulse estimate');
   else if (pulse.value < 40 || pulse.value > 110) reasons.push('Outside supported pulse range (40–110 BPM)');
   if (receiveMs - warmupStartedMs < 12_000) reasons.push('Warming up: pulse uses a 12-second average');
-  if (validation.code !== 0) reasons.push(validation.hint || 'Capture quality has not been validated');
+  if (validationBlocksMetric(validation.code, 'pulse')) reasons.push(validation.hint || 'Capture quality has not been validated');
   if (pulse?.stable !== true) reasons.push('Capture is not stable');
-  if (typeof pulse?.confidence !== 'number' || !Number.isFinite(pulse.confidence) || pulse.confidence < 80 || pulse.confidence > 100) reasons.push('Confidence below game acceptance threshold');
+  if (typeof pulse?.confidence !== 'number' || !Number.isFinite(pulse.confidence) || pulse.confidence < METRIC_POLICY.pulse.confidence || pulse.confidence > 100) reasons.push(`Pulse confidence below SDK threshold (${METRIC_POLICY.pulse.confidence}/100)`);
   if (measuredMonotonicMs === null || receiveMs - measuredMonotonicMs > 5000 || measuredMonotonicMs > receiveMs + 1000) reasons.push('Missing or stale measurement timestamp');
   return { source: 'presage', receivedMonotonicMs: receiveMs, measuredMonotonicMs, pulseBpm: pulse?.value ?? null, quality: !pulse ? 'unknown' : reasons.length ? 'rejected' : 'accepted', qualityReasons: !pulse ? ['Waiting for pulse estimate'] : reasons, nativeConfidence: pulse?.confidence ?? null, validationCode: validation.code };
 }
