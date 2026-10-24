@@ -93,7 +93,7 @@
       "event": "stage-1",
       "priority": 3,
       "maxAgeSeconds": 9,
-      "text": "Twenty-four faults, then the cables. Running equipment is loud. Isolate the machines when you hear the proximity alarm, even mid-task. Do not wait for it to reach the wall."
+      "text": "Twenty-four faults, then the cables. Running equipment is loud. Isolate the machines when its footsteps get close, even mid-task. Do not wait for it to reach the wall."
     },
     {
       "id": "FAULTS_FINISHED",

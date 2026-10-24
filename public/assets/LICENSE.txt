@@ -2,7 +2,7 @@ LOCK IN original build-kit material
 
 Permission is granted, free of charge, to any person obtaining a copy of the original code, procedural models, animations, SVG graphics, synthesized WAV sounds, dialogue and documentation in this kit, to use, copy, modify, merge, publish, distribute, sublicense and/or sell copies, subject to retaining this notice with redistributed source or asset packs.
 
-Procedural asset generation adapts the permitted original Night Relay generator; its notice is retained in source/NIGHT_RELAY_LICENSE.txt. No third-party model or sound pack is bundled. The original procedural assets are available for commercial and noncommercial use under this grant.
+Procedural asset generation adapts the permitted original Night Relay generator; its notice is retained in source/NIGHT_RELAY_LICENSE.txt. No third-party model is bundled. Seventeen WAV files in audio/ are derived from CC0 1.0 (public domain) recordings published on OpenGameArt; their sources are listed in THIRD_PARTY_SOUNDS.txt and they are not covered by the grant above. The original procedural assets are available for commercial and noncommercial use under this grant.
 
 The four CCTV PNGs were generated for this project using OpenAI's built-in image-generation tool. To the extent applicable rights are held, the same permission is granted for these outputs, subject to applicable service terms. Generated outputs may not be unique; no exclusivity or third-party clearance guarantee is made. Prompt provenance is recorded in prompts/CCTV_ART_PROMPTS.txt.
 

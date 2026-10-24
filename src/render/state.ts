@@ -18,7 +18,7 @@ export interface RenderState {
   pulseFlash?: number;
   breath?: number;
   breathMatched?: boolean;
-  creature: { position: WorldPosition; phase: string; distance: number; sensorDistance?: number | null; sensorSampleAt?: number };
+  creature: { position: WorldPosition; phase: string; distance: number; sensorDistance?: number | null; sensorSampleAt?: number; sensorBearing?: number };
   cameraFeed?: CameraFeed;
   status?: 'playing' | 'won' | 'lost';
   warningRemaining?: number | null;

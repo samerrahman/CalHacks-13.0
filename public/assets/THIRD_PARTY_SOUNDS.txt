@@ -1,0 +1,22 @@
+Third-party sounds in public/assets/audio
+
+Each file below is derived from a recording released under Creative Commons Zero 1.0
+(public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/). No
+attribution is required; it is recorded here for provenance. Every file was converted to
+mono 22.05 kHz 16-bit PCM and pitch-shifted, filtered, trimmed, echoed or looped for LOCK IN.
+
+creature_step_1-3.wav   Fantozzi, "Fantozzi's Footsteps (Grass/Sand & Stone)"
+                        https://opengameart.org/content/fantozzis-footsteps-grasssand-stone
+creature_step_4.wav     rubberduck, "80 CC0 creature SFX #2" (stomp_01)
+                        https://opengameart.org/content/80-cc0-creture-sfx-2
+creature_growl_1-2.wav, creature_scream.wav, ambient_howl.wav
+                        rubberduck, "80 CC0 creature SFX" (monster_04, monster_07, scream_01, howl)
+                        https://opengameart.org/content/80-cc0-creature-sfx
+wall_pound_1-3.wav, ambient_creak_1-2.wav, ambient_snap.wav, ambient_groan.wav
+                        rubberduck, "100 CC0 metal and wood SFX" (metal_slam_01, metal_sheet_03,
+                        metal_hit_04, wood_squeak_01-02, wood_cracking_02, metal_spring_01)
+                        https://opengameart.org/content/100-cc0-metal-and-wood-sfx
+ambience_wind.wav       JaggedStone, "Loopable Dungeon Ambience"
+                        https://opengameart.org/content/loopable-dungeon-ambience
+ambience_crickets.wav   Ted Kerr (uploaded by Wolfgang_), "Crickets Ambient Noise - loopable"
+                        https://opengameart.org/content/crickets-ambient-noise-loopable

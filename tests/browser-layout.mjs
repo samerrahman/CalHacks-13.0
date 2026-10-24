@@ -47,8 +47,9 @@ try {
   await page.keyboard.press('e');
   await page.getByRole('button', { name: 'CAM B SERVICE PATH' }).click();
   await expect(page.getByRole('heading', { name: 'SERVICE PATH', exact: true })).toBeVisible();
-  await expect(page.getByTestId('sampled-distance')).toHaveText(/^\d+$/);
-  evidence.displayedDistance = await page.getByTestId('sampled-distance').innerText();
+  await expect(page.getByTestId('radar')).toBeVisible();
+  await expect(page.getByTestId('radar-dot')).toBeVisible({ timeout: 6000 });
+  evidence.radarContact = await page.getByTestId('radar').getAttribute('aria-label');
   await page.screenshot({ path: 'artifacts/harder-camera-b.png' });
   await page.getByRole('button', { name: 'CAM C CONTAINMENT' }).click();
   await expect(page.getByRole('heading', { name: 'CONTAINMENT', exact: true })).toBeVisible();

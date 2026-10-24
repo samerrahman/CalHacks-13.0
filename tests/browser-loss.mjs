@@ -22,11 +22,12 @@ try {
   evidence.afterMistakes = await resources(page);
   if (evidence.afterMistakes.danger <= evidence.initialResources.danger) throw Error('Visible mistakes did not increase danger');
   await page.getByRole('button', { name: 'Mute', exact: true }).click();
-  await expect(page.locator('.sound-caption')).toContainText('PROXIMITY ALARM', { timeout: 180000 });
+  await expect(page.locator('.sound-caption')).toContainText(/HEAVY FOOTSTEPS CLOSE|FOOTSTEPS RIGHT OUTSIDE|POUNDING ON THE WALL/, { timeout: 180000 });
   await expect(page.locator('.breach-banner')).toHaveCount(0);
   await page.screenshot({ path: 'artifacts/harder-alarm-active.png' });
   await page.keyboard.press('j');
-  evidence.alarmAudio = JSON.parse(await page.getByTestId('audio-diagnostics').innerText());
+  evidence.closeAudio = JSON.parse(await page.getByTestId('audio-diagnostics').innerText());
+  if (!(evidence.closeAudio.footsteps > 0)) throw Error('No creature footsteps played during the close approach');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Game paused' })).toBeVisible();
   const pausedTrace = await page.locator('.trace-list').innerText();
@@ -37,7 +38,7 @@ try {
   await expect.poll(() => page.locator('.sound-caption').innerText()).toBe(pausedCaption);
   await expect(page.getByTestId('run-deadline')).toHaveText(pausedDeadline);
   await expect(page.locator('.jump-scare.breach')).toHaveCount(0);
-  evidence.checks.push('Alarm has sound-equivalent captions and no visible breach countdown; pause freezes public event times and threat beyond the normal loss interval');
+  evidence.checks.push('A close approach is heard as footsteps with sound-equivalent captions, with no siren or visible breach countdown; pause freezes public event times and threat beyond the normal loss interval');
   await page.screenshot({ path: 'artifacts/harder-loss-paused.png' });
   await page.getByRole('button', { name: 'Resume protocol →' }).click();
   // The judge trace is a player-visible diagnostic, not hidden simulation state.

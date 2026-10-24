@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { captionReadingSeconds, createAudioEngine, type AudioWorld, type SpeechEvent } from './engine';
+import { captionReadingSeconds, createAudioEngine, EFFECT_NAMES, type AudioWorld, type SpeechEvent } from './engine';
 
 class Parameter { value = 0; automation: number[] = []; setTargetAtTime(value: number) { this.value = value; this.automation.push(value); } setValueAtTime(value: number) { this.value = value; this.automation.push(value); } linearRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } exponentialRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } cancelScheduledValues() { /* Mock keeps the recorded automation. */ } }
 class Node { connected: Node[] = []; connect(node: Node) { this.connected.push(node); return node; } disconnect() { this.connected = []; } }
-class Source extends Node { buffer: { tag: string } | null = null; loop = false; stopped = false; started = false; onended: (() => void) | null = null; start() { this.started = true; } stop() { if (this.stopped) return; this.stopped = true; this.onended?.(); } }
+class Source extends Node { buffer: { tag: string } | null = null; loop = false; playbackRate = new Parameter(); stopped = false; started = false; onended: (() => void) | null = null; start() { this.started = true; } stop() { if (this.stopped) return; this.stopped = true; this.onended?.(); } }
 class Oscillator extends Node { type = ''; frequency = new Parameter(); detune = new Parameter(); started = false; stopped = false; stopAt: number | null = null; onended: (() => void) | null = null; start() { this.started = true; } stop(at?: number) { if (at !== undefined && at > FakeContext.current.currentTime) { this.stopAt = at; return; } if (this.stopped) return; this.stopped = true; this.onended?.(); } }
-class Panner extends Node { positionX = new Parameter(); positionY = new Parameter(); positionZ = new Parameter(); }
+class Panner extends Node { rolloffFactor = 1; positionX = new Parameter(); positionY = new Parameter(); positionZ = new Parameter(); }
 class FakeContext {
   static current: FakeContext;
   state = 'suspended'; currentTime = 0; sampleRate = 8000; destination = new Node(); sources: Source[] = []; oscillators: Oscillator[] = []; gains: (Node & { gain: Parameter })[] = [];
@@ -27,37 +27,43 @@ class FakeContext {
 const world = (extra: Partial<AudioWorld> = {}): AudioWorld => ({ time: 0, power: 'on', faults: [], creature: { position: [0, 0, -20], distance: 20, phase: 'search', lastMotion: 'stationary' }, ...extra });
 const pannerOf = (source: Source): Panner => source.connected[0]!.connected[0] as Panner;
 
-test('world audio follows the same creature position and stops contradictory movement/breath cues', async () => {
-  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
-  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
+test('footsteps carry the threat: louder and quicker as it nears, a run when hunting, direction-only panning', async () => {
+  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch, originalRandom = Math.random;
+  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext; Math.random = () => .5;
   globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
   const engine = createAudioEngine();
   try {
-    await engine.start(); assert.equal(engine.diagnostics.status, 'ready'); assert.equal(engine.diagnostics.loadedEffects.length, 27); assert.equal(engine.diagnostics.contextState, 'running');
-    const context = FakeContext.current;
+    await engine.start(); assert.equal(engine.diagnostics.status, 'ready'); assert.equal(engine.diagnostics.loadedEffects.length, EFFECT_NAMES.length); assert.equal(engine.diagnostics.contextState, 'running');
+    const context = FakeContext.current, steps = () => context.sources.filter(source => source.buffer?.tag.startsWith('creature_step'));
     engine.setListenerPosition([.2, 1.52, -.4]); assert.deepEqual([context.listener.positionX!.value, context.listener.positionY!.value, context.listener.positionZ!.value], [.2, 1.52, -.4]);
     engine.setListenerPosition([NaN, 9, 9]); assert.equal(context.listener.positionY!.value, 1.52, 'invalid render pose cannot corrupt the audio listener');
-    engine.updateWorld(world({ creature: { position: [-3.8, 0, 0], distance: 3.8, phase: 'approach', lastMotion: 'approaching' } }));
-    const approach = context.sources.find(source => source.buffer?.tag === 'steps_approaching.wav')!; assert.ok(approach?.started);
-    assert.deepEqual([pannerOf(approach).positionX.value, pannerOf(approach).positionY.value, pannerOf(approach).positionZ.value], [-3.8, 0, 0]);
-    engine.updateWorld(world({ time: 1, creature: { position: [-3.4, 0, .2], distance: 3.4, phase: 'approach', lastMotion: 'approaching' } }));
-    assert.equal(pannerOf(approach).positionZ.value, .2, 'active footsteps follow simulation position');
-    engine.updateWorld(world({ time: 2, power: 'quiet', creature: { position: [-3.4, 0, .2], distance: 3.4, phase: 'listen', lastMotion: 'stationary' } }));
-    assert.ok(approach.stopped); const breath = context.sources.find(source => source.buffer?.tag === 'wall_breath.wav')!; assert.ok(breath?.started);
-    engine.updateWorld(world({ time: 3, power: 'quiet', creature: { position: [-12, 0, -12], distance: 17, phase: 'retreat', lastMotion: 'receding' } }));
-    assert.ok(breath.stopped); const receding = context.sources.find(source => source.buffer?.tag === 'steps_receding.wav')!; assert.ok(receding?.started);
-    assert.equal(pannerOf(receding).positionX.value, -12);
-    engine.updateWorld(world({ time: 4, power: 'quiet', creature: { position: [-12, 0, -12], distance: 17, phase: 'listen', lastMotion: 'stationary' } }));
-    assert.ok(receding.stopped); assert.equal(context.sources.filter(source => source.buffer?.tag === 'wall_breath.wav').length, 1, 'distant listening never emits a near-wall breath');
+    engine.updateWorld(world({ creature: { position: [-12, 0, -16], distance: 20, phase: 'approach', lastMotion: 'approaching' } }));
+    const far = engine.diagnostics.lastFootstepGain, first = steps()[0]!; assert.ok(first?.started);
+    assert.deepEqual([pannerOf(first).positionX.value, pannerOf(first).positionZ.value], [-12, -16]); assert.equal(pannerOf(first).rolloffFactor, 0, 'loudness comes from the distance curve, not the panner');
+    engine.updateWorld(world({ time: .5, creature: { position: [-3.4, 0, .2], distance: 3, phase: 'approach', lastMotion: 'approaching' } }));
+    assert.equal(steps().length, 1, 'walking steps keep a cadence');
+    engine.updateWorld(world({ time: 1.2, creature: { position: [-3.4, 0, .2], distance: 3, phase: 'approach', lastMotion: 'approaching' } }));
+    assert.equal(steps().length, 2); assert.ok(engine.diagnostics.lastFootstepGain > far * 5, 'close footsteps are far louder');
+    const before = steps().length;
+    const finish = (prefix: string) => context.sources.filter(source => source.buffer?.tag.startsWith(prefix) && !source.stopped).forEach(source => source.stop());
+    for (let t = 1.3; t <= 3.3; t += .1) { finish('creature_step'); engine.updateWorld(world({ time: t, hunting: true, creature: { position: [4, 0, -8], distance: 8, phase: 'approach', lastMotion: 'approaching' } })); }
+    assert.ok(steps().length - before >= 5, 'a hunt is a run');
+    engine.updateWorld(world({ time: 4, power: 'quiet', creature: { position: [-3.4, 0, .2], distance: 3.4, phase: 'listen', lastMotion: 'stationary' } }));
+    const breath = context.sources.find(source => source.buffer?.tag === 'wall_breath.wav')!; assert.ok(breath?.started);
+    engine.updateWorld(world({ time: 5, power: 'quiet', creature: { position: [-12, 0, -12], distance: 17, phase: 'listen', lastMotion: 'stationary' } }));
+    assert.ok(breath.stopped); assert.equal(context.sources.filter(source => source.buffer?.tag === 'wall_breath.wav').length, 1, 'distant listening never emits a near-wall breath');
+    engine.updateWorld(world({ time: 30, creature: { position: [0, 0, -40], distance: 23, phase: 'search', lastMotion: 'stationary' } }));
+    assert.equal(steps().filter(source => !source.stopped).length >= 0, true); const outOfRange = steps().length;
+    engine.updateWorld(world({ time: 40, creature: { position: [0, 0, -40], distance: 23, phase: 'search', lastMotion: 'stationary' } }));
+    assert.equal(steps().length, outOfRange, 'beyond hearing range there are no footsteps');
     engine.reset(); assert.ok(context.sources.every(source => source.stopped), 'reset stops all old effects and beds');
     assert.equal(engine.diagnostics.decodedSpeech, 0); assert.equal(engine.diagnostics.startedSpeech, 0);
     engine.speak({ id: 'playback-proof', text: 'The transmitter is ready.', expiresAt: 30, priority: 1, source: 'live', audioBase64: btoa('speech-proof') });
     engine.update(0); await new Promise(resolve => setTimeout(resolve, 0));
     assert.equal(engine.diagnostics.decodedSpeech, 1); assert.equal(engine.diagnostics.startedSpeech, 1); assert.equal(engine.diagnostics.playbackErrors, 0);
     assert.ok(context.sources.some(source => source.buffer?.tag === 'speech-proof' && source.started));
-  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
+  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; Math.random = originalRandom; }
 });
-
 test('fault beds power down in quiet and the sustained lure uses its remote emitter', async () => {
   const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
   globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
@@ -75,55 +81,32 @@ test('fault beds power down in quiet and the sustained lure uses its remote emit
   } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
 });
 
-test('siren shares the bounded bus, sweeps faster with urgency and never duplicates its graph', async () => {
- const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
- globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
- globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
- const engine = createAudioEngine();
- try {
-  await engine.start(); const context = FakeContext.current;
-  engine.updateWorld(world({ alarm: { active: false, urgency: 1 } })); assert.equal(context.oscillators.length, 0);
-  engine.updateWorld(world({ alarm: { active: true, urgency: 0 } }));
-  assert.equal(context.oscillators.length, 3); assert.ok(context.oscillators.every(o => o.started));
-  const slow = engine.diagnostics.alarmPulseHz; assert.equal(slow, .5, 'a slow wail when it first gets close');
-  const master = context.gains[0]!;
-  const horn = context.oscillators[0]!;
-  const filter = horn.connected[0]!.connected[0]!;
-  const envelope = filter.connected[0] as Node & { gain: Parameter };
-  assert.equal(envelope.connected[0]!.connected[0], master, 'alarm panner routes through shared master/limiter');
-  for (let i = 0; i < 120; i++) engine.updateWorld(world({ time: i / 60, power: 'quiet', alarm: { active: true, urgency: i / 119 } }));
-  assert.equal(context.oscillators.length, 3, 'render updates reuse the same three oscillators');
-  assert.ok(engine.diagnostics.alarmPulseHz > slow); assert.equal(engine.diagnostics.alarmPulseHz, 5, 'a fast yelp at the wall');
-  engine.updateWorld(world({ alarm: { active: true, urgency: .33 } })); assert.ok(engine.diagnostics.alarmPulseHz > .5 + 4.5 * .5, 'a third of the urgency is already past half speed');
-  assert.ok(engine.diagnostics.alarmActive, 'committed late-Q alarm survives equipment isolation');
-  engine.updateWorld(world({ power: 'blackout', alarm: { active: true, urgency: 2 }, softScares: true }));
-  assert.equal(engine.diagnostics.alarmPulseHz, 5); assert.equal(envelope.gain.value, .06);
-  engine.setMuted(true); assert.equal(master.gain.value, 0); engine.setVolume(.7); assert.equal(master.gain.value, 0);
-  engine.setMuted(false); assert.equal(master.gain.value, .7);
-  engine.updateWorld(world({ alarm: { active: false, urgency: 1 } }));
-  assert.ok(context.oscillators.every(o => o.stopped)); assert.equal(engine.diagnostics.alarmActive, false);
- } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
+test('it pounds on the wall when it is there, a barrage once committed; crickets fall silent near it; the night adds one-shots', async () => {
+  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch, originalRandom = Math.random;
+  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext; Math.random = () => .5;
+  globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
+  const engine = createAudioEngine();
+  try {
+    await engine.start(); const context = FakeContext.current;
+    const crickets = () => (context.sources.find(source => source.buffer?.tag === 'ambience_crickets.wav')!.connected[0] as Node & { gain: Parameter }).gain.value;
+    engine.updateWorld(world({ creature: { position: [0, 0, -40], distance: 20, phase: 'search', lastMotion: 'stationary' } }));
+    assert.ok(crickets() > 0, 'crickets sing while it is far'); assert.ok(context.sources.some(source => source.buffer?.tag === 'ambience_wind.wav' && source.loop));
+    engine.updateWorld(world({ time: 1, creature: { position: [0, 0, -4], distance: 1, phase: 'listen', lastMotion: 'stationary' } }));
+    assert.equal(crickets(), 0, 'crickets fall silent when it is near');
+    assert.equal(engine.diagnostics.wallPounds, 1); const pound = context.sources.find(source => source.buffer?.tag.startsWith('wall_pound'))!;
+    assert.ok(Math.abs(Math.hypot(pannerOf(pound).positionX.value, pannerOf(pound).positionZ.value) - 3.3) < 1e-6, 'pounding comes from the hull');
+    engine.updateWorld(world({ time: 2, creature: { position: [0, 0, -4], distance: 1, phase: 'listen', lastMotion: 'stationary' } }));
+    assert.equal(engine.diagnostics.wallPounds, 1, 'a waiting creature pounds now and then, not constantly');
+    for (let t = 2.1; t <= 4.1; t += .1) { context.sources.filter(source => source.buffer?.tag.startsWith('wall_pound') && !source.stopped).forEach(source => source.stop()); engine.updateWorld(world({ time: t, creature: { position: [0, 0, -3.5], distance: 1, phase: 'breach', lastMotion: 'stationary' } })); }
+    assert.ok(engine.diagnostics.wallPounds >= 4, 'a committed attack is a rapid barrage');
+    const shots = engine.diagnostics.ambientOneShots;
+    for (let t = 5; t <= 40; t += .5) { context.sources.filter(source => !source.loop && !source.stopped).forEach(source => source.stop()); engine.updateWorld(world({ time: t, creature: { position: [0, 0, -40], distance: 20, phase: 'search', lastMotion: 'stationary' } })); }
+    assert.ok(engine.diagnostics.ambientOneShots > shots, 'random night sounds play');
+    engine.setPaused(true); engine.updateWorld(world({ time: 41, paused: true }));
+    assert.equal(crickets(), 0, 'pause silences the beds');
+    engine.reset(); assert.ok(context.sources.every(source => source.stopped));
+  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; Math.random = originalRandom; }
 });
-
-test('pause, ended-world state, reset and disposal tear down alarm sources immediately', async () => {
- const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
- globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
- globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
- const engine = createAudioEngine();
- try {
-  await engine.start(); const context = FakeContext.current;
-  const alarming = world({ alarm: { active: true, urgency: .5 } });
-  engine.updateWorld(alarming); engine.setPaused(true);
-  assert.ok(context.oscillators.every(o => o.stopped)); assert.equal(engine.diagnostics.alarmActive, false);
-  engine.updateWorld(alarming); assert.equal(context.oscillators.length, 3, 'paused engine cannot resurrect a siren');
-  engine.setPaused(false); await Promise.resolve(); engine.updateWorld(alarming); assert.equal(context.oscillators.length, 6);
-  engine.updateWorld({ ...alarming, paused: true }); assert.ok(context.oscillators.every(o => o.stopped));
-  engine.updateWorld(alarming); engine.reset(); assert.ok(context.oscillators.every(o => o.stopped));
-  engine.updateWorld(alarming); engine.dispose(); assert.ok(context.oscillators.every(o => o.stopped));
-  assert.equal(engine.diagnostics.alarmActive, false);
- } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
-});
-
 test('mechanical scares have short envelopes, positional routing, softer gain and bounded retriggering', async () => {
  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
@@ -176,8 +159,8 @@ test('creature speech waits for actual instruction completion while alarm and sc
     engine.update(3); await Promise.resolve();
     assert.equal(opening.stopped, false, 'higher priority and latest-start expiry cannot truncate begun speech');
     assert.equal(context.sources.filter(source => source.buffer?.tag === 'creature audio').length, 0);
-    engine.updateWorld(world({ time: 3, alarm: { active: true, urgency: .5 } })); engine.playScare('impact');
-    assert.equal(engine.diagnostics.alarmActive, true); assert.equal(engine.diagnostics.startedScares, 1);
+    engine.updateWorld(world({ time: 3, creature: { position: [0, 0, -6], distance: 4, phase: 'approach', lastMotion: 'approaching' } })); engine.playScare('impact');
+    assert.ok(engine.diagnostics.footsteps >= 1); assert.equal(engine.diagnostics.startedScares, 1);
     assert.equal(opening.stopped, false, 'critical effects do not steal the speech slot');
     opening.onended?.();
     assert.equal(events.at(-1)?.type, 'ended', 'pending speech keeps the engine busy between lines');

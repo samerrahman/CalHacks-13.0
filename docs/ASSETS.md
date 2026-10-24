@@ -46,7 +46,7 @@ All seven SVGs are used: `title`, `protocol_card`, `camera_notice`, `sensor_noti
 
 ## Audio and speech
 
-The 27 effects are mono, signed 16-bit PCM at 22,050 Hz. Their measured maximum source peak is **0.679993**. [audio-manifest.json](../public/assets/audio/audio-manifest.json) records exact durations, peaks, looping flags and synthesis provenance.
+The 44 effects are mono, signed 16-bit PCM at 22,050 Hz. Their measured maximum source peak is **0.679993**. [audio-manifest.json](../public/assets/audio/audio-manifest.json) records exact durations, peaks, looping flags and provenance. Twenty-seven are original procedural syntheses; seventeen are derived from CC0 1.0 recordings on OpenGameArt (below).
 
 | Group | WAV basenames |
 | --- | --- |
@@ -57,12 +57,27 @@ The 27 effects are mono, signed 16-bit PCM at 22,050 Hz. Their measured maximum 
 | Exterior creature | `steps_approaching`, `steps_receding`, `wall_breath`, `wall_scrape` |
 | Warning/results | `breach_warning`, `breach_impact`, `blackout`, `power_restart`, `containment_success` |
 | Radio/security | `radio_static`, `radio_chime`, `monitor_interrupt` |
+| Creature (CC0) | `creature_step_1`–`4`, `wall_pound_1`–`3`, `creature_growl_1`–`2`, `creature_scream` |
+| Night ambience (CC0) | `ambience_wind` (loop), `ambience_crickets` (loop), `ambient_creak_1`–`2`, `ambient_snap`, `ambient_groan`, `ambient_howl` |
 
-The Web Audio engine decodes all 27 after a player gesture. A bounded master gain (maximum 0.7), mute and compressor apply to effects and speech. The four authored loop beds have checked seams; runtime uses short gain transitions for room hum, individual fault noise and the remote heartbeat. All other sounds are event cues. Source-file peaks alone do not establish comfortable hardware output volume.
+The Web Audio engine decodes all 44 after a player gesture. A bounded master gain (maximum 0.7), mute and compressor apply to effects and speech. All six loop beds have checked seams; runtime uses short gain transitions for room hum, individual fault noise and the remote heartbeat. All other sounds are event cues. Source-file peaks alone do not establish comfortable hardware output volume.
 
-Approaching/receding footsteps follow the simulation's `lastMotion` and actual creature vector; they stop when that direction changes. Breath is eligible only within 4.2 m in listening/breach phases, and scraping only when circling within 4.2 m. These sources and creature-attached speech update from the same position used for CCTV and distance. A remote lure is placed at its actual emitter. The engine does not fabricate a second encounter clock or teleport audio between walls.
+There is no siren. Creature footsteps play from its heard position (range from the path, bearing from the seeded drift) with an explicit distance curve: faint and slow far out, loud and quick near the wall, a run during a hunt. Within two steps of the wall it pounds on the hull now and then, and a committed attack is a rapid barrage. Growls play within five steps. Crickets outside fall silent as it closes in; wind is always present and clearer with the machines off. Creaks, groans, snaps and distant howls play at random. Breath is eligible only within 4.2 m in listening/breach phases, and scraping only when circling within 4.2 m. CCTV silhouettes still use the path projection. A remote lure is placed at its actual emitter. The engine does not fabricate a second encounter clock or teleport audio between walls.
 
 Optional generated speech is distinct from the bundled effects. The queue accepts an exact caption plus expiry, priority, identity and optional live/cache source metadata. It cancels obsolete instructions, preempts lower priorities and avoids repeated IDs. Missing/unavailable audio falls back to captions with a chime. Live and cached labels describe actual request metadata; bundled WAVs are never labelled as provider output. Provider verification belongs in the integration status report.
+
+## Third-party CC0 sources
+
+Each source page dedicates the recording to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/); [THIRD_PARTY_SOUNDS.txt](../public/assets/THIRD_PARTY_SOUNDS.txt) maps every derived file to its source. All were converted to mono 22.05 kHz PCM and pitch-shifted, filtered, trimmed, echoed or crossfade-looped.
+
+| Files | Source (author) |
+| --- | --- |
+| `creature_step_1`–`3` | [Fantozzi's Footsteps (Grass/Sand & Stone)](https://opengameart.org/content/fantozzis-footsteps-grasssand-stone) (Fantozzi) |
+| `creature_step_4` | [80 CC0 creature SFX #2](https://opengameart.org/content/80-cc0-creture-sfx-2) (rubberduck) |
+| `creature_growl_1`–`2`, `creature_scream`, `ambient_howl` | [80 CC0 creature SFX](https://opengameart.org/content/80-cc0-creature-sfx) (rubberduck) |
+| `wall_pound_1`–`3`, `ambient_creak_1`–`2`, `ambient_snap`, `ambient_groan` | [100 CC0 metal and wood SFX](https://opengameart.org/content/100-cc0-metal-and-wood-sfx) (rubberduck) |
+| `ambience_wind` | [Loopable Dungeon Ambience](https://opengameart.org/content/loopable-dungeon-ambience) (JaggedStone) |
+| `ambience_crickets` | [Crickets Ambient Noise - loopable](https://opengameart.org/content/crickets-ambient-noise-loopable) (Ted Kerr, uploaded by Wolfgang_) |
 
 ## Checks
 

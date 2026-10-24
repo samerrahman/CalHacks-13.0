@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame, dispatch, step, canRestore, proximityAlarm, config } from '../src/game/reducer';
 import { buildDirectorRequest, validateProposal, allowedPairs, allowedTaunts, DIRECTOR_TIMEOUT_MS } from '../src/game/directorValidation';
-import { applyLure, commitIfEligible, contextualTaunt, movementProbabilities, projectCreature, restoreEquipment, triggerScare } from '../src/game/creature';
+import { applyLure, bearingLabel, commitIfEligible, contextualTaunt, creatureBearing, creatureHeardPosition, movementProbabilities, projectCreature, restoreEquipment, triggerScare, updateCaption } from '../src/game/creature';
 import { emit, type DirectorProposal, type GameState, type Tactic, type Target } from '../src/game/state';
 import { startStage } from '../src/game/tasks';
 import { playBalancedRun } from './balance-helpers';
@@ -257,4 +257,23 @@ test('multiple seeds complete every wire board and thinking task, all research a
     const state = playBalancedRun(seed); assert.equal(state.status, 'won', `seed${seed}`);
     assert.deepEqual(state.tasks.completedStages, [1, 2, 3, 4]); assert.equal(state.creature.linePosition, 24); assert.ok(state.time <= config.line.deadlineSeconds);
   }
+});
+
+test('the creature wanders smoothly around the shelter: no jumps, deterministic, and captions give direction but never range', () => {
+  for (const seed of [1, 17, 99]) {
+    let previous = creatureBearing(seed, 0), low = previous, high = previous;
+    for (let t = .1; t <= config.line.deadlineSeconds; t += .1) {
+      const bearing = creatureBearing(seed, t);
+      assert.ok(Math.abs(bearing - previous) < .02, `seed${seed} t${t.toFixed(1)}: no teleporting`); previous = bearing;
+      low = Math.min(low, bearing); high = Math.max(high, bearing);
+    }
+    assert.ok(high - low > Math.PI / 2, 'it really moves around the shelter over a run');
+    assert.equal(creatureBearing(seed, 123.4), creatureBearing(seed, 123.4));
+  }
+  assert.deepEqual([0, Math.PI / 2, Math.PI, -Math.PI / 2, 2 * Math.PI].map(bearingLabel), ['AHEAD', 'RIGHT', 'BEHIND', 'LEFT', 'AHEAD']);
+  const state = at(5); state.creature.lastMotion = 'approaching';
+  const heard = creatureHeardPosition(state);
+  assert.ok(Math.abs(Math.hypot(heard[0], heard[2]) - Math.hypot(state.creature.position[0], state.creature.position[2])) < 1e-9, 'heard from the same range');
+  updateCaption(state); assert.match(state.caption, /— (AHEAD|RIGHT|BEHIND|LEFT)$/); assert.doesNotMatch(state.caption, /\d/);
+  state.creature.linePosition = 1; projectCreature(state); updateCaption(state); assert.match(state.caption, /^POUNDING ON THE WALL/);
 });

@@ -38,12 +38,14 @@ test('visual scares require a current authoritative event and respect comfort se
 });
 
 test('physical displays expose no breach warning or countdown text', () => {
-  const lines: string[] = [], context = { fillRect() {}, clearRect() {}, fillText(text: string) { lines.push(text); }, createRadialGradient() { return { addColorStop() {} }; } };
+  const lines: string[] = [], arcs: number[][] = [], noop = () => {};
+  const context = { fillRect: noop, clearRect: noop, beginPath: noop, stroke: noop, fill: noop, arc(x: number, y: number, r: number) { arcs.push([x, y, r]); }, fillText(text: string) { lines.push(text); }, createRadialGradient() { return { addColorStop: noop }; } };
   const display = { context, texture: { needsUpdate: false } } as unknown as Display;
-  const state: RenderState = { time: 10, power: 'on', stage: 1, faults: [], creature: { position: [0, 0, -3], distance: 3, sensorDistance: 8, sensorSampleAt: 8, phase: 'breach' }, warningRemaining: 1.25, alarm: { active: true, urgency: 1 }, cameraFeed: 'C' };
+  const state: RenderState = { time: 10, power: 'on', stage: 1, faults: [], creature: { position: [0, 0, -3], distance: 3, sensorDistance: 8, sensorSampleAt: 8, sensorBearing: Math.PI / 2, phase: 'breach' }, warningRemaining: 1.25, alarm: { active: true, urgency: 1 }, cameraFeed: 'C' };
   drawProximity(display, state); drawCameraOverlay(display, state);
-  assert.ok(lines.includes('8'), 'the last sampled distance is displayed');
-  assert.ok(!lines.includes('3'), 'the hidden current position is not leaked between samples');
+  assert.ok(!lines.some(line => /\d+\s*$/.test(line) && !/SECONDS/.test(line)), 'the radar never prints a range number');
+  const contact = arcs.find(([, , r]) => r === 9)!; assert.ok(contact, 'the sampled contact is drawn');
+  assert.ok(Math.abs(contact[0] - (256 + 8 / 24 * 150)) < 1e-6 && Math.abs(contact[1] - 205) < 1e-6, 'it sits at the sampled range and bearing, not the hidden current position');
   assert.doesNotMatch(lines.join(' '), /breach|warning|countdown|1\.25/i);
   for (const power of ['blackout', 'quiet'] as const) {
     lines.length = 0; drawProximity(display, { ...state, power }); assert.deepEqual(lines, [], 'unpowered detector is completely dark');

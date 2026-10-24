@@ -33,8 +33,8 @@ async function checkInventory(directory) {
 }
 await checkInventory(assetRoot);
 const models = await files('models', '.glb'), audio = await files('audio', '.wav'), cameras = await files('cameras', '.png'), decals = await files('decals', '.svg');
-assert.equal(models.length, 10); assert.equal(audio.length, 27); assert.equal(cameras.length, 4); assert.equal(decals.length, 7);
-assert.deepEqual(manifest.counts, { models: 10, audio: 27, cctvBackgrounds: 4, decals: 7 });
+assert.equal(models.length, 10); assert.equal(audio.length, 44); assert.equal(cameras.length, 4); assert.equal(decals.length, 7);
+assert.deepEqual(manifest.counts, { models: 10, audio: 44, cctvBackgrounds: 4, decals: 7 });
 let meshCount = 0, clipCount = 0;
 for (const file of models) {
   const bytes = await readFile(path.join(assetRoot, 'models', file));
@@ -81,7 +81,7 @@ for (const file of audio) {
   assert.ok(Math.abs(peak - record.peakLinear) < .000001, `${file}: peak metadata`);
   if (record.loop) { loopBeds++; assert.ok(Math.abs(data.readInt16LE(0) - data.readInt16LE(data.length - 2)) / 32768 < .03, `${file}: loop boundary`); }
 }
-assert.equal(loopBeds, 4);
+assert.equal(loopBeds, 6);
 for (const file of cameras) {
   const bytes = await readFile(path.join(assetRoot, 'cameras', file));
   assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `${file}: PNG signature`);

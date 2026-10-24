@@ -13,12 +13,12 @@ The design intent: running equipment is loud. While power is on and a research t
 | Opening grace | 25 active seconds; no movement, scares, contextual taunts or threatening director choices |
 | Step cadence | Every 2.5 seconds; first scheduled step at 27.5 seconds |
 | Possible step | −3, −2, −1, 0, +1, +2, +3; negative is closer |
-| Distance detector | Samples every 4 seconds while powered; immediately unavailable when power is off |
-| Alarm | Latches at position ≤7; clears at ≥10 |
-| Committed attack | Position ≤1, at least 2.5 seconds since alarm activation, and audible evidence within 30 seconds; then an irreversible 2.4-second windup |
+| Proximity radar | Pings every 4 seconds while powered, revealing a fading dot at the sampled range and bearing (no number); dark when power is off |
+| Near state (no siren) | Latches at position ≤7; clears at ≥10; heard as close footsteps and captions |
+| Committed attack | Position ≤1, at least 2.5 seconds since the near state began, and audible evidence within 30 seconds; then an irreversible 2.4-second windup |
 | Protocol deadline | 720 active seconds (12 minutes), including final containment arrival/seal |
 
-The authoritative position is dimensionless. Scene coordinates, camera visibility, footsteps, alarm and spatial creature voice derive from it. They do not simulate a second creature. Camera A covers positions 7–14, B covers 14–22, and C covers 22–24; boundary positions appear on two feeds. Normal gameplay sees the delayed detector reading, not the hidden current position. The consenting judge trace can show current position and danger.
+The authoritative position is dimensionless. Scene coordinates, camera visibility, footsteps and spatial creature voice derive from it, together with a stateless seeded bearing (`creatureBearing`) that drifts smoothly around the shelter for sound direction, captions and the radar. They do not simulate a second creature. Camera A covers positions 7–14, B covers 14–22, and C covers 22–24; boundary positions appear on two feeds. Normal gameplay sees the delayed detector reading, not the hidden current position. The consenting judge trace can show current position and danger.
 
 Pause freezes active time. Tutorial does not move or kill the creature, consume finite isolation charges, trigger scares, add work noise, or expire the protocol. Provider requests run independently and cannot pause the simulation.
 
@@ -118,9 +118,9 @@ Only currently allowed pairs and supported evidence pass the local validator. Th
 
 ## Verification limits
 
-The [sweep](../artifacts/survival-balance.json) runs 30 seeds per policy through the real reducer. Policies know private puzzle answers, solve thinking tasks after a scripted delay, react to the public proximity alarm after a scripted delay, and go silent when no isolation is available. It is **not a human playtest** and does not measure memory, attention, rhythm, drag accuracy, audio perception or camera quality. The elevated policy injects a labeled synthetic accepted trend; it uses no live measurement.
+The [sweep](../artifacts/survival-balance.json) runs 30 seeds per policy through the real reducer. Policies know private puzzle answers, solve thinking tasks after a scripted delay, react to the public close-approach caption after a scripted delay, and go silent when no isolation is available. It is **not a human playtest** and does not measure memory, attention, rhythm, drag accuracy, audio perception or camera quality. The elevated policy injects a labeled synthetic accepted trend; it uses no live measurement.
 
-| Automated policy | Pace (fault / cable / digit / alarm reaction / routing think) | Wins / 30 | Mean winning time | Alarms per run | Mean seconds between alarms | Isolations per run |
+| Automated policy | Pace (fault / cable / digit / close-approach reaction / routing think) | Wins / 30 | Mean winning time | Alarms per run | Mean seconds between alarms | Isolations per run |
 | --- | --- | --- | --- | --- | --- | --- |
 | Perfect information | 0.3 s / 0.3 / 0.3 / 0.2 / 0.5 | 21 | 290 s | 4.9 | 40 | 5.4 |
 | Fast | 0.5 s / 1.2 / 0.45 / 0.8 / 3 | 24 | 349 s | 6.0 | 43 | 6.3 |

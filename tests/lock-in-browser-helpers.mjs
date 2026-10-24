@@ -1,4 +1,6 @@
 import { expect } from '@playwright/test';
+/** Captions that describe the creature close to the wall: the cue a player acts on. */
+export const CLOSE_CAPTION = /HEAVY FOOTSTEPS CLOSE|FOOTSTEPS RIGHT OUTSIDE|POUNDING ON THE WALL/;
 export const TEST_URL = process.env.LOCK_IN_TEST_URL ?? 'http://127.0.0.1:5180';
 const trace = process.env.LOCK_IN_DEBUG ? (...parts) => console.log(new Date().toISOString().slice(11, 19), ...parts) : () => {};
 const observations = new WeakMap();
@@ -75,7 +77,7 @@ async function endOfIsolation(page) {
 export async function guardDanger(page) {
   if (await page.locator('.jump-scare.breach').isVisible() || await page.getByRole('heading', { name: 'The shelter fell silent.', exact: true }).isVisible()) throw Error('Lost during early-defense playthrough');
   const caption = await page.locator('.sound-caption').innerText();
-  if (/METAL STRAINING — HEAVY IMPACTS/.test(caption)) throw Error('Defense was late: committed impact sound reached the shelter');
+  if (/IT IS BREAKING IN/.test(caption)) throw Error('Defense was late: the committed attack reached the shelter');
   const quiet = page.locator('[data-tutorial="emergency-quiet"]');
   if (await page.locator('[data-tutorial="emergency-restore"]').isEnabled()) {
     if (/active/.test(await quiet.getAttribute('class') ?? '')) {
@@ -86,7 +88,7 @@ export async function guardDanger(page) {
     }
     await openTerminal(page); return true;
   }
-  if (/PROXIMITY ALARM/.test(caption) && await quiet.isEnabled()) {
+  if (CLOSE_CAPTION.test(caption) && await quiet.isEnabled()) {
     const defended = await defend(page);
     if (defended) {
       const data = evidenceFor(page);
@@ -163,7 +165,11 @@ export async function locateCreature(page) {
     if (await guardDanger(page)) { await page.getByRole('button', { name: '02 Look at monitor' }).click(); await page.keyboard.press('e'); continue; }
     const first = panel.locator('button').first();
     if (await first.isDisabled()) { await page.waitForTimeout(150); continue; }
-    const reading = Number(await page.getByTestId('sampled-distance').innerText());
+    // Read the radar like a player: the contact's distance from the centre gives its band.
+    const dot = page.getByTestId('radar-dot');
+    if (!await dot.count()) { await page.waitForTimeout(150); continue; }
+    const [x, y] = await Promise.all([dot.getAttribute('cx'), dot.getAttribute('cy')]);
+    const reading = Math.hypot(Number(x) - 84, Number(y) - 84) / 74 * 24;
     if (!Number.isFinite(reading)) { await page.waitForTimeout(150); continue; }
     const key = reading < 7 ? '1' : reading <= 14 ? '2' : reading <= 22 ? '3' : '4';
     await page.keyboard.press(key); data.marks = (data.marks ?? 0) + 1;
@@ -177,7 +183,7 @@ export async function holdCalm(page) {
   let holding = false; const end = Date.now() + 120000;
   while (await heading.count() && Date.now() < end) {
     const caption = await page.locator('.sound-caption').innerText();
-    if (/PROXIMITY ALARM/.test(caption) || await page.locator('[data-tutorial="emergency-restore"]').isEnabled()) { if (holding) { await page.keyboard.up('b'); holding = false; } await guardDanger(page); await openTerminal(page); continue; }
+    if (CLOSE_CAPTION.test(caption) || await page.locator('[data-tutorial="emergency-restore"]').isEnabled()) { if (holding) { await page.keyboard.up('b'); holding = false; } await guardDanger(page); await openTerminal(page); continue; }
     const label = await terminal.locator('.calm-ring span').innerText().catch(() => '');
     const inhale = label.startsWith('BREATHE IN');
     if (inhale && !holding) { await page.keyboard.down('b'); holding = true; }

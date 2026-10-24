@@ -75,16 +75,26 @@ export function drawTerminal(display: Display, state: RenderState): void {
   }
   wornGlass(display, 1024, 512); display.texture.needsUpdate = true;
 }
+/** In-room ping radar: rings for the close band and camera bands, a sweeping ping each detector
+ * reading, and a fading contact at the sampled range and bearing. It never prints a range number. */
 export function drawProximity(display: Display, state: RenderState): void {
   const on = state.power === 'on', ctx = display.context;
   ctx.fillStyle = '#0b0d07'; ctx.fillRect(0, 0, 512, 384); ctx.textAlign = 'center';
   if (!on) { display.texture.needsUpdate = true; return; }
-  ctx.fillStyle = '#b0a97c'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY', 256, 57);
-  const sampled = state.creature.sensorDistance;
-  ctx.font = 'bold 104px monospace'; ctx.fillText(typeof sampled === 'number' && Number.isFinite(sampled) ? `${sampled}` : '—', 256, 202);
-  ctx.font = '24px monospace'; ctx.fillText('STEPS FROM YOUR WALL / 24', 256, 252);
-  ctx.fillStyle = '#6c704e'; ctx.font = '23px monospace';
-  ctx.fillText('NEW READING EVERY 4 SECONDS', 256, 325);
+  const cx = 256, cy = 205, radius = 150, length = 24, sampled = state.creature.sensorDistance, since = Math.max(0, state.time - (state.creature.sensorSampleAt ?? state.time));
+  ctx.fillStyle = '#b0a97c'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY RADAR', 256, 38);
+  ctx.strokeStyle = '#4c5a3c'; ctx.lineWidth = 2;
+  for (const edge of [7, 14, 22, 24]) { ctx.strokeStyle = edge === 7 ? '#8a4430' : '#4c5a3c'; ctx.beginPath(); ctx.arc(cx, cy, edge / length * radius, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.fillStyle = '#c9c194'; ctx.fillRect(cx - 6, cy - 6, 12, 12);
+  if (typeof sampled === 'number' && Number.isFinite(sampled)) {
+    const sweep = Math.min(1, since / 1.2), share = sampled / length;
+    ctx.strokeStyle = `rgba(166, 188, 135, ${1 - sweep * .85})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, sweep * radius, 0, Math.PI * 2); ctx.stroke();
+    if (sweep >= share) {
+      const bearing = state.creature.sensorBearing ?? 0, fade = Math.max(.18, 1 - (since - share * 1.2) / 4);
+      ctx.fillStyle = `rgba(231, 164, 106, ${fade})`; ctx.beginPath(); ctx.arc(cx + Math.sin(bearing) * share * radius, cy - Math.cos(bearing) * share * radius, 9, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.fillStyle = '#6c704e'; ctx.font = '21px monospace'; ctx.fillText('PING EVERY 4 SECONDS', 256, 372);
   wornGlass(display, 512, 384); display.texture.needsUpdate = true;
 }
 export function drawCameraOverlay(display: Display, state: RenderState, corruption = 0, reducedMotion = false): void {
