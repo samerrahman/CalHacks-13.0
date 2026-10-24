@@ -1,7 +1,7 @@
 import { config, currentSedation, finite, FIXED_DT, NODES } from './config';
 import { cameraVisible, canRestore, commitIfEligible, enterQuiet, proximityAlarm, triggerScare, lureProtected, projectCreature, restoreEquipment, tickCreature, updateCaption, updateClues, updateDanger, updateDistanceSensor, warningRemaining } from './creature';
 import { receiveProposal, tickDirector } from './directorValidation';
-import { connectWire, emptyMemory, emptyWires, replayMemory, startStage, taskInput, tickTasks, transmit } from './tasks';
+import { breathe, connectWire, emptyCalm, emptyLocate, emptyMemory, emptyPulse, emptyRouting, emptyWires, engageRoute, markSector, replayMemory, startStage, tapPulse, taskInput, tickTasks, toggleRoute, transmit } from './tasks';
 import { emit, random, type GameAction, type GameState, type SensorState } from './state';
 
 export { config, currentSedation, cameraVisible, canRestore, lureProtected, warningRemaining, proximityAlarm };
@@ -11,7 +11,7 @@ export function createGame(seed = 17, mode: GameState['mode'] = 'standard'): Gam
     seed: safeSeed, mode, time: 0, status: 'playing', paused: false, version: 0,
     station: 'terminal', cameraFeed: 'A', equipment: 'on',
     danger: config.danger.base, pressure: 0, shutdown: { chargesRemaining: config.shutdown.charges, used: 0, activeUntil: 0, cooldownUntil: 0 },
-    tasks: { stage: 1, stageStarted: 0, completedStages: [], faults: { active: [], completed: 0, required: 5, spawned: 0, spawnElapsed: 0, maximumActive: 1 }, memory: emptyMemory(), wires: emptyWires(), finalTransmitted: false },
+    tasks: { stage: 1, stageStarted: 0, completedStages: [], faults: { active: [], completed: 0, required: 5, spawned: 0, spawnElapsed: 0, maximumActive: 1 }, memory: emptyMemory(), wires: emptyWires(), step: 'faults', routing: emptyRouting(), pulse: emptyPulse(), locate: emptyLocate(), calm: emptyCalm(), finalTransmitted: false },
     creature: {
       linePosition: config.line.start, nextMoveAt: config.line.graceSeconds + config.line.stepSeconds, lastStep: 0, tacticBias: 0, biasUntil: 0, nearSince: null, movementRng: (safeSeed ^ 0x9e3779b9) >>> 0, sensorDistance: config.line.start, sensorSampleAt: 0,
       position: [...NODES.NEAR_PATH], node: 'NEAR_PATH', route: [], target: 'NONE', phase: 'search', distance: 12,
@@ -54,7 +54,7 @@ function tick(state: GameState): void {
   tickCreature(state, FIXED_DT);
   if (state.status === 'playing') { tickBlackout(state); tickDirector(state); }
   if (state.mode !== 'tutorial' && state.status === 'playing' && state.time >= config.line.deadlineSeconds - 1e-8) {
-    state.status = 'lost'; state.restoreHeld = false; state.lossReason = 'The five-minute protocol window expired.'; state.notice = 'Complete the research and final containment before the deadline.'; emit(state, 'TIMEOUT'); emit(state, 'LOST', 'TIMEOUT'); state.version++;
+    state.status = 'lost'; state.restoreHeld = false; state.lossReason = `The ${Math.round(config.line.deadlineSeconds / 60)}-minute protocol window expired.`; state.notice = 'Complete the research and final containment before the deadline.'; emit(state, 'TIMEOUT'); emit(state, 'LOST', 'TIMEOUT'); state.version++;
   }
   updateDistanceSensor(state);
   updateCaption(state);
@@ -105,6 +105,11 @@ export function dispatch(previous: GameState, action: GameAction): GameState {
     case 'camera': if (['A', 'B', 'C'].includes(action.feed)) state.cameraFeed = action.feed; break;
     case 'input': taskInput(state, action.value); break;
     case 'wire': connectWire(state, action.from, action.to); break;
+    case 'route': toggleRoute(state, action.machine); break;
+    case 'engage': engageRoute(state); break;
+    case 'mark': markSector(state, action.sector); break;
+    case 'tap': tapPulse(state); break;
+    case 'breathe': breathe(state, action.holding); break;
     case 'practice-memory': if (state.mode === 'tutorial') startStage(state, 2); break;
     case 'replay': if (state.station === 'terminal') replayMemory(state); break;
     case 'transmit': transmit(state); break;

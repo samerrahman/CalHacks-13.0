@@ -2,20 +2,23 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { captionReadingSeconds, createAudioEngine, type AudioWorld, type SpeechEvent } from './engine';
 
-class Parameter { value = 0; automation: number[] = []; setTargetAtTime(value: number) { this.value = value; this.automation.push(value); } setValueAtTime(value: number) { this.value = value; this.automation.push(value); } linearRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } exponentialRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } }
+class Parameter { value = 0; automation: number[] = []; setTargetAtTime(value: number) { this.value = value; this.automation.push(value); } setValueAtTime(value: number) { this.value = value; this.automation.push(value); } linearRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } exponentialRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } cancelScheduledValues() { /* Mock keeps the recorded automation. */ } }
 class Node { connected: Node[] = []; connect(node: Node) { this.connected.push(node); return node; } disconnect() { this.connected = []; } }
 class Source extends Node { buffer: { tag: string } | null = null; loop = false; stopped = false; started = false; onended: (() => void) | null = null; start() { this.started = true; } stop() { if (this.stopped) return; this.stopped = true; this.onended?.(); } }
 class Oscillator extends Node { type = ''; frequency = new Parameter(); detune = new Parameter(); started = false; stopped = false; stopAt: number | null = null; onended: (() => void) | null = null; start() { this.started = true; } stop(at?: number) { if (at !== undefined && at > FakeContext.current.currentTime) { this.stopAt = at; return; } if (this.stopped) return; this.stopped = true; this.onended?.(); } }
 class Panner extends Node { positionX = new Parameter(); positionY = new Parameter(); positionZ = new Parameter(); }
 class FakeContext {
   static current: FakeContext;
-  state = 'suspended'; currentTime = 0; destination = new Node(); sources: Source[] = []; oscillators: Oscillator[] = []; gains: (Node & { gain: Parameter })[] = [];
+  state = 'suspended'; currentTime = 0; sampleRate = 8000; destination = new Node(); sources: Source[] = []; oscillators: Oscillator[] = []; gains: (Node & { gain: Parameter })[] = [];
   listener = Object.fromEntries(['positionX', 'positionY', 'positionZ', 'forwardX', 'forwardY', 'forwardZ', 'upX', 'upY', 'upZ'].map(name => [name, new Parameter()]));
   constructor() { FakeContext.current = this; }
   async resume() { this.state = 'running'; } async suspend() { this.state = 'suspended'; } async close() { this.state = 'closed'; }
   createGain() { const node = Object.assign(new Node(), { gain: new Parameter() }); this.gains.push(node); return node; }
-  createDynamicsCompressor() { return Object.assign(new Node(), Object.fromEntries(['threshold', 'knee', 'ratio', 'attack', 'release'].map(name => [name, new Parameter()]))); }
+  createDynamicsCompressor() { const node = Object.assign(new Node(), Object.fromEntries(['threshold', 'knee', 'ratio', 'attack', 'release'].map(name => [name, new Parameter()]))) as unknown as Node & { threshold: Parameter }; this.compressors.push(node); return node; }
+  compressors: (Node & { threshold: Parameter })[] = [];
   createPanner() { return new Panner(); }
+  createWaveShaper() { return Object.assign(new Node(), { curve: null as Float32Array | null, oversample: 'none' }); }
+  createBuffer(_channels: number, length: number) { const data = new Float32Array(length); return { tag: 'noise', getChannelData: () => data }; }
   createBiquadFilter() { return Object.assign(new Node(), { frequency: new Parameter(), Q: new Parameter(), type: '' }); }
   createOscillator() { const source = new Oscillator(); this.oscillators.push(source); return source; }
   createBufferSource() { const source = new Source(); this.sources.push(source); return source; }
@@ -72,7 +75,7 @@ test('fault beds power down in quiet and the sustained lure uses its remote emit
   } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
 });
 
-test('industrial alarm shares the bounded bus, speeds up with urgency and never duplicates its graph', async () => {
+test('siren shares the bounded bus, sweeps faster with urgency and never duplicates its graph', async () => {
  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
  globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
@@ -82,7 +85,7 @@ test('industrial alarm shares the bounded bus, speeds up with urgency and never 
   engine.updateWorld(world({ alarm: { active: false, urgency: 1 } })); assert.equal(context.oscillators.length, 0);
   engine.updateWorld(world({ alarm: { active: true, urgency: 0 } }));
   assert.equal(context.oscillators.length, 3); assert.ok(context.oscillators.every(o => o.started));
-  const slow = engine.diagnostics.alarmPulseHz; assert.equal(slow, .8);
+  const slow = engine.diagnostics.alarmPulseHz; assert.equal(slow, .5, 'a slow wail when it first gets close');
   const master = context.gains[0]!;
   const horn = context.oscillators[0]!;
   const filter = horn.connected[0]!.connected[0]!;
@@ -90,10 +93,11 @@ test('industrial alarm shares the bounded bus, speeds up with urgency and never 
   assert.equal(envelope.connected[0]!.connected[0], master, 'alarm panner routes through shared master/limiter');
   for (let i = 0; i < 120; i++) engine.updateWorld(world({ time: i / 60, power: 'quiet', alarm: { active: true, urgency: i / 119 } }));
   assert.equal(context.oscillators.length, 3, 'render updates reuse the same three oscillators');
-  assert.ok(engine.diagnostics.alarmPulseHz > slow); assert.equal(engine.diagnostics.alarmPulseHz, 4.2);
+  assert.ok(engine.diagnostics.alarmPulseHz > slow); assert.equal(engine.diagnostics.alarmPulseHz, 5, 'a fast yelp at the wall');
+  engine.updateWorld(world({ alarm: { active: true, urgency: .33 } })); assert.ok(engine.diagnostics.alarmPulseHz > .5 + 4.5 * .5, 'a third of the urgency is already past half speed');
   assert.ok(engine.diagnostics.alarmActive, 'committed late-Q alarm survives equipment isolation');
   engine.updateWorld(world({ power: 'blackout', alarm: { active: true, urgency: 2 }, softScares: true }));
-  assert.equal(engine.diagnostics.alarmPulseHz, 4.2); assert.equal(envelope.gain.value, .065);
+  assert.equal(engine.diagnostics.alarmPulseHz, 5); assert.equal(envelope.gain.value, .06);
   engine.setMuted(true); assert.equal(master.gain.value, 0); engine.setVolume(.7); assert.equal(master.gain.value, 0);
   engine.setMuted(false); assert.equal(master.gain.value, .7);
   engine.updateWorld(world({ alarm: { active: false, urgency: 1 } }));
@@ -136,12 +140,22 @@ test('mechanical scares have short envelopes, positional routing, softer gain an
   assert.ok(first.stopAt! <= .55); assert.equal(Math.max(...firstEnvelope.gain.automation), .28);
   assert.ok(context.sources.some(s => s.buffer?.tag === 'breach_impact.wav' && s.started));
   engine.playScare('breach'); assert.equal(engine.diagnostics.startedScares, 1, 'repeated frames cannot stack impacts');
-  context.currentTime = 1; engine.playScare('breach', undefined, true);
-  const softer = context.oscillators[1]!; const softEnvelope = softer.connected[0]!.connected[0] as Node & { gain: Parameter };
+  const scream = context.oscillators.slice(1), limiter = context.compressors[0]!;
+  assert.ok(scream.filter(o => o.type === 'sawtooth').length >= 4 && scream.every(o => o.started && o.stopAt! <= 2.1), 'breach adds a bounded scream voice and growl');
+  assert.ok(context.sources.some(s => s.buffer?.tag === 'noise' && s.started), 'breach adds rasp noise');
+  assert.equal(Math.max(...limiter.threshold.automation), -1, 'unsoftened breach briefly opens the limiter');
+  const scareBus = context.gains.find(g => g !== context.gains[0] && g.connected.includes(limiter))!; assert.ok(scareBus, 'the scream has its own bus into the limiter');
+  assert.equal(scareBus.gain.value, Math.min(1, .55 * 1.9)); engine.setMuted(true); assert.equal(scareBus.gain.value, 0, 'mute silences the scream'); engine.setMuted(false);
+  context.currentTime = 1; const before = context.oscillators.length; const openings = limiter.threshold.automation.filter(v => v === -1).length;
+  engine.playScare('breach', undefined, true);
+  const softer = context.oscillators[before]!;
+  assert.equal(limiter.threshold.automation.filter(v => v === -1).length, openings, 'softer scares keep the normal limiter'); const softEnvelope = softer.connected[0]!.connected[0] as Node & { gain: Parameter };
   assert.ok(Math.max(...softEnvelope.gain.automation) < Math.max(...firstEnvelope.gain.automation));
   engine.setPaused(true); assert.ok(softer.stopped); context.currentTime = 3; engine.playScare('monitor'); assert.equal(engine.diagnostics.startedScares, 2);
   assert.ok(context.sources.filter(s => s.buffer?.tag === 'breach_impact.wav').every(s => s.stopped), 'pause stops the mechanical sample layers too');
+  assert.ok(scream.every(o => o.stopped), 'pause stops the scream layers');
   engine.reset(); assert.ok(context.oscillators.every(o => o.stopped));
+  assert.equal(limiter.threshold.value, -12, 'stopping a scare restores the limiter');
  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
 });
 

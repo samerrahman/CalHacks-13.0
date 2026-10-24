@@ -4,48 +4,100 @@
   "seed": 17,
   "checks": [
     "Physical-equipment E interaction and all seven nonlethal tutorial steps completed through visible controls",
-    "One visible isolation cell is consumed; equipment returns automatically after ten seconds and cooldown prevents immediate reuse",
-    "Seed17 won eight faults + wiring, five pulses, twelve faults + wiring, six pulses, and containment through observed controls"
+    "One visible isolation cell is consumed; equipment returns automatically after twelve seconds and cooldown prevents immediate reuse",
+    "Seed17 won 24 faults + 12 cables + four routing circuits, growing 3→7 memory + heartbeat mask, 36 faults + 18 cables + five monitor marks, growing 4→8 memory + calm hold, and containment through observed controls"
   ],
   "errors": [],
   "failedResources": [],
   "observations": {
-    "defenses": 1,
-    "automaticRestores": 1,
-    "blackouts": 0,
+    "defenses": 4,
+    "automaticRestores": 4,
+    "blackouts": 3,
     "sequenceLengths": [
       4,
+      3,
+      4,
       5,
-      6
+      6,
+      7,
+      4,
+      5,
+      6,
+      7,
+      8
     ],
     "wireBoards": 2,
     "wireDrags": 1,
-    "wireClicks": 7,
+    "wireClicks": 29,
     "stages": [
       "Silence the machines.",
       "Reconnect the relay.",
+      "Route power quietly.",
       "Transmit a false heartbeat.",
+      "Mask your heartbeat.",
       "Clear the overload.",
+      "Mark its position.",
       "Lead it toward containment.",
+      "Let it lose your trail.",
       "Bring it back inside."
     ],
     "resourceSamples": [
       {
-        "cells": 4,
-        "danger": 18,
-        "deadline": "5:00"
+        "cells": 5,
+        "danger": 10,
+        "deadline": "12:00"
+      },
+      {
+        "cells": 5,
+        "danger": 10,
+        "deadline": "12:00"
       },
       {
         "cells": 4,
-        "danger": 18,
-        "deadline": "5:00"
+        "danger": null,
+        "deadline": "12:00"
+      },
+      {
+        "cells": 5,
+        "danger": 65,
+        "deadline": "10:43"
+      },
+      {
+        "cells": 4,
+        "danger": null,
+        "deadline": "10:43"
+      },
+      {
+        "cells": 5,
+        "danger": 52,
+        "deadline": "10:08"
+      },
+      {
+        "cells": 4,
+        "danger": null,
+        "deadline": "10:08"
+      },
+      {
+        "cells": 4,
+        "danger": 73,
+        "deadline": "9:30"
       },
       {
         "cells": 3,
         "danger": null,
-        "deadline": "5:00"
+        "deadline": "9:30"
       }
-    ]
+    ],
+    "routes": 4,
+    "pulsePeriods": [
+      910
+    ],
+    "pulseBeatsNeeded": [
+      10
+    ],
+    "naturalAlarmDefenses": 3,
+    "marks": 5,
+    "calmHolds": 1
   },
-  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n48s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n233s\nELAPSED\n3\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
 }

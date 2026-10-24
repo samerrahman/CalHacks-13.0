@@ -18,7 +18,7 @@ try{
  const marked=page.getByRole('button',{name:/^Machine [1-4] FAULT$/}); const count=await marked.count(); if(count)await marked.nth(0).click();
  await page.getByRole('button',{name:'Judge view J',exact:true}).click();
  const audio=page.getByTestId('audio-diagnostics');
- await expect(page.locator('.radio-caption')).toContainText('Eight faults.',{timeout:6000});
+ await expect(page.locator('.radio-caption')).toContainText('faults, then the cables',{timeout:6000});
  result.initialInstruction=await page.locator('.radio-caption p').innerText();
  await expect(page.locator('.radio-caption')).toHaveCount(0,{timeout:20000});
  result.initialInstructionCompletedBeforeMonster=true;

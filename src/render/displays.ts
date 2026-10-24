@@ -24,6 +24,11 @@ export function plateTexture(title: string, lines: string[]): CanvasTexture {
   ctx.font = '34px monospace'; lines.forEach((line, i) => ctx.fillText(line, 52, 207 + i * 67));
   return texture;
 }
+const STEP_SCREENS: Record<string, [string, string]> = {
+  wires: ['PATCH THE RELAY', 'MATCH EACH CABLE TO ITS SOCKET'], routing: ['ROUTE POWER QUIETLY', 'ENOUGH POWER, UNDER ITS HEARING'],
+  locate: ['MARK ITS POSITION', 'USE THE SECURITY MONITOR'], pulse: ['MASK YOUR HEARTBEAT', 'TAP IN RHYTHM WITH THE PULSE'], calm: ['LET IT LOSE YOUR TRAIL', 'BREATHE WITH THE RING'],
+};
+const PROGRESS_UNITS: Record<string, string> = { wires: 'CABLES LINKED', routing: 'CIRCUITS ENGAGED', locate: 'POSITIONS MARKED', pulse: 'BEATS IN RHYTHM', calm: 'CALM SECONDS' };
 export function drawTerminal(display: Display, state: RenderState): void {
   const on = state.power === 'on', ctx = display.context;
   ctx.fillStyle = on ? '#14170d' : '#030403'; ctx.fillRect(0, 0, 1024, 512);
@@ -33,6 +38,20 @@ export function drawTerminal(display: Display, state: RenderState): void {
   if (!on) {
     ctx.fillText(state.power === 'quiet' ? 'EMERGENCY QUIET' : 'POWER INTERRUPTED', 48, 205);
     ctx.font = '30px monospace'; ctx.fillStyle = '#5d6e56'; ctx.fillText('PROGRESS PRESERVED', 48, 278);
+  } else if (state.step && STEP_SCREENS[state.step]) {
+    const [title, detail] = STEP_SCREENS[state.step]!, [done, total] = state.progress ?? [0, 0];
+    ctx.fillText(title, 45, 120);
+    ctx.font = '28px monospace'; ctx.fillStyle = '#8fae80'; ctx.fillText(detail, 48, 168);
+    if (state.step === 'pulse') {
+      const flash = Math.max(0, Math.min(1, state.pulseFlash ?? 0));
+      ctx.fillStyle = `rgba(${Math.round(60 + flash * 150)}, ${Math.round(30 + flash * 30)}, 24, 1)`; ctx.beginPath(); ctx.arc(512, 290, 70 + flash * 10, 0, Math.PI * 2); ctx.fill();
+    } else if (state.step === 'calm') {
+      ctx.strokeStyle = state.breathMatched === false ? '#c78b4f' : '#93a873'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(512, 290, 22 + Math.max(0, Math.min(1, state.breath ?? 0)) * 88, 0, Math.PI * 2); ctx.stroke();
+    } else {
+      for (let i = 0; i < total; i++) { const x = 48 + i * Math.min(60, 920 / Math.max(1, total)); ctx.fillStyle = i < done ? '#a2c18b' : '#1b3d29'; ctx.fillRect(x, 250, Math.min(48, 920 / Math.max(1, total) - 8), 80); }
+    }
+    ctx.fillStyle = '#b8c8a2'; ctx.font = '27px monospace'; ctx.fillText(`${done} / ${total} ${PROGRESS_UNITS[state.step] ?? ''}`, 48, 448);
   } else if (state.stage === 1 || state.stage === 3) {
     ctx.fillText(state.stage === 1 ? 'SILENCE THE FAULTS' : 'REPAIR THE OVERLOAD', 45, 120);
     for (let i = 0; i < 4; i++) {
@@ -63,9 +82,9 @@ export function drawProximity(display: Display, state: RenderState): void {
   ctx.fillStyle = '#b0a97c'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY', 256, 57);
   const sampled = state.creature.sensorDistance;
   ctx.font = 'bold 104px monospace'; ctx.fillText(typeof sampled === 'number' && Number.isFinite(sampled) ? `${sampled}` : '—', 256, 202);
-  ctx.font = '24px monospace'; ctx.fillText('LINE UNITS / LAST SAMPLE', 256, 252);
+  ctx.font = '24px monospace'; ctx.fillText('STEPS FROM YOUR WALL / 24', 256, 252);
   ctx.fillStyle = '#6c704e'; ctx.font = '23px monospace';
-  ctx.fillText('SAMPLE INTERVAL 4 SECONDS', 256, 325);
+  ctx.fillText('NEW READING EVERY 4 SECONDS', 256, 325);
   wornGlass(display, 512, 384); display.texture.needsUpdate = true;
 }
 export function drawCameraOverlay(display: Display, state: RenderState, corruption = 0, reducedMotion = false): void {

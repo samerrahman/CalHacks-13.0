@@ -12,6 +12,12 @@ export interface RenderState {
   sequenceLength?: number;
   entered?: number[];
   armed?: boolean;
+  /** Live part of the stage and its progress, so the in-room screen matches the HUD task. */
+  step?: string;
+  progress?: [number, number] | null;
+  pulseFlash?: number;
+  breath?: number;
+  breathMatched?: boolean;
   creature: { position: WorldPosition; phase: string; distance: number; sensorDistance?: number | null; sensorSampleAt?: number };
   cameraFeed?: CameraFeed;
   status?: 'playing' | 'won' | 'lost';

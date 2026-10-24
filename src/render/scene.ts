@@ -163,7 +163,8 @@ export function createScene(container: HTMLElement): SceneView {
       const inspection = state.inspection && (station === 'terminal' || station === 'cameras');
       if (!!inspection !== wasInspecting) { yaw = 0; pitch = 0; wasInspecting = !!inspection; }
       desiredPosition.copy(seatedPosition); desiredTarget.copy(STATION_TARGETS[station]);
-      if (inspection) { const x = station === 'terminal' ? -.62 : .72; desiredPosition.set(x, 1.47, -.32); desiredTarget.set(x, 1.33, -1.66); }
+      // On squarer landscape screens the monitor view slides right so the CCTV feed clears the docked panel.
+      if (inspection) { const x = station === 'terminal' ? -.62 : .72 + (camera.aspect >= 1.2 && camera.aspect < 1.5 ? .1 : 0); desiredPosition.set(x, 1.47, -.32); desiredTarget.set(x, 1.33, -1.66); }
       camera.position.lerp(desiredPosition, reducedMotion ? 1 : 1 - Math.exp(-delta * 5));
       aim.position.copy(camera.position); aim.lookAt(desiredTarget); const angles = new THREE.Euler().setFromQuaternion(aim.quaternion, 'YXZ'); angles.y += yaw; angles.x += pitch;
       const scare = scareStrength(state.time, state.scare, reducedMotion, state.softScares);

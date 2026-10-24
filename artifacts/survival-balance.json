@@ -1,13 +1,53 @@
 {
   "kind": "DETERMINISTIC REDUCER BALANCE — NOT A HUMAN PLAYTEST",
-  "limitation": "Policies know private puzzle answers and respond to the public proximity alarm immediately. They do not measure human attention, drag accuracy, memory or camera performance. No live provider or physiological measurements were used.",
-  "policies": {
-    "fast": "0.3s input spacing",
-    "medium": "2.5s per fault;1.5s per wire;1s per memory digit",
-    "twoMistakes": "one wrong quiet machine at the start of each fault stage",
-    "slowErrorProne": "3.5s per fault;2.5s per wire;1.5s per digit;one wrong input every third fault",
-    "elevated": "synthetic accepted ELEVATED throughout; no raw pulse samples"
+  "limitation": "Policies know private puzzle answers, solve thinking tasks after a scripted delay and react to the public proximity alarm after a scripted delay; with no isolation available they go silent. They do not measure human attention, drag accuracy, rhythm, memory or camera performance. No live provider or physiological measurements were used.",
+  "paces": {
+    "perfect": {
+      "fault": 0.3,
+      "wire": 0.3,
+      "digit": 0.3,
+      "think": 0.2,
+      "react": 0.2,
+      "route": 0.5,
+      "look": 0.5,
+      "jitter": 0,
+      "mistakes": 0
+    },
+    "fast": {
+      "fault": 0.5,
+      "wire": 1.2,
+      "digit": 0.45,
+      "think": 0.6,
+      "react": 0.8,
+      "route": 3,
+      "look": 1.2,
+      "jitter": 0.04,
+      "mistakes": 0
+    },
+    "human": {
+      "fault": 1,
+      "wire": 2.2,
+      "digit": 0.7,
+      "think": 1.2,
+      "react": 1.5,
+      "route": 8,
+      "look": 2,
+      "jitter": 0.08,
+      "mistakes": 0.05
+    },
+    "slow": {
+      "fault": 1.6,
+      "wire": 3.4,
+      "digit": 1,
+      "think": 2,
+      "react": 2.5,
+      "route": 14,
+      "look": 3,
+      "jitter": 0.1,
+      "mistakes": 0.14
+    }
   },
+  "elevated": "synthetic accepted ELEVATED throughout; no raw pulse samples",
   "config": {
     "line": {
       "length": 24,
@@ -15,7 +55,7 @@
       "stepSeconds": 2.5,
       "maximumStep": 3,
       "graceSeconds": 25,
-      "deadlineSeconds": 300,
+      "deadlineSeconds": 720,
       "nearPosition": 7,
       "clearPosition": 10,
       "commitPosition": 1,
@@ -25,8 +65,10 @@
       "soundEvidenceSeconds": 30
     },
     "lineBias": {
-      "base": -0.32,
-      "dangerScale": 0.8,
+      "base": 0.32,
+      "dangerScale": 1.36,
+      "lostTrailSeconds": 8,
+      "lostTrailBias": 0.6,
       "momentum": 0.06,
       "providerMaximum": 0.15,
       "providerDurationSeconds": 8,
@@ -53,4578 +95,1638 @@
       "durationSeconds": 12
     },
     "danger": {
-      "base": 18,
-      "timeMaximum": 42,
-      "pressureMaximum": 30,
-      "pressureDecayPerSecond": 0.08,
+      "base": 10,
+      "timeMaximum": 25,
+      "pressureMaximum": 55,
+      "pressureDecayPerSecond": 0.6,
+      "quietCoolingMultiplier": 6,
+      "workPressure": 1.8,
+      "machineryPressurePerSecond": 0.8,
       "mistakePressure": 6,
-      "successRelief": 1.25,
-      "stageRelief": 4,
-      "physiologyMaximum": 8,
-      "shutdownAdaptation": 4
+      "stageRelief": 8,
+      "physiologyMaximum": 5,
+      "shutdownAdaptation": 2
     },
     "shutdown": {
-      "charges": 4,
-      "durationSeconds": 10,
+      "charges": 5,
+      "stageRefill": 2,
+      "durationSeconds": 12,
       "cooldownSeconds": 10,
-      "retreatBias": 0.9,
+      "retreatBias": 1,
       "listeningSeconds": 4,
       "manualRestoreAfterSeconds": 8
+    },
+    "tasks": {
+      "stage1": {
+        "kind": "faults",
+        "required": 24,
+        "maxActive": 2,
+        "spawnIntervalSeconds": 1.4,
+        "wires": 12
+      },
+      "stage2": {
+        "kind": "memory",
+        "inputs": 7,
+        "target": "EMITTER_A",
+        "firstInputs": 3
+      },
+      "stage3": {
+        "kind": "faults",
+        "required": 36,
+        "maxActive": 3,
+        "spawnIntervalSeconds": 1,
+        "wires": 18
+      },
+      "stage4": {
+        "kind": "memory",
+        "inputs": 8,
+        "target": "EMITTER_B",
+        "firstInputs": 4
+      },
+      "routing": {
+        "rounds": 4,
+        "maximumRating": 8
+      },
+      "pulse": {
+        "minimumBpm": 54,
+        "maximumBpm": 90,
+        "beats": 10,
+        "tolerance": 0.15,
+        "elevatedBeats": 12,
+        "elevatedTolerance": 0.12
+      },
+      "locate": {
+        "marks": 5,
+        "spacingSeconds": 6
+      },
+      "calm": {
+        "seconds": 16,
+        "breathSeconds": 4,
+        "graceSeconds": 0.45,
+        "steadyMultiplier": 1.5,
+        "elevatedMultiplier": 0.6,
+        "drainPerSecond": 0.5
+      }
     }
   },
   "results": [
     {
-      "name": "fast-perfect-information",
-      "count": 100,
-      "wins": 100,
-      "meanWinSeconds": 57.024999999999324,
-      "maxWinSeconds": 75.49999999999828,
-      "runsWithNearEncounter": 0,
-      "meanIsolationChargesUsed": 0,
+      "name": "perfect-information",
+      "count": 30,
+      "wins": 21,
+      "meanWinSeconds": 289.66666666668306,
+      "maxWinSeconds": 358.0000000000692,
+      "meanAlarms": 4.866666666666666,
+      "meanSecondsBetweenAlarms": 39.575287356320686,
+      "meanIsolationChargesUsed": 5.4,
       "outcomes": [
         {
           "seed": 1,
           "outcome": "won",
-          "seconds": 60.5,
+          "seconds": 270.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 5,
+          "alarms": 5,
           "reason": null
         },
         {
           "seed": 2,
           "outcome": "won",
-          "seconds": 58,
+          "seconds": 293,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 3,
           "reason": null
         },
         {
           "seed": 3,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 224.9,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 6,
+          "alarms": 5,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 4,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 307.4,
+          "stage": 4,
+          "step": "transmit",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 5,
           "outcome": "won",
-          "seconds": 60.5,
+          "seconds": 288,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 6,
           "reason": null
         },
         {
           "seed": 6,
           "outcome": "won",
-          "seconds": 55.5,
+          "seconds": 273,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 4,
           "reason": null
         },
         {
           "seed": 7,
           "outcome": "won",
-          "seconds": 55.5,
+          "seconds": 320.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 8,
           "reason": null
         },
         {
           "seed": 8,
           "outcome": "won",
-          "seconds": 58,
+          "seconds": 358,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 9,
           "outcome": "won",
-          "seconds": 65.5,
+          "seconds": 303,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 6,
           "reason": null
         },
         {
           "seed": 10,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 204.9,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 3,
+          "alarms": 3,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 11,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 337.4,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 8,
+          "alarms": 4,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 12,
           "outcome": "won",
-          "seconds": 68,
+          "seconds": 345.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 8,
           "reason": null
         },
         {
           "seed": 13,
           "outcome": "won",
-          "seconds": 55.5,
+          "seconds": 273,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 4,
           "reason": null
         },
         {
           "seed": 14,
           "outcome": "won",
-          "seconds": 50.5,
+          "seconds": 250.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 4,
           "reason": null
         },
         {
           "seed": 15,
           "outcome": "won",
-          "seconds": 55.5,
+          "seconds": 288,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 5,
+          "alarms": 5,
           "reason": null
         },
         {
           "seed": 16,
           "outcome": "won",
-          "seconds": 55.5,
+          "seconds": 325.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 7,
           "reason": null
         },
         {
           "seed": 17,
           "outcome": "won",
-          "seconds": 55.5,
+          "seconds": 250.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 3,
+          "alarms": 3,
           "reason": null
         },
         {
           "seed": 18,
           "outcome": "won",
-          "seconds": 53,
+          "seconds": 260.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 4,
           "reason": null
         },
         {
           "seed": 19,
           "outcome": "won",
-          "seconds": 48,
+          "seconds": 303,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 5,
           "reason": null
         },
         {
           "seed": 20,
           "outcome": "won",
-          "seconds": 58,
+          "seconds": 345.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 7,
           "reason": null
         },
         {
           "seed": 21,
           "outcome": "won",
-          "seconds": 50.5,
+          "seconds": 235.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 2,
+          "alarms": 2,
           "reason": null
         },
         {
           "seed": 22,
           "outcome": "won",
-          "seconds": 68,
+          "seconds": 290.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 5,
           "reason": null
         },
         {
           "seed": 23,
           "outcome": "won",
-          "seconds": 45.5,
+          "seconds": 275.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 3,
           "reason": null
         },
         {
           "seed": 24,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 207.4,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 4,
+          "alarms": 4,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 25,
           "outcome": "won",
-          "seconds": 73,
+          "seconds": 285.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 5,
           "reason": null
         },
         {
           "seed": 26,
-          "outcome": "won",
-          "seconds": 68,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 292.4,
+          "stage": 4,
+          "step": "calm",
+          "chargesUsed": 7,
+          "alarms": 5,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 27,
           "outcome": "won",
-          "seconds": 58,
+          "seconds": 248,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 3,
+          "alarms": 3,
           "reason": null
         },
         {
           "seed": 28,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 242.4,
+          "stage": 4,
+          "step": "calm",
+          "chargesUsed": 4,
+          "alarms": 3,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 29,
+          "outcome": "lost",
+          "seconds": 257.4,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 7,
+          "alarms": 5,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 30,
+          "outcome": "lost",
+          "seconds": 202.4,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 3,
+          "alarms": 4,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        }
+      ]
+    },
+    {
+      "name": "fast",
+      "count": 30,
+      "wins": 24,
+      "meanWinSeconds": 348.9375000000619,
+      "maxWinSeconds": 428.0000000001249,
+      "meanAlarms": 5.966666666666667,
+      "meanSecondsBetweenAlarms": 43.27472035794575,
+      "meanIsolationChargesUsed": 6.333333333333333,
+      "outcomes": [
+        {
+          "seed": 1,
           "outcome": "won",
-          "seconds": 68,
+          "seconds": 335.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 7,
           "reason": null
+        },
+        {
+          "seed": 2,
+          "outcome": "won",
+          "seconds": 345.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 5,
+          "reason": null
+        },
+        {
+          "seed": 3,
+          "outcome": "lost",
+          "seconds": 282.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 7,
+          "alarms": 6,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 4,
+          "outcome": "won",
+          "seconds": 428,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 7,
+          "reason": null
+        },
+        {
+          "seed": 5,
+          "outcome": "won",
+          "seconds": 325.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 5,
+          "alarms": 5,
+          "reason": null
+        },
+        {
+          "seed": 6,
+          "outcome": "won",
+          "seconds": 308,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 3,
+          "alarms": 3,
+          "reason": null
+        },
+        {
+          "seed": 7,
+          "outcome": "won",
+          "seconds": 403,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 10,
+          "alarms": 10,
+          "reason": null
+        },
+        {
+          "seed": 8,
+          "outcome": "won",
+          "seconds": 345.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 6,
+          "reason": null
+        },
+        {
+          "seed": 9,
+          "outcome": "won",
+          "seconds": 370.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 7,
+          "reason": null
+        },
+        {
+          "seed": 10,
+          "outcome": "won",
+          "seconds": 353,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": null
+        },
+        {
+          "seed": 11,
+          "outcome": "won",
+          "seconds": 375.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 8,
+          "reason": null
+        },
+        {
+          "seed": 12,
+          "outcome": "won",
+          "seconds": 350.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": null
+        },
+        {
+          "seed": 13,
+          "outcome": "won",
+          "seconds": 358,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": null
+        },
+        {
+          "seed": 14,
+          "outcome": "won",
+          "seconds": 335.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 4,
+          "reason": null
+        },
+        {
+          "seed": 15,
+          "outcome": "won",
+          "seconds": 343,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": null
+        },
+        {
+          "seed": 16,
+          "outcome": "lost",
+          "seconds": 364.9,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 9,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 17,
+          "outcome": "won",
+          "seconds": 338,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 5,
+          "alarms": 5,
+          "reason": null
+        },
+        {
+          "seed": 18,
+          "outcome": "won",
+          "seconds": 330.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 5,
+          "alarms": 5,
+          "reason": null
+        },
+        {
+          "seed": 19,
+          "outcome": "won",
+          "seconds": 335.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 6,
+          "reason": null
+        },
+        {
+          "seed": 20,
+          "outcome": "won",
+          "seconds": 388,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 9,
+          "reason": null
+        },
+        {
+          "seed": 21,
+          "outcome": "won",
+          "seconds": 308,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 4,
+          "alarms": 4,
+          "reason": null
+        },
+        {
+          "seed": 22,
+          "outcome": "won",
+          "seconds": 320.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 5,
+          "alarms": 5,
+          "reason": null
+        },
+        {
+          "seed": 23,
+          "outcome": "won",
+          "seconds": 300.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 3,
+          "alarms": 3,
+          "reason": null
+        },
+        {
+          "seed": 24,
+          "outcome": "lost",
+          "seconds": 214.9,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 4,
+          "alarms": 4,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 25,
+          "outcome": "won",
+          "seconds": 343,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 6,
+          "reason": null
+        },
+        {
+          "seed": 26,
+          "outcome": "lost",
+          "seconds": 389.9,
+          "stage": 4,
+          "step": "calm",
+          "chargesUsed": 10,
+          "alarms": 9,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 27,
+          "outcome": "won",
+          "seconds": 330.5,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 5,
+          "alarms": 5,
+          "reason": null
+        },
+        {
+          "seed": 28,
+          "outcome": "lost",
+          "seconds": 177.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 2,
+          "alarms": 2,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 29,
+          "outcome": "lost",
+          "seconds": 342.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 30,
           "outcome": "won",
-          "seconds": 48,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 31,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 32,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 33,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 34,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 35,
-          "outcome": "won",
-          "seconds": 65.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 36,
-          "outcome": "won",
-          "seconds": 75.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 37,
-          "outcome": "won",
-          "seconds": 65.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 38,
-          "outcome": "won",
-          "seconds": 65.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 39,
-          "outcome": "won",
-          "seconds": 45.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 40,
-          "outcome": "won",
-          "seconds": 55.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 41,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 42,
-          "outcome": "won",
-          "seconds": 55.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 43,
-          "outcome": "won",
-          "seconds": 45.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 44,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 45,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 46,
-          "outcome": "won",
-          "seconds": 53,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 47,
-          "outcome": "won",
-          "seconds": 63,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 48,
-          "outcome": "won",
-          "seconds": 53,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 49,
-          "outcome": "won",
-          "seconds": 53,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 50,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 51,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 52,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 53,
-          "outcome": "won",
-          "seconds": 55.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 54,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 55,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 56,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 57,
-          "outcome": "won",
-          "seconds": 63,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 58,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 59,
-          "outcome": "won",
-          "seconds": 48,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 60,
-          "outcome": "won",
-          "seconds": 68,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 61,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 62,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 63,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 64,
-          "outcome": "won",
-          "seconds": 53,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 65,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 66,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 67,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 68,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 69,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 70,
-          "outcome": "won",
-          "seconds": 55.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 71,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 72,
-          "outcome": "won",
-          "seconds": 45.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 73,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 74,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 75,
-          "outcome": "won",
-          "seconds": 65.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 76,
-          "outcome": "won",
-          "seconds": 55.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 77,
-          "outcome": "won",
-          "seconds": 73,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 78,
-          "outcome": "won",
-          "seconds": 70.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 79,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 80,
-          "outcome": "won",
-          "seconds": 60.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 81,
-          "outcome": "won",
-          "seconds": 63,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 82,
-          "outcome": "won",
-          "seconds": 68,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 83,
-          "outcome": "won",
-          "seconds": 55.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 84,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 85,
-          "outcome": "won",
-          "seconds": 68,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 86,
-          "outcome": "won",
-          "seconds": 53,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 87,
-          "outcome": "won",
-          "seconds": 53,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 88,
-          "outcome": "won",
-          "seconds": 48,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 89,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 90,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 91,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 92,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 93,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 94,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 95,
-          "outcome": "won",
-          "seconds": 48,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 96,
-          "outcome": "won",
-          "seconds": 70.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 97,
-          "outcome": "won",
-          "seconds": 50.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 98,
-          "outcome": "won",
-          "seconds": 53,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 99,
-          "outcome": "won",
-          "seconds": 45.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 100,
-          "outcome": "won",
-          "seconds": 58,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "seconds": 403,
+          "stage": 6,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 6,
           "reason": null
         }
       ]
     },
     {
-      "name": "medium-perfect-information",
-      "count": 100,
-      "wins": 91,
-      "meanWinSeconds": 124.95054945054493,
-      "maxWinSeconds": 160.49999999999346,
-      "runsWithNearEncounter": 64,
-      "meanIsolationChargesUsed": 1.13,
+      "name": "human-paced",
+      "count": 30,
+      "wins": 11,
+      "meanWinSeconds": 456.4090909092385,
+      "maxWinSeconds": 498.0000000001806,
+      "meanAlarms": 7.966666666666667,
+      "meanSecondsBetweenAlarms": 44.55917065391976,
+      "meanIsolationChargesUsed": 8.366666666666667,
       "outcomes": [
         {
           "seed": 1,
           "outcome": "won",
-          "seconds": 138,
+          "seconds": 445.5,
           "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 8,
           "reason": null
         },
         {
           "seed": 2,
-          "outcome": "won",
-          "seconds": 108,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 457.4,
+          "stage": 4,
+          "step": "calm",
+          "chargesUsed": 10,
+          "alarms": 10,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 3,
           "outcome": "lost",
-          "seconds": 89.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
+          "seconds": 279.9,
+          "stage": 2,
+          "step": "pulse",
+          "chargesUsed": 7,
+          "alarms": 6,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 4,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 342.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 7,
+          "alarms": 5,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 5,
           "outcome": "won",
-          "seconds": 133,
+          "seconds": 418,
           "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
+          "step": "final",
+          "chargesUsed": 7,
+          "alarms": 7,
           "reason": null
         },
         {
           "seed": 6,
           "outcome": "won",
-          "seconds": 113,
+          "seconds": 433,
           "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
+          "step": "final",
+          "chargesUsed": 6,
+          "alarms": 6,
           "reason": null
         },
         {
           "seed": 7,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 382.4,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 9,
+          "alarms": 10,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 8,
           "outcome": "won",
-          "seconds": 143,
+          "seconds": 478,
           "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
+          "step": "final",
+          "chargesUsed": 10,
+          "alarms": 10,
           "reason": null
         },
         {
           "seed": 9,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 414.9,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 9,
+          "alarms": 9,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 10,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 424.9,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 9,
+          "alarms": 9,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 11,
-          "outcome": "won",
-          "seconds": 100.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 367.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 8,
+          "alarms": 6,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 12,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 464.9,
+          "stage": 4,
+          "step": "transmit",
+          "chargesUsed": 11,
+          "alarms": 12,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 13,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 447.4,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 10,
+          "alarms": 9,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 14,
           "outcome": "won",
-          "seconds": 115.5,
+          "seconds": 463,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 15,
           "outcome": "won",
-          "seconds": 125.5,
+          "seconds": 460.5,
           "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 16,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 329.9,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 8,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 17,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 482.4,
+          "stage": 4,
+          "step": "transmit",
+          "chargesUsed": 10,
+          "alarms": 10,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 18,
           "outcome": "won",
-          "seconds": 100.5,
+          "seconds": 463,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 19,
           "outcome": "won",
-          "seconds": 100.5,
+          "seconds": 435.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 7,
+          "alarms": 7,
           "reason": null
         },
         {
           "seed": 20,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 377.4,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 8,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 21,
-          "outcome": "won",
-          "seconds": 90.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 382.4,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 5,
+          "alarms": 5,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 22,
           "outcome": "won",
-          "seconds": 130.5,
+          "seconds": 488,
           "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 23,
           "outcome": "won",
-          "seconds": 110.5,
+          "seconds": 438,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 8,
           "reason": null
         },
         {
           "seed": 24,
           "outcome": "lost",
-          "seconds": 89.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
+          "seconds": 319.9,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 7,
+          "alarms": 6,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 25,
-          "outcome": "lost",
-          "seconds": 102.4,
-          "stage": 4,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 26,
           "outcome": "won",
-          "seconds": 143,
+          "seconds": 498,
           "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
+          "step": "final",
+          "chargesUsed": 11,
+          "alarms": 10,
           "reason": null
-        },
-        {
-          "seed": 27,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 28,
-          "outcome": "won",
-          "seconds": 103,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 29,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 30,
-          "outcome": "won",
-          "seconds": 108,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 31,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 32,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 33,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 34,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 35,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 36,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 37,
-          "outcome": "lost",
-          "seconds": 82.4,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 38,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 39,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 40,
-          "outcome": "won",
-          "seconds": 98,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 41,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 42,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 43,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 44,
-          "outcome": "lost",
-          "seconds": 94.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 45,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 46,
-          "outcome": "won",
-          "seconds": 110.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 47,
-          "outcome": "won",
-          "seconds": 160.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 48,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 49,
-          "outcome": "won",
-          "seconds": 103,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 50,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 51,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 52,
-          "outcome": "lost",
-          "seconds": 89.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 53,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 54,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 55,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 56,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 57,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 58,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 59,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 60,
-          "outcome": "lost",
-          "seconds": 87.4,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 61,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 62,
-          "outcome": "lost",
-          "seconds": 94.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 63,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 64,
-          "outcome": "won",
-          "seconds": 105.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 65,
-          "outcome": "won",
-          "seconds": 103,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 66,
-          "outcome": "won",
-          "seconds": 108,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 67,
-          "outcome": "won",
-          "seconds": 105.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 68,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 69,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 70,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 71,
-          "outcome": "won",
-          "seconds": 105.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 72,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 73,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 74,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 75,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 76,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 77,
-          "outcome": "lost",
-          "seconds": 82.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 78,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 79,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 80,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 81,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 82,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 83,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 84,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 85,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 86,
-          "outcome": "won",
-          "seconds": 105.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 87,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 88,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 89,
-          "outcome": "won",
-          "seconds": 108,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 90,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 91,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 92,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 93,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 94,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 95,
-          "outcome": "won",
-          "seconds": 100.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 96,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 97,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 98,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 99,
-          "outcome": "won",
-          "seconds": 110.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 100,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        }
-      ]
-    },
-    {
-      "name": "medium-two-fault-mistakes",
-      "count": 100,
-      "wins": 84,
-      "meanWinSeconds": 134.45833333332826,
-      "maxWinSeconds": 170.4999999999929,
-      "runsWithNearEncounter": 73,
-      "meanIsolationChargesUsed": 1.41,
-      "outcomes": [
-        {
-          "seed": 1,
-          "outcome": "won",
-          "seconds": 153,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 2,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 3,
-          "outcome": "lost",
-          "seconds": 89.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 4,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 5,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 6,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 7,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 8,
-          "outcome": "won",
-          "seconds": 153,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 9,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 10,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 11,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 12,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 13,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 14,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 15,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 16,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 17,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 18,
-          "outcome": "won",
-          "seconds": 108,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 19,
-          "outcome": "won",
-          "seconds": 105.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 20,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 21,
-          "outcome": "won",
-          "seconds": 98,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 22,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 23,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 24,
-          "outcome": "lost",
-          "seconds": 87.4,
-          "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 25,
-          "outcome": "lost",
-          "seconds": 102.4,
-          "stage": 4,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 26,
           "outcome": "lost",
-          "seconds": 117.4,
-          "stage": 4,
-          "chargesUsed": 3,
-          "alarms": 1,
+          "seconds": 357.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 8,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 27,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 499.9,
+          "stage": 4,
+          "step": "transmit",
+          "chargesUsed": 9,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 28,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 287.4,
+          "stage": 3,
+          "step": "faults",
+          "chargesUsed": 6,
+          "alarms": 6,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 29,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 259.9,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 4,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 30,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 31,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 32,
-          "outcome": "won",
-          "seconds": 158,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 33,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 34,
           "outcome": "lost",
-          "seconds": 104.9,
+          "seconds": 432.4,
           "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
+          "step": "memory",
+          "chargesUsed": 9,
+          "alarms": 8,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 35,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 36,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 37,
-          "outcome": "lost",
-          "seconds": 82.4,
-          "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 38,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 39,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 40,
-          "outcome": "won",
-          "seconds": 105.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 41,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 42,
-          "outcome": "lost",
-          "seconds": 97.4,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 43,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 44,
-          "outcome": "lost",
-          "seconds": 94.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 45,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 46,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 47,
-          "outcome": "won",
-          "seconds": 170.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 48,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 49,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 50,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 51,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 52,
-          "outcome": "lost",
-          "seconds": 89.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 53,
-          "outcome": "won",
-          "seconds": 153,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 54,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 55,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 56,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 57,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 58,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 59,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 60,
-          "outcome": "lost",
-          "seconds": 87.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 61,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 62,
-          "outcome": "lost",
-          "seconds": 92.4,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 63,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 64,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 65,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 66,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 67,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 68,
-          "outcome": "won",
-          "seconds": 153,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 69,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 70,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 71,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 72,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 73,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 74,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 75,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 76,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 77,
-          "outcome": "lost",
-          "seconds": 79.9,
-          "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 78,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 79,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 80,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 81,
-          "outcome": "lost",
-          "seconds": 94.9,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 82,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 83,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 84,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 85,
-          "outcome": "won",
-          "seconds": 163,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 86,
-          "outcome": "won",
-          "seconds": 115.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 87,
-          "outcome": "lost",
-          "seconds": 87.4,
-          "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 88,
-          "outcome": "won",
-          "seconds": 153,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 89,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 90,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 91,
-          "outcome": "won",
-          "seconds": 160.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 92,
-          "outcome": "lost",
-          "seconds": 107.4,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 93,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 94,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 95,
-          "outcome": "won",
-          "seconds": 110.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 96,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 97,
-          "outcome": "lost",
-          "seconds": 97.4,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 98,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 99,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 100,
-          "outcome": "won",
-          "seconds": 160.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
         }
       ]
     },
     {
       "name": "slow-error-prone",
-      "count": 100,
-      "wins": 10,
-      "meanWinSeconds": 214.4999999999904,
-      "maxWinSeconds": 235.4999999999892,
-      "runsWithNearEncounter": 100,
-      "meanIsolationChargesUsed": 3.25,
+      "count": 30,
+      "wins": 0,
+      "meanWinSeconds": null,
+      "maxWinSeconds": null,
+      "meanAlarms": 6.433333333333334,
+      "meanSecondsBetweenAlarms": 46.884662576696805,
+      "meanIsolationChargesUsed": 6.8,
       "outcomes": [
         {
           "seed": 1,
           "outcome": "lost",
-          "seconds": 152.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
+          "seconds": 349.9,
+          "stage": 2,
+          "step": "pulse",
+          "chargesUsed": 7,
+          "alarms": 8,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 2,
           "outcome": "lost",
-          "seconds": 132.4,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 3,
+          "seconds": 352.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 6,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 3,
           "outcome": "lost",
-          "seconds": 134.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
+          "seconds": 222.4,
+          "stage": 1,
+          "step": "routing",
+          "chargesUsed": 5,
+          "alarms": 5,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 4,
           "outcome": "lost",
-          "seconds": 179.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 1,
+          "seconds": 279.9,
+          "stage": 1,
+          "step": "routing",
+          "chargesUsed": 5,
+          "alarms": 2,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 5,
           "outcome": "lost",
-          "seconds": 119.9,
+          "seconds": 424.9,
           "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
+          "step": "faults",
+          "chargesUsed": 9,
+          "alarms": 9,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 6,
-          "outcome": "won",
-          "seconds": 200.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 532.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 10,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 7,
           "outcome": "lost",
-          "seconds": 139.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
+          "seconds": 337.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 6,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 8,
           "outcome": "lost",
-          "seconds": 124.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
+          "seconds": 332.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 8,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 9,
           "outcome": "lost",
-          "seconds": 154.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 5,
+          "seconds": 224.9,
+          "stage": 1,
+          "step": "routing",
+          "chargesUsed": 5,
+          "alarms": 4,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 10,
           "outcome": "lost",
-          "seconds": 159.9,
+          "seconds": 424.9,
           "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
+          "step": "faults",
+          "chargesUsed": 9,
+          "alarms": 7,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 11,
           "outcome": "lost",
-          "seconds": 147.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 12,
-          "outcome": "lost",
-          "seconds": 142.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 13,
-          "outcome": "lost",
-          "seconds": 154.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 14,
-          "outcome": "lost",
-          "seconds": 169.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 5,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 15,
-          "outcome": "lost",
-          "seconds": 172.4,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 5,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 16,
-          "outcome": "lost",
-          "seconds": 144.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 17,
-          "outcome": "lost",
-          "seconds": 157.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 18,
-          "outcome": "lost",
-          "seconds": 117.4,
-          "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 19,
-          "outcome": "lost",
-          "seconds": 129.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 20,
-          "outcome": "lost",
-          "seconds": 137.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 21,
-          "outcome": "lost",
-          "seconds": 169.9,
-          "stage": 4,
+          "seconds": 179.9,
+          "stage": 1,
+          "step": "routing",
           "chargesUsed": 3,
           "alarms": 2,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
+          "seed": 12,
+          "outcome": "lost",
+          "seconds": 309.9,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 13,
+          "outcome": "lost",
+          "seconds": 319.9,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 14,
+          "outcome": "lost",
+          "seconds": 527.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 15,
+          "outcome": "lost",
+          "seconds": 507.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 11,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 16,
+          "outcome": "lost",
+          "seconds": 312.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 6,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 17,
+          "outcome": "lost",
+          "seconds": 437.4,
+          "stage": 3,
+          "step": "faults",
+          "chargesUsed": 9,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 18,
+          "outcome": "lost",
+          "seconds": 477.4,
+          "stage": 3,
+          "step": "faults",
+          "chargesUsed": 9,
+          "alarms": 6,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 19,
+          "outcome": "lost",
+          "seconds": 292.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 20,
+          "outcome": "lost",
+          "seconds": 317.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
+          "seed": 21,
+          "outcome": "lost",
+          "seconds": 372.4,
+          "stage": 3,
+          "step": "faults",
+          "chargesUsed": 7,
+          "alarms": 6,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
+        },
+        {
           "seed": 22,
           "outcome": "lost",
-          "seconds": 157.4,
+          "seconds": 404.9,
           "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
+          "step": "faults",
+          "chargesUsed": 9,
+          "alarms": 8,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 23,
           "outcome": "lost",
-          "seconds": 139.9,
+          "seconds": 444.9,
           "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 11,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 24,
           "outcome": "lost",
-          "seconds": 159.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
+          "seconds": 209.9,
+          "stage": 1,
+          "step": "routing",
+          "chargesUsed": 3,
+          "alarms": 2,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 25,
           "outcome": "lost",
-          "seconds": 64.9,
-          "stage": 2,
-          "chargesUsed": 1,
-          "alarms": 1,
+          "seconds": 202.4,
+          "stage": 1,
+          "step": "routing",
+          "chargesUsed": 5,
+          "alarms": 5,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 26,
           "outcome": "lost",
-          "seconds": 62.4,
-          "stage": 2,
-          "chargesUsed": 1,
-          "alarms": 1,
+          "seconds": 257.4,
+          "stage": 1,
+          "step": "routing",
+          "chargesUsed": 5,
+          "alarms": 6,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 27,
           "outcome": "lost",
-          "seconds": 174.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 6,
+          "seconds": 464.9,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 8,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 28,
           "outcome": "lost",
-          "seconds": 144.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 3,
+          "seconds": 247.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 5,
+          "alarms": 5,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 29,
           "outcome": "lost",
           "seconds": 64.9,
-          "stage": 2,
+          "stage": 1,
+          "step": "wires",
           "chargesUsed": 1,
           "alarms": 1,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 30,
-          "outcome": "won",
-          "seconds": 235.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": null
-        },
-        {
-          "seed": 31,
           "outcome": "lost",
-          "seconds": 149.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 32,
-          "outcome": "lost",
-          "seconds": 127.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 33,
-          "outcome": "won",
-          "seconds": 230.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 5,
-          "reason": null
-        },
-        {
-          "seed": 34,
-          "outcome": "lost",
-          "seconds": 142.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 35,
-          "outcome": "lost",
-          "seconds": 159.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 36,
-          "outcome": "lost",
-          "seconds": 62.4,
+          "seconds": 347.4,
           "stage": 2,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 37,
-          "outcome": "lost",
-          "seconds": 67.4,
-          "stage": 2,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 38,
-          "outcome": "lost",
-          "seconds": 144.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 39,
-          "outcome": "lost",
-          "seconds": 137.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 40,
-          "outcome": "won",
-          "seconds": 205.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 4,
-          "reason": null
-        },
-        {
-          "seed": 41,
-          "outcome": "lost",
-          "seconds": 129.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 42,
-          "outcome": "lost",
-          "seconds": 154.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 5,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 43,
-          "outcome": "lost",
-          "seconds": 107.4,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 44,
-          "outcome": "lost",
-          "seconds": 137.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 45,
-          "outcome": "lost",
-          "seconds": 139.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 46,
-          "outcome": "lost",
-          "seconds": 117.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 47,
-          "outcome": "lost",
-          "seconds": 144.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 48,
-          "outcome": "lost",
-          "seconds": 107.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 49,
-          "outcome": "lost",
-          "seconds": 127.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 50,
-          "outcome": "lost",
-          "seconds": 154.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 51,
-          "outcome": "lost",
-          "seconds": 124.9,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 52,
-          "outcome": "lost",
-          "seconds": 152.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 53,
-          "outcome": "lost",
-          "seconds": 147.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 54,
-          "outcome": "lost",
-          "seconds": 149.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 55,
-          "outcome": "lost",
-          "seconds": 69.9,
-          "stage": 2,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 56,
-          "outcome": "lost",
-          "seconds": 149.9,
-          "stage": 4,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 57,
-          "outcome": "lost",
-          "seconds": 164.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 58,
-          "outcome": "lost",
-          "seconds": 174.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 59,
-          "outcome": "lost",
-          "seconds": 134.9,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 60,
-          "outcome": "lost",
-          "seconds": 69.9,
-          "stage": 2,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 61,
-          "outcome": "lost",
-          "seconds": 114.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 62,
-          "outcome": "lost",
-          "seconds": 134.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 63,
-          "outcome": "won",
-          "seconds": 230.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": null
-        },
-        {
-          "seed": 64,
-          "outcome": "lost",
-          "seconds": 182.4,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 65,
-          "outcome": "lost",
-          "seconds": 129.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 66,
-          "outcome": "lost",
-          "seconds": 172.4,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 6,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 67,
-          "outcome": "won",
-          "seconds": 215.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": null
-        },
-        {
-          "seed": 68,
-          "outcome": "lost",
-          "seconds": 102.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 69,
-          "outcome": "lost",
-          "seconds": 109.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 70,
-          "outcome": "lost",
-          "seconds": 177.4,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 71,
-          "outcome": "lost",
-          "seconds": 139.9,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 72,
-          "outcome": "lost",
-          "seconds": 134.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 73,
-          "outcome": "lost",
-          "seconds": 179.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 74,
-          "outcome": "lost",
-          "seconds": 154.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 75,
-          "outcome": "lost",
-          "seconds": 67.4,
-          "stage": 2,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 76,
-          "outcome": "lost",
-          "seconds": 149.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 77,
-          "outcome": "lost",
-          "seconds": 67.4,
-          "stage": 2,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 78,
-          "outcome": "lost",
-          "seconds": 62.4,
-          "stage": 2,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 79,
-          "outcome": "lost",
-          "seconds": 109.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 80,
-          "outcome": "lost",
-          "seconds": 154.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 81,
-          "outcome": "lost",
-          "seconds": 102.4,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 82,
-          "outcome": "lost",
-          "seconds": 179.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 83,
-          "outcome": "lost",
-          "seconds": 129.9,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 84,
-          "outcome": "lost",
-          "seconds": 129.9,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 85,
-          "outcome": "lost",
-          "seconds": 67.4,
-          "stage": 2,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 86,
-          "outcome": "won",
-          "seconds": 203,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 87,
-          "outcome": "lost",
-          "seconds": 77.4,
-          "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 88,
-          "outcome": "lost",
-          "seconds": 167.4,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 89,
-          "outcome": "won",
-          "seconds": 210.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 90,
-          "outcome": "lost",
-          "seconds": 162.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 91,
-          "outcome": "lost",
-          "seconds": 72.4,
-          "stage": 2,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 92,
-          "outcome": "lost",
-          "seconds": 152.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 93,
-          "outcome": "lost",
-          "seconds": 154.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 94,
-          "outcome": "won",
-          "seconds": 220.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 5,
-          "reason": null
-        },
-        {
-          "seed": 95,
-          "outcome": "won",
-          "seconds": 193,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 96,
-          "outcome": "lost",
-          "seconds": 147.4,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 97,
-          "outcome": "lost",
-          "seconds": 97.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 98,
-          "outcome": "lost",
-          "seconds": 104.9,
-          "stage": 3,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 99,
-          "outcome": "lost",
-          "seconds": 179.9,
-          "stage": 4,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 100,
-          "outcome": "lost",
-          "seconds": 144.9,
-          "stage": 3,
-          "chargesUsed": 4,
-          "alarms": 4,
+          "step": "pulse",
+          "chargesUsed": 7,
+          "alarms": 8,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         }
       ]
     },
     {
-      "name": "medium-two-mistakes-simulated-elevated",
-      "count": 100,
-      "wins": 79,
-      "meanWinSeconds": 135.72151898733665,
-      "maxWinSeconds": 165.49999999999318,
-      "runsWithNearEncounter": 79,
-      "meanIsolationChargesUsed": 1.55,
+      "name": "human-paced-simulated-elevated",
+      "count": 30,
+      "wins": 7,
+      "meanWinSeconds": 480.85714285730984,
+      "maxWinSeconds": 505.50000000018656,
+      "meanAlarms": 8.333333333333334,
+      "meanSecondsBetweenAlarms": 40.2957575757677,
+      "meanIsolationChargesUsed": 8.3,
       "outcomes": [
         {
           "seed": 1,
           "outcome": "won",
-          "seconds": 148,
+          "seconds": 505.5,
           "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
+          "step": "final",
+          "chargesUsed": 11,
+          "alarms": 11,
           "reason": null
         },
         {
           "seed": 2,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 357.4,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 8,
+          "alarms": 9,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 3,
           "outcome": "lost",
-          "seconds": 89.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
+          "seconds": 222.4,
+          "stage": 2,
+          "step": "memory",
+          "chargesUsed": 6,
+          "alarms": 5,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 4,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 354.9,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 8,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 5,
           "outcome": "won",
-          "seconds": 150.5,
+          "seconds": 475.5,
           "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
+          "step": "final",
+          "chargesUsed": 10,
+          "alarms": 10,
           "reason": null
         },
         {
           "seed": 6,
           "outcome": "won",
-          "seconds": 120.5,
+          "seconds": 465.5,
           "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
+          "step": "final",
+          "chargesUsed": 8,
+          "alarms": 8,
           "reason": null
         },
         {
           "seed": 7,
           "outcome": "lost",
-          "seconds": 109.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
+          "seconds": 382.4,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 9,
+          "alarms": 10,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 8,
           "outcome": "lost",
-          "seconds": 99.9,
+          "seconds": 487.4,
           "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
+          "step": "calm",
+          "chargesUsed": 11,
+          "alarms": 11,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 9,
           "outcome": "lost",
-          "seconds": 92.4,
+          "seconds": 372.4,
           "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 2,
+          "step": "locate",
+          "chargesUsed": 8,
+          "alarms": 9,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 10,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 422.4,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 9,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 11,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 379.9,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 8,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 12,
-          "outcome": "won",
-          "seconds": 158,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 384.9,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 9,
+          "alarms": 10,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 13,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 379.9,
+          "stage": 3,
+          "step": "locate",
+          "chargesUsed": 8,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 14,
           "outcome": "won",
-          "seconds": 130.5,
+          "seconds": 475.5,
           "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 15,
           "outcome": "won",
-          "seconds": 133,
+          "seconds": 475.5,
           "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 10,
           "reason": null
         },
         {
           "seed": 16,
-          "outcome": "won",
-          "seconds": 150.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 329.9,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 9,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 17,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 329.9,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 18,
           "outcome": "won",
-          "seconds": 118,
+          "seconds": 498,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 10,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 19,
           "outcome": "won",
-          "seconds": 113,
+          "seconds": 470.5,
           "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
+          "step": "final",
+          "chargesUsed": 9,
+          "alarms": 9,
           "reason": null
         },
         {
           "seed": 20,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 377.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 9,
+          "alarms": 10,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 21,
-          "outcome": "won",
-          "seconds": 100.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 392.4,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 7,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 22,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 444.9,
+          "stage": 4,
+          "step": "memory",
+          "chargesUsed": 9,
+          "alarms": 8,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 23,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 489.9,
+          "stage": 4,
+          "step": "calm",
+          "chargesUsed": 11,
+          "alarms": 11,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 24,
           "outcome": "lost",
-          "seconds": 87.4,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 2,
+          "seconds": 209.9,
+          "stage": 3,
+          "step": "faults",
+          "chargesUsed": 4,
+          "alarms": 4,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 25,
           "outcome": "lost",
-          "seconds": 97.4,
+          "seconds": 444.9,
           "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
+          "step": "memory",
+          "chargesUsed": 11,
+          "alarms": 11,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 26,
           "outcome": "lost",
-          "seconds": 117.4,
-          "stage": 4,
-          "chargesUsed": 3,
-          "alarms": 1,
+          "seconds": 292.4,
+          "stage": 3,
+          "step": "wires",
+          "chargesUsed": 7,
+          "alarms": 6,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 27,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 3,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 497.4,
+          "stage": 4,
+          "step": "calm",
+          "chargesUsed": 10,
+          "alarms": 10,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 28,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 259.9,
+          "stage": 3,
+          "step": "faults",
+          "chargesUsed": 5,
+          "alarms": 5,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 29,
-          "outcome": "won",
-          "seconds": 165.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 2,
-          "reason": null
+          "outcome": "lost",
+          "seconds": 257.4,
+          "stage": 2,
+          "step": "pulse",
+          "chargesUsed": 7,
+          "alarms": 7,
+          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
         },
         {
           "seed": 30,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 31,
-          "outcome": "won",
-          "seconds": 140.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 32,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 33,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 34,
           "outcome": "lost",
-          "seconds": 104.9,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 35,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 36,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 37,
-          "outcome": "lost",
-          "seconds": 79.9,
+          "seconds": 212.4,
           "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 38,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 39,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 40,
-          "outcome": "won",
-          "seconds": 108,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 41,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 42,
-          "outcome": "lost",
-          "seconds": 97.4,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 43,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 44,
-          "outcome": "lost",
-          "seconds": 89.9,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 45,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 46,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 47,
-          "outcome": "lost",
-          "seconds": 107.4,
-          "stage": 4,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 48,
-          "outcome": "won",
-          "seconds": 153,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 49,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 50,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 51,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 52,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 53,
-          "outcome": "won",
-          "seconds": 158,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 54,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
+          "step": "faults",
           "chargesUsed": 3,
           "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 55,
-          "outcome": "lost",
-          "seconds": 102.4,
-          "stage": 4,
-          "chargesUsed": 3,
-          "alarms": 1,
           "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 56,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 57,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 58,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 59,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 60,
-          "outcome": "lost",
-          "seconds": 87.4,
-          "stage": 3,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 61,
-          "outcome": "won",
-          "seconds": 130.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 62,
-          "outcome": "lost",
-          "seconds": 92.4,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 63,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 64,
-          "outcome": "won",
-          "seconds": 113,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 65,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 66,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 67,
-          "outcome": "won",
-          "seconds": 118,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 68,
-          "outcome": "won",
-          "seconds": 153,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 69,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 70,
-          "outcome": "won",
-          "seconds": 123,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 71,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 72,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 73,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 74,
-          "outcome": "won",
-          "seconds": 128,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 75,
-          "outcome": "won",
-          "seconds": 125.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 76,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 77,
-          "outcome": "lost",
-          "seconds": 74.9,
-          "stage": 3,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 78,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 79,
-          "outcome": "lost",
-          "seconds": 99.9,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 80,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 81,
-          "outcome": "lost",
-          "seconds": 94.9,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 82,
-          "outcome": "won",
-          "seconds": 133,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 83,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 84,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 85,
-          "outcome": "won",
-          "seconds": 165.5,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 86,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 87,
-          "outcome": "lost",
-          "seconds": 87.4,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 88,
-          "outcome": "won",
-          "seconds": 145.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 89,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 90,
-          "outcome": "won",
-          "seconds": 138,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 91,
-          "outcome": "won",
-          "seconds": 158,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 92,
-          "outcome": "lost",
-          "seconds": 107.4,
-          "stage": 4,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 93,
-          "outcome": "won",
-          "seconds": 143,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 94,
-          "outcome": "won",
-          "seconds": 135.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 95,
-          "outcome": "won",
-          "seconds": 108,
-          "stage": 6,
-          "chargesUsed": 0,
-          "alarms": 0,
-          "reason": null
-        },
-        {
-          "seed": 96,
-          "outcome": "won",
-          "seconds": 158,
-          "stage": 6,
-          "chargesUsed": 4,
-          "alarms": 3,
-          "reason": null
-        },
-        {
-          "seed": 97,
-          "outcome": "lost",
-          "seconds": 94.9,
-          "stage": 4,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": "The creature reached the shelter. Isolation must be used before its final strike."
-        },
-        {
-          "seed": 98,
-          "outcome": "won",
-          "seconds": 148,
-          "stage": 6,
-          "chargesUsed": 2,
-          "alarms": 2,
-          "reason": null
-        },
-        {
-          "seed": 99,
-          "outcome": "won",
-          "seconds": 120.5,
-          "stage": 6,
-          "chargesUsed": 1,
-          "alarms": 1,
-          "reason": null
-        },
-        {
-          "seed": 100,
-          "outcome": "won",
-          "seconds": 155.5,
-          "stage": 6,
-          "chargesUsed": 3,
-          "alarms": 3,
-          "reason": null
         }
       ]
     }

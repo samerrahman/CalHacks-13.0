@@ -93,7 +93,7 @@
       "event": "stage-1",
       "priority": 3,
       "maxAgeSeconds": 9,
-      "text": "Eight faults. Work at the terminal. Isolate the machines when you hear the proximity alarm. Do not wait for it to reach the wall."
+      "text": "Twenty-four faults, then the cables. Running equipment is loud. Isolate the machines when you hear the proximity alarm, even mid-task. Do not wait for it to reach the wall."
     },
     {
       "id": "FAULTS_FINISHED",
@@ -109,7 +109,7 @@
       "event": "stage-2",
       "priority": 3,
       "maxAgeSeconds": 7,
-      "text": "Five pulses. Repeat the sequence and send the heartbeat to emitter A."
+      "text": "The sequence grows each round. Repeat every pulse, then mask your heartbeat and send it to emitter A."
     },
     {
       "id": "LURE_A_SUCCESS",
@@ -117,7 +117,7 @@
       "event": "lure-success",
       "priority": 4,
       "maxAgeSeconds": 8,
-      "text": "The remote signal has it. Clear twelve overload faults before it comes back."
+      "text": "The remote signal has it. Clear thirty-six overload faults before it comes back."
     },
     {
       "id": "OVERLOAD_START",
@@ -125,7 +125,7 @@
       "event": "stage-3",
       "priority": 3,
       "maxAgeSeconds": 8,
-      "text": "Seven faults across the rack. More than one may be active. Work one at a time."
+      "text": "Thirty-six faults across the rack. Up to three fail together. Work one at a time."
     },
     {
       "id": "OVERLOAD_FINISHED",
@@ -141,7 +141,7 @@
       "event": "stage-4",
       "priority": 3,
       "maxAgeSeconds": 8,
-      "text": "Six pulses this time. Calibrate emitter B and move it toward containment."
+      "text": "Longer sequences this time. Calibrate emitter B, then stay calm until it loses your trail."
     },
     {
       "id": "LURE_B_SUCCESS",

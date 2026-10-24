@@ -1,4 +1,4 @@
-import { clamp, config, NODES } from './config';
+import { clamp, config, FIXED_DT, NODES } from './config';
 import { emit, type GameState, type LureTarget, type NodeId, type Target, type Vec3, type TauntId } from './state';
 
 export const distance = (a: Vec3, b: Vec3 = [0, 0, 0]) => Math.hypot(...a.map((v, i) => v - b[i]));
@@ -50,7 +50,7 @@ export function enterQuiet(state: GameState): void {
   const c = state.creature;
   // Isolation changes future step probabilities, never the position or step clock.
   if (!c.warning) setPhase(state, 'retreat', 'NONE');
-  state.notice = c.warning ? 'Isolation relay disengaged.' : 'Isolation active for ten seconds. Research paused; charges are limited.';
+  state.notice = c.warning ? 'Isolation relay disengaged.' : `Isolation active for ${config.shutdown.durationSeconds} seconds. Research paused; charges are limited.`;
   emit(state, 'QUIET_ENTERED'); contextualTaunt(state, 'MACHINES_QUIET'); state.version++;
 }
 export function canRestore(state: GameState): boolean {
@@ -67,9 +67,27 @@ export function restoreEquipment(state: GameState): void {
   emit(state, 'RESTORED', 'CLEAR'); state.notice = wasIsolated ? 'Power restored. Isolation relay is cooling down.' : 'Power restored. Research can continue.'; state.version++;
 }
 export function warningRemaining(state: GameState): number | null { return state.creature.warning ? Math.max(0, state.creature.warning.deadline - state.time) : null; }
+/** A research task is live (not tutorial, not the final broadcast): the terminal and relays are running. */
+export function equipmentRunning(state: GameState): boolean {
+  return state.mode !== 'tutorial' && state.status === 'playing' && state.time >= config.line.graceSeconds && state.tasks.step !== 'final';
+}
+/** One seeded hunt per period at a seeded offset, derived from the run seed: no extra state, fully deterministic. */
+export function huntWindow(state: GameState): { start: number; end: number } | null {
+  const h = config.hunt;
+  if (state.mode === 'tutorial' || state.time < h.firstSeconds) return null;
+  const k = Math.floor((state.time - h.firstSeconds) / h.periodSeconds);
+  const jitter = (Math.imul((state.seed ^ 0x5bd1e995) + k * 0x9e3779b1, 2654435761) >>> 0) / 4294967296;
+  const start = h.firstSeconds + k * h.periodSeconds + jitter * (h.periodSeconds - h.durationSeconds);
+  return state.time >= start && state.time < start + h.durationSeconds ? { start, end: start + h.durationSeconds } : null;
+}
+export function huntActive(state: GameState): boolean {
+  return !!huntWindow(state) && state.equipment !== 'quiet' && !lureProtected(state) && !state.creature.warning;
+}
 export function updateClues(state: GameState, _dt: number): void {
   const c = state.creature;
-  const machinery = state.equipment === 'quiet' ? 0 : Math.min(config.tasks.maxFaultNoise, state.tasks.faults.active.length * (state.equipment === 'blackout' ? config.tasks.blackoutResidualNoisePerActive : config.tasks.faultNoisePerActive));
+  const faultNoise = Math.min(config.tasks.maxFaultNoise, state.tasks.faults.active.length * (state.equipment === 'blackout' ? config.tasks.blackoutResidualNoisePerActive : config.tasks.faultNoisePerActive));
+  // Running research equipment is never silent: only turning it off (Q) or a blackout quiets the room.
+  const machinery = state.equipment === 'quiet' ? 0 : state.equipment === 'on' && equipmentRunning(state) ? Math.max(faultNoise, config.tasks.equipmentNoise) : faultNoise;
   state.transients = state.transients.filter(s => state.time - s.at < s.duration);
   const transient = state.equipment === 'quiet' ? 0 : Math.min(1, state.transients.reduce((sum, s) => sum + s.strength * clamp(1 - (state.time - s.at) / s.duration), 0));
   const physiology = state.sensor.source !== 'manual' && state.sensor.quality === 'accepted' && state.sensor.trend === 'ELEVATED' ? config.threat.maximumPhysiologyClue : 0;
@@ -77,11 +95,20 @@ export function updateClues(state: GameState, _dt: number): void {
   if (Math.max(machinery, transient) >= config.threat.audibleEvidenceMinimumStrength) { c.lastAudibleAt = state.time; c.lastAudibleStrength = Math.max(machinery, transient); }
   c.confidence = clamp(state.danger / 100);
 }
+/** Named exposure contributions. The HUD explains the same numbers the movement odds use. */
+export function dangerParts(state: GameState): { base: number; time: number; noise: number; pulse: number; isolation: number } {
+  const pulse = state.sensor.source !== 'manual' && state.sensor.quality === 'accepted' && state.sensor.trend === 'ELEVATED' ? config.danger.physiologyMaximum : 0;
+  return { base: config.danger.base, time: config.danger.timeMaximum * clamp(state.time / config.line.deadlineSeconds), noise: state.pressure, pulse, isolation: state.shutdown.used * config.danger.shutdownAdaptation };
+}
 /** Tasks own mistake/success pressure; this combines it with bounded contextual factors. */
 export function updateDanger(state: GameState, dt: number): void {
-  state.pressure = clamp(state.pressure - config.danger.pressureDecayPerSecond * dt, 0, config.danger.pressureMaximum);
-  const pulse = state.sensor.source !== 'manual' && state.sensor.quality === 'accepted' && state.sensor.trend === 'ELEVATED' ? config.danger.physiologyMaximum : 0;
-  state.danger = state.mode === 'tutorial' ? 0 : clamp(config.danger.base + config.danger.timeMaximum * clamp(state.time / config.line.deadlineSeconds) + state.pressure + pulse + state.shutdown.used * config.danger.shutdownAdaptation, 0, 100);
+  // Work noise: inputs and mistakes add it (tasks.ts), unresolved faults keep adding it,
+  // and it cools whenever the room is quiet, fastest while isolated.
+  const cooling = config.danger.pressureDecayPerSecond * (state.equipment === 'quiet' ? config.danger.quietCoolingMultiplier : 1);
+  const machinery = state.equipment === 'on' && state.mode !== 'tutorial' ? state.clues.machinery * config.danger.machineryPressurePerSecond : 0;
+  state.pressure = clamp(state.pressure + (machinery - cooling) * dt, 0, config.danger.pressureMaximum);
+  const part = dangerParts(state);
+  state.danger = state.mode === 'tutorial' ? 0 : clamp(part.base + part.time + part.noise + part.pulse + part.isolation, 0, 100);
 }
 export function updateDistanceSensor(state: GameState): void {
   const c = state.creature;
@@ -92,6 +119,10 @@ export function movementProbabilities(state: GameState): { step: number; probabi
   const c = state.creature;
   const settings = config.lineBias;
   let bias = settings.base - state.danger / 100 * settings.dangerScale + Math.sign(c.lastStep) * settings.momentum;
+  // It hunts by sound: after a stretch of silence it loses the trail and drifts away.
+  if (state.time - c.lastAudibleAt > settings.lostTrailSeconds) bias += settings.lostTrailBias;
+  // Seeded hunts: now and then it charges regardless of how careful you have been.
+  if (huntActive(state)) bias = config.hunt.bias;
   if (state.time < c.biasUntil) bias += clamp(c.tacticBias, -settings.providerMaximum, settings.providerMaximum);
   if (state.equipment === 'quiet') bias = config.shutdown.retreatBias - state.danger / 100 * settings.quietDangerScale;
   if (lureProtected(state)) bias = c.lure?.target === 'CONTAINMENT' ? settings.finalLure : config.lineLure.bias - state.danger / 100 * settings.lureDangerScale;
@@ -116,6 +147,8 @@ export function beginApproach(state: GameState): void {
 }
 export function tickCreature(state: GameState, _dt: number): void {
   const c = state.creature;
+  const hunt = huntWindow(state);
+  if (hunt && state.time - hunt.start < FIXED_DT - 1e-9 && !c.warning && !lureProtected(state)) { emit(state, 'HUNT_STARTED'); state.version++; }
   if (state.quiet) {
     if (state.time - state.quiet.started >= config.shutdown.listeningSeconds && state.quiet.phase === 'listening') { state.quiet.phase = 'retreat'; state.quiet.retreatStarted = state.time; emit(state, 'QUIET_RETREAT'); }
     const readyAt = state.mode === 'tutorial' ? config.shutdown.durationSeconds : config.shutdown.manualRestoreAfterSeconds;
@@ -183,18 +216,19 @@ export function commitIfEligible(state: GameState): void {
 function finishCommittedAttack(state: GameState): void {
   if (!state.creature.warning || state.time < state.creature.warning.deadline - 1e-8 || state.status !== 'playing') return;
   state.status = 'lost'; state.restoreHeld = false; state.lossReason = 'The creature reached the shelter. Isolation must be used before its final strike.';
-  state.notice = 'Watch its distance and manage the four isolation charges.'; triggerScare(state, 'breach'); emit(state, 'LOST', 'BREACH'); state.version++;
+  state.notice = 'Watch its distance and manage your isolation cells.'; triggerScare(state, 'breach'); emit(state, 'LOST', 'BREACH'); state.version++;
 }
 export function updateCaption(state: GameState): void {
   const c = state.creature;
   if (state.status === 'won') state.caption = 'REMOTE SEAL CLOSED — CONTAINMENT COMPLETE';
-  else if (state.status === 'lost') state.caption = state.lossReason?.includes('five-minute') ? 'PROTOCOL WINDOW CLOSED' : 'SHELTER BREACHED';
+  else if (state.status === 'lost') state.caption = state.lossReason?.includes('protocol window') ? 'PROTOCOL WINDOW CLOSED' : 'SHELTER BREACHED';
   else if (c.warning) state.caption = 'METAL STRAINING — HEAVY IMPACTS';
   else if (state.quiet?.phase === 'ready') state.caption = 'ISOLATION ENDING — RESTORE WINDOW';
   else if (proximityAlarm(state).active) state.caption = c.lastMotion === 'receding' ? 'PROXIMITY ALARM — MOVEMENT RECEDING' : c.lastMotion === 'approaching' ? 'PROXIMITY ALARM — MOVEMENT CLOSING IN' : 'PROXIMITY ALARM — MOVEMENT STILL CLOSE';
   else if (state.equipment === 'quiet') state.caption = 'EQUIPMENT ISOLATED — LISTEN FOR MOVEMENT';
   else if (c.phase === 'containment') state.caption = 'REMOTE CONTAINMENT SEAL CLOSING';
   else if (c.lastMotion === 'receding') state.caption = 'FOOTSTEPS RECEDING — AWAY FROM SHELTER';
+  else if (huntActive(state)) state.caption = 'RUNNING FOOTSTEPS — IT IS CHARGING';
   else if (c.lastMotion === 'approaching') state.caption = c.position[0] < -2 ? 'FOOTSTEPS APPROACHING — LEFT' : c.position[0] > 2 ? 'FOOTSTEPS APPROACHING — RIGHT' : 'FOOTSTEPS APPROACHING — FRONT';
   else if (state.equipment === 'blackout') state.caption = 'POWER LOST — HOLD F TO RESTORE';
   else if (lureProtected(state)) state.caption = 'REMOTE SIGNAL ACTIVE — CREATURE FOLLOWING';

@@ -66,6 +66,17 @@ export interface MemoryState {
   needsReplay: boolean;
 }
 export interface WireState { targetOrder: number[]; connections: number[] }
+/** Which part of the current research stage is live. Private local puzzle state. */
+export type TaskStep = 'faults' | 'wires' | 'routing' | 'locate' | 'memory' | 'pulse' | 'calm' | 'transmit' | 'final';
+/** Quiet routing: power at least `required` while total noise stays at or under `limit`. Private. */
+export interface RoutingState { round: number; rounds: number; power: number[]; noise: number[]; on: boolean[]; required: number; limit: number }
+/** Heartbeat mask: tap intervals must match `periodSeconds`. Private. */
+export interface PulseMaskState { periodSeconds: number; startedAt: number; streak: number; lastTap: number | null }
+/** Locate: mark the creature's sector from the monitor. */
+export interface LocateState { marks: number; required: number; lastMarkAt: number }
+/** Calm hold: follow the breathing pacer (and, with live data, an unelevated pulse). */
+export interface CalmState { progress: number; required: number; pacerStartedAt: number; holding: boolean }
+export type Sector = 'NEAR' | 'A' | 'B' | 'C';
 export interface GameState {
   seed: number;
   mode: 'standard' | 'demo' | 'tutorial';
@@ -87,6 +98,11 @@ export interface GameState {
     faults: { active: number[]; completed: number; required: number; spawned: number; spawnElapsed: number; maximumActive: number };
     memory: MemoryState;
     wires: WireState;
+    step: TaskStep;
+    routing: RoutingState;
+    pulse: PulseMaskState;
+    locate: LocateState;
+    calm: CalmState;
     finalTransmitted: boolean;
   };
   creature: {
@@ -163,6 +179,11 @@ export type GameAction =
   | { type: 'camera'; feed: CameraFeed }
   | { type: 'input'; value: number }
   | { type: 'wire'; from: number; to: number }
+  | { type: 'route'; machine: number }
+  | { type: 'engage' }
+  | { type: 'mark'; sector: Sector }
+  | { type: 'tap' }
+  | { type: 'breathe'; holding: boolean }
   | { type: 'practice-memory' }
   | { type: 'replay' }
   | { type: 'transmit' }

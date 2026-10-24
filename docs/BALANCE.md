@@ -1,6 +1,8 @@
 # LOCK IN balance and movement
 
-The current implementation is authoritative: [`config.ts`](../src/game/config.ts), [`creature.ts`](../src/game/creature.ts), [`tasks.ts`](../src/game/tasks.ts), and [`directorValidation.ts`](../src/game/directorValidation.ts). Gameplay tuning lives in the runtime configuration, including movement weights, bias coefficients, detector cadence, danger contributions, isolation and lure durations. The archived build kits describe earlier designs and remain unchanged.
+The current implementation is authoritative: [`config.ts`](../src/game/config.ts), [`creature.ts`](../src/game/creature.ts), [`tasks.ts`](../src/game/tasks.ts), and [`directorValidation.ts`](../src/game/directorValidation.ts). Gameplay tuning lives in the runtime configuration, including movement weights, bias coefficients, detector cadence, exposure contributions, isolation and lure durations, and every task size. The archived build kits describe earlier designs and remain unchanged.
+
+The design intent: running equipment is loud. While power is on and a research task is live, the room is never silent, so exposure keeps climbing and the creature keeps coming until you turn the equipment off with Q, usually mid-task. Seeded hunts make it charge now and then even if you play flawlessly. A human-paced win takes about seven to eight minutes, and even perfect play is sometimes caught. The game is meant to be hard.
 
 ## Local position and time
 
@@ -13,27 +15,29 @@ The current implementation is authoritative: [`config.ts`](../src/game/config.ts
 | Possible step | −3, −2, −1, 0, +1, +2, +3; negative is closer |
 | Distance detector | Samples every 4 seconds while powered; immediately unavailable when power is off |
 | Alarm | Latches at position ≤7; clears at ≥10 |
-| Committed attack | Position ≤1, at least 2.5 seconds since alarm activation, and fresh audible evidence; then an irreversible 2.4-second windup |
-| Protocol deadline | 300 active seconds, including final containment arrival/seal |
+| Committed attack | Position ≤1, at least 2.5 seconds since alarm activation, and audible evidence within 30 seconds; then an irreversible 2.4-second windup |
+| Protocol deadline | 720 active seconds (12 minutes), including final containment arrival/seal |
 
-The authoritative position is dimensionless. Scene coordinates, camera visibility, footsteps, alarm and spatial creature voice derive from it. They do not simulate a second creature. Camera A covers positions 7–14, B covers 14–22, and C covers 22–24; the upper A/B bounds are exclusive. Normal gameplay sees the delayed detector reading, not the hidden current position. The consenting judge trace can show current position and danger.
+The authoritative position is dimensionless. Scene coordinates, camera visibility, footsteps, alarm and spatial creature voice derive from it. They do not simulate a second creature. Camera A covers positions 7–14, B covers 14–22, and C covers 22–24; boundary positions appear on two feeds. Normal gameplay sees the delayed detector reading, not the hidden current position. The consenting judge trace can show current position and danger.
 
-Pause freezes active time. Tutorial does not move or kill the creature, consume finite isolation charges, trigger scares, or expire the protocol. Provider requests run independently and cannot pause the simulation.
+Pause freezes active time. Tutorial does not move or kill the creature, consume finite isolation charges, trigger scares, add work noise, or expire the protocol. Provider requests run independently and cannot pause the simulation.
 
-## Danger and mistake pressure
+## Exposure (danger) and work noise
 
-Let `t` be active game seconds, `P` mistake pressure, `U` isolation charges already used, and `E` be one only when source is not manual, quality is accepted, and coarse trend is ELEVATED. Current defaults calculate:
+Let `t` be active game seconds, `P` work noise, `U` isolation charges already used, and `E` be one only when source is not manual, quality is accepted, and coarse trend is ELEVATED. Current defaults calculate:
 
 ```text
-P decays by 0.08 per active second, bounded to [0, 30].
-Wrong fault, memory or wire input: P += 6, at most 30.
-Correct fault or wire connection: P -= 1.25, at least 0.
-Completed research stage: P -= 4, at least 0.
+Every correct fault, cable, memory digit, sector mark or routing engage: P += 1.8.
+Wrong input of any kind: P += 6 (plus a loud transient).
+Machinery noise is the larger of 0.35 per active fault (at most 0.9) and, while powered with a live
+research task after the grace period, a 0.35 equipment floor. P += 0.8 × machinery per second while powered.
+P cools by 0.6 per second, six times faster while isolated, bounded to [0, 55].
+Completed research stage: P -= 8.
 
-D = clamp(18 + 42 × clamp(t / 300, 0, 1) + P + 8 × E + 4 × U, 0, 100)
+D = clamp(10 + 25 × clamp(t / 720, 0, 1) + P + 5 × E + 2 × U, 0, 100)
 ```
 
-The movement sampler uses `D`. A higher value increases the chance of approaching; it does not force a step or an attack. Rejected, missing, stale or manual physiology contributes zero. SIMULATED accepted elevation can exercise the same fictional difficulty rule and remains visibly labeled. Danger is a game variable, not a measurement of fear, health or performance. Raw pulse, camera frames and local report history never enter the model or shared trace.
+The HUD exposure meter shows `D` and these named parts. The movement sampler uses `D`; a higher value increases the chance of approaching but never forces a step or an attack. Rejected, missing, stale or manual physiology contributes zero. SIMULATED accepted elevation can exercise the same fictional difficulty rule and remains visibly labeled. Exposure is a game variable, not a measurement of fear, health or performance. Raw pulse, camera frames and local report history never enter the model or shared trace.
 
 ## Step probabilities
 
@@ -43,13 +47,15 @@ Base weights correspond to steps `[-3, -2, -1, 0, +1, +2, +3]`:
 w = [0.07, 0.14, 0.23, 0.22, 0.19, 0.10, 0.05]
 ```
 
-The ordinary bias uses the current danger, the sign of the previous actual step, and a currently valid local director bias `A`:
+The ordinary bias uses current exposure, the sign of the previous actual step, silence, and a currently valid local director bias `A`:
 
 ```text
-b = -0.32 - 0.80 × D / 100 + 0.06 × sign(previous step) + A
+b = 0.32 - 1.36 × D / 100 + 0.06 × sign(previous step) + A
+If no audible evidence for more than 8 seconds (it lost your trail): b += 0.6.
+During a seeded hunt: replace b with -0.85.
 A is bounded to [-0.15, +0.15] and expires after 8 seconds.
 
-If equipment is isolated: replace b with 0.90 - 0.20 × D / 100.
+If equipment is isolated: replace b with 1.0 - 0.20 × D / 100.
 If an intermediate lure is protected: replace b with 0.85 - 0.10 × D / 100.
 If the final containment lure is active: replace b with 1.
 Finally clamp b to [-0.85, 1].
@@ -60,37 +66,42 @@ positive-step weight = base weight × (1 + b)
 probability          = adjusted weight / sum(all adjusted weights)
 ```
 
-Later overrides take precedence: protected lures override isolation, ordinary danger bias and model bias. At final-lure bias 1, negative-step weights are zero. A positive bias favors retreat; a negative bias favors approach. These coefficients change normalized weights, not percentage points directly.
-
-Each movement tick advances the creature's independent seeded RNG once, samples the distribution, applies the selected step, then clamps position to `[0,24]`. Near a boundary, the actual logged displacement can be smaller than the sampled step. Given the same seed and actions, the result is deterministic; frame chunking does not redraw movement. Task/wire RNG draws do not consume the creature's RNG stream.
+Running equipment is always audible, so the lost-trail bonus only applies while the equipment is off or before the grace period ends. Hunts: one per 100-second period after 70 seconds, at a seeded offset derived from the run seed, lasting 10 seconds. A hunt starts with a `HUNT_STARTED` event, a warning sound at the creature's position and the caption RUNNING FOOTSTEPS — IT IS CHARGING. Isolation and protected lures override hunts, and the 2.5-second warning before a committed attack still applies. Later overrides take precedence: protected lures override isolation, hunts, ordinary exposure bias and model bias. A positive bias favors retreat; a negative bias favors approach. Each movement tick advances the creature's independent seeded RNG once, samples the distribution, applies the selected step, then clamps position to `[0,24]`. Given the same seed and actions, the result is deterministic; frame chunking does not redraw movement. Task RNG draws do not consume the creature's RNG stream.
 
 Illustrative current distributions, with no model bias, lure or isolation and previous step zero, are computed from the same implementation. These describe one draw, not a guaranteed survival time:
 
-| Danger | Closer | Stationary | Farther | Mean step per tick |
+| Exposure | Closer | Stationary | Farther | Mean step per tick |
 | --- | --- | --- | --- | --- |
-| 18 | 61.56% | 21.02% | 17.42% | −0.731 |
-| 50 | 70.60% | 20.52% | 8.88% | −1.014 |
-| 80 | 75.02% | 20.28% | 4.70% | −1.153 |
+| 15 | 39.35% | 22.26% | 38.39% | −0.034 |
+| 40 | 52.68% | 21.52% | 25.81% | −0.452 |
+| 65 | 65.14% | 20.83% | 14.03% | −0.843 |
+| 85 | 74.55% | 20.30% | 5.15% | −1.138 |
+| 40, trail lost | 28.53% | 22.86% | 48.61% | +0.305 |
 
 ## Limited isolation and earned lures
 
-Standard runs have four Q charges. A valid Q consumes one, isolates equipment for ten seconds, pauses research, clears current machine/transient clues and favors outward movement. It changes only the distribution sampled at the next normal 2.5-second tick; there is no immediate backstep or alternate movement clock. Retreat remains probabilistic. Q at a far position still consumes its charge. Repeated Q during isolation cannot extend its duration; exhaustion and cooldown produce no extra benefit.
+Standard runs start with five Q charges, and completing each research stage recharges two (never above five). A valid Q consumes one, isolates equipment for twelve seconds, pauses research, clears current machine/transient clues, cools work noise six times faster and strongly favors outward movement. It changes only the distribution sampled at the next normal 2.5-second tick; there is no immediate backstep or alternate movement clock. Retreat remains probabilistic. Repeated Q during isolation cannot extend its duration; exhaustion and cooldown produce no extra benefit.
 
-A manual restore window opens after eight seconds, with the existing one-second hold. Otherwise restoration is automatic at ten seconds. Restoring isolation starts a ten-second relay cooldown. Restoring an unrelated blackout preserves the existing cooldown and never adds or extends one. Each consumed charge permanently adds four to the danger formula for that run, so repeated shutdown is not an unlimited solution. A committed strike remains committed through Q, F, model responses and attempted lures.
+A manual restore window opens after eight seconds, with the existing one-second hold. Otherwise restoration is automatic at twelve seconds. Restoring isolation starts a ten-second relay cooldown. Restoring an unrelated blackout preserves the existing cooldown and never adds or extends one. Each consumed charge permanently adds two to the exposure formula for that run. A committed strike remains committed through Q, F, model responses and attempted lures. With no cell available there is no way to silence running equipment, so spending cells well matters; a blackout is the only other quiet moment.
 
-Emitter A and B reward completed memory tasks with twelve seconds of protected outward bias toward positions 20 and 22. They do not teleport the creature or guarantee a particular sampled step. The final signal stays active until resolved, eliminates negative steps, and aims for position 24. After arrival, a three-second seal completes containment. The global five-minute deadline still applies.
+Emitter A and B reward completed memory stages with twelve seconds of protected outward bias toward positions 20 and 22. They do not teleport the creature or guarantee a particular sampled step. The final signal stays active until resolved, eliminates negative steps, and aims for position 24. After arrival, a three-second seal completes containment. The global twelve-minute deadline still applies.
 
-## Research and director limits
+## Research stages and thinking tasks
 
 | Stage | Work |
 | --- | --- |
-| 1 | Eight faults, at most two active; then four matched wire connections |
-| 2 | Five memory inputs, then deliberate emitter A transmission |
-| 3 | Twelve faults, at most three active; then a new four-wire board |
-| 4 | Six memory inputs, then deliberate emitter B transmission |
+| 1 | 24 faults (at most two active, one every 1.4 s); 12 cables in two six-cable panels; **quiet routing**, four circuits |
+| 2 | Memory growing 3→7 cues (five rounds); **heartbeat mask**; emitter A transmission |
+| 3 | 36 faults (at most three active, one every 1.0 s); 18 cables in three panels; **locate**, five monitor marks |
+| 4 | Memory growing 4→8 cues (five rounds); **calm hold**; emitter B transmission |
 | Final | Deliberate containment transmission, physical arrival and seal |
 
-Memory cues are 0.42 seconds on plus 0.16 seconds gap, with a sixteen-second entry window. Replay is free and resets the attempt. Accepted elevated trend can select the existing capped tempo multiplier when playback starts; it never changes an in-progress presentation. Fixed-tempo accessibility preserves normal timing. Isolation/blackout preserves puzzle progress while disabling powered interaction. Wire success emits no colors, endpoints or solution into public events.
+- **Quiet routing.** Four machines show power and noise ratings (1–8). The player switches on a set giving at least the required power (8 or more) while total noise stays at or under the creature's hearing limit, then engages with T. Every generated circuit has exactly one right answer, which needs at least two machines. Running totals aren't shown; adding them up is the puzzle. Toggling is silent. A wrong engage resets the switches and counts as a loud mistake that names whether it was underpowered or too loud.
+- **Heartbeat mask.** A false pulse at a seeded 54–90 BPM flashes and ticks with no number shown. Tapping 1 (or the pad) on intervals within ±15% of its period builds a streak; ten lock it. With an accepted ELEVATED trend, twelve beats at ±12% are required. Manual, missing or rejected data uses the standard rule. Taps are silent.
+- **Locate.** From the security monitor, the player marks the creature's sector with 1–4: near the wall (0–6, off camera), CAM A, B or C. A mark is accepted if it matches the current position or the last detector reading. Marks need six seconds between them. Five are required. The security-monitor panel docks on the right so the CCTV feed stays visible. A wrong mark is a loud mistake.
+- **Calm hold.** A pacer alternates four seconds of breathing in (hold B or the ring) and four out (release), with 0.45 s grace at each change. Matched time accrues toward sixteen seconds; mismatched time drains it at 0.5/s. An accepted STEADY/RECOVERED trend accrues 1.5× faster, ELEVATED at 0.6×. Without live data it is the pacer alone. Isolation pauses it. The equipment keeps running during it, so the creature keeps coming.
+
+Memory cues are 0.36 seconds on plus 0.14 seconds gap, with a sixteen-second entry window per round. Each matched round adds one cue and replays automatically; a mistake restarts the current round. Replay is free and resets the attempt. Accepted elevated trend can select the existing capped tempo multiplier when playback starts. Isolation/blackout preserves puzzle progress while disabling powered interaction. Wire, routing, pulse and memory answers stay in private local state; public events record only success or `WRONG_INPUT` with a kind.
 
 The exact model proposal schema is unchanged. Local code translates accepted tactics as follows:
 
@@ -103,18 +114,18 @@ The exact model proposal schema is unchanged. Local code translates accepted tac
 | WAIT | 0 |
 | TAUNT | No change to movement bias |
 
-Only currently allowed pairs and supported evidence pass the local validator. The proposal cannot supply position, movement step, random seed, probability, attack, timer or puzzle answer. Its eight-second response budget does not stop game time. Failed, missing and late providers leave deterministic local behavior active. Generated creature dialogue is a separate bounded text-and-speech pipeline and has no game-rule authority.
+Only currently allowed pairs and supported evidence pass the local validator. The proposal cannot supply position, movement step, random seed, probability, attack, timer or puzzle answer. Its eight-second response budget does not stop game time. Failed, missing and late providers leave deterministic local behavior active.
 
 ## Verification limits
 
-Probability, resource, deadline, grace, privacy and seeded-play tests run offline. The [500-run sweep](../artifacts/survival-balance.json) uses 100 seeds per policy, perfect knowledge of private puzzle answers, and immediate defense when the public alarm sounds. It is **not a human playtest** and does not measure memory, attention, drag accuracy, audio perception or camera quality. The elevated policy injects a labeled synthetic accepted trend; it uses no live measurement.
+The [sweep](../artifacts/survival-balance.json) runs 30 seeds per policy through the real reducer. Policies know private puzzle answers, solve thinking tasks after a scripted delay, react to the public proximity alarm after a scripted delay, and go silent when no isolation is available. It is **not a human playtest** and does not measure memory, attention, rhythm, drag accuracy, audio perception or camera quality. The elevated policy injects a labeled synthetic accepted trend; it uses no live measurement.
 
-| Automated policy | Wins / 100 | Mean winning time | Mean isolation charges, all runs | Runs with near encounter |
-| --- | --- | --- | --- | --- |
-| Fast, perfect information | 100 | 57.03 s | 0 | 0 |
-| Medium, perfect information | 91 | 124.95 s | 1.13 | 64 |
-| Medium, two fault mistakes | 84 | 134.46 s | 1.41 | 73 |
-| Slow, error prone | 10 | 214.50 s | 3.25 | 100 |
-| Medium, two mistakes, synthetic elevated trend | 79 | 135.72 s | 1.55 | 79 |
+| Automated policy | Pace (fault / cable / digit / alarm reaction / routing think) | Wins / 30 | Mean winning time | Alarms per run | Mean seconds between alarms | Isolations per run |
+| --- | --- | --- | --- | --- | --- | --- |
+| Perfect information | 0.3 s / 0.3 / 0.3 / 0.2 / 0.5 | 21 | 290 s | 4.9 | 40 | 5.4 |
+| Fast | 0.5 s / 1.2 / 0.45 / 0.8 / 3 | 24 | 349 s | 6.0 | 43 | 6.3 |
+| Human-paced, 5% mistakes | 1.0 s / 2.2 / 0.7 / 1.5 / 8 | 11 | 456 s | 8.0 | 45 | 8.4 |
+| Slow, 14% mistakes | 1.6 s / 3.4 / 1.0 / 2.5 / 14 | 0 | — | 6.4 | 47 | 6.8 |
+| Human-paced, synthetic elevated trend | as human-paced | 7 | 481 s | 8.3 | 40 | 8.3 |
 
-The longest successful simulated run was 235.5 seconds; every run ended by 300 seconds. This table uses the final tick-only Q rule and 0.90 retreat bias, including the blackout cooldown correction. These results establish reachable outcomes and meaningful pressure under the stated artificial policies, not a target human win rate. Earlier live Gemini/ElevenLabs results establish provider text/audio generation and playback, but predate this number-line balance revision. No additional live provider request was run for this balance change. The updated Convex trace contract is `lock-in-v2`; it has not been deployed or verified remotely.
+Every run ended by the deadline. These results establish reachable outcomes, run length and alarm rhythm under the stated artificial policies, not a target human win rate. Earlier live Gemini/ElevenLabs results establish provider text/audio generation and playback, but predate this balance revision. No additional live provider request was run for this balance change. The Convex trace contract is `lock-in-v2`; it has not been deployed or verified remotely.

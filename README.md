@@ -2,7 +2,7 @@
 
 LOCK IN is the root application. `npm run dev` opens this game; NIGHT RELAY remains only in its archived build kit and historical evidence.
 
-You have five active minutes to finish the research and contain the creature outside a sealed shelter. Repair faults, drag matching cables into sockets, memorize signal sequences, and broadcast remote lures. The creature takes seeded random steps along a 0–24 line; time, mistakes, isolation use and accepted baseline-relative pulse elevation change its approach probability. Four isolation cells buy short diversions. Once an attack commits at the wall, cutting power is too late.
+You have twelve active minutes to finish the research and contain the creature outside a sealed shelter; a human-paced win takes about seven to eight. Repair faults, patch cable panels, route power quietly, memorize growing signal sequences, mask your heartbeat, mark the creature's position from the monitor, breathe with a calm pacer, and broadcast remote lures. Running equipment is loud: while a research task is live, exposure keeps climbing and the creature keeps coming until you turn the equipment off, so you will regularly have to stop mid-task and isolate. Now and then it also charges on its own (RUNNING FOOTSTEPS), even if you have made no mistakes. Five isolation cells (two recharged per completed stage) buy short diversions. Once an attack commits at the wall, cutting power is too late.
 
 ## Run
 
@@ -31,22 +31,23 @@ On a fresh checkout use `npm ci`. Dependencies are pinned; this build was verifi
 | --- | --- |
 | Click equipment / E | Open the computer, security monitor or isolation controls |
 | Space | Leave the equipment interface |
-| 1–4 / numbered buttons | Enter task choices while using the computer |
+| 1–4 / numbered buttons | Task choices: faults, routing switches, heartbeat taps, memory; sector marks at the monitor |
+| T | Transmit a calibrated lure, engage a routed relay, or the final containment broadcast |
 | R | Replay the same sequence freely |
-| T | Transmit a calibrated lure / final containment broadcast |
 | Drag cables / select cable then socket | Reconnect matching symbols after each fault stage |
-| Q | Spend one of four isolation cells; ten-second duration, then automatic restoration |
+| Q | Spend one of five isolation cells; twelve-second duration, then automatic restoration |
+| B (hold) | Breathe in with the calm pacer; release to breathe out |
 | Hold F for 1 second | Restore a blackout freely, or end isolation in its final restore window |
 | Restore button | Accessible one-click equivalent with cancel |
 | Station buttons / drag | Face equipment / look around the room |
 | Escape | Pause game time, sound and capture |
 | J | Open sanitized judge trace |
 
-The run begins with a 25-second grace period. Guided practice is nonlethal and does not use the run's timer or cells. The regular run has a five-minute deadline, including time spent with equipment off. Every shutdown consumes a cell, adds persistent exposure and triggers a cooldown after power returns. Fault and cable progress persists.
+The run begins with a 25-second grace period. Guided practice is nonlethal and does not use the run's timer or cells. The regular run has a twelve-minute deadline, including time spent with equipment off. Every shutdown consumes a cell, adds persistent exposure and triggers a cooldown after power returns. All task progress persists.
 
 The detector refreshes every four seconds and goes completely dark without power. The monster moves every 2.5 seconds, at most three units per step. A nearby alarm and matching captions continue during isolation; the local rules guarantee at least 2.5 seconds of near warning before an irreversible attack can commit. The display never shows a breach countdown. Intermediate lures bias movement outward; the final broadcast brings it to position24 and a three-second seal.
 
-Fault stages require eight/twelve repairs followed by four cable connections each. Memory stages use five/six cues, 0.42-second flashes and a sixteen-second response window. Replaying is free but costs time. Captions, neutral sensing, reduced motion, softer impacts, fixed memory tempo, volume and mute remain available. The friend's opening cutscene files are unchanged by this overhaul. See [tuning and balance](docs/BALANCE.md) for defaults, probabilities, fairness bounds and measured simulation results.
+Stage 1 is 24 faults, 12 cables and four quiet-routing circuits. Stage 2 is memory growing from 3 to 7 cues, then the heartbeat mask. Stage 3 is 36 faults, 18 cables and five monitor marks. Stage 4 is memory growing from 4 to 8 cues, then the calm hold. The heartbeat mask and calm hold use the coarse accepted Presage trend when available (an elevated pulse makes them harder) and run on standard rules without it. Memory uses 0.36-second flashes and a sixteen-second response window per round. Replaying is free but costs time. Captions, neutral sensing, reduced motion, softer impacts, fixed memory tempo, volume and mute remain available. The friend's opening cutscene files are unchanged by this overhaul. See [tuning and balance](docs/BALANCE.md) for defaults, probabilities, fairness bounds and measured simulation results.
 
 ## Optional integrations and privacy
 

@@ -8,7 +8,7 @@ try {
   page = await browser.newPage({ viewport: { width: 1280, height: 720 } }); collectBrowserEvidence(page, evidence);
   page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['127.0.0.1', 'localhost'].includes(url.hostname)) evidence.externalRequests.push(`${url.origin}${url.pathname}`); });
   await begin(page); await openTerminal(page);
-  await expect(page.locator('.task-progress')).toContainText('0 / 8');
+  await expect(page.locator('.task-progress')).toContainText('0 / 24');
   evidence.initialResources = await resources(page);
   await expect(page.getByRole('complementary', { name: 'Survival resources' })).toContainText('SEDATIVE HOLD');
   // Deliberately make visible mistakes, then leave the noisy machines running.
@@ -57,9 +57,9 @@ try {
   await page.getByRole('button', { name: 'Replay this seed', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Research terminal' })).toHaveCount(0);
   await openTerminal(page);
-  await expect(page.locator('.task-progress')).toContainText('0 / 8');
+  await expect(page.locator('.task-progress')).toContainText('0 / 24');
   await expect(page.locator('.protocol-progress b')).toHaveText('0 / 4');
-  await expect(page.locator('.isolation-reserve b')).toHaveText('4 / 4');
+  await expect(page.locator('.isolation-reserve b')).toHaveText('5 / 5');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Game paused' })).toBeVisible();
   evidence.checks.push('Replay resets research and returns to equipment interaction; keyboard pause remains available');

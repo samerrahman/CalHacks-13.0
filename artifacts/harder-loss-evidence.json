@@ -11,14 +11,14 @@
   "failedResources": [],
   "externalRequests": [],
   "initialResources": {
-    "cells": 4,
-    "danger": 18,
-    "deadline": "5:00"
+    "cells": 5,
+    "danger": 10,
+    "deadline": "12:00"
   },
   "afterMistakes": {
-    "cells": 4,
-    "danger": 48,
-    "deadline": "4:58"
+    "cells": 5,
+    "danger": 46,
+    "deadline": "11:58"
   },
   "alarmAudio": {
     "status": "ready",
@@ -27,29 +27,29 @@
       "door_slam",
       "fault_rattle",
       "intro_alarm",
-      "forest_run",
-      "relay_confirm",
-      "machine_mistake",
-      "terminal_press",
-      "sequence_tone_1",
-      "sequence_tone_2",
       "room_hum",
-      "sequence_tone_4",
+      "forest_run",
+      "sequence_tone_1",
+      "machine_mistake",
+      "sequence_tone_2",
       "sequence_tone_3",
+      "sequence_tone_4",
+      "terminal_press",
+      "relay_confirm",
       "lure_transmit",
-      "steps_approaching",
       "lure_heartbeat",
-      "steps_receding",
-      "wall_breath",
       "wall_scrape",
       "breach_impact",
+      "steps_receding",
+      "steps_approaching",
       "breach_warning",
       "blackout",
       "radio_chime",
       "power_restart",
+      "wall_breath",
+      "radio_static",
       "monitor_interrupt",
-      "containment_success",
-      "radio_static"
+      "containment_success"
     ],
     "speech": "caption",
     "error": null,
@@ -58,9 +58,9 @@
     "playbackErrors": 0,
     "contextState": "running",
     "alarmActive": true,
-    "alarmPulseHz": 1.9333333333333333,
+    "alarmPulseHz": 2.9999999999999996,
     "startedScares": 1
   },
-  "committedEvent": "65.0s\ne35 / ATTACK_COMMITTED",
-  "result": "FIELD RESEARCH / RUN REPORT\n⊘\nThe shelter fell silent.\n\nThe creature reached the shelter. Isolation must be used before its final strike.\n\n0/4\nRESEARCH STAGES\n67s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  "committedEvent": "95.0s\ne51 / ATTACK_COMMITTED",
+  "result": "FIELD RESEARCH / RUN REPORT\n⊘\nThe shelter fell silent.\n\nThe creature reached the shelter. Isolation must be used before its final strike.\n\n0/4\nRESEARCH STAGES\n97s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
 }

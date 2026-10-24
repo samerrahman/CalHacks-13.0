@@ -68,6 +68,14 @@ try {
   await page.screenshot({ path: 'artifacts/TEST-FIXTURE-vitals-mobile-terminal.png' });
   evidence.checks.push('Mobile camera, pulse, breathing and pulse bar stay above the actual wire component during terminal inspection');
   await page.getByRole('button', { name: 'Close terminal test panel' }).click();
+  await page.getByRole('button', { name: 'Reject test sample with motion warning' }).click();
+  await expect(corner.getByTestId('current-pulse')).toHaveText('84');
+  await expect(corner.getByTestId('current-pulse')).toHaveClass(/held/);
+  await expect(corner.getByTestId('current-breathing')).toHaveText('16');
+  await expect(corner.getByTestId('vitals-held')).toContainText('Hold still');
+  await expect(meter).toHaveAttribute('aria-valuetext', /held from/);
+  await page.screenshot({ path: 'artifacts/TEST-FIXTURE-vitals-held.png' });
+  evidence.checks.push('A rejected-but-fresh reading during a motion warning keeps the last accepted values visible, labelled HELD, with the reason');
   await page.getByRole('button', { name: 'Expire test sample at 6 seconds' }).click();
   await expect(corner.getByTestId('current-pulse')).toHaveText('—');
   await expect(corner.getByTestId('current-breathing')).toHaveText('—');

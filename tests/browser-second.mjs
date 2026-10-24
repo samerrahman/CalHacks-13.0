@@ -17,21 +17,18 @@ try {
   await expect(page.locator('.sensor-label')).toContainText('SIMULATED · ELEVATED');
   await page.screenshot({ path: 'artifacts/harder-simulated-calibrated.png' });
   evidence.checks.push('Opt-in simulated baseline survives setup-to-game handoff; accepted sustained ELEVATED appears without raw data injection');
-  const encounterDeadline = Date.now() + 150000;
-  while (!evidenceFor(page).naturalAlarmDefenses && Date.now() < encounterDeadline) {
-    await guardDanger(page); await page.waitForTimeout(100);
-  }
-  if (!evidenceFor(page).naturalAlarmDefenses) throw Error('No natural proximity-alarm defense completed during the bounded encounter observation');
-  await page.screenshot({ path: 'artifacts/survival-natural-defense.png' });
-  evidence.checks.push('A naturally approaching creature triggers the visible proximity alarm; timely Q survives the encounter and automatically restores equipment');
+  // Silence makes it lose the trail, so encounters come from working, not waiting.
   await solve(page, { delayStageThree: true });
+  if (!evidenceFor(page).naturalAlarmDefenses) throw Error('No natural proximity-alarm defense completed while working');
+  evidence.checks.push('Working draws the creature to the visible proximity alarm; timely Q survives each encounter and automatically restores equipment');
   await expect(page.getByRole('dialog', { name: 'Run results' })).toContainText('4/4');
   await expect(page.locator('.pulse-report')).toContainText('SIMULATED DATA');
   await page.screenshot({ path: 'artifacts/harder-seed18-report.png' });
   evidence.observations = evidenceFor(page); evidence.report = await page.locator('.pulse-report').innerText();
   if (!evidence.observations.blackouts) throw Error('The delayed overload run did not exercise a visible blackout');
   if (evidence.observations.wireBoards !== 2) throw Error('Both visible wiring boards were not completed');
-  evidence.checks.push('Seed18 won both fault/wire and memory stages with limited isolation, F-only blackout recovery and an opt-in simulated report');
+  if (!evidence.observations.pulseBeatsNeeded?.includes(12) || !evidence.observations.calmHolds) throw Error('The elevated heartbeat-mask and calm-hold rules were not exercised');
+  evidence.checks.push('Seed18 won every stage under an accepted SIMULATED ELEVATED trend (12-beat heartbeat mask, slower calm hold) with limited isolation, F-only blackout recovery and an opt-in simulated report');
   await page.getByRole('button', { name: 'Delete report & shared session', exact: true }).click();
   await expect(page.locator('.pulse-report')).toContainText('Physiological statistics unrecorded.');
   evidence.checks.push('Delete removes the local timeline and derived pulse statistics');

@@ -41,7 +41,7 @@ try {
   await page.getByRole('button', { name: 'Resume protocol →' }).click();
   await page.getByRole('button', { name: 'Close ×', exact: true }).click();
   evidence.checks.push('Escape remains global while a judge checkbox has focus');
-  await expect(page.locator('[data-tutorial="emergency-restore"]')).toBeDisabled({ timeout: 13000 });
+  await expect(page.locator('[data-tutorial="emergency-restore"]')).toBeDisabled({ timeout: 16000 });
   await page.getByRole('button', { name: '02 Look at monitor' }).click();
   await expect(page.getByRole('button', { name: 'CAM B SERVICE PATH' })).toHaveCount(0);
   await page.keyboard.press('e');
@@ -85,7 +85,7 @@ try {
   if (!wireDangerUncovered) throw Error('The taller wire puzzle covers the mobile danger meter');
   await page.screenshot({ path: 'artifacts/survival-wires-mobile.png' });
   if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw Error('Wire puzzle causes mobile horizontal overflow');
-  evidence.checks.push('Actual stage-one wiring board rendered at laptop and mobile sizes after eight visible fault repairs; mobile danger meter remains uncovered');
+  evidence.checks.push('Actual stage-one wiring board rendered at laptop and mobile sizes after twenty-four visible fault repairs; mobile danger meter remains uncovered');
   if (evidence.errors.length || evidence.failedResources.length) throw Error('Browser errors or missing resources');
   evidence.passed = true;
 } catch (error) {
