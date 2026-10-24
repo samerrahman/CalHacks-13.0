@@ -15,14 +15,25 @@ test('expired and repeated instructions never replay', () => {
   assert.equal(queue.next(5), null);
 });
 
-test('critical calls interrupt active obsolete speech and replace queued lower priorities', () => {
+test('higher-priority speech waits for the active instruction instead of interrupting it', () => {
   const queue = new SpeechQueue();
   queue.enqueue(line('tutorial'), 0); queue.next(0);
   queue.enqueue(line('help'), 0);
-  assert.deepEqual(queue.enqueue(line('warning', { priority: 3 }), 1), { accepted: true, interrupted: true });
+  assert.deepEqual(queue.enqueue(line('warning', { priority: 3 }), 1), { accepted: true, interrupted: false });
+  assert.equal(queue.active?.id, 'tutorial');
+  assert.equal(queue.next(1), null);
+  queue.finish('tutorial');
   assert.equal(queue.next(1)?.id, 'warning');
   queue.finish('warning');
-  assert.equal(queue.next(2), null);
+  assert.equal(queue.next(2)?.id, 'help');
+});
+
+test('queue deadlines prevent stale starts without truncating a line that already began', () => {
+  const queue = new SpeechQueue();
+  queue.enqueue(line('instruction', { expiresAt: 2 }), 0); queue.next(0); queue.markStarted('instruction');
+  assert.equal(queue.prune(3), false);
+  assert.equal(queue.active?.id, 'instruction');
+  assert.equal(queue.prune(3, () => false), true, 'stage or run invalidation still cancels begun speech');
 });
 
 test('task or encounter invalidation cancels active and pending instructions', () => {

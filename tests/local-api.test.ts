@@ -4,6 +4,7 @@ import { Readable } from 'node:stream';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createLocalApi, type LocalApiOptions } from '../src/integrations/devServer';
 import { createDirectorProbe } from '../electron/liveCheckValidation';
+import { authoredMonsterFallback, type MonsterRequest } from '../src/integrations/contracts';
 
 type Result = { status: number; headers: Record<string,string>; body: any };
 function invoke(api: ReturnType<typeof createLocalApi>, path: string, options: { method?: string; body?: unknown; raw?: string; headers?: Record<string,string|undefined>; peer?: string } = {}): Promise<Result> {
@@ -24,10 +25,12 @@ function fixture(offline = false) {
  const providers: LocalApiOptions['providers'] = {
   director: async (request, safeEnv) => { calls.push({ kind: 'director', request, env: safeEnv }); return { proposal: { requestId: request.requestId }, source: 'gemini', latencyMs: 1 }; },
   speech: async (request, safeEnv) => { calls.push({ kind: 'speech', request, env: safeEnv }); return { audioBase64: 'SUQz', mimeType: 'audio/mpeg', source: 'elevenlabs', latencyMs: 1 }; },
+  monster: async (request, safeEnv) => { calls.push({ kind: 'monster', request, env: safeEnv }); return { ...authoredMonsterFallback(request, 'Test fixture'), caption: 'Your machinery calls me through the wall.', textSource: 'gemini' }; },
  };
  return { api: createLocalApi({ port: 5173, env, offline, allowedCaptions: ['Authored test caption.'], providers, now: () => { clockReads++; return clock; } }), calls, get clockReads() { return clockReads; }, advance(ms: number) { clock += ms; } };
 }
 const speech = (requestId = 'speech-1') => ({ requestId, caption: 'Authored test caption.', encounterId: 'fixture', expiresAtMs: Date.now() + 10000 });
+const monster = (requestId = 'monster-1'): MonsterRequest => ({ requestId, context: createDirectorProbe('monster-context').request, fallbackId: 'AFTER_MISTAKE', expiresAtMs: Date.now() + 25000 });
 
 test('local API exposes only configuration booleans and projects public provider requests through injected fake transports', async () => {
  const { api, calls } = fixture();
@@ -102,4 +105,28 @@ test('offline parallel requests return deterministic fallbacks without providers
  assert.equal((await invoke(disabled.api, 'director', { body: { ...request, allowedTactics: ['KILL'] } })).status, 400);
  assert.equal((await invoke(disabled.api, 'speech', { body: speech(), headers: { origin: 'https://foreign.invalid' } })).status, 403);
  assert.equal(disabled.calls.length, 0);
+});
+
+test('monster pipeline only accepts public context and known triggers, with an independent bounded rate', async () => {
+ const { api, calls, advance } = fixture();
+ const request = monster();
+ for (const body of [ { ...request, caption: 'Caller text must never be voiced.' }, { ...request, fallbackId: 'ARBITRARY' }, { ...request, expiresAtMs: Date.now() - 1 }, { ...request, expiresAtMs: Date.now() + 60000 } ]) assert.equal((await invoke(api, 'monster', { body })).status, 400);
+ assert.equal(calls.length, 0);
+ const raw = { ...request, context: { ...request.context, privateAnswer: 'SECRET', observations: { ...request.context.observations, pulseBpm: 'SECRET' } } };
+ const result = await invoke(api, 'monster', { body: raw });
+ assert.equal(result.status, 200); assert.equal(result.body.textSource, 'gemini'); assert.equal(calls.length, 1);
+ assert.equal(JSON.stringify(calls[0]!.request).includes('SECRET'), false);
+ assert.equal((await invoke(api, 'monster', { body: monster('monster-2') })).status, 429);
+ assert.equal((await invoke(api, 'speech', { body: speech() })).status, 200, 'authored supervisor route remains independent');
+ advance(18000);
+ assert.equal((await invoke(api, 'monster', { body: request })).status, 409);
+ assert.equal((await invoke(api, 'monster', { body: monster('monster-2') })).status, 200);
+});
+
+test('offline monster dialogue cannot call providers or consume quota, and labels its authored fallback', async () => {
+ const disabled = fixture(true);
+ const results = await Promise.all(Array.from({ length: 12 }, () => invoke(disabled.api, 'monster', { body: monster() })));
+ assert.ok(results.every(result => result.status === 200 && result.body.textSource === 'authored-fallback' && result.body.speech.source === 'fallback'));
+ assert.equal(disabled.calls.length, 0); assert.equal(disabled.clockReads, 0);
+ assert.equal((await invoke(disabled.api, 'monster', { body: { ...monster(), caption: 'Injected' } })).status, 400);
 });

@@ -1,16 +1,43 @@
 import type { DirectorRequest, PublicEvent } from '../game/state';
+import dialogue from '../game/dialogue.json';
 
 export type DirectorResult = { proposal: unknown | null; source: 'gemini' | 'fallback'; latencyMs: number; reason?: string; providerRequestId?: string };
 /** expiry is a wall-clock transport deadline, never a remote monotonic clock. */
 export type SpeechRequest = { requestId: string; caption: string; encounterId: string; expiresAtMs: number };
 export type SpeechResult = { audioBase64: string | null; mimeType: string; source: 'elevenlabs' | 'cached' | 'fallback'; reason?: string; latencyMs: number; providerRequestId?: string };
+export const MONSTER_FALLBACK_IDS = ['FIRST_APPROACH', 'AFTER_MISTAKE', 'MACHINES_QUIET', 'HEARD_RHYTHM', 'LURE_FOLLOWED'] as const;
+export type MonsterFallbackId = typeof MONSTER_FALLBACK_IDS[number];
+export const MONSTER_TEXT_TIMEOUT_MS = 5000;
+export const MONSTER_TOTAL_TIMEOUT_MS = 12000;
+export const MONSTER_MIN_INTERVAL_MS = 18000;
+export type MonsterRequest = { requestId: string; context: DirectorRequest; fallbackId: MonsterFallbackId; expiresAtMs: number };
+export type MonsterResult = { requestId: string; caption: string; textSource: 'gemini' | 'authored-fallback'; textLatencyMs: number; textReason?: string; textProviderRequestId?: string; evidenceEventIds: string[]; speech: SpeechResult; totalLatencyMs: number };
 export type IntegrationStatus = { desktop: boolean; offline?: boolean; presage: boolean; gemini: boolean; elevenlabs: boolean; convex: boolean; reasons: string[] };
 export interface DesktopBridge {
   status(): Promise<IntegrationStatus>;
   director(request: DirectorRequest): Promise<DirectorResult>;
   speech(request: SpeechRequest): Promise<SpeechResult>;
+  monster(request: MonsterRequest): Promise<MonsterResult>;
 }
 declare global { interface Window { lockIn?: DesktopBridge } }
+
+/** The public speech route accepts authored captions only. Generated speech
+ * can be reached only by the server's contextual monster pipeline. */
+export function isAuthoredCaption(caption: unknown): caption is string {
+  return typeof caption === 'string' && dialogue.lines.some(line => line.text === caption);
+}
+export function monsterFallbackCaption(id: MonsterFallbackId): string {
+  return dialogue.lines.find(line => line.id === id && line.role === 'creature')?.text ?? 'I can hear you working.';
+}
+export function authoredMonsterFallback(request: Pick<MonsterRequest, 'requestId' | 'fallbackId'>, reason: string): MonsterResult {
+  return { requestId: request.requestId, caption: monsterFallbackCaption(request.fallbackId), textSource: 'authored-fallback', textLatencyMs: 0, textReason: reason, evidenceEventIds: [], totalLatencyMs: 0, speech: { audioBase64: null, mimeType: 'audio/mpeg', source: 'fallback', latencyMs: 0, reason } };
+}
+export function publicMonsterRequest(raw: MonsterRequest, nowMs = Date.now()): MonsterRequest {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).sort().join(',') !== 'context,expiresAtMs,fallbackId,requestId') throw new Error('Invalid monster request');
+  const expiresAtMs = finite(raw.expiresAtMs);
+  if (expiresAtMs <= nowMs || expiresAtMs > nowMs + 30000) throw new Error('Expired monster request');
+  return { requestId: identity(raw.requestId, 128), fallbackId: member(raw.fallbackId, MONSTER_FALLBACK_IDS), expiresAtMs, context: publicDirectorRequest(raw.context) };
+}
 
 export const TACTICS = ['INVESTIGATE_SOUND', 'CIRCLE_SHELTER', 'LISTEN_NEAR', 'FOLLOW_LURE', 'WAIT', 'TAUNT', 'RETREAT'] as const;
 export const TARGETS = ['SHELTER', 'EMITTER_A', 'EMITTER_B', 'CONTAINMENT', 'NONE'] as const;

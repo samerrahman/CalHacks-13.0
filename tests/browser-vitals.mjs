@@ -1,0 +1,77 @@
+import assert from 'node:assert/strict';
+import { chromium, expect } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+
+const base = process.env.LOCK_IN_TEST_URL ?? 'http://127.0.0.1:5182';
+const url = `${base}/tests/fixtures/vitals.html`;
+await mkdir('artifacts', { recursive: true });
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const evidence = { passed: false, kind: 'TEST FIXTURE — synthetic video and pulse; NOT live Presage', url, checks: [], errors: [], failedResources: [], externalRequests: [] };
+let page;
+try {
+  page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  page.on('pageerror', error => evidence.errors.push(String(error)));
+  page.on('console', message => { if (message.type() === 'error') evidence.errors.push(message.text()); });
+  page.on('response', response => { if (response.status() >= 400) evidence.failedResources.push({ url: response.url(), status: response.status() }); });
+  page.on('request', request => { if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== new URL(base).origin) evidence.externalRequests.push(request.url()); });
+  await page.goto(url);
+  await expect(page.locator('.fixture-banner')).toContainText('NOT LIVE PRESAGE');
+  await expect(page.getByTestId('fixture-state')).toContainText('Synthetic stream: running');
+  await expect(page.getByRole('progressbar', { name: 'Pulse baseline calibration' })).toHaveAttribute('value', '29');
+  await expect(page.getByRole('button', { name: 'Start calibrated game →' })).toHaveCount(0);
+  const preview = page.getByLabel('Your local mirrored webcam preview');
+  await expect.poll(() => preview.evaluate(video => video.readyState)).toBeGreaterThanOrEqual(2);
+  const originalStream = await preview.evaluateHandle(video => video.srcObject);
+  await page.getByRole('button', { name: 'Complete 30-second test calibration' }).click();
+  await expect(page.getByRole('progressbar', { name: 'Pulse baseline calibration' })).toHaveAttribute('value', '30');
+  await expect(page.getByRole('button', { name: 'Start calibrated game →' })).toBeVisible();
+  await page.screenshot({ path: 'artifacts/TEST-FIXTURE-vitals-calibrated.png', fullPage: true });
+  await page.getByRole('button', { name: 'Start calibrated game →' }).click();
+  const corner = page.getByRole('complementary', { name: 'Your camera and heartbeat' });
+  await expect(corner).toBeVisible();
+  await expect(page.getByTestId('fixture-state')).toContainText('Additional capture starts: 0');
+  await expect(page.getByTestId('fixture-state')).toContainText('Calibrated handoffs: 1');
+  const localVideo = page.getByLabel('Your live local camera');
+  assert.equal(await localVideo.evaluate((video, stream) => video.srcObject === stream, originalStream), true, 'corner must attach the exact original MediaStream');
+  await expect.poll(() => localVideo.evaluate(video => video.readyState)).toBeGreaterThanOrEqual(2);
+  await expect(corner.getByTestId('current-pulse')).toHaveText('72');
+  const meter = corner.getByRole('meter', { name: 'Current pulse level' });
+  await expect(meter).toHaveAttribute('aria-valuenow', '72');
+  evidence.checks.push('30-second ready state exposes the real Start button; resumeSensorCapture preserves the original stream with zero extra starts');
+  const width72 = await meter.locator('i').evaluate(element => parseFloat(element.style.width));
+  await page.getByRole('button', { name: 'Inject accepted 84 BPM test sample' }).click();
+  await expect(corner.getByTestId('current-pulse')).toHaveText('84');
+  await expect(meter).toHaveAttribute('aria-valuenow', '84');
+  const width84 = await meter.locator('i').evaluate(element => parseFloat(element.style.width));
+  assert.ok(width84 > width72, 'pulse bar must increase with the accepted synthetic BPM');
+  await page.screenshot({ path: 'artifacts/TEST-FIXTURE-vitals-84-bpm.png' });
+  evidence.checks.push('Actual CornerVitals displays accepted synthetic 72→84 BPM and increases its pulse bar');
+  await page.setViewportSize({ width: 390, height: 844 });
+  const bounds = await corner.boundingBox();
+  assert.ok(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= 390 && bounds.y + bounds.height <= 844, 'corner vitals must fit mobile viewport');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'no mobile horizontal overflow');
+  await page.screenshot({ path: 'artifacts/TEST-FIXTURE-vitals-mobile.png', fullPage: true });
+  evidence.checks.push('The real corner camera, BPM and bar fit a 390×844 viewport');
+  await page.getByRole('button', { name: 'Expire test sample at 6 seconds' }).click();
+  await expect(corner.getByTestId('current-pulse')).toHaveText('—');
+  await expect(meter).not.toHaveAttribute('aria-valuenow');
+  await expect(meter).toHaveAttribute('aria-valuetext', 'No accepted reading');
+  await expect(meter.locator('i')).toHaveCount(0);
+  await page.screenshot({ path: 'artifacts/TEST-FIXTURE-vitals-stale.png', fullPage: true });
+  evidence.checks.push('A normalized stale sensor view clears BPM and the pulse fill instead of retaining the last reading');
+  await page.getByRole('button', { name: 'Stop synthetic stream' }).click();
+  await expect(corner).toHaveCount(0);
+  await expect(page.getByTestId('fixture-state')).toContainText('Synthetic stream: stopped');
+  assert.equal(await originalStream.evaluate(stream => stream.getTracks().every(track => track.readyState === 'ended')), true, 'Stop releases every generated track');
+  evidence.checks.push('Stop releases the original stream tracks and removes the camera/vitals overlay');
+  evidence.streamWasReused = true; evidence.additionalCaptureStarts = 0; evidence.barWidths = { bpm72: width72, bpm84: width84 };
+  await originalStream.dispose();
+  if (evidence.errors.length || evidence.failedResources.length || evidence.externalRequests.length) throw Error('Fixture console/resource/network errors');
+  evidence.passed = true;
+} catch (error) {
+  evidence.failure = String(error); process.exitCode = 1;
+  if (page) { await page.screenshot({ path: 'artifacts/TEST-FIXTURE-vitals-failure.png', fullPage: true }); evidence.visibleTextAtFailure = await page.locator('body').innerText(); }
+} finally {
+  await writeFile('artifacts/TEST-FIXTURE-vitals-evidence.json', JSON.stringify(evidence, null, 2));
+  console.log(JSON.stringify(evidence)); await browser.close();
+}

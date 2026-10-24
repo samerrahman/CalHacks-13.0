@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createAudioEngine, type AudioWorld } from './engine';
+import { captionReadingSeconds, createAudioEngine, type AudioWorld, type SpeechEvent } from './engine';
 
 class Parameter { value = 0; automation: number[] = []; setTargetAtTime(value: number) { this.value = value; this.automation.push(value); } setValueAtTime(value: number) { this.value = value; this.automation.push(value); } linearRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } exponentialRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } }
 class Node { connected: Node[] = []; connect(node: Node) { this.connected.push(node); return node; } disconnect() { this.connected = []; } }
@@ -143,4 +143,86 @@ test('mechanical scares have short envelopes, positional routing, softer gain an
   assert.ok(context.sources.filter(s => s.buffer?.tag === 'breach_impact.wav').every(s => s.stopped), 'pause stops the mechanical sample layers too');
   engine.reset(); assert.ok(context.oscillators.every(o => o.stopped));
  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
+});
+
+test('creature speech waits for actual instruction completion while alarm and scare effects remain immediate', async () => {
+  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
+  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
+  globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
+  const engine = createAudioEngine(), events: SpeechEvent[] = [];
+  engine.subscribeSpeech(event => events.push(event));
+  try {
+    await engine.start(); const context = FakeContext.current;
+    engine.speak({ id: 'opening', text: 'Eight faults. Isolate when you hear the alarm.', expiresAt: 2, priority: 3, source: 'live', audioBase64: btoa('opening audio') });
+    assert.equal(events.length, 0, 'requesting speech does not display a caption');
+    engine.update(0); await new Promise(resolve => setTimeout(resolve, 0));
+    const opening = context.sources.find(source => source.buffer?.tag === 'opening audio')!;
+    assert.deepEqual(events, [{ type: 'started', id: 'opening', text: 'Eight faults. Isolate when you hear the alarm.', mode: 'live' }]);
+    engine.speak({ id: 'creature', text: 'I can hear you working.', expiresAt: 12, priority: 4, source: 'cached', audioBase64: btoa('creature audio') });
+    engine.update(3); await Promise.resolve();
+    assert.equal(opening.stopped, false, 'higher priority and latest-start expiry cannot truncate begun speech');
+    assert.equal(context.sources.filter(source => source.buffer?.tag === 'creature audio').length, 0);
+    engine.updateWorld(world({ time: 3, alarm: { active: true, urgency: .5 } })); engine.playScare('impact');
+    assert.equal(engine.diagnostics.alarmActive, true); assert.equal(engine.diagnostics.startedScares, 1);
+    assert.equal(opening.stopped, false, 'critical effects do not steal the speech slot');
+    opening.onended?.();
+    assert.equal(events.at(-1)?.type, 'ended', 'pending speech keeps the engine busy between lines');
+    engine.update(3.1); await new Promise(resolve => setTimeout(resolve, 0));
+    assert.deepEqual(events.at(-1), { type: 'started', id: 'creature', text: 'I can hear you working.', mode: 'cached' });
+    context.sources.find(source => source.buffer?.tag === 'creature audio')!.onended?.();
+    assert.deepEqual(events.slice(-2), [{ type: 'ended', id: 'creature' }, { type: 'idle' }]);
+    assert.equal(engine.isSpeechBusy(), false);
+  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
+});
+
+test('caption fallback reserves readable time even without an audio context', () => {
+  const engine = createAudioEngine(), events: SpeechEvent[] = [];
+  engine.subscribeSpeech(event => events.push(event));
+  const text = 'Eight faults. Work at the terminal. Isolate the machines when you hear the proximity alarm. Do not wait for it to reach the wall.';
+  engine.speak({ id: 'caption', text, priority: 3, expiresAt: 1 }); engine.update(0);
+  assert.deepEqual(events, [{ type: 'started', id: 'caption', text, mode: 'caption' }]);
+  assert.equal(engine.isSpeechBusy(), true);
+  engine.update(captionReadingSeconds(text) - .01); assert.equal(engine.isSpeechBusy(), true);
+  engine.update(captionReadingSeconds(text));
+  assert.equal(engine.isSpeechBusy(), false);
+  assert.deepEqual(events.slice(-2), [{ type: 'ended', id: 'caption' }, { type: 'idle' }]);
+  engine.dispose();
+});
+
+test('pause cancels speech once, clears its caption lifecycle and never resumes obsolete audio', async () => {
+  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
+  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
+  globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
+  const engine = createAudioEngine(), events: SpeechEvent[] = [];
+  engine.subscribeSpeech(event => events.push(event));
+  try {
+    await engine.start(); engine.speak({ id: 'paused', text: 'Eight faults.', expiresAt: 20, priority: 3, audioBase64: btoa('paused audio') });
+    engine.update(0); await new Promise(resolve => setTimeout(resolve, 0));
+    const source = FakeContext.current.sources.find(item => item.buffer?.tag === 'paused audio')!;
+    engine.setPaused(true); assert.equal(source.stopped, true); assert.equal(engine.isSpeechBusy(), false);
+    assert.equal(engine.speak({ id: 'late while paused', text: 'Obsolete.', expiresAt: 20, priority: 4 }), false);
+    assert.equal(events.filter(event => event.type === 'cancelled').length, 1);
+    assert.equal(events.filter(event => event.type === 'ended').length, 0, 'source.stop is cancellation, not natural completion');
+    engine.setPaused(false); await Promise.resolve(); engine.update(1);
+    assert.equal(engine.diagnostics.startedSpeech, 1);
+  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
+});
+
+test('a decoder completing after stage cancellation cannot emit a premature caption or play stale speech', async () => {
+  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
+  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
+  globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
+  const engine = createAudioEngine(), events: SpeechEvent[] = [];
+  engine.subscribeSpeech(event => events.push(event));
+  try {
+    await engine.start();
+    let finishDecode!: (value: { tag: string }) => void;
+    FakeContext.current.decodeAudioData = () => new Promise(resolve => { finishDecode = resolve; });
+    engine.speak({ id: 'decoding', text: 'Prepare emitter A.', expiresAt: 20, priority: 3, audioBase64: btoa('stale') });
+    engine.update(0); assert.equal(engine.isSpeechBusy(), true); assert.equal(events.length, 0);
+    engine.update(1, () => false); finishDecode({ tag: 'stale' }); await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(events.some(event => event.type === 'started'), false);
+    assert.equal(events.filter(event => event.type === 'cancelled').length, 1);
+    assert.equal(engine.diagnostics.startedSpeech, 0); assert.equal(engine.isSpeechBusy(), false);
+  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
 });

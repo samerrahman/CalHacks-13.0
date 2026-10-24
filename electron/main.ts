@@ -3,8 +3,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { geminiProposal, elevenSpeech } from '../src/integrations/providers';
-import { publicDirectorRequest } from '../src/integrations/contracts';
+import { geminiProposal, elevenSpeech, generateMonster, validSpeechRequest } from '../src/integrations/providers';
+import { publicDirectorRequest, publicMonsterRequest, authoredMonsterFallback, isAuthoredCaption, MONSTER_MIN_INTERVAL_MS } from '../src/integrations/contracts';
 import { bindPresage } from './presageAdapter';
 
 const require = createRequire(import.meta.url);
@@ -29,8 +29,10 @@ function trusted(event: Electron.IpcMainInvokeEvent): void {
 }
 let lastDirectorAt = -Infinity;
 let lastSpeechAt = -Infinity;
+let lastMonsterAt = -Infinity;
 const directorIds = new Set<string>();
 const speechIds = new Set<string>();
+const monsterIds = new Set<string>();
 function restrictNavigation(window: BrowserWindow): void {
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', e => e.preventDefault());
@@ -53,10 +55,20 @@ ipcMain.handle('lock-in:director', async (event, raw) => {
 });
 ipcMain.handle('lock-in:speech', async (event, request) => {
   trusted(event);
+  if (!validSpeechRequest(request) || !isAuthoredCaption(request.caption)) throw new Error('Speech must match a valid authored caption');
   if (speechIds.has(request?.requestId) || performance.now() - lastSpeechAt < 1500) return { audioBase64: null, mimeType: 'audio/mpeg', source: 'fallback', latencyMs: 0, reason: 'Duplicate or rate-limited speech' };
   speechIds.add(request?.requestId); lastSpeechAt = performance.now();
   if (speechIds.size > 500) speechIds.delete(speechIds.values().next().value!);
   return elevenSpeech(request, process.env);
+});
+ipcMain.handle('lock-in:monster', async (event, raw) => {
+  trusted(event);
+  const request = publicMonsterRequest(raw);
+  if (offline) return authoredMonsterFallback(request, 'Offline mode · authored monster dialogue');
+  if (monsterIds.has(request.requestId) || performance.now() - lastMonsterAt < MONSTER_MIN_INTERVAL_MS) return authoredMonsterFallback(request, 'Duplicate or rate-limited monster dialogue');
+  monsterIds.add(request.requestId); lastMonsterAt = performance.now();
+  if (monsterIds.size > 500) monsterIds.delete(monsterIds.values().next().value!);
+  return generateMonster(request, process.env);
 });
 
 async function createWindow(): Promise<void> {

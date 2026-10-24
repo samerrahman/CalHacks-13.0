@@ -1,5 +1,33 @@
 export type SensorMode = 'manual' | 'simulated' | 'presage';
 export type Trend = 'UNKNOWN' | 'STEADY' | 'ELEVATED' | 'RECOVERED';
+/** Local diagnostics only. These are never director inputs or shared trace fields. */
+export type SensorDiagnosticMetric = {
+  bpm: number | null;
+  confidence: number | null;
+  stable: boolean | null;
+  ageMs: number | null;
+  eligible: boolean;
+  state: 'waiting' | 'warming-up' | 'accepted' | 'rejected' | 'stale';
+  reasons: string[];
+};
+export type SensorDiagnostics = {
+  captureState: 'off' | 'acquiring' | 'live';
+  processingStatus: 'uninitialized' | 'idle' | 'starting' | 'running' | 'stopping' | 'error';
+  validationCode: number | null;
+  validationHint: string;
+  warmupRemainingSeconds: number;
+  breathingWarmupRemainingSeconds: number;
+  metricsPackets: number;
+  pulseSamples: number;
+  breathingSamples: number;
+  framesSentThrough: number;
+  framesRejected: number;
+  frameRate: number | null;
+  lastMetricAgeMs: number | null;
+  pulse: SensorDiagnosticMetric;
+  breathing: SensorDiagnosticMetric;
+  blocker: string | null;
+};
 export type SensorSample = {
   source: 'presage' | 'simulated';
   receivedMonotonicMs: number;
@@ -24,6 +52,7 @@ export type SensorView = {
   /** Local measurement clock only; excluded from remote trace and providers. */
   sampleAtMs: number | null;
   captureSegment: number;
+  diagnostics?: SensorDiagnostics;
 };
 export const FRESHNESS_MS = 5000;
 

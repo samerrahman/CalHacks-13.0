@@ -2,7 +2,7 @@ import { ConvexClient } from 'convex/browser';
 import { makeFunctionReference } from 'convex/server';
 import type { GameState, DirectorRequest, PublicEvent } from '../game/state';
 import type { SensorView } from '../sensing/types';
-import { publicDirectorRequest, publicEvent, type DirectorResult, type SpeechRequest, type SpeechResult, type IntegrationStatus } from './contracts';
+import { publicDirectorRequest, publicEvent, publicMonsterRequest, authoredMonsterFallback, MONSTER_TOTAL_TIMEOUT_MS, type MonsterRequest, type MonsterResult, type DirectorResult, type SpeechRequest, type SpeechResult, type IntegrationStatus } from './contracts';
 import { DIRECTOR_TIMEOUT_MS } from '../game/directorValidation';
 
 // The default beforeunload guard silently cancels closing an Electron window while a write is pending.
@@ -12,7 +12,7 @@ let integrationRun = 0;
 let integrationPrefix = 'boot';
 function localDevApi(): boolean { return !!import.meta.env?.DEV && typeof location !== 'undefined' && ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname); }
 async function localRequest<T>(endpoint: string, body?: unknown): Promise<T> {
-  const response = await fetch(`/api/lock-in/${endpoint}`, { method: body === undefined ? 'GET' : 'POST', credentials: 'omit', headers: { 'X-Lock-In-Client': '1', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(endpoint === 'director' ? DIRECTOR_TIMEOUT_MS : endpoint === 'speech' ? 7500 : 1500) });
+  const response = await fetch(`/api/lock-in/${endpoint}`, { method: body === undefined ? 'GET' : 'POST', credentials: 'omit', headers: { 'X-Lock-In-Client': '1', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(endpoint === 'director' ? DIRECTOR_TIMEOUT_MS : endpoint === 'monster' ? MONSTER_TOTAL_TIMEOUT_MS + 500 : endpoint === 'speech' ? 7500 : 1500) });
   if (!response.ok) throw new Error(`Local provider HTTP ${response.status}`);
   return response.json() as Promise<T>;
 }
@@ -52,6 +52,17 @@ export async function requestSpeech(request: SpeechRequest): Promise<SpeechResul
     if (result && run === integrationRun) return result;
   } catch { /* Captions plus radio beep are always usable. */ }
   return { audioBase64: null, mimeType: 'audio/mpeg', source: 'fallback', latencyMs: 0, reason: local ? 'Local voice unavailable or timed out · captions remain available' : 'No live voice bridge · captions and radio beep' };
+}
+
+export async function requestMonster(request: MonsterRequest): Promise<MonsterResult> {
+  const run = integrationRun;
+  try {
+    const safe = publicMonsterRequest(request);
+    const remote = { ...safe, requestId: `${integrationPrefix}:${safe.requestId.slice(-96)}` };
+    const result = window.lockIn ? await window.lockIn.monster(remote) : localDevApi() ? await localRequest<MonsterResult>('monster', remote) : activeTrace?.connected ? await activeTrace.action('monster:generate', remote) as MonsterResult : null;
+    if (result && result.requestId === remote.requestId && run === integrationRun && Date.now() < request.expiresAtMs) return { ...result, requestId: request.requestId };
+    return authoredMonsterFallback(request, 'Stale or unavailable contextual dialogue');
+  } catch { return authoredMonsterFallback(request, 'Contextual dialogue unavailable · authored fallback'); }
 }
 
 export type TraceSummary = { time: number; stage: number; status: string; equipment: string; creatureNode: string; creaturePhase: string; distanceM: number; tactic: string; target: string; proposalSource: string; sensorSource: string; sensorQuality: string; trend: string; sensorAgeMs: number | null };

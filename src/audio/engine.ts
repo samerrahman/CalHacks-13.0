@@ -4,6 +4,15 @@ export const EFFECT_NAMES = ['intro_alarm', 'forest_run', 'door_slam', 'room_hum
 export type EffectName = typeof EFFECT_NAMES[number];
 export type AudioPosition = [number, number, number];
 export type ScareKind = 'impact' | 'monitor' | 'breach';
+export type SpeechEvent =
+  | { type: 'started'; id: string; text: string; mode: 'live' | 'cached' | 'caption' }
+  | { type: 'ended' | 'cancelled'; id: string }
+  | { type: 'idle' };
+
+/** A readable fallback must hold its place just as recorded speech does. */
+export function captionReadingSeconds(text: string): number {
+  return Math.max(3, Math.min(14, text.trim().split(/\s+/).length / 2.6 + 1));
+}
 export interface AudioWorld {
   time: number;
   power: 'on' | 'quiet' | 'blackout';
@@ -25,6 +34,9 @@ export interface AudioEngine {
   playEffect(name: EffectName, position?: AudioPosition, volume?: number): void;
   playScare(kind: ScareKind, position?: AudioPosition, soft?: boolean): void;
   speak(request: SpeechRequest): boolean;
+  subscribeSpeech(listener: (event: SpeechEvent) => void): () => void;
+  isSpeechBusy(): boolean;
+  cancelSpeech(id?: string): void;
   update(now: number, isValid?: (request: SpeechRequest) => boolean): void;
   updateWorld(state: AudioWorld): void;
   reset(): void;
@@ -36,6 +48,8 @@ export interface AudioEngine {
 export function createAudioEngine(): AudioEngine {
   let context: AudioContext | null = null, master: GainNode | null = null;
   let speechSource: AudioBufferSourceNode | null = null;
+  let speechRequest: SpeechRequest | null = null, captionUntil: number | null = null;
+  const speechListeners = new Set<(event: SpeechEvent) => void>();
   let volume = .55, muted = false, paused = false, disposed = false, now = 0, generation = 0;
   let startPromise: Promise<void> | null = null, speechController: AbortController | null = null;
   const loadingController = new AbortController();
@@ -57,11 +71,31 @@ export function createAudioEngine(): AudioEngine {
     diagnostics.status = 'unavailable'; diagnostics.error = error instanceof Error ? error.message : String(error);
   }
 
+  function emitSpeech(event: SpeechEvent): void {
+    for (const listener of speechListeners) listener(event);
+  }
+  function emitIdle(): void { if (!queue.active && !queue.length) emitSpeech({ type: 'idle' }); }
   function stopSpeech(): void {
     generation++; speechController?.abort(); speechController = null;
+    const request = speechRequest; speechRequest = null; captionUntil = null;
     const source = speechSource; speechSource = null;
     if (source) { try { source.stop(); } catch { /* Already ended. */ } source.disconnect(); }
     diagnostics.speech = 'idle';
+    if (request) emitSpeech({ type: 'cancelled', id: request.id });
+    emitIdle();
+  }
+  function cancelSpeech(id?: string): void {
+    const playingId = speechRequest?.id;
+    const removed = queue.cancel(id);
+    if (!id || playingId === id) stopSpeech();
+    for (const request of removed) if (request.id !== playingId) emitSpeech({ type: 'cancelled', id: request.id });
+    if (id && playingId !== id) emitIdle();
+  }
+  function finishSpeech(request: SpeechRequest): void {
+    if (speechRequest?.id !== request.id) return;
+    speechSource = null; speechRequest = null; captionUntil = null;
+    queue.finish(request.id); diagnostics.speech = 'idle';
+    emitSpeech({ type: 'ended', id: request.id }); emitIdle();
   }
   function setPosition(panner: PannerNode, location: AudioPosition): void {
     panner.positionX.value = location[0]; panner.positionY.value = location[1]; panner.positionZ.value = location[2];
@@ -174,11 +208,17 @@ export function createAudioEngine(): AudioEngine {
     tone.start(at); tone.stop(at + duration + .025);
   }
   function fallback(request: SpeechRequest): void {
-    diagnostics.speech = 'caption'; effect('radio_chime', undefined, .5); queue.finish(request.id);
+    if (disposed || speechRequest?.id !== request.id || queue.active?.id !== request.id) return;
+    diagnostics.speech = 'caption';
+    const duration = request.captionDuration;
+    captionUntil = now + (duration !== undefined && Number.isFinite(duration) ? Math.max(3, Math.min(14, duration)) : captionReadingSeconds(request.text));
+    queue.markStarted(request.id); effect('radio_chime', undefined, .5);
+    emitSpeech({ type: 'started', id: request.id, text: request.text, mode: 'caption' });
   }
   async function playSpeech(request: SpeechRequest): Promise<void> {
-    if (!context || disposed || request.expiresAt <= now) { queue.finish(request.id); return; }
-    if (!request.audioUrl && !request.audioBase64) { fallback(request); return; }
+    if (disposed || request.expiresAt <= now) { queue.finish(request.id); emitSpeech({ type: 'cancelled', id: request.id }); emitIdle(); return; }
+    speechRequest = request;
+    if (!context || context.state !== 'running' || (!request.audioUrl && !request.audioBase64)) { fallback(request); return; }
     const version = ++generation, controller = new AbortController(); speechController = controller;
     const timeout = globalThis.setTimeout(() => controller.abort(), 3500);
     try {
@@ -200,12 +240,14 @@ export function createAudioEngine(): AudioEngine {
       if (!source) { fallback(request); return; }
       diagnostics.startedSpeech++;
       speechSource = source; diagnostics.speech = request.source === 'cached' ? 'cached' : 'live';
+      queue.markStarted(request.id);
       if (request.followCreature) creatureAttached.add(source);
       const ended = source.onended;
       source.onended = event => {
         ended?.call(source, event);
-        if (speechSource === source) { speechSource = null; queue.finish(request.id); diagnostics.speech = 'idle'; }
+        if (speechSource === source) finishSpeech(request);
       };
+      emitSpeech({ type: 'started', id: request.id, text: request.text, mode: request.source === 'cached' ? 'cached' : 'live' });
     } catch {
       if (!disposed && version === generation && queue.active?.id === request.id) { diagnostics.playbackErrors++; fallback(request); }
     } finally { globalThis.clearTimeout(timeout); if (speechController === controller) speechController = null; }
@@ -243,7 +285,7 @@ export function createAudioEngine(): AudioEngine {
     setVolume(value) { volume = Math.min(.7, Math.max(0, value)); if (master && context) master.gain.setTargetAtTime(muted ? 0 : volume, context.currentTime, .04); },
     setMuted(value) { muted = value; if (master && context) master.gain.setTargetAtTime(muted ? 0 : volume, context.currentTime, .04); },
     setPaused(value) {
-      paused = value; if (value) { stopAlarm(); stopScareTones(); } if (!context || disposed || context.state === 'closed') return;
+      paused = value; if (value) { cancelSpeech(); stopAlarm(); stopScareTones(); } if (!context || disposed || context.state === 'closed') return;
       void (value ? context.suspend() : context.resume()).then(syncContextState).catch(audioFailure);
     },
     setListenerYaw(radians) {
@@ -256,13 +298,18 @@ export function createAudioEngine(): AudioEngine {
     },
     playEffect: effect,
     playScare,
+    subscribeSpeech(listener) { speechListeners.add(listener); return () => { speechListeners.delete(listener); }; },
+    isSpeechBusy() { return queue.active !== null || queue.length > 0; },
+    cancelSpeech,
     speak(request) {
+      if (disposed || paused) return false;
       const result = queue.enqueue(request, now); if (result.interrupted) stopSpeech();
       if (result.accepted) effect('radio_static', undefined, .12); return result.accepted;
     },
     update(gameTime, isValid = () => true) {
       now = gameTime; if (queue.prune(now, isValid)) stopSpeech();
-      if (paused || disposed || !context) return;
+      if (paused || disposed) return;
+      if (captionUntil !== null && now >= captionUntil && speechRequest) finishSpeech(speechRequest);
       const next = queue.next(now); if (next) void playSpeech(next);
     },
     updateWorld(state) {
@@ -302,12 +349,12 @@ export function createAudioEngine(): AudioEngine {
       }
     },
     reset() {
-      stopSpeech(); stopMovement(); stopLoops(); stopAlarm(); stopScareTones(); lastScareAt = -Infinity; queue.reset(); now = 0; lastWorldTime = 0; nextBreathAt = 0; nextScrapeAt = 0; breathSource = null;
+      cancelSpeech(); stopMovement(); stopLoops(); stopAlarm(); stopScareTones(); lastScareAt = -Infinity; queue.reset(); now = 0; lastWorldTime = 0; nextBreathAt = 0; nextScrapeAt = 0; breathSource = null;
       for (const source of active) { try { source.stop(); } catch { /* Already ended. */ } source.disconnect(); } active.clear();
       positions.clear(); creatureAttached.clear();
     },
     dispose() {
-      if (disposed) return; disposed = true; loadingController.abort(); stopSpeech(); stopMovement(); stopLoops(); stopAlarm(); stopScareTones(); queue.reset();
+      if (disposed) return; disposed = true; loadingController.abort(); cancelSpeech(); stopMovement(); stopLoops(); stopAlarm(); stopScareTones(); queue.reset(); speechListeners.clear();
       for (const source of active) { try { source.stop(); } catch { /* Already ended. */ } source.disconnect(); } active.clear();
       positions.clear(); creatureAttached.clear(); buffers.clear(); master?.disconnect(); if (context && context.state !== 'closed') void context.close().then(syncContextState).catch(() => undefined);
     },

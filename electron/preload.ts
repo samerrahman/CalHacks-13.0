@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('lockIn', {
   status: () => ipcRenderer.invoke('lock-in:status'),
   director: (request: unknown) => ipcRenderer.invoke('lock-in:director', request),
   speech: (request: unknown) => ipcRenderer.invoke('lock-in:speech', request),
+  monster: (request: unknown) => ipcRenderer.invoke('lock-in:monster', request),
 });
 
 // Narrow compatibility surface required by the installed renderer SDK. The

@@ -1,6 +1,7 @@
 import { Baseline } from './baseline';
 import { TrendTracker } from './trend';
-import { normalizePresage } from './presageSample';
+import { NativeMetricStream } from './nativeMetrics';
+import { sanitizeSensorError } from './sensorError';
 import { simulatedSample } from './simulated';
 import { acceptedPulse, type SensorMode, type SensorSample, type SensorView } from './types';
 import type { SmartSpectraSDK } from '@smartspectra/node-sdk/renderer';
@@ -30,6 +31,8 @@ export class SensorController {
   private status: SensorView['status'] = 'manual';
   private hint = 'MANUAL · no camera or pulse data';
   private elevated = false;
+  private native = new NativeMetricStream();
+  private diagnosticPublishedAt = 0;
   subscribe(listener: (view: SensorView) => void): () => void { this.listeners.add(listener); listener(this.view()); return () => this.listeners.delete(listener); }
   /** Local-only recorder hook. Consumers must independently require report consent. */
   subscribeSamples(listener: (sample: SensorSample, captureSegment: number) => void): () => void { this.sampleListeners.add(listener); return () => this.sampleListeners.delete(listener); }
@@ -37,15 +40,24 @@ export class SensorController {
     const now = performance.now();
     const pulse = acceptedPulse(this.sample, now, this.mode === 'simulated');
     const usable = this.status === 'calibrating' || this.status === 'ready';
-    return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment };
+    const diagnostics = this.mode === 'presage' ? this.native.view(now, this.stream ? 'live' : this.status === 'starting' ? 'acquiring' : 'off') : undefined;
+    return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...(diagnostics ? { diagnostics } : {}) };
   }
   private publish(): void { const view = this.view(); this.listeners.forEach(l => l(view)); }
+  private publishDiagnostics(force = false): void {
+    const now = performance.now();
+    if (!force && now - this.diagnosticPublishedAt < 250) return;
+    this.diagnosticPublishedAt = now;
+    const diagnostics = this.native.view(now, this.stream ? 'live' : 'acquiring');
+    this.hint = diagnostics.blocker ?? (this.baseline.value === null ? 'Stable capture · collecting 30 usable seconds' : 'LIVE · accepted sustained pulse trend');
+    this.publish();
+  }
   private accept(sample: SensorSample): void {
     if (this.disposed) return;
     this.sample = sample;
     this.baseline.add(sample, performance.now(), this.mode === 'simulated');
     this.trends.add(sample);
-    this.status = this.baseline.value === null ? 'calibrating' : 'ready';
+    if (this.mode !== 'presage' || this.native.processingStatus === 'running') this.status = this.baseline.value === null ? 'calibrating' : 'ready';
     this.hint = sample.quality === 'accepted' ? this.mode === 'simulated' ? 'SIMULATED · development fixture, camera off' : this.baseline.value === null ? 'Stable capture · collecting 30 usable seconds' : 'LIVE · accepted sustained pulse trend' : sample.qualityReasons.join(' · ');
     this.sampleListeners.forEach(listener => listener({ ...sample, qualityReasons: [...sample.qualityReasons] }, this.captureSegment));
     this.publish();
@@ -60,7 +72,7 @@ export class SensorController {
     this.captureSegment++;
     this.mode = mode;
     if (!preserveBaseline) this.baseline.reset();
-    this.trends.reset(); this.sample = null; this.startedAt = performance.now();
+    this.trends.reset(); this.sample = null; this.startedAt = performance.now(); this.native = new NativeMetricStream();
     if (mode === 'manual') { this.status = 'manual'; this.hint = 'MANUAL · no camera or pulse data'; this.publish(); return; }
     this.status = 'starting'; this.hint = mode === 'presage' ? 'Checking native camera integration' : 'SIMULATED · development fixture'; this.publish();
     if (mode === 'simulated') {
@@ -77,33 +89,55 @@ export class SensorController {
       if (generation !== this.generation) { stream.getTracks().forEach(t => t.stop()); return; }
       this.stream = stream; this.publishPreview();
       stream.getTracks().forEach(track => track.addEventListener('ended', () => { if (generation === this.generation) void this.unavailable('Camera stopped or permission revoked'); }, { once: true }));
-      const sdk = new SDK({ requestedMetrics: [MetricType.PULSE_RATE], enableTelemetry: false, sendTimeoutMs: 8000 });
+      const sdk = new SDK({ requestedMetrics: [MetricType.PULSE_RATE, MetricType.BREATHING_RATE], enableTelemetry: false, sendTimeoutMs: 8000 });
       this.sdk = sdk;
-      let validation: { code: number | null; hint: string } = { code: null, hint: 'Waiting for capture validation' };
-      sdk.on('validationStatus', (code, _timestamp, hint) => { if (generation !== this.generation) return; validation = { code, hint }; if (code !== 0) { this.hint = hint; if (this.sample) { this.sample = { ...this.sample, quality: 'rejected', qualityReasons: [hint] }; this.trends.discard(); this.baseline.discardContinuity(); } this.publish(); } });
+      sdk.on('processingStatus', code => {
+        if (generation !== this.generation) return;
+        this.native.processing(code);
+        if (code === 3) this.status = this.baseline.value === null ? 'calibrating' : 'ready';
+        else if (code === 0 || code === 1 || code === 2) this.status = 'starting';
+        if (code !== 3) { this.sample = null; this.trends.discard(); this.baseline.discardContinuity(); }
+        this.publishDiagnostics(true);
+      });
+      sdk.on('frameSentThrough', (sent, timestamp) => {
+        if (generation !== this.generation) return;
+        this.native.frame(sent, timestamp, performance.now()); this.publishDiagnostics();
+      });
+      sdk.on('validationStatus', (code, _timestamp, hint) => {
+        if (generation !== this.generation) return;
+        const changed = code !== this.native.validation.code || hint !== this.native.validation.hint;
+        this.native.setValidation(code, hint || (code === 0 ? 'Capture validated' : `Capture validation ${code}`));
+        if (code !== 0 && this.sample) { this.sample = { ...this.sample, quality: 'rejected', qualityReasons: [this.native.validation.hint] }; this.trends.discard(); this.baseline.discardContinuity(); }
+        this.publishDiagnostics(changed);
+      });
       sdk.on('metrics', buffer => {
         if (generation !== this.generation) return;
         const receiveMs = performance.now();
-        try { this.accept(normalizePresage(decodeMetrics(buffer), receiveMs, Date.now(), this.startedAt, validation)); }
-        catch { this.hint = 'Pulse payload could not be decoded'; this.sample = null; this.publish(); }
+        try {
+          const sample = this.native.ingest(decodeMetrics(buffer), receiveMs, Date.now());
+          if (sample) {
+            if (this.native.processingStatus !== 'running') { sample.quality = 'rejected'; sample.qualityReasons.unshift(`Native processing: ${this.native.processingStatus}`); }
+            this.accept(sample);
+          } else this.publishDiagnostics();
+        } catch { this.hint = 'Pulse payload could not be decoded'; this.sample = null; this.trends.discard(); this.baseline.discardContinuity(); this.publish(); }
       });
-      sdk.on('error', (code, _message) => { if (generation === this.generation) void this.unavailable(`Sensor error ${code} · capture stopped; neutral play remains available`); });
+      sdk.on('error', (code, message) => { if (generation === this.generation) void this.unavailable(`Sensor error ${code}: ${sanitizeSensorError(message)} · capture stopped`); });
       sdk.useMediaStream(stream);
       this.startedAt = performance.now();
       await sdk.start();
       if (generation !== this.generation) return;
-      this.status = 'calibrating'; this.hint = 'Face the camera in steady light · warming up for 12 seconds';
+      this.status = this.native.processingStatus === 'running' ? 'calibrating' : 'starting';
       this.timer = setInterval(() => {
-        if (this.sample && performance.now() - this.sample.receivedMonotonicMs > 5000) this.hint = 'Stale sensor data · neutral gameplay';
-        if (this.baseline.value === null && performance.now() - this.startedAt >= 60_000) this.hint = 'Calibration not ready · continue in manual mode';
-        this.publish();
+        this.publishDiagnostics(true);
       }, 1000);
-      this.publish();
-    } catch (error) { if (generation === this.generation) await this.unavailable(error instanceof Error ? error.name==='NotFoundError'?'No webcam detected. Connect a camera, then retry.':error.name==='NotAllowedError'?'Camera permission denied. Allow camera access in system settings, then retry.':error.name==='NotReadableError'?'Camera is busy. Close the other camera app and retry.':error.message : 'Camera unavailable'); }
+      this.publishDiagnostics(true);
+    } catch (error) { if (generation === this.generation) await this.unavailable(error instanceof Error ? error.name==='NotFoundError'?'No webcam detected. Connect a camera, then retry.':error.name==='NotAllowedError'?'Camera permission denied. Allow camera access in system settings, then retry.':error.name==='NotReadableError'?'Camera is busy. Close the other camera app and retry.':sanitizeSensorError(error) : 'Camera unavailable'); }
   }
   private async unavailable(hint: string): Promise<void> {
     if (this.disposed) return;
     this.generation++;
+    this.native.failure ??= hint;
+    this.native.processingStatus = 'error';
     await this.retireCapture('unavailable', hint);
   }
   setSimulatedElevated(value: boolean): void { this.elevated = value; }

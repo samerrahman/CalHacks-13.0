@@ -1,0 +1,25 @@
+{
+  "passed": false,
+  "kind": "TEST FIXTURE — synthetic video and pulse; NOT live Presage",
+  "url": "http://127.0.0.1:5182/tests/fixtures/vitals.html",
+  "checks": [
+    "30-second ready state exposes the real Start button; resumeSensorCapture preserves the original stream with zero extra starts",
+    "Actual CornerVitals displays accepted synthetic 72→84 BPM and increases its pulse bar",
+    "The real corner camera, BPM and bar fit a 390×844 viewport",
+    "A normalized stale sensor view clears BPM and the pulse fill instead of retaining the last reading",
+    "Stop releases the original stream tracks and removes the camera/vitals overlay"
+  ],
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "failedResources": [],
+  "externalRequests": [],
+  "streamWasReused": true,
+  "additionalCaptureStarts": 0,
+  "barWidths": {
+    "bpm72": 45.7143,
+    "bpm84": 62.8571
+  },
+  "failure": "Error: Fixture console/resource/network errors",
+  "visibleTextAtFailure": "TEST FIXTURE · SYNTHETIC VIDEO + PULSE · NOT LIVE PRESAGE\nSynthetic in-game handoff\n\nReal UI components, a canvas-generated video stream, and explicit test samples. No webcam permission, SDK session, or live physiological measurement.\n\nAdditional capture starts: 0\nCalibrated handoffs: 1\nSynthetic stream: stopped\nInject accepted 84 BPM test sample\nExpire test sample at 6 seconds\nReturn to test calibration\nStop synthetic stream"
+}

@@ -2,12 +2,13 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 if (!process.argv.includes('--live')) throw new Error('Requires --live');
-const result={checkedAt:new Date().toISOString(),application:'LOCK IN',scope:'Actual Chrome gameplay through local Vite provider bridge',cameraRequested:false,traceSharingEnabled:false,status:'failed',errors:[]};
+const result={checkedAt:new Date().toISOString(),application:'LOCK IN',scope:'Actual Chrome gameplay with Gemini-written monster dialogue through local Vite provider bridge',cameraRequested:false,traceSharingEnabled:false,status:'failed',errors:[],monsterResponses:[]};
 const browser=await chromium.launch({channel:'chrome',headless:true});
 await mkdir('docs/qa',{recursive:true});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}});page.on('pageerror',error=>result.errors.push(error.message.slice(0,200)));
- await page.goto('http://127.0.0.1:5174');
+ page.on('response',async response=>{if(!response.url().endsWith('/api/lock-in/monster'))return;try{const value=await response.json();if(!value.speech)return;result.monsterResponses.push({requestId:value.requestId,caption:value.caption,textSource:value.textSource,textLatencyMs:value.textLatencyMs,textReason:value.textReason??null,textProviderRequestId:value.textProviderRequestId??null,evidenceEventIds:value.evidenceEventIds,totalLatencyMs:value.totalLatencyMs,speech:{source:value.speech.source,latencyMs:value.speech.latencyMs,providerRequestId:value.speech.providerRequestId??null,reason:value.speech.reason??null,bytes:value.speech.audioBase64?Buffer.from(value.speech.audioBase64,'base64').length:0}});}catch{result.errors.push('Invalid contextual dialogue response');}});
+ await page.goto(process.env.LOCK_IN_TEST_URL||'http://127.0.0.1:5174');
  await expect(page.getByRole('button',{name:'Skip guidance & start',exact:true})).toBeEnabled({timeout:20000});
  await expect(page.getByText('Monster speech enabled · ElevenLabs',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Skip guidance & start',exact:true}).click();
@@ -16,14 +17,28 @@ try{
  await expect(page.getByRole('dialog',{name:'Research terminal'})).toBeVisible();
  const marked=page.getByRole('button',{name:/^Machine [1-4] FAULT$/}); const count=await marked.count(); if(count)await marked.nth(0).click();
  await page.getByRole('button',{name:'Judge view J',exact:true}).click();
- await expect(page.locator('.creature-voice')).toContainText('I can hear you working.',{timeout:25000});
  const audio=page.getByTestId('audio-diagnostics');
+ await expect(page.locator('.radio-caption')).toContainText('Eight faults.',{timeout:6000});
+ result.initialInstruction=await page.locator('.radio-caption p').innerText();
+ await expect(page.locator('.trace-list')).toContainText('PROXIMITY_ALARM',{timeout:6000});
+ await page.keyboard.press('q');
+ await expect(page.locator('.trace-list')).toContainText('QUIET_ENTERED');
+ await expect.poll(()=>result.monsterResponses.some(value=>value.textSource==='gemini'&&value.speech.source==='elevenlabs'),{timeout:8000}).toBe(true);
+ await expect(page.locator('.radio-caption')).toContainText('Eight faults.');
+ const duringInstruction=JSON.parse(await audio.textContent());
+ expect(duringInstruction.startedSpeech).toBe(1);
+ result.instructionProtectedWhileMonsterReady=true;result.audioWhileMonsterQueued=duringInstruction;
+ await expect(page.locator('.creature-voice')).toContainText('GEMINI GENERATED',{timeout:30000});
+ await expect.poll(()=>result.monsterResponses.some(value=>value.textSource==='gemini'&&value.speech.source==='elevenlabs'),{timeout:1000}).toBe(true);
+ const live=result.monsterResponses.find(value=>value.textSource==='gemini'&&value.speech.source==='elevenlabs');
+ await expect(page.locator('.creature-voice')).toContainText(live.caption);
+ await expect(page.locator('.creature-voice')).toContainText('ELEVENLABS VOICE');
  await expect.poll(async()=>{const state=JSON.parse(await audio.textContent());return state.startedSpeech>=2&&state.decodedSpeech>=2&&state.contextState==='running'&&state.speech==='live';},{timeout:8000}).toBe(true);
  result.caption=await page.locator('.creature-voice').innerText();
  result.audio=JSON.parse(await audio.textContent());
  result.providers=await page.locator('.provider-table').evaluate(element=>Object.fromEntries([...element.querySelectorAll('div')].map(row=>[row.querySelector('span')?.textContent,row.querySelector('b')?.textContent])));
- result.actualMonsterPlayback=true;result.status=result.errors.length?'failed':'passed';
- await page.screenshot({path:'docs/qa/local-api-monster-browser.png'});
+ result.actualMonsterPlayback=true;result.actualGeneratedCaption=live.caption;result.status=result.errors.length?'failed':'passed';
+ await page.screenshot({path:'docs/qa/generated-monster-browser.png'});
  await page.keyboard.press('q');await page.keyboard.press('Escape');
 }catch(error){result.reason=String(error?.message??error).replace(/https?:\/\/\S+/g,'[URL]').slice(0,400);}
-finally{await browser.close();await writeFile('docs/qa/local-api-monster-browser.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result,null,2));if(result.status!=='passed')process.exitCode=1;}
+finally{await browser.close();await writeFile('docs/qa/generated-monster-browser.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result,null,2));if(result.status!=='passed')process.exitCode=1;}
