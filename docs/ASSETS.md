@@ -64,6 +64,10 @@ Approaching/receding footsteps follow the simulation's `lastMotion` and actual c
 
 Optional generated speech is distinct from the bundled effects. The queue accepts an exact caption plus expiry, priority, identity and optional live/cache source metadata. It cancels obsolete instructions, preempts lower priorities and avoids repeated IDs. Missing/unavailable audio falls back to captions with a chime. Live and cached labels describe actual request metadata; bundled WAVs are never labelled as provider output. Provider verification belongs in the integration status report.
 
+## Opening cutscene video
+
+`public/assets/video/opening.mp4` (640×360 pixel art shown scaled up, 30 fps with motion blur, H.264 + AAC, 34.6 s) is rendered offline by `tools/cutscene.mjs render` from `src/cutscene/` and the low-poly GLBs in `cutscene/models/`. Those models are original placeholders generated for this project and meant to be replaced; see [cutscene/README.md](../cutscene/README.md). Its default `ironlung` look textures them with 14 CC0 Poly Haven textures in `cutscene/textures/`, credited in [SOURCES.md](../cutscene/textures/SOURCES.md). Those textures are render inputs only and are not shipped in `public/assets`. Its soundtrack is entirely synthesised by ffmpeg from the layers listed in `src/cutscene/timeline.ts` (metal impacts, steam hiss, a hinge shriek, footsteps, breathing, heartbeat, drone, rain, wind). It uses none of the bundled WAVs and has no speech. Captions come from the same timeline at runtime. The video is listed in `manifest.json` like every other asset, and `npm run assets:validate` checks its hash and MP4 container.
+
 ## Checks
 
 Run from the application root:
@@ -73,7 +77,7 @@ npm run assets:validate
 node --import tsx --test src/render/*.test.ts src/audio/*.test.ts
 ```
 
-The asset validator checked all 54 inventory hashes, all 10 actual GLBs/209 meshes and 11 animated clips, the 27 WAV formats and bounded peaks, four loop boundaries, four CCTV PNG headers/resolutions and seven SVGs. It rejects asset paths outside `public/assets`, symlinks, duplicates and unlisted files. The current 12 render tests passed, covering actual GLB parsing, fixed door roots, independent fault targets, emergency lever endpoints, truthful CCTV projection, visible-object click occlusion, bounded alarm lighting, current-event-only scares and the absence of breach/countdown text on physical displays. Audio queue and Web Audio graph checks are separate from these rendering checks.
+The asset validator checked all 55 inventory hashes, all 10 actual GLBs/209 meshes and 11 animated clips, the 27 WAV formats and bounded peaks, four loop boundaries, four CCTV PNG headers/resolutions and seven SVGs. It rejects asset paths outside `public/assets`, symlinks, duplicates and unlisted files. The current 12 render tests passed, covering actual GLB parsing, fixed door roots, independent fault targets, emergency lever endpoints, truthful CCTV projection, visible-object click occlusion, bounded alarm lighting, current-event-only scares and the absence of breach/countdown text on physical displays. Audio queue and Web Audio graph checks are separate from these rendering checks.
 
 These checks establish file integrity and behavior contracts. Render screenshots, complete game playthroughs, physical output listening and live provider results are reported separately by the main application verification. The preserved kit's gallery screenshots do not establish those application results.
 

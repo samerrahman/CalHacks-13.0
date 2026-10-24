@@ -18,3 +18,6 @@ release/
 # personal Claude Code settings
 .claude/settings.local.json
 CLAUDE.local.md
+
+# cutscene preview renders (regenerate with tools/cutscene.mjs)
+cutscene/.previews/

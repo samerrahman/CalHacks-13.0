@@ -4,7 +4,8 @@
     "models": 10,
     "audio": 27,
     "cctvBackgrounds": 4,
-    "decals": 7
+    "decals": 7,
+    "openingVideo": 1
   },
   "assets": [
     {
@@ -438,6 +439,15 @@
       "bytes": 1949702,
       "sha256": "6e6e7025b7e9f335d61f18e0529bb048969b1dad9e4bd33712a94c587b481452",
       "source": "OpenAI built-in image_gen; original LOCK IN breach image generated2026-10-23",
+      "license": "Generated for this project; see docs/ASSETS.md"
+    },
+    {
+      "path": "public/assets/video/opening.mp4",
+      "url": "/assets/video/opening.mp4",
+      "bytes": 9456895,
+      "sha256": "f12d423199056dc87cc37c6717510a0859dd07f4be31201729f3394d15f89ff5",
+      "mediaType": "video/mp4",
+      "source": "cutscene/ + src/cutscene/ (rendered by tools/cutscene.mjs render)",
       "license": "Generated for this project; see docs/ASSETS.md"
     }
   ]

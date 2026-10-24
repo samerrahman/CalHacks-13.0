@@ -13,6 +13,7 @@
     "test:reference": "node --test lock-in-kit/reference/*.test.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "assets:validate": "node tools/validate-app-assets.mjs",
+    "cutscene": "node tools/cutscene.mjs",
     "electron:build": "node electron/build.mjs",
     "desktop": "npm run build && npm run electron:build && env -u ELECTRON_RUN_AS_NODE electron dist-electron/main.mjs",
     "native:smoke": "node electron/smoke.mjs",

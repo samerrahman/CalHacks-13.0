@@ -30,7 +30,7 @@ try {
  result.acceptedBaselineSeconds = maxAcceptedSeconds;
  if (ready) {
   await page.getByRole('button', { name: /Skip guidance & start/ }).click();
-  await page.getByRole('button', { name: /Skip opening/ }).click();
+  await page.getByRole('button', { name: /Skip cutscene/ }).click();
   await page.getByRole('button', { name: /Judge view/ }).click();
   const panel = page.locator('.judge-panel'); await panel.waitFor();
   result.sensorLabel = await page.locator('.sensor-label').innerText();
