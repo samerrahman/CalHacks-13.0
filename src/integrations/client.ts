@@ -4,6 +4,8 @@ import type { GameState, DirectorRequest, PublicEvent } from '../game/state';
 import type { SensorView } from '../sensing/types';
 import { publicDirectorRequest, publicEvent, type DirectorResult, type SpeechRequest, type SpeechResult, type IntegrationStatus } from './contracts';
 
+// The default beforeunload guard silently cancels closing an Electron window while a write is pending.
+const convexOptions = { unsavedChangesWarning: false };
 let activeTrace: TraceBridge | null = null;
 let integrationRun = 0;
 let integrationPrefix = 'boot';
@@ -68,7 +70,7 @@ export class TraceBridge {
     const url = import.meta.env.VITE_CONVEX_URL;
     if (!url) return;
     try {
-      this.client = new ConvexClient(url);
+      this.client = new ConvexClient(url, convexOptions);
       this.sessionId = await this.client.mutation(makeFunctionReference<'mutation'>('sessions:create'), { ownerCapability: this.owner, judgeCapability: this.judge, consent: true, seed, mode });
       if (this.disposed) { await this.deleteSession(); return; }
       this.connected = true; activeTrace = this;
@@ -114,7 +116,7 @@ export function subscribeJudge(listener: (snapshot: TraceSnapshot) => void, repo
     reportStatus('Waiting for consenting local session');
     const configuredUrl = import.meta.env.VITE_CONVEX_URL;
     if (access.convexUrl && access.convexUrl === configuredUrl && access.sessionId && access.capability) {
-      client = new ConvexClient(configuredUrl);
+      client = new ConvexClient(configuredUrl, convexOptions);
       unsubscribe = client.onUpdate(makeFunctionReference<'query'>('sessions:get'), { sessionId: access.sessionId, capability: access.capability }, result => { if (result.summary) listener({ ...result, transport: 'convex' } as TraceSnapshot); reportStatus('Convex live subscription'); }, () => reportStatus('Convex trace unavailable; access may have expired'));
     }
   } catch { reportStatus('Invalid or missing judge access'); }

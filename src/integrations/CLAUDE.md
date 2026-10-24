@@ -11,5 +11,5 @@
 - Implemented, but not yet tested live: it needs `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` and `ELEVENLABS_MODEL_ID`. Use one authorized voice and the same radio processing for Mara and the fake. To qualify for the prize, the demo needs a real generated line that depends on game state.
 - Cartesia is optional extra scope (the kit's "interruptible supervisor" idea). Only add it after the core voice works, and keep the same voice for both roles.
 
-## Known follow-up (Samer)
-- `client.ts` creates `new ConvexClient(url)` without `{ unsavedChangesWarning: false }`. In Electron its beforeunload handler can block closing the window while a mutation is pending.
+## Convex client
+- Always create it with `convexOptions` (`unsavedChangesWarning: false`). Otherwise its beforeunload handler can block closing the Electron window while a mutation is pending.
