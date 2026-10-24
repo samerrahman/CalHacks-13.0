@@ -1,0 +1,65 @@
+.wellness-checkin {
+  border-top: 1px solid #8fa49b55;
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.wellness-checkin__label {
+  color: #a6b2aa;
+  font: 9px 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: .1em;
+}
+
+.wellness-checkin fieldset {
+  border: 0;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.wellness-checkin legend {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.wellness-checkin__choices {
+  display: flex;
+  gap: 8px;
+}
+
+.wellness-checkin__choices button {
+  flex: 1;
+  padding: 9px;
+  font-size: 11px;
+}
+
+.wellness-checkin__choices button[aria-pressed='true'] {
+  background: #d5da97;
+  border-color: #d5da97;
+  color: #142420;
+}
+
+.wellness-checkin__saved {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 11px;
+}
+
+.wellness-checkin__saved button {
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+.wellness-checkin p {
+  color: #b1bca6;
+  font-size: 10px;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+
+.wellness-checkin .wellness-checkin__notice {
+  color: #dfb393;
+}
