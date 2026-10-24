@@ -54,6 +54,7 @@
         "deadline": "8:00"
       }
     ],
+    "cameraPrompt": "declined",
     "manualRestores": 1,
     "faultKey": {
       "ELECTRIC BUZZING": 1,
@@ -64,7 +65,7 @@
     "faultsByEar": 14,
     "routes": 1,
     "pulsePeriods": [
-      674
+      673
     ],
     "pulseBeatsNeeded": [
       8
@@ -72,5 +73,5 @@
     "marks": 3,
     "calmHolds": 1
   },
-  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n128s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n135s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
 }

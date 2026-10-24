@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open the URL printed by Vite, normally `http://127.0.0.1:5173`. Restart your existing dev process to load the new local voice/provider bridge. Start with **Begin with guidance** for the seven-step tutorial. Browser play works offline with neutral or explicitly simulated sensing. With configured local credentials, the dev server also supplies Gemini and ElevenLabs; live Presage camera sensing requires the desktop app.
+Open the URL printed by Vite, normally `http://127.0.0.1:5173`. Restart your existing dev process to load the new local voice/provider bridge. Start with **Begin with guidance** for the seven-step tutorial. The first start in a session asks you to enable your camera for Presage; **I don’t want to turn on my camera** plays with neutral physiology. Browser play works offline with neutral or explicitly simulated sensing. With configured local credentials, the dev server also supplies Gemini and ElevenLabs; live Presage camera sensing requires the desktop app.
 
 ```sh
 npm run desktop          # build and launch Electron for native camera sensing

@@ -12,6 +12,7 @@ try{
  await expect(page.getByRole('button',{name:'Skip guidance & start',exact:true})).toBeEnabled({timeout:20000});
  await expect(page.getByText('Monster speech enabled · ElevenLabs',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Skip guidance & start',exact:true}).click();
+ await page.getByRole('dialog',{name:'Enable your camera'}).getByRole('button',{name:/I don’t want to/}).click({timeout:1500}).catch(()=>{});
  await page.getByRole('button',{name:'Skip cutscene →',exact:true}).click();
  await page.keyboard.press('e');
  await expect(page.getByRole('dialog',{name:'Research terminal'})).toBeVisible();

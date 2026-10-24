@@ -19,6 +19,8 @@ Three concrete code problems were corrected: the app's blanket80confidence gate 
 
 Pulse and breathing merge independently. They keep their separate12/30-second warmup windows and5-second freshness bounds. Local diagnostics now include per-metric confidence, eligibility, measurement/receipt age, cadence and sample count. The corner monitor explains missing breathing instead of silently displaying a dash. See [sensing diagnostics and primary sources](../src/sensing/DIAGNOSTICS.md).
 
+The first start in a session now opens a camera request (enable and calibrate with the real camera panel, start while calibrating, or decline for neutral play). Between accepted estimates the vitals readouts keep the last accepted pulse and breathing (pulse falls back to the calibrated baseline) and simply stop updating, instead of blanking; the game still treats a missing estimate as neutral. Checked with the synthetic vitals fixture and the browser runs, not a live camera.
+
 The user reports successful30-second calibration. **A new real-camera measurement session was not performed for this revision.** Hardware reliability is therefore not claimed verified. The older CAMERA_NOT_FOUND result is historical and does not describe the user's currently working camera.
 
 ## Verification evidence

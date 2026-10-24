@@ -2,6 +2,8 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: At the user's request (Lea's `src/ui`): the first start in a session asks for the camera through the new `CameraPrompt`. The player can enable it and calibrate, start while calibrating, or choose "I don’t want to turn on my camera". Vitals readouts no longer blank or show HELD: they keep the last accepted pulse and breathing (pulse falls back to the baseline) through dropouts, pauses and stale data. The game still gets neutral physiology for missing data. The HUD label keeps the last trend, and the judge trace stays exact. Check passes (149 tests), as do the vitals fixture and sequential layout, seed-17 win and loss browser runs. Run browser tests one at a time, since the dev bridge's per-route rate limit returns 429 to parallel games.
+
 - 2026-10-24: Wires attach to their boxes (touching Lea's `WirePuzzle.tsx`/`thinking.css` at the user's request). Paths are now drawn in board pixels from the measured cable right edge and socket left edge, re-measured on resize. Previously they used equal percentage rows while six 46 px buttons overflowed the 240 px board, because `survival.css` silently overrode the intended 260/40 px sizes. Endpoints were measured to within 0.5 px at 1280, 1440 and 390 widths. Check, layout and the seed-17 win pass.
 
 - 2026-10-24: Added seeded0–24 monster movement, tunable danger, five-minute deadline,25-second grace, finite isolation, sampled detector and drag-wire puzzles. Fixed SDK confidence/validation/timestamp handling and exposed breathing status. Opening cutscene/App/intro assets untouched; verification and live-test limits are in docs/HANDOFF.md and docs/BALANCE.md.

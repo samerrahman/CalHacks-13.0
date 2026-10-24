@@ -1,27 +1,34 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { holdable, holdVital, VITALS_HOLD_MS } from '../src/ui/vitalsHold';
-import type { SensorView } from '../src/sensing/types';
+import { readVitals, type VitalsMemory } from '../src/ui/vitalsHold';
+import type { SensorDiagnostics, SensorView } from '../src/sensing/types';
 
-const view = (extra: Partial<SensorView> = {}): SensorView => ({ source: 'presage', status: 'ready', trend: 'UNKNOWN', quality: 'rejected', hint: '', baselineBpm: 70, pulseBpm: null, ageMs: 400, acceptedSeconds: 30, canContinueManual: true, sampleAtMs: null, captureSegment: 2, ...extra });
+const memory = (): VitalsMemory => ({ source: null, pulse: null, breathing: null, trend: 'UNKNOWN' });
+const breathing = (bpm: number | null, eligible: boolean): Partial<SensorView> => ({ diagnostics: { breathing: { bpm, eligible } } as unknown as SensorDiagnostics });
+const view = (extra: Partial<SensorView> = {}): SensorView => ({ source: 'presage', status: 'ready', trend: 'STEADY', quality: 'accepted', hint: '', baselineBpm: 70, pulseBpm: 84, ageMs: 400, acceptedSeconds: 30, canContinueManual: true, sampleAtMs: 1, captureSegment: 2, ...extra });
+const dropped: Partial<SensorView> = { quality: 'rejected', pulseBpm: null, trend: 'UNKNOWN', sampleAtMs: null };
 
-test('a brief rejected reading keeps the last accepted value visible and labelled as held', () => {
-  const live = holdVital(null, 84, 1000, 'presage:2', true);
-  assert.deepEqual([live.value, live.heldMs], [84, null]);
-  const held = holdVital(live.held, null, 4000, 'presage:2', true);
-  assert.deepEqual([held.value, held.heldMs], [84, 3000]);
-  const resumed = holdVital(held.held, 79, 5000, 'presage:2', true);
-  assert.deepEqual([resumed.value, resumed.heldMs, resumed.held?.at], [79, null, 5000]);
+test('when the estimate drops out the readout keeps the last accepted pulse and breathing', () => {
+  const m = memory();
+  assert.deepEqual(readVitals(m, view(breathing(16, true))), { pulse: 84, breathing: 16, trend: 'STEADY', pulseLive: true, breathingLive: true });
+  assert.deepEqual(readVitals(m, view({ ...dropped, ...breathing(9, false) })), { pulse: 84, breathing: 16, trend: 'STEADY', pulseLive: false, breathingLive: false });
+  for (const extra of [{ ageMs: 60_000 }, { status: 'paused' }, { status: 'starting' }, { captureSegment: 3 }, { status: 'unavailable' }] as Partial<SensorView>[])
+    assert.deepEqual([readVitals(m, view({ ...dropped, ...extra })).pulse, readVitals(m, view({ ...dropped, ...extra })).breathing], [84, 16], `kept through ${JSON.stringify(extra)}`);
+  assert.deepEqual(readVitals(m, view({ pulseBpm: 79, ...breathing(14, true) })), { pulse: 79, breathing: 14, trend: 'STEADY', pulseLive: true, breathingLive: true });
 });
 
-test('the hold expires, never crosses captures and stops when the stream goes stale', () => {
-  const live = holdVital(null, 84, 0, 'presage:2', true).held;
-  assert.equal(holdVital(live, null, VITALS_HOLD_MS + 1, 'presage:2', true).value, null);
-  assert.equal(holdVital(live, null, 1000, 'presage:3', true).value, null, 'a restarted capture never shows an old value');
-  assert.equal(holdVital(live, null, 1000, 'presage:2', false).value, null);
-  assert.equal(holdable(view()), true);
-  assert.equal(holdable(view({ ageMs: 6000 })), false, 'no new estimates for over five seconds is stale, not a blip');
-  assert.equal(holdable(view({ status: 'paused' })), false);
-  assert.equal(holdable(view({ status: 'unavailable' })), false);
-  assert.equal(holdable(view({ ageMs: null })), false);
+test('before any reading the calibrated baseline stands in for pulse; nothing is invented for breathing', () => {
+  assert.deepEqual(readVitals(memory(), view(dropped)), { pulse: 70, breathing: null, trend: 'UNKNOWN', pulseLive: false, breathingLive: false });
+  assert.equal(readVitals(memory(), view({ ...dropped, baselineBpm: null, status: 'calibrating' })).pulse, null);
+});
+
+test('rejected or uncalibrated samples never update the memory, and changing source clears it', () => {
+  const m = memory();
+  readVitals(m, view());
+  assert.equal(readVitals(m, view({ quality: 'rejected', pulseBpm: 101 })).pulse, 84);
+  assert.equal(readVitals(m, view({ status: 'starting', pulseBpm: 99 })).pulse, 84);
+  assert.equal(readVitals(m, view({ source: 'manual', status: 'manual' })).pulse, null);
+  assert.equal(readVitals(m, view(dropped)).pulse, 70, 'a new camera session starts from the baseline, not the old reading');
+  readVitals(m, view({ source: 'simulated', pulseBpm: 90 }));
+  assert.equal(readVitals(m, view(dropped)).pulse, 70);
 });

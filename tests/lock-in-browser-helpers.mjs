@@ -21,6 +21,13 @@ export async function begin(page, { tutorial = false, seed = 17, simulated = fal
     evidenceFor(page).calibratedBeforeRun = true;
   }
   await page.getByRole('button', { name: tutorial ? 'Begin with guidance' : 'Skip guidance & start' }).click();
+  if (!simulated) {
+    // A fresh session asks for the camera before the first run; these runs play with neutral physiology.
+    const prompt = page.getByRole('dialog', { name: 'Enable your camera' });
+    await expect(prompt.getByRole('button', { name: /Enable camera & set up Presage/ })).toBeVisible();
+    await prompt.getByRole('button', { name: 'I don’t want to turn on my camera' }).click();
+    evidenceFor(page).cameraPrompt = 'declined';
+  }
   await page.getByRole('button', { name: 'Skip cutscene →' }).click();
   await expect(page.getByRole('button', { name: 'Use terminal' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Research terminal' })).toHaveCount(0);
