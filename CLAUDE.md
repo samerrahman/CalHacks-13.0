@@ -2,7 +2,9 @@
 
 A horror game where your body is the controller. The webcam (Presage SDK) reads the player's pulse, breathing, blinks and voice, and the creatures react: the **Listener** hunts by sound and breath, the **Watcher** only moves when you blink, and the **Mimic** talks back. You survive each night at a desk with a lamp, a radio and limited oil. A Claude-powered **director** picks what happens next from a fixed menu, based on how the player is doing. At dawn a **garden** grows from how well you stayed calm, and a **journal** tracks sessions, check-ins and wellness tips. The point is practising calm under stress, so wellness safety rules can override any scare.
 
-Stack: **JavaScript** (ES modules, no TypeScript source), Electron + Vite + Phaser 4. Types are JSDoc, checked by `tsc` with `checkJs`.
+> **Design not final.** The game is 3D, but the concept above is a draft. James's `Night_Relay_Codex_Build_Kit.zip` (repo root) is the most detailed spec so far. Don't build gameplay features until the team confirms the design.
+
+Stack: **JavaScript** (ES modules, no TypeScript source), Electron + Vite + **Three.js**, Gemini (director), Cartesia (voice), Convex (backend), Presage (sensing). Types are JSDoc, checked by `tsc` with `checkJs`. Gemini/Cartesia/Convex setup is in progress.
 
 ## Run
 

@@ -48,7 +48,7 @@ export const DIRECTOR_MENU = [
  * @property {number} [delayMs]                 wait this long before firing
  * @property {string} [line]                    Mimic dialogue, only with spawn_mimic
  * @property {string} reason                    short rationale for logs and the journal
- * @property {'claude'|'canned'|'safety'} source
+ * @property {'gemini'|'canned'|'safety'} source
  */
 
 export {}

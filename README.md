@@ -1,8 +1,8 @@
 # SCARY — CalHacks 13.0
 
-A biometric horror game: your pulse, breath and blinks (read by webcam through Presage) drive the creatures, a Claude director chooses what happens next, and a dawn garden and a journal turn the scares into calm practice.
+A 3D biometric horror game: the player's pulse and breathing (read by webcam through Presage) shape what the creature does, and a Gemini director chooses what happens next. The design isn't final yet; `Night_Relay_Codex_Build_Kit.zip` holds James's detailed spec.
 
-JavaScript · Electron · Vite · Phaser 4 · Presage · Claude · Cartesia
+JavaScript · Electron · Vite · Three.js · Presage · Gemini · Cartesia · Convex
 
 ## Team
 

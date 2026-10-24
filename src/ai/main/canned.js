@@ -3,7 +3,7 @@
 
 /**
  * Offline director: no API calls, so the game never waits on the network during dev.
- * Also the fallback when Claude is slow or errors.
+ * Also the fallback when Gemini is unconfigured, slow or errors.
  * @param {DirectorRequest} req
  * @returns {DirectorResponse}
  */
