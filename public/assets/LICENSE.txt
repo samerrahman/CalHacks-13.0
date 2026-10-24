@@ -1,0 +1,7 @@
+Original Night Relay kit material
+
+Permission is granted, free of charge, to any person obtaining a copy of the original code, procedural models, animations, SVG graphics, synthesized WAV sounds, dialogue and documentation in this kit, to use, copy, modify, merge, publish, distribute, sublicense and/or sell copies, subject to retaining this notice with redistributed source or asset packs.
+
+THE MATERIAL IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND. No claim is made that it constitutes a completed game, a medical device, verified sponsor integration or guaranteed prize eligibility.
+
+No third-party model pack is bundled. Referenced services, SDKs, libraries, trademarks, downloadable external art and any audio later generated through a provider have their respective licenses and terms. This permission does not grant rights to third-party voices or authorize cloning a real person's voice.

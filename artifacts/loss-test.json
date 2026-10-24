@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "reason": "STATION 04 / SHIFT REPORT\n⊘\nThe line went quiet.\n\nThe left shutter stayed open through the full six-second threshold warning.\n\n0/3\nOPERATIONS\n34s\nELAPSED\n0\nFAKES REJECTED\n100%\nPOWER\n\nSeed 17 · Two-minute demo\nFALLBACK · seeded local director\nMANUAL · SENSING UNAVAILABLE\n\nTake another shift\n↗\nReplay this seed\nReturn to desk",
+  "restartPassed": true,
+  "errors": []
+}

@@ -1,0 +1,14 @@
+{
+  "results": [
+    "Both closed blocks carrier even with matching dials",
+    "Pause freezes displayed clock",
+    "False call rejected through visible challenge mismatch",
+    "Upload retains an eight-second checkpoint after release",
+    "Seed17 complete win through real rendered controls, three tasks and fake rejected",
+    "Sanitized local second-screen trace subscribes and displays event IDs",
+    "1280x720 laptop and 390x844 mobile layouts have no horizontal clipping"
+  ],
+  "ending": "STATION 04 / SHIFT REPORT\n↗\nSignal received.\n\nThree operations complete. The transmission is safe. Leave the radio on the desk.\n\n3/3\nOPERATIONS\n53s\nELAPSED\n1\nFAKES REJECTED\n64%\nPOWER\n\nSeed 17 · Two-minute demo\nFALLBACK · seeded local director\nMANUAL · SENSING UNAVAILABLE\n\nTake another shift\n↗\nReplay this seed\nReturn to desk",
+  "errors": [],
+  "failedResources": []
+}

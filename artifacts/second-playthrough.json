@@ -1,0 +1,13 @@
+{
+  "results": [
+    "Browser live-sensor selection honestly reports unavailability without camera acquisition",
+    "Labeled simulated sensing calibrates30 usable seconds then sustains elevation with dwell; no direct death",
+    "Seed18 full-shift preset won through rendered controls with simulated sensing"
+  ],
+  "ending": "STATION 04 / SHIFT REPORT\n↗\nSignal received.\n\nThree operations complete. The transmission is safe. Leave the radio on the desk.\n\n3/3\nOPERATIONS\n51s\nELAPSED\n1\nFAKES REJECTED\n66%\nPOWER\n\nSeed 18 · Five-minute shift\nFALLBACK · seeded local director\nSIMULATED · UNKNOWN\n\nTake another shift\n↗\nReplay this seed\nReturn to desk",
+  "mobile": {
+    "headerCount": 1,
+    "overflow": false
+  },
+  "errors": []
+}

@@ -1,0 +1,14 @@
+NIGHT RELAY kit validation — 2026-10-24
+
+PASS: original asset generation script executed successfully.
+PASS: 8 GLB binaries structurally checked, including declared byte lengths, accessors, finite float values, matching positions/normals, triangle counts, node references, animation times and channel lengths.
+PASS: 4 total animation clips (mimic idle/listen/reach; shutter open).
+PASS: 9 mono PCM WAV files opened and validated as nonempty audio.
+PASS: 5 SVG files parsed as XML; all JSON files parsed.
+PASS: generated asset-sheet image opened and visually inspected.
+PASS: 8 Node reference behavior tests passed: camping/resource prerequisites, pause/recharge, spoof evidence, sensor rejection, sustained trend, late/duplicate/illegal proposals, safe-window/threshold gating.
+PASS: ElevenLabs generation tool dry run; no requests made.
+
+Not performed: actual Three.js model-import smoke test, glTF validator certification, full game balance/solvability testing, native camera capture, provider authentication, Gemini/ElevenLabs/Convex integration tests, paid voice generation, deployment, or event eligibility verification.
+
+The reference tests establish the behavior of the included utilities only. They are not evidence that a full game exists or is complete. Codex must implement and playtest the application described by the handoff.

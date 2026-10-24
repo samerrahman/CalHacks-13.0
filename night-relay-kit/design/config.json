@@ -1,0 +1,89 @@
+{
+  "shiftDurationSeconds": 300,
+  "demoDurationSeconds": 120,
+  "energy": {
+    "initial": 100,
+    "max": 100,
+    "twoClosedPerSecond": -0.75,
+    "oneClosedPerSecond": -0.2,
+    "bothOpenPerSecond": 0.35,
+    "blackoutGraceSeconds": 8
+  },
+  "creature": {
+    "approachMinSeconds": 8,
+    "thresholdWarningSeconds": 6,
+    "sideSwitchMinSeconds": 8,
+    "recoveryMinSeconds": 12,
+    "maxAttacksPerMinute": 3
+  },
+  "floodlight": {
+    "cost": 8,
+    "cooldownSeconds": 12,
+    "safeWindowSeconds": 12
+  },
+  "tasks": {
+    "syncSeconds": 20,
+    "cartridgeHoldSeconds": 3,
+    "uploadSeconds": 12,
+    "uploadCheckpointSeconds": 4
+  },
+  "sensor": {
+    "baselineAcceptedSeconds": 30,
+    "calibrationTimeoutSeconds": 60,
+    "pulseRangeBpm": [
+      40,
+      110
+    ],
+    "freshnessMs": 5000,
+    "trendWindowSeconds": 12,
+    "elevationDeltaBpm": 8,
+    "recoveryDeltaBpm": 4,
+    "minStateDwellSeconds": 20,
+    "note": "Game tuning only; provider adapter must validate actual SDK quality semantics."
+  },
+  "director": {
+    "minimumRequestIntervalSeconds": 12,
+    "timeoutMs": 3500,
+    "proposalExpiryMs": 5000
+  },
+  "camera": {
+    "position": [
+      0,
+      1.65,
+      1.4
+    ],
+    "lookAt": [
+      0,
+      1.3,
+      -1.7
+    ]
+  },
+  "stations": {
+    "console": [
+      0,
+      0.92,
+      -1.7
+    ],
+    "radio": [
+      -1,
+      0.92,
+      -1.7
+    ],
+    "relay": [
+      0,
+      0.96,
+      2.6
+    ],
+    "leftDoor": [
+      -4,
+      0,
+      0
+    ],
+    "rightDoor": [
+      4,
+      0,
+      0
+    ]
+  },
+  "tuningStatus": "Starting values; full game playtesting still required."
+}

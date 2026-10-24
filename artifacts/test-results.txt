@@ -1,0 +1,266 @@
+
+> night-relay@1.0.0 test
+> node --import tsx --test tests/*.test.ts src/audio/*.test.ts src/render/*.test.ts
+
+TAP version 13
+# Subtest: expired and repeated instructions never replay
+ok 1 - expired and repeated instructions never replay
+  ---
+  duration_ms: 0.571375
+  type: 'test'
+  ...
+# Subtest: critical calls interrupt active obsolete speech and replace queued lower priorities
+ok 2 - critical calls interrupt active obsolete speech and replace queued lower priorities
+  ---
+  duration_ms: 1.054084
+  type: 'test'
+  ...
+# Subtest: task or encounter invalidation cancels active and pending instructions
+ok 3 - task or encounter invalidation cancels active and pending instructions
+  ---
+  duration_ms: 0.101208
+  type: 'test'
+  ...
+# Subtest: reset removes an old shift but allows the same authored ID in a new one
+ok 4 - reset removes an old shift but allows the same authored ID in a new one
+  ---
+  duration_ms: 0.165667
+  type: 'test'
+  ...
+# Subtest: all eight actual GLB assets parse into nonempty Three.js scenes
+ok 5 - all eight actual GLB assets parse into nonempty Three.js scenes
+  ---
+  duration_ms: 29.455375
+  type: 'test'
+  ...
+# Subtest: shutter animation moves only the leaf; root remains at its doorway
+ok 6 - shutter animation moves only the leaf; root remains at its doorway
+  ---
+  duration_ms: 4.54125
+  type: 'test'
+  ...
+# Subtest: idle, listen and reach clips each visibly change their authored mimic nodes
+ok 7 - idle, listen and reach clips each visibly change their authored mimic nodes
+  ---
+  duration_ms: 4.7015
+  type: 'test'
+  ...
+# Subtest: paused shutter clip scrubs correctly at the render loop endpoints
+ok 8 - paused shutter clip scrubs correctly at the render loop endpoints
+  ---
+  duration_ms: 1.324583
+  type: 'test'
+  ...
+# Subtest: both closed stops carrier progress and drains exactly 0.75 per second
+ok 9 - both closed stops carrier progress and drains exactly 0.75 per second
+  ---
+  duration_ms: 3.786416
+  type: 'test'
+  ...
+# Subtest: one closed drains 0.20/s, both open recharge 0.35/s, capped at 100
+ok 10 - one closed drains 0.20/s, both open recharge 0.35/s, capped at 100
+  ---
+  duration_ms: 1.766333
+  type: 'test'
+  ...
+# Subtest: explicit defensive sequence rejects the teaching fake and wins across seeds and presets
+ok 11 - explicit defensive sequence rejects the teaching fake and wins across seeds and presets
+  ---
+  duration_ms: 11.91975
+  type: 'test'
+  ...
+# Subtest: every fake has an accessible authored tell and can never match the current private answer
+ok 12 - every fake has an accessible authored tell and can never match the current private answer
+  ---
+  duration_ms: 0.95925
+  type: 'test'
+  ...
+# Subtest: genuine radio orders match current task truth and authenticate reliably
+ok 13 - genuine radio orders match current task truth and authenticate reliably
+  ---
+  duration_ms: 0.590542
+  type: 'test'
+  ...
+# Subtest: sanitized director/events never contain private challenge or authentication response
+ok 14 - sanitized director/events never contain private challenge or authentication response
+  ---
+  duration_ms: 1.274875
+  type: 'test'
+  ...
+# Subtest: approach lasts 8 seconds and threshold warning lasts 6 seconds before an open-side breach
+ok 15 - approach lasts 8 seconds and threshold warning lasts 6 seconds before an open-side breach
+  ---
+  duration_ms: 0.342
+  type: 'test'
+  ...
+# Subtest: a sweep prevents AI overrides, guarantees 12 seconds clear and enforces global cooldown
+ok 16 - a sweep prevents AI overrides, guarantees 12 seconds clear and enforces global cooldown
+  ---
+  duration_ms: 0.4325
+  type: 'test'
+  ...
+# Subtest: only one physical encounter can exist and switching sides respects recovery/travel
+ok 17 - only one physical encounter can exist and switching sides respects recovery/travel
+  ---
+  duration_ms: 0.670209
+  type: 'test'
+  ...
+# Subtest: the physical encounter budget never permits more than three approaches in a minute
+ok 18 - the physical encounter budget never permits more than three approaches in a minute
+  ---
+  duration_ms: 0.441
+  type: 'test'
+  ...
+# Subtest: power zero allows eight-second rescue and prevents a new lethal phase
+ok 19 - power zero allows eight-second rescue and prevents a new lethal phase
+  ---
+  duration_ms: 0.188625
+  type: 'test'
+  ...
+# Subtest: pause freezes energy, task, warnings, safe windows and provider timeout; resume cancels hold
+ok 20 - pause freezes energy, task, warnings, safe windows and provider timeout; resume cancels hold
+  ---
+  duration_ms: 0.29725
+  type: 'test'
+  ...
+# Subtest: upload checkpoints survive interrupted holds; closed right and expired sweep cannot progress
+ok 21 - upload checkpoints survive interrupted holds; closed right and expired sweep cannot progress
+  ---
+  duration_ms: 0.390625
+  type: 'test'
+  ...
+# Subtest: cartridge collection requires the left hatch open and an active sweep window
+ok 22 - cartridge collection requires the left hatch open and an active sweep window
+  ---
+  duration_ms: 0.520042
+  type: 'test'
+  ...
+# Subtest: director rejects invalid shapes, enums, IDs, old state, provenance, expiry and duplicate responses
+ok 23 - director rejects invalid shapes, enums, IDs, old state, provenance, expiry and duplicate responses
+  ---
+  duration_ms: 0.310125
+  type: 'test'
+  ...
+# Subtest: director timeout does not freeze controls and uses a deterministic legal fallback
+ok 24 - director timeout does not freeze controls and uses a deterministic legal fallback
+  ---
+  duration_ms: 0.146292
+  type: 'test'
+  ...
+# Subtest: a model proposal received after a defensive sweep cannot override the guaranteed clear window
+ok 25 - a model proposal received after a defensive sweep cannot override the guaranteed clear window
+  ---
+  duration_ms: 0.195625
+  type: 'test'
+  ...
+# Subtest: elevated trend grants recovery and cannot directly cause loss or bypass defenses
+ok 26 - elevated trend grants recovery and cannot directly cause loss or bypass defenses
+  ---
+  duration_ms: 0.149292
+  type: 'test'
+  ...
+# Subtest: fresh games reset all temporal/verification state and equal seeds reproduce actions
+ok 27 - fresh games reset all temporal/verification state and equal seeds reproduce actions
+  ---
+  duration_ms: 0.7085
+  type: 'test'
+  ...
+# Subtest: sensor rejects missing, rejected, stale, future, out-of-range and unlabeled simulated data
+ok 28 - sensor rejects missing, rejected, stale, future, out-of-range and unlabeled simulated data
+  ---
+  duration_ms: 0.596875
+  type: 'test'
+  ...
+# Subtest: native shape requires stable capture, full warmup, supported range, confidence and fresh epoch timestamp
+ok 29 - native shape requires stable capture, full warmup, supported range, confidence and fresh epoch timestamp
+  ---
+  duration_ms: 0.216125
+  type: 'test'
+  ...
+# Subtest: calibration counts usable time only and remains frozen during elevation
+ok 30 - calibration counts usable time only and remains frozen during elevation
+  ---
+  duration_ms: 0.193667
+  type: 'test'
+  ...
+# Subtest: trend requires twelve sustained seconds, rejects gaps and respects dwell without treating unavailable as steady
+ok 31 - trend requires twelve sustained seconds, rejects gaps and respects dwell without treating unavailable as steady
+  ---
+  duration_ms: 0.258917
+  type: 'test'
+  ...
+# Subtest: disposing pending sensor start cannot create a timer; newer resume wins over an overlapping pause
+ok 32 - disposing pending sensor start cannot create a timer; newer resume wins over an overlapping pause
+  ---
+  duration_ms: 0.85125
+  type: 'test'
+  ...
+# Subtest: director projection excludes hidden properties and arbitrary event detail
+ok 33 - director projection excludes hidden properties and arbitrary event detail
+  ---
+  duration_ms: 0.286917
+  type: 'test'
+  ...
+# Subtest: observable history projection is idempotent and rejects injected prose in every permitted detail
+ok 34 - observable history projection is idempotent and rejects injected prose in every permitted detail
+  ---
+  duration_ms: 1.135416
+  type: 'test'
+  ...
+# Subtest: live-check harness uses full game validation and records only safe provider metadata
+ok 35 - live-check harness uses full game validation and records only safe provider metadata
+  ---
+  duration_ms: 0.753084
+  type: 'test'
+  ...
+# Subtest: provider transport IDs differ across deterministic replays and obsolete replies are discarded
+ok 36 - provider transport IDs differ across deterministic replays and obsolete replies are discarded
+  ---
+  duration_ms: 1.592458
+  type: 'test'
+  ...
+# Subtest: missing provider credentials return honest fallbacks immediately with no HTTP
+ok 37 - missing provider credentials return honest fallbacks immediately with no HTTP
+  ---
+  duration_ms: 0.889542
+  type: 'test'
+  ...
+# Subtest: speech reuses only exact caption/voice/model audio, labels cached results, rejects expiry, and evicts old entries
+ok 38 - speech reuses only exact caption/voice/model audio, labels cached results, rejects expiry, and evicts old entries
+  ---
+  duration_ms: 14.195625
+  type: 'test'
+  ...
+# Subtest: capability hashes distinguish owner/judge and reject expired or nonconsenting trace access
+ok 39 - capability hashes distinguish owner/judge and reject expired or nonconsenting trace access
+  ---
+  duration_ms: 6.507375
+  type: 'test'
+  ...
+# Subtest: a provider result received during pause applies exactly once after resume
+ok 40 - a provider result received during pause applies exactly once after resume
+  ---
+  duration_ms: 1.938917
+  type: 'test'
+  ...
+# Subtest: menu, restart and StrictMode cleanup invalidate queued and in-flight replies
+ok 41 - menu, restart and StrictMode cleanup invalidate queued and in-flight replies
+  ---
+  duration_ms: 0.115334
+  type: 'test'
+  ...
+# Subtest: a run change while consuming replies cannot apply the remaining previous-run work
+ok 42 - a run change while consuming replies cannot apply the remaining previous-run work
+  ---
+  duration_ms: 0.069042
+  type: 'test'
+  ...
+1..42
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 386.230542

@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-10-24T03:27:42.137Z",
+  "method": "Actual Electron game, visible manual controls, sanitized judge DOM",
+  "cameraRequested": false,
+  "traceSharingEnabled": false,
+  "status": "passed",
+  "errors": [],
+  "configured": {
+    "desktop": true,
+    "presage": false,
+    "gemini": true,
+    "elevenlabs": false,
+    "convex": false,
+    "reasons": [
+      "Presage key not configured"
+    ]
+  },
+  "judge": {
+    "providers": {
+      "GEMINI": "LIVE · 2882ms · applied",
+      "ELEVENLABS": "FALLBACK · captions + radio beep",
+      "PRESAGE": "MANUAL · SENSING UNAVAILABLE",
+      "CONVEX": "Trace sharing off"
+    },
+    "events": [
+      {
+        "time": "14.9s",
+        "identity": "e7 / DIRECTOR_APPLIED",
+        "detail": "GEMINI selected PROBE_LEFT; evidence e3, e4."
+      },
+      {
+        "time": "12.0s",
+        "identity": "e5 / DIRECTOR_REQUEST",
+        "detail": "request-1; allowed WAIT, PROBE_LEFT, PROBE_RIGHT, FEINT; trend UNKNOWN."
+      },
+      {
+        "time": "0.2s",
+        "identity": "e4 / DOOR",
+        "detail": "left shutter closed."
+      },
+      {
+        "time": "0.2s",
+        "identity": "e3 / DOOR",
+        "detail": "left shutter open."
+      }
+    ],
+    "tactic": "Tactic: PROBE_LEFT · GEMINIOutcome: APPLIEDEvidence: e3, e4"
+  },
+  "observedRequestToOutcomeMs": 2835,
+  "providerLatencyMs": 2882,
+  "reason": "Real proposal accepted by the actual game reducer and displayed as GEMINI in the judge trace"
+}

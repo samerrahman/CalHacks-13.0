@@ -1,0 +1,110 @@
+You are implementing NIGHT RELAY, a polished, small 3D horror game for a two-day Cal Hacks build. Build the application; do not stop at a plan or a scaffold. Work in the current repository, preserve unrelated files, inspect existing instructions, and use the accompanying night-relay-kit as source material. The team will supply API credentials through local/server environment configuration, never hardcode them. Continue all independent offline work while an unavailable credential blocks a live integration.
+
+Read first:
+- night-relay-kit/README.md
+- night-relay-kit/design/GAME_SPEC.md
+- night-relay-kit/design/config.json and dialogue.json
+- night-relay-kit/docs/INTEGRATIONS.md
+- night-relay-kit/docs/TRACKS_AND_DEMO.md
+- night-relay-kit/prompts/MONSTER_DIRECTOR.txt
+- night-relay-kit/reference/rules.mjs and director.schema.json
+If the kit itself is the repository root, use the corresponding paths without the prefix. The assets and reference utilities are real files; the application and provider adapters are not yet built. Do not imply otherwise in your final report.
+
+GOAL AND SCOPE
+Deliver one polished five-minute shift and a two-minute demo preset. Single player, one low-poly 3D booth, two short corridors, mouse-look with keyboard station-switching, three concrete tasks, one deceptive creature, and one helpful fictional supervisor. No open world, inventory grid, combat system, multiplayer, custom humanoid rigging, or complicated physics. The monster can glide/tilt/reach using included animations. Build game feel through readable lighting, timing, positional audio and fair uncertainty.
+
+HARD GAMEPLAY REQUIREMENTS
+1. Finish the three operations to win. Both doors closed must stop link progress; task 2 requires opening left, task 3 requires opening right. Closed doors consume power. Do not allow a timer-only camping victory.
+2. Tasks: match carrier settings + 20 seconds accumulated link; collect a cartridge from a safely opened left hatch with a 3-second interaction and insert it; align right uplink + 12 seconds accumulated upload with 4-second checkpoints. All controls and required state must be visible and keyboard accessible. Tweak time values after playtesting, preserve invariants.
+3. One creature moves through a fixed left/right graph. Minimum approach 8 seconds, threshold warning 6 seconds, side switch 8 seconds, recovery 12 seconds. At most one physical encounter. Successful floodlight sweep guarantees 12 seconds safe on that side; costs 8 energy, cooldown 12 seconds. No unseen teleportation, death from a dialogue click, or opening a door during a valid clear window suddenly kills you.
+4. Both shutters closed drains .75 energy/sec, one closed .20/sec, both open recharge .35/sec, initial/max 100. At zero energy warn for 8 seconds before station-outage loss; opening both allows recovery. Don't begin a new lethal phase during that recovery countdown. Model power with elapsed game seconds; paused time consumes none. These are starting tuning values, not validated final difficulty.
+5. Boss Mara gives correct, timely guidance and hints. The mimic uses the same licensed fictional voice and radio processing. Every fake has at least one code-authored, accessible tell: expired order, wrong requested hatch, or failed current challenge-response. No ambiguous randomness determines whether verification succeeds.
+6. Rotate the private challenge every call. Keep its answer out of monster model inputs, shared memory and public event feeds. A fake's answer must be guaranteed unequal to the current valid response. Normal captions label both as RADIO. All clues work without hearing audio or distinguishing colors.
+7. AI cannot modify rules, hidden secrets, warning times, geometry or arbitrary code. It chooses a legal tactic, then deterministic code commits an encounter. Do not present arbitrary generated narrative as authoritative task logic. Compose operative order text from validated IDs/actions and authored templates; optional AI flavor must not introduce instructions.
+8. Use Presage only for accepted sustained pulse trends relative to personal baseline. No direct fear/emotion inference, instant beat reactions, health diagnosis, breath-holding, or requirement to reduce pulse to win. Elevation can alter next tactic and increase recovery/help, never trigger an unavoidable kill. Missing/invalid/stale data uses neutral gameplay. Live vs simulated status must be explicit.
+
+STACK AND ARCHITECTURE
+Use TypeScript, Vite, React for menus and overlays, Three.js for scene, a small deterministic state reducer/fixed timestep for gameplay, and Electron for the native sensor experience. The browser build should run with manual/simulated sensing and say so. Target the actual laptop before attempting installers. Read the current Presage Electron sample and use its supported capture architecture. First test the camera SDK in isolation; do not spend half a day building around an assumed browser SDK.
+
+Use clear modules such as:
+src/game/state.ts, reducer.ts, tasks.ts, creature.ts, encounters.ts, verification.ts, directorValidation.ts
+src/render/scene.ts, stations.ts, assets.ts, creatureView.ts, lighting.ts
+src/audio/queue.ts, positional.ts, radio.ts
+src/sensing/types.ts, baseline.ts, trend.ts, simulated.ts
+src/ui/Setup.tsx, HUD.tsx, Pause.tsx, JudgeView.tsx, Results.tsx
+electron/main.ts, preload.ts, presageAdapter.ts
+convex/schema.ts, sessions.ts, events.ts, director.ts, speech.ts
+tests/ for behavior and integration boundaries
+
+These are suggested responsibilities, not an obligation to generate empty files. Keep the frame loop free of React rerenders and provider calls. Keep state transitions deterministic given seed, time and inputs. Use one game authority locally for the single-player demo; Convex persists/synchronizes events and handles providers. Do not accidentally create competing local/server simulation clocks.
+
+DOCUMENTATION TO READ BEFORE IMPLEMENTATION
+Presage:
+https://smartspectra.presagetech.com/docs/nodejs/
+https://smartspectra.presagetech.com/docs/nodejs/api-reference
+https://smartspectra.presagetech.com/docs/nodejs/metrics
+https://smartspectra.presagetech.com/docs/measurement-quality/
+https://smartspectra.presagetech.com/docs/model-cards-and-limitations/
+https://smartspectra.presagetech.com/docs/telemetry-and-privacy/
+Follow the Electron quickstart link on the Node overview. Inspect the installed SDK types and sample. Do not fabricate method names or confidence conversions. Its native platform support is a gating requirement, and the pulse estimate has documented window/range limitations.
+Google:
+https://ai.google.dev/gemini-api/docs/structured-output
+ElevenLabs:
+https://elevenlabs.io/docs/api-reference/text-to-speech/stream
+https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert
+Convex:
+https://docs.convex.dev/quickstart/react
+https://docs.convex.dev/functions/actions
+https://docs.convex.dev/scheduling/scheduled-functions
+Engine:
+https://threejs.org/manual/pages/installation.html
+https://threejs.org/docs/pages/GLTFLoader.html
+https://threejs.org/docs/pages/AnimationMixer.html
+https://www.electronjs.org/docs/latest/tutorial/security
+
+Use available web tools or fetch official documentation when network policy permits. If a URL is unavailable, use installed type definitions and the included research notes; flag the uncertainty rather than inventing APIs. Pin tested versions in the lockfile. Do not embed entire documentation sites in the repository.
+
+SENSING IMPLEMENTATION
+Make one narrow adapter translating actual SDK payloads into the internal SensorSample contract from INTEGRATIONS.md. Retain callback receive-time on a monotonic app clock. Treat data timestamps carefully, reject old samples, expose state and quality, and correctly stop/destroy resources. Enable cardiac metrics explicitly. Follow official renderer/preload guidance; do not enable arbitrary Node access in the renderer. Keys and raw image frames must not appear in public logs or Convex events.
+
+Calibration: stable capture, wait for valid estimates, collect approximately 30 seconds of usable baseline after warmup; let users continue manual mode if not ready by 60 seconds. Initial trend tuning is >=+8 BPM sustained for 12 seconds, recovery below +4 for 12 seconds, and 20-second state dwell. These are game thresholds only. Apply SDK-documented confidence and capture-quality requirements; outside supported range is UNKNOWN. Simulated inputs bypass the hardware only in explicitly labeled development mode. Pause/resume should discard stale data; never silently substitute simulated BPM for live readings.
+
+GEMINI IMPLEMENTATION
+Use structured output with the provided schema (adapt only syntax unsupported by chosen model). Send allowedTactics, observable player history, current quality-gated trend, requestId, stateVersion and relevant public event IDs. Never send challenge secrets or raw video. Store keys server-side. Configure model by environment; verify availability instead of guessing a preview model.
+
+Validate output shape and semantics. Enforce request identity, expiry, event provenance, allowed action, current state version, cooldown, attack budget and warning guarantees. Handle invalid JSON, unsupported enum, stale response, duplicate response, timeout and provider failure with a seeded deterministic fallback. No AI call more frequently than an encounter boundary / 10–15 seconds. Live rendering and input continue during calls. Label proposal source accurately in judge mode. Show concise evidence IDs and chosen action, not purported hidden chain of thought.
+
+ELEVENLABS IMPLEMENTATION
+Keep one authorized synthetic/stock supervisor voice ID for genuine and fake orders. Same filtering; truth comes from clues. Play generated speech with exact matching captions, source/encounter IDs and expiry. New critical messages cancel lower priority obsolete speech. Avoid hearing an instruction after the task or door state has made it invalid. Cache authored tutorial lines, but include at least one real state-conditioned generated line for the sponsor demo. If TTS fails, display the caption and use a short radio beep. No endless retry or block on audio decoding. Avoid loud output spikes; implement master volume and mute.
+
+CONVEX IMPLEMENTATION
+Use actions for external provider calls, queries/mutations for state. Record session/event sequence, proposal outcome and latencies. Schedule provider work from persisted intents if appropriate. Keep the 3D simulation local. A second browser screen should subscribe to a sanitized consenting session and show event timeline, selected tactic, sensor source/quality and current task. Store raw pulse only if explicitly opted in; coarse trend is sufficient for strategy. No camera uploads through our backend.
+
+Validate session ownership/capabilities on reads and writes. Use idempotent request IDs and session+event sequence deduplication. Reconnect must not replay an attack or voice line twice. Make offline fallback clear. Backend secrets must never be VITE_* variables. Include a reset/delete session route for demo data. Do not deploy publicly or create paid resources unless separately authorized; local development and supplied development services are sufficient.
+
+ASSETS AND ART DIRECTION
+Use the supplied 8 GLBs, 9 WAVs, 5 SVG decals and dialogue. Copy them to the app's public assets with a manifest. The booth origin is center, units are meters, Y up; doors at x +/-4. The monster faces +Z. Use its idle/listen/reach clips; root movement is controlled by encounter state. The shutter open clip moves shutter_leaf; avoid double-applying a second animation transform. Generate runtime text for ticket/challenge cards, never leave the example secret hardcoded.
+
+Look: dirty teal steel, warm desk light, muted cream labels, restrained orange warnings, deep corridor fog, a narrow backlit creature silhouette. Include soft ambient fill so the player can read tasks. Prefer baked-looking simple lights over expensive postprocessing. No required external art downloads, flashes or frantic camera shake. Do not replace the 3D game with a landing page/dashboard. A clear development trace belongs behind a toggle/second screen, not over the entire normal view.
+
+MILESTONES — IMPLEMENT AND VERIFY EACH
+A. Run the supplied reference tests, import all GLBs, preview animations, prove Presage sample on target hardware if credentials available. Record actual blockers.
+B. Build an offline full loop with deterministic authored encounters. It must support completing all tasks, clear win/loss, restart, pause, and rejecting a fake by evidence. No keys required.
+C. Add light/sound, readable tutorial and accessible controls. Play through more than one seed. Tune task timing and power, preserving solvability.
+D. Integrate Gemini and ElevenLabs with tested adapters and honest fallbacks. Verify one real request to each only when credentials are provided. Keep a list of what was not live-tested.
+E. Integrate real sensing and Convex trace; show data freshness and real state impact. Then polish judge flow. Optional sponsors are out of scope until A–E work.
+
+TESTS THAT MATTER
+- Both doors closed cannot complete any shift; power depletes at the intended rate.
+- An explicit valid defensive/task sequence can win; several seeded authored encounters remain solvable.
+- Every fake contains a supported tell; every genuine order matches active task truth; no private key leaks in director payloads/logs.
+- A sweep's safe window cannot be overridden by an AI action. No dual-side attack or unwarned breach.
+- Old/duplicate/illegal model proposals are rejected; timeouts do not freeze input.
+- Rejected/stale/out-of-range/missing samples produce UNKNOWN; baseline does not drift to erase elevation; no trend directly kills the player.
+- TTS queue discards expired instructions; unavailable audio still has captions.
+- Pause, restart and unmount clear timers, listeners, cameras and audio; no duplicated loops after retry.
+- Real GLBs load and their clips play; no missing resources, console errors, unreadable clues or clipped controls at the judging laptop resolution.
+- Run typecheck, build, targeted behavior tests and a real visual smoke test. Report actual results, not intended results.
+
+DELIVERABLES
+Working repository; README with run commands and tested platform; .env.example with names only; pinned dependencies; no secrets; sponsor usage table marked live/cached/fallback/unimplemented; exact known limitations; asset/license manifest; two-minute demo guide; and a concise handoff describing what you built, what you tested and what remains blocked. Continue until the offline game works and all available integrations are connected. Ask only for missing external access that genuinely blocks a step, while completing independent work. Do not claim an integration or prize qualification without its required functioning behavior.

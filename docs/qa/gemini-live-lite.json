@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-10-24T03:27:05.432Z",
+  "model": "gemini-3.5-flash-lite",
+  "configuration": "Isolated process-only override; .env unchanged",
+  "requestId": "lite-probe-1792812420965",
+  "observation": {
+    "requestId": "lite-probe-1792812420965",
+    "stateVersion": 4,
+    "allowedTactics": [
+      "WAIT",
+      "RETREAT"
+    ],
+    "trend": "UNKNOWN",
+    "events": [
+      {
+        "id": "e1",
+        "seq": 1,
+        "time": 0,
+        "type": "SHIFT_STARTED",
+        "detail": ""
+      },
+      {
+        "id": "e2",
+        "seq": 2,
+        "time": 0,
+        "type": "RADIO_CALL",
+        "detail": ""
+      },
+      {
+        "id": "e3",
+        "seq": 3,
+        "time": 0,
+        "type": "DOOR",
+        "detail": "right shutter open."
+      },
+      {
+        "id": "e4",
+        "seq": 4,
+        "time": 0,
+        "type": "DOOR",
+        "detail": "left shutter closed."
+      },
+      {
+        "id": "e5",
+        "seq": 5,
+        "time": 0,
+        "type": "APPROACH",
+        "detail": "left"
+      }
+    ],
+    "evidenceEventIds": [
+      "e1",
+      "e2",
+      "e3",
+      "e4",
+      "e5"
+    ],
+    "expiresAt": 8
+  },
+  "modelAvailability": "passed",
+  "source": "gemini",
+  "latencyMs": 3887,
+  "providerRequestId": "hSXcate0Kvie_uMPpcWh8QU",
+  "validation": "ACCEPTED",
+  "selectedTactic": "WAIT",
+  "evidenceEventIds": [
+    "e2",
+    "e3",
+    "e5"
+  ]
+}

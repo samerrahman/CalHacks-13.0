@@ -1,0 +1,43 @@
+{
+  "name": "night-relay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A five-minute shift. A familiar voice. One thing outside.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts src/audio/*.test.ts src/render/*.test.ts",
+    "test:reference": "node --test night-relay-kit/reference/rules.test.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "assets:validate": "python3 night-relay-kit/tools/validate_assets.py",
+    "electron:build": "node electron/build.mjs",
+    "desktop": "npm run build && npm run electron:build && env -u ELECTRON_RUN_AS_NODE electron dist-electron/main.mjs",
+    "native:smoke": "node electron/smoke.mjs",
+    "integrations:check": "node --import tsx electron/liveChecks.ts",
+    "test:browser": "node tests/browser-playthrough.mjs && node tests/browser-second.mjs && node tests/browser-loss.mjs",
+    "test:desktop": "node electron/smokeDesktop.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "2.31.0",
+    "@smartspectra/node-sdk": "3.4.0",
+    "convex": "1.48.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "electron": "45.0.0",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  }
+}
