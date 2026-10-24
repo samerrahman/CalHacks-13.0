@@ -2,6 +2,8 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24 (via Samer): cutscene now has the creature's heavy footsteps behind you on the run (CC0 Fantozzi steps, an octave down), gaining from the corridor through the woods.
+
 - 2026-10-24 (via Samer): cutscene breathing (re-sequenced CC0 OpenGameArt breaths) and a soft heartbeat are back under the escape, kept well below the impacts.
 
 - 2026-10-24 (via Samer): cutscene colleague now stands beside you and the arm stretches across the room to take them. No first-person hands until you run. Creaks are real public-domain door/metal recordings; breathing is off for now; fewer drum-like thumps (no heartbeat until the shed, quieter impacts and footsteps).

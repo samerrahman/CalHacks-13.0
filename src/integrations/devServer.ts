@@ -100,10 +100,10 @@ export function createLocalApi(options: LocalApiOptions) {
 }
 
 export function localProviderApi(): Plugin {
- return { name: 'lock-in-local-provider-api', apply: 'serve', configureServer(server) {
-  if (server.config.server.host !== '127.0.0.1') throw new Error('LOCK IN local providers require server.host=127.0.0.1');
+ return { name: 'hush-local-provider-api', apply: 'serve', configureServer(server) {
+  if (server.config.server.host !== '127.0.0.1') throw new Error('HUSH local providers require server.host=127.0.0.1');
   const loaded = { ...loadEnv(server.config.mode, server.config.root, ''), ...process.env };
   const env: ProviderEnv = { GEMINI_API_KEY: loaded.GEMINI_API_KEY, GEMINI_MODEL: loaded.GEMINI_MODEL, GEMINI_DIALOGUE_MODEL: loaded.GEMINI_DIALOGUE_MODEL, ELEVENLABS_API_KEY: loaded.ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID: loaded.ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL_ID: loaded.ELEVENLABS_MODEL_ID };
-  server.middlewares.use(createLocalApi({ port: server.config.server.port ?? 5173, env, offline: loaded.LOCK_IN_OFFLINE === '1', allowedCaptions: dialogue.lines.map(line => line.text) }));
+  server.middlewares.use(createLocalApi({ port: server.config.server.port ?? 5173, env, offline: loaded.LOCK_IN_OFFLINE === '1' || loaded.HUSH_OFFLINE === '1', allowedCaptions: dialogue.lines.map(line => line.text) }));
  } };
 }

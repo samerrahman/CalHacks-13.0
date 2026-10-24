@@ -13,9 +13,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 for (const name of ['.env', '.env.local']) { const p = path.join(root, name); if (existsSync(p)) process.loadEnvFile(p); }
 // Explicit QA gate: a configured account must not turn an offline smoke into
 // a live network/camera test. This mutates only the child process environment.
-const offline = process.env.LOCK_IN_OFFLINE === '1';
+const offline = process.env.LOCK_IN_OFFLINE === '1' || process.env.HUSH_OFFLINE === '1';
 if (offline) for (const name of ['PRESAGE_API_KEY', 'GEMINI_API_KEY', 'ELEVENLABS_API_KEY', 'VITE_SPACETIMEDB_DB_NAME']) delete process.env[name];
-app.setName('Lock In');
+app.setName('HUSH');
 protocol.registerSchemesAsPrivileged([{ scheme: 'lockin', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }]);
 let mainWindow: BrowserWindow | null = null;
 let nativeAvailable = false;
@@ -38,7 +38,7 @@ function restrictNavigation(window: BrowserWindow): void {
   window.webContents.on('will-navigate', e => e.preventDefault());
 }
 function contentPolicy(): string {
-  const dev = !!process.env.LOCK_IN_DEV_URL;
+  const dev = !!(process.env.LOCK_IN_DEV_URL || process.env.HUSH_DEV_URL);
   return `default-src 'self'; script-src 'self'${dev ? " 'unsafe-inline'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 ws://localhost:3000 https://maincloud.spacetimedb.com wss://maincloud.spacetimedb.com; object-src 'none'; base-uri 'self'; frame-src 'none'`;
 }
 ipcMain.handle('lock-in:status', event => {
@@ -72,7 +72,7 @@ ipcMain.handle('lock-in:monster', async (event, raw) => {
 });
 
 async function createWindow(): Promise<void> {
-  const win = new BrowserWindow({ width: 1440, height: 960, minWidth: 900, minHeight: 640, title: 'LOCK IN', backgroundColor: '#071114', webPreferences: { preload: path.join(root, 'dist-electron/preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
+  const win = new BrowserWindow({ width: 1440, height: 960, minWidth: 900, minHeight: 640, title: 'HUSH', backgroundColor: '#071114', webPreferences: { preload: path.join(root, 'dist-electron/preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
   mainWindow = win;
   const unbind = bindPresage(win);
   win.on('closed', () => { unbind(); mainWindow = null; });
@@ -81,13 +81,13 @@ async function createWindow(): Promise<void> {
     const target = new URL(url);
     const current = new URL(win.webContents.getURL());
     if (target.protocol === current.protocol && target.host === current.host && target.pathname === current.pathname && target.hash.startsWith('#judge=') && BrowserWindow.getAllWindows().length < 3) {
-      const judge = new BrowserWindow({ width: 1100, height: 800, title: 'LOCK IN · Judge trace', backgroundColor: '#071114', webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
+      const judge = new BrowserWindow({ width: 1100, height: 800, title: 'HUSH · Judge trace', backgroundColor: '#071114', webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
       restrictNavigation(judge);
       void judge.loadURL(target.href);
     }
     return { action: 'deny' };
   });
-  const developmentUrl = process.env.LOCK_IN_DEV_URL;
+  const developmentUrl = process.env.LOCK_IN_DEV_URL || process.env.HUSH_DEV_URL;
   if (developmentUrl) {
     const parsed = new URL(developmentUrl);
     if (!['127.0.0.1', 'localhost'].includes(parsed.hostname) || parsed.protocol !== 'http:') throw new Error('Only local development servers are permitted');

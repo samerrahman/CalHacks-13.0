@@ -1,6 +1,6 @@
-# LOCK IN
+# HUSH
 
-LOCK IN is the root application. `npm run dev` opens this game; NIGHT RELAY remains only in its archived build kit and historical evidence.
+HUSH is the root application. `npm run dev` opens this game; NIGHT RELAY remains only in its archived build kit and historical evidence.
 
 You have eight active minutes to finish the research and contain the creature outside a sealed shelter; a typical win takes about five. Repair faults, patch cable panels, route power quietly, memorize growing signal sequences, mask your heartbeat, mark the creature's position from the monitor, breathe with a calm pacer, and broadcast remote lures. Running equipment is loud: while a research task is live, exposure keeps climbing and the creature keeps coming until you turn the equipment off, so you will regularly have to stop mid-task and isolate. There is no alarm: you hear its footsteps get louder and quicker as it nears, from the direction it is in, and it pounds on the wall when it is there. Now and then it charges on its own (a run), even if you have made no mistakes. The security monitor's ping radar shows where it was at the last ping, never an exact number. Three isolation cells (one recharged per completed stage) buy time: an isolation lasts until you restore power (hold F, from 4 seconds) or 25 seconds, so wait until the footsteps fade. Once an attack commits at the wall, cutting power is too late.
 
@@ -19,7 +19,7 @@ GEMINI_MODEL=gemini-3.5-flash-lite npm run desktop  # tested live model; leaves 
 npm run check            # tests, typecheck, browser build, Electron build
 npm run assets:validate  # hashes, actual GLB clips, WAVs, CCTV and decals
 npm run test:reference   # kit reference invariants
-LOCK_IN_TEST_URL=http://127.0.0.1:5173 npm run test:browser  # with dev running
+HUSH_TEST_URL=http://127.0.0.1:5173 npm run test:browser  # with dev running
 npm run test:desktop     # isolated offline Electron smoke, including second screen
 ```
 
@@ -57,11 +57,13 @@ For a remote judge screen, publish the module in `spacetimedb/` to your chosen S
 
 Gemini chooses validated, bounded probability biases; it never directly sets the creature position. An eight-second deadline falls back locally. Monster text is separately generated from public game events, then its exact caption is sent to ElevenLabs. Generated text, authored fallback, live voice and cached voice are labelled separately. A serial speech scheduler prevents overlapping narration and creature dialogue. Use **Camera & pulse setup** before a run or the pulse button during play to select a device, view its mirrored local preview, calibrate and stop capture. After 30 usable calibration seconds, Start calibrated game reuses the active stream. A corner preview displays accepted pulse, breathing, baseline delta and the pulse bar. Breathing has its own 30-second warm-up and quality status. The preview uses the same video stream as the native adapter; it does not open a second camera. Missing or rejected measurements immediately produce neutral UNKNOWN physiology. Neither the model nor the shared trace receives raw pulse, memory answers or webcam frames.
 
+Creature speech now uses a much darker local treatment: lower pitch and slower delivery, driven distortion, and a short filtered double. Human radio lines keep their original sound. [Monster voice auditions](notes/monster-voice.md) lists three tested ElevenLabs voices; choose the in-game voice with `ELEVENLABS_VOICE_ID` in ignored `.env.local`.
+
 Pulse recording and sanitized trace sharing have separate, unchecked opt-ins. Local reports show accepted measurements with gaps, event timing and conservative supported change/recovery. Simulated reports say SIMULATED. They do not infer fear or diagnose anything. Run deletion clears in-memory history and attempts deletion of the consenting remote session; remote failure is reported.
 
 The generated-monster pipeline was tested live before this overhaul: the final corrected narrative probe used Gemini in891ms and ElevenLabs in359ms, with decoded audio matching the exact generated caption. Those timings are historical evidence, not a new live test of this rule revision. The user reports successful Presage calibration; the latest reliability fixes have automated packet/lifecycle coverage but have not yet been verified against a fresh live camera session. Earlier Convex deployment evidence is historical; the SpacetimeDB module has not been published or live checked.
 
-See [current integration status](docs/INTEGRATION_STATUS.md) and [verification handoff](docs/HANDOFF.md) for actual new-game evidence and external blockers. Old NIGHT RELAY results do not count as LOCK IN live tests.
+See [current integration status](docs/INTEGRATION_STATUS.md) and [verification handoff](docs/HANDOFF.md) for actual new-game evidence and external blockers. Old NIGHT RELAY results do not count as HUSH live tests.
 
 ## Implementation and assets
 

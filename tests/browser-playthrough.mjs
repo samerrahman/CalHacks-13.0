@@ -1,6 +1,6 @@
 import { chromium, expect } from '@playwright/test';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { begin, openTerminal, watchSequence, restore, defend, resources, solve, evidenceFor, collectBrowserEvidence, TEST_URL } from './lock-in-browser-helpers.mjs';
+import { begin, openTerminal, watchSequence, restore, defend, resources, solve, evidenceFor, collectBrowserEvidence, TEST_URL } from './hush-browser-helpers.mjs';
 await mkdir('artifacts', { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const evidence = { passed: false, url: TEST_URL, seed: 17, checks: [], errors: [], failedResources: [] }; let page;

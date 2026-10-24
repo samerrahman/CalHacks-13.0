@@ -13,7 +13,7 @@
 - Optional `GEMINI_DIALOGUE_MODEL` defaults to the user-approved `gemini-3.5-flash-lite`. The separate director continues to use `GEMINI_MODEL`. Secrets stay server-side, and `.env` is user-owned.
 - Dialogue text has a 5-second budget; text plus speech has a 12-second budget, further bounded by the caller's wall-clock expiry. The UI must independently discard expired/cancelled queue entries. One monster request per 18 seconds per transport; no automatic retries.
 - `textSource` is `gemini` only after validated live model output; otherwise `authored-fallback`. Speech independently reports `elevenlabs`, `cached`, or `fallback`. A Gemini caption can remain available during a speech outage. Authored fallback speech must never be labeled generated text.
-- ElevenLabs needs `ELEVENLABS_API_KEY`, an authorized `ELEVENLABS_VOICE_ID`, and `ELEVENLABS_MODEL_ID`. Prior successful LOCK IN voice tests used authored text; they do not prove the new contextual generation path. Current test evidence belongs in `docs/qa/`.
+- ElevenLabs needs `ELEVENLABS_API_KEY`, an authorized `ELEVENLABS_VOICE_ID`, and `ELEVENLABS_MODEL_ID`. Prior successful HUSH voice tests used authored text; they do not prove the new contextual generation path. Current test evidence belongs in `docs/qa/`.
 - Official APIs: [Gemini structured output](https://ai.google.dev/gemini-api/docs/structured-output), [ElevenLabs streaming TTS](https://elevenlabs.io/docs/api-reference/text-to-speech/stream). Reviewed October 24, 2026.
 
 ## SpacetimeDB trace

@@ -1,4 +1,4 @@
-# LOCK IN balance and movement
+# HUSH balance and movement
 
 The current implementation is authoritative: [`config.ts`](../src/game/config.ts), [`creature.ts`](../src/game/creature.ts), [`tasks.ts`](../src/game/tasks.ts), and [`directorValidation.ts`](../src/game/directorValidation.ts). Gameplay tuning lives in the runtime configuration, including movement weights, bias coefficients, detector cadence, exposure contributions, isolation and lure durations, and every task size. The archived build kits describe earlier designs and remain unchanged.
 
@@ -131,4 +131,4 @@ The [sweep](../artifacts/survival-balance.json) runs 30 seeds per policy through
 
 The policies restore isolation as soon as the restore window is open and the creature has moved off (position 12 or more); they know every puzzle answer instantly, so a real first run takes longer than these times.
 
-Every run ended by the deadline. These results establish reachable outcomes, run length and alarm rhythm under the stated artificial policies, not a target human win rate. Earlier live Gemini/ElevenLabs results establish provider text/audio generation and playback, but predate this balance revision. No additional live provider request was run for this balance change. The Convex trace contract is `lock-in-v2`; it has not been deployed or verified remotely.
+Every run ended by the deadline. These results establish reachable outcomes, run length and alarm rhythm under the stated artificial policies, not a target human win rate. Earlier live Gemini/ElevenLabs results establish provider text/audio generation and playback, but predate this balance revision. No additional live provider request was run for this balance change. The trace contract remains `lock-in-v2`; it has not been deployed or verified remotely.

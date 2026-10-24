@@ -176,7 +176,7 @@ test('authored event projection preserves observable behavior and rejects inject
   assert.equal(publicEvent({id:'e1',seq:1,time:1,type:'MEMORY_READY',detail:'1,3,2,4'}).detail,'');
   assert.equal(publicEvent({id:'e1',seq:1,time:1,type:'PRIVATE_PULSE_SECRET',detail:'87'}).type,'UNKNOWN');
 });
-test('live probe uses all new LOCK IN proposal guards and sanitized provider metadata', () => {
+test('live probe uses all new HUSH proposal guards and sanitized provider metadata', () => {
   const {state,request: observation}=createDirectorProbe('fixture');
   const valid={requestId:observation.requestId,stateVersion:observation.stateVersion,tactic:'WAIT',target:'NONE',tauntId:'NONE',evidenceEventIds:[],reasonCode:'NO_VALID_SIGNAL'};
   assert.equal(validateDirectorProbe(state,valid,1000),null);
@@ -213,7 +213,7 @@ test('missing provider credentials return honest fallbacks immediately with no H
   assert.equal(speech.source, 'fallback'); assert.equal(speech.audioBase64, null);
   assert.equal(validSpeechRequest({ requestId: 'r1', encounterId: 'e1', caption: 'expired', expiresAtMs: 100 }, 101), false);
 });
-test('installed Gemini SDK sends LOCK IN schema and configured model settings through an intercepted transport', async () => {
+test('installed Gemini SDK sends HUSH schema and configured model settings through an intercepted transport', async () => {
   const originalFetch = globalThis.fetch;
   let body: Record<string, any> | null = null;
   globalThis.fetch = async (input, init) => {

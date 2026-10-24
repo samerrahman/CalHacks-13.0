@@ -9,7 +9,7 @@ export default function CameraPrompt({sensor,stream,desktop,deviceId,onDevice,en
   <button className="text-button" onClick={onBack}>← Back</button>
   <div className="eyebrow">BEFORE YOU ENTER / PRESAGE PULSE</div>
   <h2>Please enable your camera.</h2>
-  <p className="camera-prompt-why">LOCK IN uses Presage to read your heartbeat and breathing from your webcam. We set up your pulse baseline before the shelter seals: a racing heart bleeds into the heartbeat mask, and a steady one helps you hold calm.</p>
+  <p className="camera-prompt-why">HUSH uses Presage to read your heartbeat and breathing from your webcam. We set up your pulse baseline before the shelter seals: a racing heart bleeds into the heartbeat mask, and a steady one helps you hold calm.</p>
   {!enabled&&<><div className="setup-actions camera-prompt-actions">
    <button className="primary" autoFocus={desktop} disabled={!desktop} onClick={onEnable}>Enable camera & set up Presage <span>↗</span></button>
    <button className="camera-decline" autoFocus={!desktop} onClick={onDecline}>I don’t want to turn on my camera</button>

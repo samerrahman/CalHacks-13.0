@@ -1,10 +1,10 @@
 // Offline desktop gate. Child-process-only override; .env stays untouched.
 import { _electron } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
-const env = { ...process.env, LOCK_IN_OFFLINE: '1' };
-delete env.ELECTRON_RUN_AS_NODE; delete env.LOCK_IN_DEV_URL;
+const env = { ...process.env, HUSH_OFFLINE: '1' };
+delete env.ELECTRON_RUN_AS_NODE; delete env.HUSH_DEV_URL;
 const errors = [], resources = [];
-const result = { application: 'LOCK IN', checkedAt: new Date().toISOString(), mode: 'offline', cameraRequested: false, providerCallsEnabled: false, errors, resources, outcome: 'failed' };
+const result = { application: 'HUSH', checkedAt: new Date().toISOString(), mode: 'offline', cameraRequested: false, providerCallsEnabled: false, errors, resources, outcome: 'failed' };
 mkdirSync('docs/qa', { recursive: true });
 let app;
 try {

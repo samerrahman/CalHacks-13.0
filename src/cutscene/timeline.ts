@@ -30,7 +30,7 @@ export const CAPTIONS: Caption[] = [
   { start: B.alarm + 0.1, end: B.thud2 - 0.2, text: 'Containment failure. Proceed to the emergency observation shelter.' },
   { start: B.open, end: B.snatch, text: '[the hatch bursts open — something grips the frame]' },
   { start: B.snatch, end: B.turn + 0.4, text: '[it seizes your colleague and drags them inside]' },
-  { start: B.forest + 0.4, end: B.forest + 4.8, text: '[running through wet branches — something follows]' },
+  { start: B.forest + 0.4, end: B.forest + 4.8, text: "[running through wet branches — heavy footsteps behind you]" },
   { start: B.slam, end: B.crash - 0.1, text: '[the door slams shut — a heartbeat in the dark]' },
   { start: B.crash, end: B.crash + 2.3, text: '[something slams into the door]' },
   { start: B.black + 0.5, end: B.end, text: 'Silence the faults. Test the emitters. Lead it back into containment.' },
@@ -38,14 +38,18 @@ export const CAPTIONS: Caption[] = [
 
 /** Recorded cues from cutscene/audio (render inputs only; credits in cutscene/audio/SOURCES.md).
  * Everything else is synthesised (SYNTH below). `from` skips into the file, `rate` speeds it up
- * (and raises the pitch), `until` ends it. */
-export type SoundCue = { at: number; file: string; gain: number; from?: number; until?: number; fadeIn?: number; fadeOut?: number; loop?: number; rate?: number };
+ * (and raises the pitch), `until` ends it, `env` scales it over time (absolute seconds), e.g. for distance. */
+export type SoundCue = { at: number; file: string; gain: number; from?: number; until?: number; fadeIn?: number; fadeOut?: number; loop?: number; rate?: number; env?: [number, number][] };
 export const SOUND_CUES: SoundCue[] = [
   // Your breathing, built from real breaths and kept under everything else: shallow and scared
   // as it breaks loose, panting on the run, held after the slam, panic after the hit.
   { at: B.thud1 - 0.3, file: 'breath_scared.opus', gain: 0.45, until: B.turn + 0.2, fadeIn: 0.8, fadeOut: 0.3 },
   { at: B.turn, file: 'breath_run.opus', gain: 0.55, until: B.slam, fadeIn: 0.4, fadeOut: 0.1 },
   { at: B.crash + 0.35, file: 'breath_panic.opus', gain: 0.6, until: B.end - 0.4, fadeIn: 0.2, fadeOut: 2 },
+  // The big one, out of the tube and coming after you: heavy, uneven, slower than your feet. Far
+  // behind in the corridor, gaining through the woods, out there in the fog at the shed door.
+  { at: B.turn + 1.3, file: 'stomps_stone.opus', gain: 0.8, until: B.barge + 0.3, fadeIn: 0.8, fadeOut: 0.4, env: [[B.turn + 1.3, 0.6], [B.barge, 1]] },
+  { at: B.forest + 0.7, file: 'stomps_mud.opus', gain: 0.95, until: B.rush, fadeIn: 1.2, fadeOut: 0.5, env: [[B.forest + 0.7, 0.4], [B.arrive, 1], [B.lookBack, 0.75]] },
   // Real metal: the tube groaning, the hatch tearing open, the arm dragging back over the frame.
   { at: B.thud2 + 0.1, file: 'metal_grind.opus', from: 0.5, rate: 0.55, gain: 0.35, until: B.thud2 + 0.9, fadeOut: 0.3 },
   { at: B.open, file: 'metal_grind.opus', from: 10.5, rate: 0.7, gain: 0.6, until: B.open + 0.6, fadeOut: 0.25 },

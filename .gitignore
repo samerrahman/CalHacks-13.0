@@ -12,6 +12,7 @@ spacetimedb/.spacetime/
 .env
 .env.*
 !.env.example
+voice-auditions/
 
 # local databases
 *.db

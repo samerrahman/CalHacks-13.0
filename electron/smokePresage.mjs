@@ -3,8 +3,8 @@
 import { _electron } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
 if (!process.argv.includes('--camera')) { console.error('Requires --camera and operator consent in the current session'); process.exit(2); }
-const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.LOCK_IN_DEV_URL; delete env.LOCK_IN_OFFLINE;
-const result = { application: 'LOCK IN', checkedAt: new Date().toISOString(), cameraRequested: true, rawPulseRecorded: false, traceSharingEnabled: false, status: 'blocked', checks: [] };
+const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.HUSH_DEV_URL; delete env.HUSH_OFFLINE;
+const result = { application: 'HUSH', checkedAt: new Date().toISOString(), cameraRequested: true, rawPulseRecorded: false, traceSharingEnabled: false, status: 'blocked', checks: [] };
 mkdirSync('docs/qa', { recursive: true }); let app;
 try {
  app = await _electron.launch({ args: ['dist-electron/main.mjs'], env, timeout: 30000 });

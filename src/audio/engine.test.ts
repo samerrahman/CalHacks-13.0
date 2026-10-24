@@ -4,12 +4,12 @@ import { captionReadingSeconds, createAudioEngine, EFFECT_NAMES, type AudioWorld
 
 class Parameter { value = 0; automation: number[] = []; setTargetAtTime(value: number) { this.value = value; this.automation.push(value); } setValueAtTime(value: number) { this.value = value; this.automation.push(value); } linearRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } exponentialRampToValueAtTime(value: number) { this.value = value; this.automation.push(value); } cancelScheduledValues() { /* Mock keeps the recorded automation. */ } }
 class Node { connected: Node[] = []; connect(node: Node) { this.connected.push(node); return node; } disconnect() { this.connected = []; } }
-class Source extends Node { buffer: { tag: string } | null = null; loop = false; playbackRate = new Parameter(); stopped = false; started = false; onended: (() => void) | null = null; start() { this.started = true; } stop() { if (this.stopped) return; this.stopped = true; this.onended?.(); } }
+class Source extends Node { buffer: { tag: string } | null = null; loop = false; playbackRate = Object.assign(new Parameter(), { value: 1 }); stopped = false; started = false; onended: (() => void) | null = null; start() { this.started = true; } stop() { if (this.stopped) return; this.stopped = true; this.onended?.(); } }
 class Oscillator extends Node { type = ''; frequency = new Parameter(); detune = new Parameter(); started = false; stopped = false; stopAt: number | null = null; onended: (() => void) | null = null; start() { this.started = true; } stop(at?: number) { if (at !== undefined && at > FakeContext.current.currentTime) { this.stopAt = at; return; } if (this.stopped) return; this.stopped = true; this.onended?.(); } }
 class Panner extends Node { rolloffFactor = 1; positionX = new Parameter(); positionY = new Parameter(); positionZ = new Parameter(); }
 class FakeContext {
   static current: FakeContext;
-  state = 'suspended'; currentTime = 0; sampleRate = 8000; destination = new Node(); sources: Source[] = []; oscillators: Oscillator[] = []; gains: (Node & { gain: Parameter })[] = [];
+  state = 'suspended'; currentTime = 0; sampleRate = 8000; destination = new Node(); sources: Source[] = []; oscillators: Oscillator[] = []; gains: (Node & { gain: Parameter })[] = []; delays: (Node & { delayTime: Parameter })[] = []; shapers: (Node & { curve: Float32Array | null })[] = [];
   listener = Object.fromEntries(['positionX', 'positionY', 'positionZ', 'forwardX', 'forwardY', 'forwardZ', 'upX', 'upY', 'upZ'].map(name => [name, new Parameter()]));
   constructor() { FakeContext.current = this; }
   async resume() { this.state = 'running'; } async suspend() { this.state = 'suspended'; } async close() { this.state = 'closed'; }
@@ -17,7 +17,8 @@ class FakeContext {
   createDynamicsCompressor() { const node = Object.assign(new Node(), Object.fromEntries(['threshold', 'knee', 'ratio', 'attack', 'release'].map(name => [name, new Parameter()]))) as unknown as Node & { threshold: Parameter }; this.compressors.push(node); return node; }
   compressors: (Node & { threshold: Parameter })[] = [];
   createPanner() { return new Panner(); }
-  createWaveShaper() { return Object.assign(new Node(), { curve: null as Float32Array | null, oversample: 'none' }); }
+  createWaveShaper() { const node = Object.assign(new Node(), { curve: null as Float32Array | null, oversample: 'none' }); this.shapers.push(node); return node; }
+  createDelay() { const node = Object.assign(new Node(), { delayTime: new Parameter() }); this.delays.push(node); return node; }
   createBuffer(_channels: number, length: number) { const data = new Float32Array(length); return { tag: 'noise', getChannelData: () => data }; }
   createBiquadFilter() { return Object.assign(new Node(), { frequency: new Parameter(), Q: new Parameter(), type: '' }); }
   createOscillator() { const source = new Oscillator(); this.oscillators.push(source); return source; }
@@ -170,6 +171,28 @@ test('creature speech waits for actual instruction completion while alarm and sc
     context.sources.find(source => source.buffer?.tag === 'creature audio')!.onended?.();
     assert.deepEqual(events.slice(-2), [{ type: 'ended', id: 'creature' }, { type: 'idle' }]);
     assert.equal(engine.isSpeechBusy(), false);
+  } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
+});
+
+test('creature speech gets the dark distortion while human radio speech keeps its original treatment', async () => {
+  const originalAudio = globalThis.AudioContext, originalFetch = globalThis.fetch;
+  globalThis.AudioContext = FakeContext as unknown as typeof AudioContext;
+  globalThis.fetch = (async input => new Response(String(input).split('/').at(-1))) as typeof fetch;
+  const engine = createAudioEngine();
+  try {
+    await engine.start(); const context = FakeContext.current;
+    engine.speak({ id: 'creature', text: 'I heard you.', expiresAt: 20, priority: 3, audioBase64: btoa('creature voice'), followCreature: true, position: [2, 1, -5] });
+    engine.update(0); await new Promise(resolve => setTimeout(resolve, 0));
+    const creature = context.sources.find(source => source.buffer?.tag === 'creature voice')!;
+    assert.equal(creature.playbackRate.value, .78);
+    assert.equal(context.delays.length, 1); assert.equal(context.delays[0]!.delayTime.value, .085);
+    assert.ok(context.shapers.some(shaper => shaper.curve?.length === 1024));
+    assert.ok(creature.started);
+    engine.cancelSpeech('creature'); assert.ok(creature.stopped);
+    engine.speak({ id: 'radio', text: 'Stay inside.', expiresAt: 20, priority: 3, audioBase64: btoa('human voice') });
+    engine.update(1); await new Promise(resolve => setTimeout(resolve, 0));
+    const radio = context.sources.find(source => source.buffer?.tag === 'human voice')!;
+    assert.equal(radio.playbackRate.value, 1); assert.equal(context.delays.length, 1);
   } finally { engine.dispose(); globalThis.AudioContext = originalAudio; globalThis.fetch = originalFetch; }
 });
 
