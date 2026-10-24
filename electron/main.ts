@@ -14,7 +14,7 @@ for (const name of ['.env', '.env.local']) { const p = path.join(root, name); if
 // Explicit QA gate: a configured account must not turn an offline smoke into
 // a live network/camera test. This mutates only the child process environment.
 const offline = process.env.LOCK_IN_OFFLINE === '1';
-if (offline) for (const name of ['PRESAGE_API_KEY', 'GEMINI_API_KEY', 'ELEVENLABS_API_KEY', 'VITE_CONVEX_URL']) delete process.env[name];
+if (offline) for (const name of ['PRESAGE_API_KEY', 'GEMINI_API_KEY', 'ELEVENLABS_API_KEY', 'VITE_SPACETIMEDB_DB_NAME']) delete process.env[name];
 app.setName('Lock In');
 protocol.registerSchemesAsPrivileged([{ scheme: 'lockin', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }]);
 let mainWindow: BrowserWindow | null = null;
@@ -39,11 +39,11 @@ function restrictNavigation(window: BrowserWindow): void {
 }
 function contentPolicy(): string {
   const dev = !!process.env.LOCK_IN_DEV_URL;
-  return `default-src 'self'; script-src 'self'${dev ? " 'unsafe-inline'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 https://*.convex.cloud wss://*.convex.cloud; object-src 'none'; base-uri 'self'; frame-src 'none'`;
+  return `default-src 'self'; script-src 'self'${dev ? " 'unsafe-inline'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 ws://localhost:3000 https://maincloud.spacetimedb.com wss://maincloud.spacetimedb.com; object-src 'none'; base-uri 'self'; frame-src 'none'`;
 }
 ipcMain.handle('lock-in:status', event => {
   trusted(event);
-  return { desktop: true, offline, presage: nativeAvailable, gemini: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL), elevenlabs: !!(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_VOICE_ID && process.env.ELEVENLABS_MODEL_ID), convex: !!process.env.VITE_CONVEX_URL, reasons: nativeReason ? [nativeReason] : [] };
+  return { desktop: true, offline, presage: nativeAvailable, gemini: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL), elevenlabs: !!(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_VOICE_ID && process.env.ELEVENLABS_MODEL_ID), spacetime: !!process.env.VITE_SPACETIMEDB_DB_NAME, reasons: nativeReason ? [nativeReason] : [] };
 });
 ipcMain.handle('lock-in:director', async (event, raw) => {
   trusted(event);

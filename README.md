@@ -7,7 +7,7 @@ You have eight active minutes to finish the research and contain the creature ou
 ## Run
 
 ```sh
-cd "/Users/jamesqiu/Desktop/CalHacks 13.0"
+npm ci
 npm run dev
 ```
 
@@ -51,18 +51,20 @@ Stage 1 is a rack sound key, six faults you find by ear (the buttons only say 1â
 
 ## Optional integrations and privacy
 
-Keep existing credentials in ignored `.env` / `.env.local`; `.env.example` lists names. Never prefix secret keys with `VITE_`. Provider keys stay in Node-side Vite middleware, Electron main or Convex actions. Local `npm run dev` calls the loopback-only provider bridge directly; it does not need Convex trace consent for voice. Static production browser hosting still needs a compatible Convex backend for provider calls.
+Keep credentials in ignored `.env` / `.env.local`; `.env.example` lists names. Never prefix secret keys with `VITE_`. Provider keys stay in Node-side Vite middleware or Electron main. Local `npm run dev` calls the loopback-only provider bridge directly; it does not need trace consent for voice. SpacetimeDB handles consenting sanitized session traces and the live judge screen. A static browser build uses local AI/voice fallbacks until a trusted provider service is configured.
+
+For a remote judge screen, publish the module in `spacetimedb/` to your chosen SpacetimeDB database, run `npm run spacetime:generate` after schema changes, and set `VITE_SPACETIMEDB_DB_NAME` plus the public `VITE_SPACETIMEDB_HOST` in `.env.local` before building. The screenshot's `scary-5zsk8` is recorded only in the ignored local Spacetime config; this branch has not published to Maincloud. Without a configured database, traces stay in the same browser through BroadcastChannel. The database keeps each consenting trace private, exposes a capability checked judge view, and schedules deletion after 24 hours. This is a single-player game; the judge screen only observes a consenting run. The game reducer remains authoritative and never waits on a database write.
 
 Gemini chooses validated, bounded probability biases; it never directly sets the creature position. An eight-second deadline falls back locally. Monster text is separately generated from public game events, then its exact caption is sent to ElevenLabs. Generated text, authored fallback, live voice and cached voice are labelled separately. A serial speech scheduler prevents overlapping narration and creature dialogue. Use **Camera & pulse setup** before a run or the pulse button during play to select a device, view its mirrored local preview, calibrate and stop capture. After 30 usable calibration seconds, Start calibrated game reuses the active stream. A corner preview displays accepted pulse, breathing, baseline delta and the pulse bar. Breathing has its own 30-second warm-up and quality status. The preview uses the same video stream as the native adapter; it does not open a second camera. Missing or rejected measurements immediately produce neutral UNKNOWN physiology. Neither the model nor the shared trace receives raw pulse, memory answers or webcam frames.
 
 Pulse recording and sanitized trace sharing have separate, unchecked opt-ins. Local reports show accepted measurements with gaps, event timing and conservative supported change/recovery. Simulated reports say SIMULATED. They do not infer fear or diagnose anything. Run deletion clears in-memory history and attempts deletion of the consenting remote session; remote failure is reported.
 
-The generated-monster pipeline was tested live before this overhaul: the final corrected narrative probe used Gemini in891ms and ElevenLabs in359ms, with decoded audio matching the exact generated caption. Those timings are historical evidence, not a new live test of this rule revision. The user reports successful Presage calibration; the latest reliability fixes have automated packet/lifecycle coverage but have not yet been verified against a fresh live camera session. The existing Convex deployment previously lacked the required LOCK IN functions; this revision prepares the v2 trace contract locally without deploying it.
+The generated-monster pipeline was tested live before this overhaul: the final corrected narrative probe used Gemini in891ms and ElevenLabs in359ms, with decoded audio matching the exact generated caption. Those timings are historical evidence, not a new live test of this rule revision. The user reports successful Presage calibration; the latest reliability fixes have automated packet/lifecycle coverage but have not yet been verified against a fresh live camera session. Earlier Convex deployment evidence is historical; the SpacetimeDB module has not been published or live checked.
 
-See [current integration status](docs/INTEGRATION_STATUS.md) and [verification handoff](docs/HANDOFF.md) for actual new-game evidence and external blockers. Old NIGHT RELAY results do not count as LOCK IN live tests. Do not run Convex provisioning/deployment automatically; use the existing project in your own terminal when required.
+See [current integration status](docs/INTEGRATION_STATUS.md) and [verification handoff](docs/HANDOFF.md) for actual new-game evidence and external blockers. Old NIGHT RELAY results do not count as LOCK IN live tests.
 
 ## Implementation and assets
 
-React handles menus and overlays; Three.js renders the sealed shelter. `src/game/` owns fixed-step authority, seeded faults/wires/memory, integer movement probabilities, danger, deadline, finite isolation and validated director biases. `src/report/` analyzes optional in-memory pulse history. `electron/` contains the isolated native/provider bridge; `convex/` contains consented sessions and capability-checked functions.
+React handles menus and overlays; Three.js renders the sealed shelter. `src/game/` owns fixed-step authority, seeded faults/wires/memory, integer movement probabilities, danger, deadline, finite isolation and validated director biases. `src/report/` analyzes optional in-memory pulse history. `electron/` contains the isolated native/provider bridge; `spacetimedb/` contains the consenting session and judge trace backend. `convex/` remains as historical reference and is no longer used by the application.
 
 Runtime assets include 10 GLBs, 11 animation clips, 27 original mono WAV effects, 7 SVG decals, 4 generated CCTV backgrounds and one generated breach-scare image. Deterministic rust/grime textures and dim amber/red lighting give the room its darker industrial treatment. Their provenance, licenses and actual uses are documented in [ASSETS](docs/ASSETS.md). Creature geometry is CCTV-only. The security feed is fiction, distinct from optional webcam sensing. The kit and its ZIP remain available as design/reference archives.

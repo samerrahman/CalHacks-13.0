@@ -5,6 +5,8 @@ release/
 *.log
 .DS_Store
 .convex/
+spacetime.local.json
+spacetimedb/.spacetime/
 
 # secrets — copy .env.example to .env.local
 .env

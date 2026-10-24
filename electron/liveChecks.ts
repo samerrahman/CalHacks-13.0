@@ -2,23 +2,21 @@
 import { existsSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { GoogleGenAI } from '@google/genai';
-import { ConvexHttpClient } from 'convex/browser';
-import { makeFunctionReference } from 'convex/server';
 import { geminiProposal, elevenSpeech, providerFailure } from '../src/integrations/providers';
 import { createDirectorProbe, validateDirectorProbe } from './liveCheckValidation';
 import type { DirectorProposal } from '../src/game/state';
-import { TRACE_SCHEMA_VERSION } from '../src/integrations/contracts';
 
 const selected = process.argv.find(value => value.startsWith('--only='))?.slice(7) ?? 'native';
-if (!['native', 'gemini', 'elevenlabs', 'convex'].includes(selected)) throw new Error('Use --only=native|gemini|elevenlabs|convex');
+if (!['native', 'gemini', 'elevenlabs', 'spacetime'].includes(selected)) throw new Error('Use --only=native|gemini|elevenlabs|spacetime');
 if (selected !== 'native' && !process.argv.includes('--live')) throw new Error('Provider checks require explicit --live after the offline game gate');
 for (const filename of ['.env', '.env.local']) if (existsSync(filename)) process.loadEnvFile(filename);
 type Outcome = { status: 'passed' | 'blocked' | 'failed' | 'not_tested'; detail: string; checkedAt?: string; [key: string]: unknown };
-const results: Record<string, Outcome> = Object.fromEntries(['presage', 'gemini', 'elevenlabs', 'convex'].map(name => [name, { status: 'not_tested', detail: 'Not yet tested in LOCK IN; previous-game evidence does not qualify' }]));
+const results: Record<string, Outcome> = Object.fromEntries(['presage', 'gemini', 'elevenlabs', 'spacetime'].map(name => [name, { status: 'not_tested', detail: 'Not yet tested in LOCK IN; previous-game evidence does not qualify' }]));
 if (existsSync('docs/integration-checks.json')) {
   const prior = JSON.parse(readFileSync('docs/integration-checks.json', 'utf8'));
   if (prior.application === 'LOCK IN') Object.assign(results, prior.results);
 }
+delete results.convex;
 const checkedAt = new Date().toISOString();
 async function bounded<T>(operation: (signal: AbortSignal) => Promise<T>, timeoutMs: number): Promise<T> {
   const abort = new AbortController(); let timer: ReturnType<typeof setTimeout> | undefined;
@@ -59,27 +57,38 @@ if (selected === 'elevenlabs') {
     results.elevenlabs = { status: result.source === 'elevenlabs' && result.audioBase64 ? 'passed' : 'failed', checkedAt, detail: result.reason ?? 'Configured voice/model and real authored speech generated; audible UI playback still separate', source: result.source, latencyMs: result.latencyMs, requestId, providerRequestId: result.providerRequestId, caption, audioBytes: result.audioBase64 ? Buffer.from(result.audioBase64, 'base64').byteLength : 0 };
   } catch (error) { results.elevenlabs = { status: 'failed', checkedAt, detail: providerFailure(error, 'ElevenLabs voice/model/generation failed') }; }
 }
-if (selected === 'convex') {
-  if (!process.env.VITE_CONVEX_URL) results.convex = { status: 'blocked', checkedAt, detail: 'VITE_CONVEX_URL absent; no deployment created' };
+if (selected === 'spacetime') {
+  if (!process.env.VITE_SPACETIMEDB_DB_NAME) results.spacetime = { status: 'blocked', checkedAt, detail: 'VITE_SPACETIMEDB_DB_NAME absent; no database published' };
   else {
-    const client = new ConvexHttpClient(process.env.VITE_CONVEX_URL, { logger: false, fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(10000) }) });
-    const ownerCapability = randomBytes(32).toString('hex'), judgeCapability = randomBytes(32).toString('hex');
-    let sessionId: string | null = null;
+    const { connectSpacetime, judgeQuery } = await import('../src/integrations/spacetime');
+    const ownerCapability = randomBytes(32).toString('hex'), judgeCapability = randomBytes(32).toString('hex'), sessionId = randomBytes(32).toString('hex');
+    let client: Awaited<ReturnType<typeof connectSpacetime>> | null = null;
     try {
-      const version = await client.query(makeFunctionReference<'query'>('sessions:version'), {});
-      if (version?.schemaVersion !== TRACE_SCHEMA_VERSION) throw new Error('Existing deployment needs current LOCK IN provisioning');
-      sessionId = await client.mutation(makeFunctionReference<'mutation'>('sessions:create'), { ownerCapability, judgeCapability, consent: true, seed: 17, mode: 'integration-smoke' });
-      await client.query(makeFunctionReference<'query'>('sessions:get'), { sessionId, capability: judgeCapability });
-      let denied = false;
-      try { await client.query(makeFunctionReference<'query'>('sessions:get'), { sessionId, capability: ownerCapability }); } catch { denied = true; }
-      if (!denied) throw new Error('Capability isolation failed');
-      results.convex = { status: 'passed', checkedAt, detail: 'Existing LOCK IN deployment version, consenting session, judge read and capability isolation passed. Reactive/reconnect UI proof separate.' };
-    } catch (error) {
-      // Inspect only to classify; never emit the remote error body or URL.
-      const missingFunctions = error instanceof Error && /Could not find public function|Could not find function|No function found|needs (?:current )?LOCK IN provisioning/.test(error.message);
-      results.convex = { status: 'blocked', checkedAt, category: missingFunctions ? 'FUNCTIONS_NOT_PROVISIONED' : 'DEPLOYMENT_UNAVAILABLE', detail: missingFunctions ? 'Existing deployment lacks compatible LOCK IN functions. Human provisioning required; no dev/env/deploy CLI commands were run.' : 'Existing deployment unavailable or incompatible. No dev/env/deploy CLI commands were run; local trace remains available.' };
+      client = await connectSpacetime();
+      await client.reducers.createSession({ id: sessionId, ownerCapability, judgeCapability, consent: true, seed: 17, mode: 'integration-smoke' });
+      await client.reducers.appendTrace({ id: sessionId, ownerCapability, events: [], summary: { time: 0, stage: 1, status: 'playing', equipment: 'on', creatureNode: 'SHELTER_WALL', creaturePhase: 'search', linePosition: 0, lineLength: 24, danger: 0, quietChargesRemaining: 5, tactic: 'WAIT', target: 'NONE', proposalSource: 'FALLBACK', sensorSource: 'manual', sensorQuality: 'unknown', trend: 'UNKNOWN', sensorAgeMs: undefined } });
+      const read = async (capability: string): Promise<number> => {
+        // Each capability needs its own cache; a prior subscription can leave rows visible.
+        const judge = await connectSpacetime();
+        try {
+          return await bounded(_signal => new Promise<number>((resolve, reject) => {
+            judge.subscriptionBuilder()
+              .onApplied(ctx => resolve([...ctx.db.judgeTrace.iter()].length))
+              .onError(() => reject(new Error('Judge subscription failed')))
+              .subscribe(judgeQuery(sessionId, capability));
+          }), 7000);
+        } finally { judge.disconnect(); }
+      };
+      if (await read(judgeCapability) !== 1 || await read(ownerCapability) !== 0) throw new Error('Judge capability isolation failed');
+      results.spacetime = { status: 'passed', checkedAt, detail: 'Consenting session, trace write, judge view isolation passed; browser reconnection proof separate.' };
+    } catch { results.spacetime = { status: 'blocked', checkedAt, detail: 'SpacetimeDB database unavailable or module not published; local trace remains available.' }; }
+    finally {
+      if (client) {
+        try { await client.reducers.removeSession({ id: sessionId, ownerCapability }); }
+        catch { results.spacetime = { status: 'failed', checkedAt, detail: 'Smoke session deletion failed; retry owner deletion before demo' }; }
+        client.disconnect();
+      }
     }
-    finally { if (sessionId) try { await client.mutation(makeFunctionReference<'mutation'>('sessions:remove'), { sessionId, capability: ownerCapability }); } catch { results.convex = { status: 'failed', checkedAt, detail: 'Smoke session deletion failed; retry owner deletion before demo' }; } }
   }
 }
 mkdirSync('docs', { recursive: true });
