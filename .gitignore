@@ -1,0 +1,19 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.log
+.DS_Store
+
+# secrets — copy .env.example to .env
+.env
+.env.*
+!.env.example
+
+# local databases (recorded signal sessions in src/signals/recordings ARE committed)
+*.db
+*.sqlite
+
+# personal Claude Code settings
+.claude/settings.local.json
+CLAUDE.local.md

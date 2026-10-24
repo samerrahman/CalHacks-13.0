@@ -1,0 +1,18 @@
+{
+  // We write JavaScript. tsc only checks it: JSDoc types from /shared/types
+  // catch contract mismatches before merge. Run with `npm run typecheck`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["electron", "src", "shared", "vite.config.js"]
+}

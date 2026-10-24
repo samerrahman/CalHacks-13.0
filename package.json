@@ -1,0 +1,24 @@
+{
+  "name": "scary",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CalHacks 13.0 — biometric horror game (Electron + Phaser + Presage)",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "vite build",
+    "check": "npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "electron": "^44.9.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-electron": "^1.1.2"
+  }
+}
