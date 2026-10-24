@@ -224,6 +224,7 @@ function audioMix(cues, layers, duration, stepRate, firstInput = 1) {
     if (length && cue.fadeOut) chain.push(`afade=t=out:st=${Math.max(0, length - cue.fadeOut)}:d=${cue.fadeOut}`);
     const ms = Math.round(cue.at * 1000);
     chain.push(`adelay=${ms}|${ms}`);
+    if (cue.env) chain.push(`volume='${envelope(cue.env)}':eval=frame`); // distance over time (absolute seconds)
     filters.push(`[${n}:a]${chain.join(',')}[a${n}]`); labels.push(`[a${n}]`); n++;
   });
   for (const s of synthSources(layers, duration, stepRate)) {
