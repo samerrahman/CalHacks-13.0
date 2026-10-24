@@ -1,23 +1,34 @@
-// Runs in the Electron main process.
-import { IPC } from '../../shared/types/bridge.js'
+// Runs in the renderer. Convex needs only the public deployment URL, never a secret.
+import { ConvexClient } from 'convex/browser'
 
-/** @typedef {import('../../shared/types/storage.js').SessionRecord} SessionRecord */
-/** @typedef {import('../../shared/types/storage.js').CheckIn} CheckIn */
+/** @typedef {'not configured'|'connecting'|'connected'} ConvexStatus */
 
-// In-memory placeholder so the bridge works today. Swap for SQLite; keep the IPC surface.
-/** @type {Map<string, SessionRecord>} */
-const sessions = new Map()
-/** @type {CheckIn[]} */
-const checkIns = []
+/** @type {ConvexClient | null | undefined} */
+let client
 
-/** @param {import('electron').IpcMain} ipcMain */
-export function registerStorageIpc(ipcMain) {
-  ipcMain.handle(IPC.saveSession, (_event, /** @type {SessionRecord} */ record) => {
-    sessions.set(record.id, record)
-  })
-  ipcMain.handle(IPC.listSessions, () => [...sessions.values()])
-  ipcMain.handle(IPC.saveCheckIn, (_event, /** @type {CheckIn} */ checkIn) => {
-    checkIns.push(checkIn)
-  })
-  ipcMain.handle(IPC.listCheckIns, () => checkIns)
+/** Convex client, or null when VITE_CONVEX_URL isn't set (the game runs offline). */
+export function getConvex() {
+  if (client === undefined) {
+    const url = import.meta.env.VITE_CONVEX_URL
+    // The default beforeunload warning silently blocks Electron windows from closing.
+    client = url ? new ConvexClient(url, { unsavedChangesWarning: false }) : null
+  }
+  return client
+}
+
+/**
+ * Reports the connection state now and on every change.
+ * @param {(status: ConvexStatus) => void} cb
+ * @returns {() => void} unsubscribe
+ */
+export function watchConvex(cb) {
+  const convex = getConvex()
+  if (!convex) {
+    cb('not configured')
+    return () => {}
+  }
+  /** @param {{ isWebSocketConnected: boolean }} state */
+  const report = (state) => cb(state.isWebSocketConnected ? 'connected' : 'connecting')
+  report(convex.connectionState())
+  return convex.subscribeToConnectionState(report)
 }

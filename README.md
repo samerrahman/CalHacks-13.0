@@ -8,7 +8,7 @@ JavaScript · Electron · Vite · Three.js · Presage · Gemini · Cartesia · C
 
 | # | Person | Role | Owns | Branch |
 |---|---|---|---|---|
-| 1 | **Samer** | Signals & platform | `/electron`, `/src/signals`, `/src/storage`, `package.json` | `samer/signals` |
+| 1 | **Samer** | Signals & platform | `/electron`, `/src/signals`, `/src/storage`, `/convex`, `package.json` | `samer/signals` |
 | 2 | **James** | Gameplay & **integrator** | `/src/game`, `src/main.js`, `index.html`, merges to `main` | `james/game` |
 | 3 | **Lea** | Art & UI | `/assets`, `/src/ui` | `lea/art-ui` |
 | 4 | **Lucy** | AI, wellness & pitch | `/src/ai`, `/src/wellness`, Devpost, demo video | `lucy/ai-wellness` |
@@ -21,10 +21,14 @@ JavaScript · Electron · Vite · Three.js · Presage · Gemini · Cartesia · C
 git clone https://github.com/samerrahman/CalHacks-13.0.git
 cd CalHacks-13.0
 npm install
-cp .env.example .env     # add API keys (Lucy/Samer)
+cp .env.example .env     # Gemini, Cartesia, Presage keys (main process only)
+npx convex dev           # once, in your own terminal: log in, pick the existing project
+npm run providers        # checks each key with read-only calls
 git switch <your-branch>
 npm run dev
 ```
+
+Everything still runs without keys: canned director, subtitles-only voice, offline storage.
 
 Running several agents on one machine? Give each one its own worktree so they never share a checkout:
 
@@ -39,6 +43,7 @@ git worktree add ../scary-game james/game
 | `npm run dev` | Vite + Electron with hot reload, mock signals |
 | `npm run typecheck` | `tsc` checks the JavaScript against the JSDoc contracts |
 | `npm run check` | type check + production build. **Run before every merge** |
+| `npm run providers` | checks the Gemini, Cartesia, Convex and Presage config without generating anything |
 
 In the app: `1` pulse up · `2` blink · `3` hold breath · `4` talk · `5` fear spike · `0` face lost · `` ` `` toggle overlay.
 

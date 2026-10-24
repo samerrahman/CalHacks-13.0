@@ -1,3 +1,4 @@
+import { watchConvex } from '../storage/index.js'
 import { signalBus } from './bus.js'
 import { MOCK_KEYS } from './mock.js'
 
@@ -13,6 +14,8 @@ export function mountSignalOverlay() {
   document.body.appendChild(el)
 
   const legend = MOCK_KEYS.map(([key, label]) => `  ${key}  ${label}`).join('\n')
+  let convexStatus = ''
+  const unwatchConvex = watchConvex((status) => (convexStatus = status))
   const unsubscribe = signalBus.subscribe((f) => {
     const fmt = (v) => (v === null ? '—' : typeof v === 'number' ? v.toFixed(1) : String(v))
     el.textContent =
@@ -21,7 +24,8 @@ export function mountSignalOverlay() {
       `breath   ${fmt(f.breath)}  rate ${fmt(f.breathRate)}${f.breathHeld ? '  HELD' : ''}\n` +
       `hrv      ${fmt(f.hrvMs)} ms\n` +
       `fear     ${fmt(f.fear)}\n` +
-      `blink ${f.blink ? '●' : '○'}  talking ${f.talking ? '●' : '○'}` +
+      `blink ${f.blink ? '●' : '○'}  talking ${f.talking ? '●' : '○'}\n` +
+      `convex   ${convexStatus}` +
       (f.source === 'mock' ? `\n\nmock keys:\n${legend}` : '')
   })
 
@@ -33,6 +37,7 @@ export function mountSignalOverlay() {
 
   return () => {
     unsubscribe()
+    unwatchConvex()
     window.removeEventListener('keydown', onKey)
     el.remove()
   }

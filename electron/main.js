@@ -2,12 +2,12 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { registerAiIpc } from '../src/ai/main/index.js'
-import { registerStorageIpc } from '../src/storage/index.js'
 
 // Built to dist-electron/, next to preload.mjs.
 const here = path.dirname(fileURLToPath(import.meta.url))
 
-// API keys for the main process only (never exposed to the renderer).
+// API keys for the main process only (never exposed to the renderer). This runs after
+// all imports are evaluated, so modules must read process.env lazily.
 try {
   process.loadEnvFile()
 } catch {
@@ -31,7 +31,6 @@ function createWindow() {
 
 app.whenReady().then(() => {
   registerAiIpc(ipcMain)
-  registerStorageIpc(ipcMain)
   createWindow()
 
   app.on('activate', () => {

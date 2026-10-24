@@ -14,5 +14,5 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["electron", "src", "shared", "vite.config.js"]
+  "include": ["electron", "src", "shared", "convex", "scripts", "vite.config.js"]
 }

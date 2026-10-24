@@ -1,54 +1,61 @@
 # SCARY — CalHacks 13.0
 
-A horror game where your body is the controller. The webcam (Presage SDK) reads the player's pulse, breathing, blinks and voice, and the creatures react: the **Listener** hunts by sound and breath, the **Watcher** only moves when you blink, and the **Mimic** talks back. You survive each night at a desk with a lamp, a radio and limited oil. A Claude-powered **director** picks what happens next from a fixed menu, based on how the player is doing. At dawn a **garden** grows from how well you stayed calm, and a **journal** tracks sessions, check-ins and wellness tips. The point is practising calm under stress, so wellness safety rules can override any scare.
+A 3D first-person horror game. The webcam (Presage) reads the player's pulse and breathing, a **Gemini** director picks what the creature does next from a fixed menu, **Cartesia** voices the radio, and **Convex** stores sessions and events for replay and a judge view.
 
-> **Design not final.** The game is 3D, but the concept above is a draft. James's `Night_Relay_Codex_Build_Kit.zip` (repo root) is the most detailed spec so far. Don't build gameplay features until the team confirms the design.
+> **Design not final.** James's `Night_Relay_Codex_Build_Kit.zip` (repo root) is the most detailed spec so far. The contracts in `/shared/types` and `convex/schema.js` are a v0 draft. Don't build gameplay features until the team confirms the design.
 
-Stack: **JavaScript** (ES modules, no TypeScript source), Electron + Vite + **Three.js**, Gemini (director), Cartesia (voice), Convex (backend), Presage (sensing). Types are JSDoc, checked by `tsc` with `checkJs`. Gemini/Cartesia/Convex setup is in progress.
+Stack: **JavaScript** (ES modules, no TypeScript source), Electron + Vite + **Three.js**. Types are JSDoc, checked by `tsc` with `checkJs`.
 
 ## Run
 
 ```bash
-npm install        # only Samer changes dependencies — see Rules
-cp .env.example .env
-npm run dev        # Vite + Electron with hot reload, mock signals on
-npm run check      # type check + build — must pass before every merge
+npm install            # only Samer changes dependencies — see Rules
+cp .env.example .env   # API keys, main process only
+npx convex dev         # once, in your own terminal: log in, choose the existing project
+npm run providers      # checks each key with read-only calls
+npm run dev            # Vite + Electron with hot reload, mock signals on
+npm run check          # type check + build — must pass before every merge
 ```
+
+Without keys or Convex, the app still runs: canned director, subtitles-only voice, offline storage. The overlay shows the Convex status.
 
 Mock signal keys in the app: `1` pulse up · `2` blink · `3` hold breath · `4` talk · `5` fear spike · `0` face lost · `` ` `` toggles the signal overlay.
 
-## Contracts — `/shared/types`
+## Contracts
 
 Every person codes against these. Read the relevant file before writing code that touches another area.
 
-- `signals.js` → `SignalFrame` (~10 Hz from the signal bus)
-- `events.js` → `GameEvent`, `CreatureId`
-- `director.js` → `DirectorRequest`, `DirectorResponse`, `DIRECTOR_MENU`
-- `storage.js` → `SessionRecord`, `CheckIn`
-- `bridge.js` → `window.scary` (renderer ↔ Electron main IPC)
+- `shared/types/signals.js` → `SignalFrame` (~10 Hz from the signal bus)
+- `shared/types/events.js` → `GameEvent`, `CreatureId`
+- `shared/types/director.js` → `DirectorRequest`, `DirectorResponse`, `DIRECTOR_MENU`
+- `shared/types/storage.js` → `SessionRecord`, `CheckIn`
+- `shared/types/bridge.js` → `window.scary` (renderer ↔ Electron main IPC: director, voice, signals)
+- `convex/schema.js` → Convex tables (sessions, events)
+- `assets/manifest.json` → every model, sound and decal, by key
 
 Import types with JSDoc: `/** @typedef {import('../../shared/types/signals.js').SignalFrame} SignalFrame */`
 
 ## Ownership
 
-| Folder | Owner | Process |
-|---|---|---|
-| `/shared/types` | whole team | both |
-| `/electron`, `/src/signals`, `/src/storage`, `package.json` | Samer (1, signals & platform) | main + renderer |
-| `/src/game`, `/src/main.js`, `index.html`, merging to `main` | James (2, gameplay & integrator) | renderer |
-| `/assets`, `/src/ui` | Lea (3, art & UI) | renderer |
-| `/src/ai`, `/src/wellness` | Lucy (4, AI, wellness & pitch) | `src/ai/main` = main, rest renderer |
+| Folder | Owner |
+|---|---|
+| `/shared/types` | whole team |
+| `/electron`, `/src/signals`, `/src/storage`, `/convex`, `convex.json`, `/scripts`, `package.json` | Samer (1, signals & platform) |
+| `/src/game`, `/src/main.js`, `index.html`, merging to `main` | James (2, gameplay & integrator) |
+| `/assets`, `/src/ui` | Lea (3, art & UI) |
+| `/src/ai`, `/src/wellness` | Lucy (4, AI, wellness & pitch) |
 
 Each owned folder has its own `CLAUDE.md` with that person's task. If you don't know which person you're working for, ask before editing.
 
 ## Rules for agents
 
 - **Only edit files in your person's folders.** Need something from another folder? Say what and stop — the owner's agent makes the change.
-- **Never edit `/shared/types` unless the user explicitly asks.** Contract changes go through the team chat first.
+- **Never edit `/shared/types` or `convex/schema.js` unless the user explicitly asks.** Contract changes go through the team chat first.
 - **Never run `npm install <pkg>` or edit `package.json`** unless you are working for Samer. Ask the user to request it from Samer.
+- **Never run `npx convex dev`, `npx convex env` or `npx convex deploy` yourself.** Without a real terminal, the CLI silently sets up an anonymous local backend instead of the team's project. Ask the user to run it.
+- API keys live in `.env` and are read only in the Electron main process. Never put a secret in a `VITE_*` variable or send it to the renderer. In main-process code, read `process.env` inside functions, not at module scope (`.env` loads after imports run).
+- The renderer reaches API keys and Presage **only through `window.scary`**, and Convex only through `src/storage`. No Node APIs in the renderer.
 - No drive-by refactors, renames or reformatting outside the task.
-- Renderer code reaches main-process things (API keys, SQLite, Presage) **only through `window.scary`**. No Node APIs in the renderer.
-- API keys live in `.env`, read only in the main process. Never commit them or send them to the renderer.
 - Run `npm run check` before saying you're done.
 - Add a line or two to `notes/<person>.md` about what you did and why.
 

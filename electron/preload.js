@@ -9,12 +9,6 @@ const bridge = {
   voice: {
     speak: (req) => ipcRenderer.invoke(IPC.voiceSpeak, req),
   },
-  storage: {
-    saveSession: (record) => ipcRenderer.invoke(IPC.saveSession, record),
-    listSessions: () => ipcRenderer.invoke(IPC.listSessions),
-    saveCheckIn: (checkIn) => ipcRenderer.invoke(IPC.saveCheckIn, checkIn),
-    listCheckIns: () => ipcRenderer.invoke(IPC.listCheckIns),
-  },
   signals: {
     onFrame: (cb) => {
       const handler = (_event, frame) => cb(frame)

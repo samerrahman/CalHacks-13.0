@@ -2,14 +2,15 @@
   "name": "scary",
   "version": "0.1.0",
   "private": true,
-  "description": "CalHacks 13.0 — biometric horror game (Electron + Phaser + Presage)",
+  "description": "CalHacks 13.0 — 3D biometric horror game (Electron + Three.js + Presage)",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run typecheck && npm run build",
+    "providers": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/check-providers.js"
   },
   "dependencies": {
     "@cartesia/cartesia-js": "^4.2.0",
