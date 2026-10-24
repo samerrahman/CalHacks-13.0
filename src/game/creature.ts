@@ -50,7 +50,7 @@ export function enterQuiet(state: GameState): void {
   const c = state.creature;
   // Isolation changes future step probabilities, never the position or step clock.
   if (!c.warning) setPhase(state, 'retreat', 'NONE');
-  state.notice = c.warning ? 'Isolation relay disengaged.' : `Isolation active for ${config.shutdown.durationSeconds} seconds. Research paused; charges are limited.`;
+  state.notice = c.warning ? 'Isolation relay disengaged.' : `Equipment isolated. Hold F to restore after ${config.shutdown.manualRestoreAfterSeconds} s when it sounds clear, or it returns by itself after ${config.shutdown.durationSeconds} s.`;
   emit(state, 'QUIET_ENTERED'); contextualTaunt(state, 'MACHINES_QUIET'); state.version++;
 }
 export function canRestore(state: GameState): boolean {
@@ -151,7 +151,7 @@ export function tickCreature(state: GameState, _dt: number): void {
   if (hunt && state.time - hunt.start < FIXED_DT - 1e-9 && !c.warning && !lureProtected(state)) { emit(state, 'HUNT_STARTED'); state.version++; }
   if (state.quiet) {
     if (state.time - state.quiet.started >= config.shutdown.listeningSeconds && state.quiet.phase === 'listening') { state.quiet.phase = 'retreat'; state.quiet.retreatStarted = state.time; emit(state, 'QUIET_RETREAT'); }
-    const readyAt = state.mode === 'tutorial' ? config.shutdown.durationSeconds : config.shutdown.manualRestoreAfterSeconds;
+    const readyAt = config.shutdown.manualRestoreAfterSeconds;
     if (state.time - state.quiet.started >= readyAt - 1e-8 && state.quiet.phase !== 'ready') { state.quiet.phase = 'ready'; emit(state, 'RESTORE_WINDOW'); }
     if (state.mode !== 'tutorial' && state.time >= state.shutdown.activeUntil - 1e-8) restoreEquipment(state);
   }
@@ -218,18 +218,35 @@ function finishCommittedAttack(state: GameState): void {
   state.status = 'lost'; state.restoreHeld = false; state.lossReason = 'The creature reached the shelter. Isolation must be used before its final strike.';
   state.notice = 'Watch its distance and manage your isolation cells.'; triggerScare(state, 'breach'); emit(state, 'LOST', 'BREACH'); state.version++;
 }
+/** Bearing around the shelter in radians (0 = ahead of the desk, positive = right). Derived from the seed
+ * and time alone: a slow drift plus two gentle swings, so it wanders around the shelter but never jumps. */
+export function creatureBearing(seed: number, time: number): number {
+  const hash = (n: number) => (Math.imul((seed ^ 0x2545f491) + n * 0x9e3779b1, 2654435761) >>> 0) / 4294967296;
+  return hash(1) * Math.PI * 2 + (hash(2) - .5) * .008 * time
+    + 1.3 * Math.sin(time * 2 * Math.PI / 170 + hash(3) * 2 * Math.PI) + .55 * Math.sin(time * 2 * Math.PI / 53 + hash(4) * 2 * Math.PI);
+}
+/** Where it is heard from: its range from the shelter (the path projection's radius) at its current bearing. */
+export function creatureHeardPosition(state: GameState): Vec3 {
+  const radius = Math.hypot(state.creature.position[0], state.creature.position[2]), bearing = creatureBearing(state.seed, state.time);
+  return [Math.sin(bearing) * radius, 0, -Math.cos(bearing) * radius];
+}
+export function bearingLabel(bearing: number): 'AHEAD' | 'RIGHT' | 'BEHIND' | 'LEFT' {
+  const turn = ((bearing % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  return turn < Math.PI / 4 || turn >= 7 * Math.PI / 4 ? 'AHEAD' : turn < 3 * Math.PI / 4 ? 'RIGHT' : turn < 5 * Math.PI / 4 ? 'BEHIND' : 'LEFT';
+}
+/** Captions describe what you would hear: loudness and direction, never the exact range. */
 export function updateCaption(state: GameState): void {
-  const c = state.creature;
+  const c = state.creature, side = bearingLabel(creatureBearing(state.seed, state.time));
   if (state.status === 'won') state.caption = 'REMOTE SEAL CLOSED — CONTAINMENT COMPLETE';
   else if (state.status === 'lost') state.caption = state.lossReason?.includes('protocol window') ? 'PROTOCOL WINDOW CLOSED' : 'SHELTER BREACHED';
-  else if (c.warning) state.caption = 'METAL STRAINING — HEAVY IMPACTS';
-  else if (state.quiet?.phase === 'ready') state.caption = 'ISOLATION ENDING — RESTORE WINDOW';
-  else if (proximityAlarm(state).active) state.caption = c.lastMotion === 'receding' ? 'PROXIMITY ALARM — MOVEMENT RECEDING' : c.lastMotion === 'approaching' ? 'PROXIMITY ALARM — MOVEMENT CLOSING IN' : 'PROXIMITY ALARM — MOVEMENT STILL CLOSE';
+  else if (c.warning) state.caption = 'POUNDING ON THE WALL — IT IS BREAKING IN';
+  else if (proximityAlarm(state).active) state.caption = c.linePosition <= 2 ? `POUNDING ON THE WALL — ${side}` : c.linePosition <= 4 ? `FOOTSTEPS RIGHT OUTSIDE — ${side}` : c.lastMotion === 'receding' ? `HEAVY FOOTSTEPS CLOSE, MOVING OFF — ${side}` : `HEAVY FOOTSTEPS CLOSE — ${side}`;
+  else if (state.quiet?.phase === 'ready') state.caption = 'RESTORE WINDOW OPEN — LISTEN BEFORE YOU RESTORE';
   else if (state.equipment === 'quiet') state.caption = 'EQUIPMENT ISOLATED — LISTEN FOR MOVEMENT';
   else if (c.phase === 'containment') state.caption = 'REMOTE CONTAINMENT SEAL CLOSING';
-  else if (c.lastMotion === 'receding') state.caption = 'FOOTSTEPS RECEDING — AWAY FROM SHELTER';
-  else if (huntActive(state)) state.caption = 'RUNNING FOOTSTEPS — IT IS CHARGING';
-  else if (c.lastMotion === 'approaching') state.caption = c.position[0] < -2 ? 'FOOTSTEPS APPROACHING — LEFT' : c.position[0] > 2 ? 'FOOTSTEPS APPROACHING — RIGHT' : 'FOOTSTEPS APPROACHING — FRONT';
+  else if (huntActive(state)) state.caption = `RUNNING FOOTSTEPS — ${side}`;
+  else if (c.lastMotion === 'receding') state.caption = `FOOTSTEPS RECEDING — ${side}`;
+  else if (c.lastMotion === 'approaching') state.caption = c.linePosition >= 14 ? `FAINT FOOTSTEPS — ${side}` : `FOOTSTEPS APPROACHING — ${side}`;
   else if (state.equipment === 'blackout') state.caption = 'POWER LOST — HOLD F TO RESTORE';
   else if (lureProtected(state)) state.caption = 'REMOTE SIGNAL ACTIVE — CREATURE FOLLOWING';
   else state.caption = 'NO NEARBY MOVEMENT';

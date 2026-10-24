@@ -1,25 +1,36 @@
 .jump-scare{position:fixed;inset:0;z-index:19;pointer-events:none;overflow:hidden}
-.scare-shake,.scare-face,.scare-face img,.scare-vignette,.scare-grain{position:absolute;inset:0}
-.scare-face{inset:-5%;transform:scale(1.1)}
-.scare-face img{width:100%;height:100%;object-fit:cover;object-position:50% 32%;filter:contrast(1.2) brightness(.8)}
+.scare-shake,.scare-face,.scare-vignette,.scare-grain{position:absolute;inset:0}
+/* The stage keeps the image's 3:2 aspect and covers the viewport, so jaw and eye layers line up with the face. */
+.scare-stage{position:absolute;left:50%;top:50%;width:max(100vw,150vh);height:max(66.667vw,100vh);transform:translate(-50%,-50%)}
+.scare-face{transform:scale(1.15)}
+.scare-face img{position:absolute;inset:0;width:100%;height:100%;filter:contrast(1.2) brightness(.82)}
+.scare-base{filter:contrast(1.2) brightness(.55)!important}.scare-upper{clip-path:inset(0 0 44% 0)}.scare-jaw{clip-path:inset(52% 0 0 0);transform-origin:50% 52%}
+.scare-eye{position:absolute;width:2.2%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff3e0 0,#ff6a3d 35%,transparent 70%);mix-blend-mode:screen;opacity:0}
+.scare-eye.left{left:32.9%;top:23.4%}.scare-eye.right{left:59.9%;top:16.2%}
 .scare-ghost,.scare-slice{opacity:0}
 .scare-ghost{mix-blend-mode:screen}
-.scare-ghost.red{filter:grayscale(1) sepia(1) saturate(6) hue-rotate(-38deg) brightness(.75)}
-.scare-ghost.cyan{filter:grayscale(1) sepia(1) saturate(5) hue-rotate(140deg) brightness(.6)}
+.scare-ghost.red{filter:grayscale(1) sepia(1) saturate(6) hue-rotate(-38deg) brightness(.75)!important}
+.scare-ghost.cyan{filter:grayscale(1) sepia(1) saturate(5) hue-rotate(140deg) brightness(.6)!important}
 .scare-slice.s0{clip-path:inset(38% 0 53% 0)}.scare-slice.s1{clip-path:inset(63% 0 29% 0)}.scare-slice.s2{clip-path:inset(15% 0 78% 0)}
 .scare-grain{background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,#0008 4px,#0008 6px);mix-blend-mode:multiply;animation:scare-roll .2s steps(3) infinite}
 
-/* Breach: hard cut to the creature lunging through the lens. No bright or full-screen flash frames. */
+/* Breach: cut to the face, a violent twitch while the jaw snaps open, a lunge into the mouth,
+ * then it holds there twitching and chattering. No bright or full-screen flash frames, no fade-out. */
 .jump-scare.breach{background:#000}
-.jump-scare.breach .scare-shake{animation:scare-shake .95s cubic-bezier(.3,0,.7,1) both,scare-tremble .16s linear .95s infinite}
-.jump-scare.breach .scare-face{animation:scare-lunge 2.1s cubic-bezier(.08,.85,.2,1) both}
-.jump-scare.breach .scare-face>img:first-child{animation:scare-light 2.1s linear both}
-.jump-scare.breach .scare-ghost.red{animation:scare-split .95s steps(1) both}
-.jump-scare.breach .scare-ghost.cyan{animation:scare-split-cyan .95s steps(1) both}
-.jump-scare.breach .scare-slice.s0{animation:scare-tear-a 2.1s steps(1) both}
-.jump-scare.breach .scare-slice.s1{animation:scare-tear-b 2.1s steps(1) both}
-.jump-scare.breach .scare-slice.s2{animation:scare-tear-c 2.1s steps(1) both}
-.jump-scare.breach .scare-vignette{background:radial-gradient(ellipse at 50% 44%,transparent 26%,#2b0402b8 68%,#000 100%);animation:scare-close 2.1s ease-in both}
+.jump-scare.breach .scare-shake{animation:scare-shake 1.4s cubic-bezier(.3,0,.7,1) both,scare-twitch 1.7s steps(1) 1.4s infinite}
+.jump-scare.breach .scare-face{animation:scare-lunge 1.6s cubic-bezier(.12,.8,.2,1) both,scare-breathe 2.4s ease-in-out 1.6s infinite alternate}
+.jump-scare.breach .scare-upper,.jump-scare.breach .scare-jaw{animation:scare-light 1.6s linear both}
+.jump-scare.breach .scare-jaw{animation:scare-light 1.6s linear both,scare-jaw-snap 1.6s cubic-bezier(.2,.9,.3,1) both,scare-jaw-chatter .34s ease-in-out 1.6s infinite alternate}
+.jump-scare.breach .scare-eye{animation:scare-eyes 1.3s steps(1) .2s infinite}
+.jump-scare.breach .scare-eye.right{animation-delay:.45s}
+.jump-scare.breach .scare-ghost.red{animation:scare-split 1.3s steps(1) both,scare-glitch 2.6s steps(1) 1.6s infinite}
+.jump-scare.breach .scare-ghost.cyan{animation:scare-split-cyan 1.3s steps(1) both,scare-glitch 2.6s steps(1) 2.9s infinite}
+.jump-scare.breach .scare-slice.s0{animation:scare-tear-a 2.2s steps(1) infinite}
+.jump-scare.breach .scare-slice.s1{animation:scare-tear-b 2.9s steps(1) .4s infinite}
+.jump-scare.breach .scare-slice.s2{animation:scare-tear-c 3.4s steps(1) .9s infinite}
+.jump-scare.breach .scare-vignette{background:radial-gradient(ellipse at 50% 44%,transparent 30%,#2b0402b8 70%,#000 100%);animation:scare-close 1.6s ease-in both,scare-pulse 1.4s ease-in-out 1.6s infinite alternate}
+/* The run report sits over the held face instead of hiding it. */
+.result-shade.lost{background:rgba(1,3,2,.5)}
 
 /* Proximity hit: the dark closes in and the room jolts. */
 .jump-scare.impact{background:radial-gradient(ellipse at 50% 50%,#0000 8%,#1c0402e6 62%,#000 100%);animation:scare-fade .52s ease-out both}
@@ -30,26 +41,32 @@ body:has(.jump-scare.impact:not(.soft):not(.still)) .scene,body:has(.jump-scare.
 .jump-scare.monitor{background:repeating-linear-gradient(0deg,#77726444 0,#060705a0 3px,#040504a0 10px);animation:scare-static .64s steps(4) both}
 .jump-scare.monitor .scare-vignette{background:linear-gradient(180deg,transparent 0 44%,#bdb8a12e 44% 47%,transparent 47% 100%);animation:scare-band .64s steps(5) both}
 
-/* Softer scares: one dim, slow tint, no face, shake or roll. */
+/* Softer scares: a dim tint, no face, shake or roll; the breach settles to dark rather than fading out. */
 .jump-scare.soft{background:#140b09aa;opacity:.6;animation:soft-impact .6s ease-out both}
 .jump-scare.breach.soft{background:#000;animation:soft-breach 2.1s ease-out both}
 .jump-scare.soft *{animation:none!important}
 
-/* Reduced motion: the same frame held still, faded in rather than lunging. */
+/* Reduced motion: the face appears and holds still. */
 .jump-scare.still,.jump-scare.still *{animation:none!important}
 .jump-scare.still:not(.breach){animation:soft-impact .5s ease-out both!important}
-.jump-scare.breach.still{animation:still-breach 2.1s ease-out both!important}
+.jump-scare.breach.still{animation:still-breach .6s ease-out both!important}
 
-@keyframes scare-lunge{0%{transform:scale(.82) translateY(5%)}7%{transform:scale(1.08) translateY(1%)}48%{transform:scale(1.2) translateY(0)}84%{transform:scale(1.6) translateY(-3%);opacity:1}100%{transform:scale(1.95) translateY(-5%);opacity:0}}
-@keyframes scare-light{0%{filter:contrast(1.35) brightness(1.15) saturate(1.2)}14%{filter:contrast(1.25) brightness(.9) saturate(1.1)}44%{filter:contrast(1.2) brightness(.82)}47%{filter:contrast(1.45) brightness(1.1) saturate(1.3)}53%{filter:contrast(1.2) brightness(.8)}100%{filter:contrast(1.3) brightness(.42)}}
-@keyframes scare-shake{0%{transform:none}7%{transform:translate(-3%,2%) rotate(-1.6deg)}14%{transform:translate(3.2%,-1.4%) rotate(1.3deg)}22%{transform:translate(-2.4%,-2.1%) rotate(-.9deg)}30%{transform:translate(2.1%,2.4%) rotate(1deg)}40%{transform:translate(-1.6%,.9%) rotate(-.6deg)}52%{transform:translate(1.2%,-1%) rotate(.5deg)}66%{transform:translate(-.8%,.6%)}82%{transform:translate(.5%,-.4%)}100%{transform:none}}
-@keyframes scare-tremble{0%,100%{transform:none}25%{transform:translate(.35%,-.25%)}50%{transform:translate(-.3%,.3%)}75%{transform:translate(.25%,.2%)}}
+@keyframes scare-lunge{0%{transform:scale(.82) translateY(4%)}6%{transform:scale(1.06) translateY(1%)}45%{transform:scale(1.12)}72%{transform:scale(1.42) translateY(1%)}100%{transform:scale(1.5) translateY(2%)}}
+@keyframes scare-breathe{from{transform:scale(1.5) translateY(2%)}to{transform:scale(1.57) translateY(2.5%)}}
+@keyframes scare-light{0%{filter:contrast(1.35) brightness(1.15) saturate(1.2)}14%{filter:contrast(1.25) brightness(.95)}60%{filter:contrast(1.3) brightness(.88)}64%{filter:contrast(1.5) brightness(1.1) saturate(1.3)}70%,100%{filter:contrast(1.3) brightness(.9)}}
+@keyframes scare-jaw-snap{0%,8%{transform:none}14%{transform:scaleY(1.1)}22%{transform:scaleY(1.03)}34%{transform:scaleY(1.16)}52%{transform:scaleY(1.08)}72%,100%{transform:scaleY(1.2)}}
+@keyframes scare-jaw-chatter{from{transform:scaleY(1.2)}to{transform:scaleY(1.1)}}
+@keyframes scare-shake{0%{transform:none}6%{transform:translate(-3%,2%) rotate(-2deg)}12%{transform:translate(3.2%,-1.4%) rotate(1.6deg)}18%{transform:translate(-2.4%,-2.1%) rotate(-1.1deg)}26%{transform:translate(2.1%,2.4%) rotate(1.2deg)}36%{transform:translate(-1.6%,.9%) rotate(-.8deg)}50%{transform:translate(1.2%,-1%) rotate(.6deg)}64%{transform:translate(-2.6%,1.4%) rotate(-1.4deg)}72%{transform:translate(2%,-.8%) rotate(.9deg)}86%{transform:translate(-.5%,.4%)}100%{transform:none}}
+@keyframes scare-twitch{0%{transform:none}8%{transform:translate(.8%,-.5%) rotate(.7deg)}11%{transform:none}46%{transform:translate(-1.1%,.4%) rotate(-1deg)}49%{transform:translate(.4%,.2%)}52%{transform:none}81%{transform:translate(.5%,.6%) rotate(.4deg)}84%{transform:none}}
+@keyframes scare-eyes{0%{opacity:0}10%{opacity:.85}16%{opacity:.2}24%{opacity:.7}60%{opacity:.15}}
 @keyframes scare-split{0%{opacity:.38;transform:translate(-1.4%,0)}14%{transform:translate(1%,.3%)}28%{transform:translate(-.7%,-.2%)}42%{opacity:.28;transform:translate(.5%,0)}60%{opacity:.16;transform:translate(-.3%,0)}80%,100%{opacity:0;transform:none}}
 @keyframes scare-split-cyan{0%{opacity:.38;transform:translate(1.4%,0)}14%{transform:translate(-1%,-.3%)}28%{transform:translate(.7%,.2%)}42%{opacity:.28;transform:translate(-.5%,0)}60%{opacity:.16;transform:translate(.3%,0)}80%,100%{opacity:0;transform:none}}
+@keyframes scare-glitch{0%,100%{opacity:0;transform:none}4%{opacity:.32;transform:translate(-1.2%,0)}8%{opacity:.22;transform:translate(.8%,.2%)}12%{opacity:0;transform:none}}
 @keyframes scare-tear-a{0%{opacity:0}10%{opacity:1;transform:translateX(4.5%)}16%{opacity:0}55%{opacity:1;transform:translateX(-3%)}58%,100%{opacity:0}}
 @keyframes scare-tear-b{0%{opacity:0}21%{opacity:1;transform:translateX(-5%)}27%{opacity:0}70%{opacity:1;transform:translateX(2.5%)}73%,100%{opacity:0}}
 @keyframes scare-tear-c{0%{opacity:0}34%{opacity:1;transform:translateX(3.5%)}38%,100%{opacity:0}}
-@keyframes scare-close{0%{opacity:.55;transform:scale(1.3)}70%{opacity:.85;transform:scale(1.05)}100%{opacity:1;transform:scale(.9)}}
+@keyframes scare-close{0%{opacity:.55;transform:scale(1.3)}100%{opacity:.8;transform:scale(1)}}
+@keyframes scare-pulse{from{opacity:.8}to{opacity:1}}
 @keyframes scare-roll{to{background-position:0 6px}}
 @keyframes scare-fade{0%{opacity:1}35%{opacity:.85}100%{opacity:0}}
 @keyframes scare-slam{0%{transform:scale(1.25)}25%{transform:scale(.96)}100%{transform:scale(1)}}
@@ -58,5 +75,5 @@ body:has(.jump-scare.impact:not(.soft):not(.still)) .scene,body:has(.jump-scare.
 @keyframes scare-band{0%{transform:translateY(-30%)}100%{transform:translateY(45%)}}
 @keyframes soft-impact{from{opacity:.6}to{opacity:0}}
 @keyframes soft-breach{0%{opacity:.55}100%{opacity:.92}}
-@keyframes still-breach{0%{opacity:0}15%,100%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.jump-scare *{animation:none!important}.jump-scare.breach{animation:still-breach 2.1s ease-out both!important}body:has(.jump-scare) .scene{animation:none!important}}
+@keyframes still-breach{0%{opacity:0}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.jump-scare *{animation:none!important}.jump-scare.breach{animation:still-breach .6s ease-out both!important}body:has(.jump-scare) .scene{animation:none!important}}

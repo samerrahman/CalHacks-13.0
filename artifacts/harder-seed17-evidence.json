@@ -4,35 +4,31 @@
   "seed": 17,
   "checks": [
     "Physical-equipment E interaction and all seven nonlethal tutorial steps completed through visible controls",
-    "One visible isolation cell is consumed; equipment returns automatically after twelve seconds and cooldown prevents immediate reuse",
-    "Seed17 won 24 faults + 12 cables + four routing circuits, growing 3→7 memory + heartbeat mask, 36 faults + 18 cables + five monitor marks, growing 4→8 memory + calm hold, and containment through observed controls"
+    "One visible isolation cell is consumed; the player restores power with F once the footsteps fade, and cooldown prevents immediate reuse",
+    "Seed17 won 6 + 8 faults found by ear from the rack key, 6 + 12 cables, a conduit board, growing 3→5 memory + heartbeat mask, three monitor marks, growing 4→6 memory + calm hold, and containment through observed controls"
   ],
   "errors": [],
   "failedResources": [],
   "observations": {
-    "defenses": 4,
-    "automaticRestores": 4,
-    "blackouts": 3,
+    "defenses": 1,
+    "automaticRestores": 1,
+    "blackouts": 1,
     "sequenceLengths": [
       4,
       3,
       4,
       5,
-      6,
-      7,
       4,
       5,
-      6,
-      7,
-      8
+      6
     ],
     "wireBoards": 2,
     "wireDrags": 1,
-    "wireClicks": 29,
+    "wireClicks": 17,
     "stages": [
-      "Silence the machines.",
+      "Find the faults by ear.",
       "Reconnect the relay.",
-      "Route power quietly.",
+      "Reconnect the conduit.",
       "Transmit a false heartbeat.",
       "Mask your heartbeat.",
       "Clear the overload.",
@@ -43,61 +39,38 @@
     ],
     "resourceSamples": [
       {
-        "cells": 5,
+        "cells": 3,
         "danger": 10,
-        "deadline": "12:00"
-      },
-      {
-        "cells": 5,
-        "danger": 10,
-        "deadline": "12:00"
-      },
-      {
-        "cells": 4,
-        "danger": null,
-        "deadline": "12:00"
-      },
-      {
-        "cells": 5,
-        "danger": 65,
-        "deadline": "10:43"
-      },
-      {
-        "cells": 4,
-        "danger": null,
-        "deadline": "10:43"
-      },
-      {
-        "cells": 5,
-        "danger": 52,
-        "deadline": "10:08"
-      },
-      {
-        "cells": 4,
-        "danger": null,
-        "deadline": "10:08"
-      },
-      {
-        "cells": 4,
-        "danger": 73,
-        "deadline": "9:30"
+        "deadline": "8:00"
       },
       {
         "cells": 3,
+        "danger": 10,
+        "deadline": "8:00"
+      },
+      {
+        "cells": 2,
         "danger": null,
-        "deadline": "9:30"
+        "deadline": "8:00"
       }
     ],
-    "routes": 4,
+    "manualRestores": 1,
+    "faultKey": {
+      "ELECTRIC BUZZING": 1,
+      "LOW THUMPING": 2,
+      "HIGH WHINE": 3,
+      "FAST TICKING": 4
+    },
+    "faultsByEar": 14,
+    "routes": 1,
     "pulsePeriods": [
-      910
+      671
     ],
     "pulseBeatsNeeded": [
-      10
+      8
     ],
-    "naturalAlarmDefenses": 3,
-    "marks": 5,
+    "marks": 3,
     "calmHolds": 1
   },
-  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n233s\nELAPSED\n3\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n138s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
 }

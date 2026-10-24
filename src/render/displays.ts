@@ -25,10 +25,10 @@ export function plateTexture(title: string, lines: string[]): CanvasTexture {
   return texture;
 }
 const STEP_SCREENS: Record<string, [string, string]> = {
-  wires: ['PATCH THE RELAY', 'MATCH EACH CABLE TO ITS SOCKET'], routing: ['ROUTE POWER QUIETLY', 'ENOUGH POWER, UNDER ITS HEARING'],
+  wires: ['PATCH THE RELAY', 'MATCH EACH CABLE TO ITS SOCKET'], routing: ['RECONNECT THE CONDUIT', 'ROTATE TILES FROM INLET TO OUTLET'],
   locate: ['MARK ITS POSITION', 'USE THE SECURITY MONITOR'], pulse: ['MASK YOUR HEARTBEAT', 'TAP IN RHYTHM WITH THE PULSE'], calm: ['LET IT LOSE YOUR TRAIL', 'BREATHE WITH THE RING'],
 };
-const PROGRESS_UNITS: Record<string, string> = { wires: 'CABLES LINKED', routing: 'CIRCUITS ENGAGED', locate: 'POSITIONS MARKED', pulse: 'BEATS IN RHYTHM', calm: 'CALM SECONDS' };
+const PROGRESS_UNITS: Record<string, string> = { wires: 'CABLES LINKED', routing: 'CONDUITS JOINED', locate: 'POSITIONS MARKED', pulse: 'BEATS IN RHYTHM', calm: 'CALM SECONDS' };
 export function drawTerminal(display: Display, state: RenderState): void {
   const on = state.power === 'on', ctx = display.context;
   ctx.fillStyle = on ? '#14170d' : '#030403'; ctx.fillRect(0, 0, 1024, 512);
@@ -53,13 +53,13 @@ export function drawTerminal(display: Display, state: RenderState): void {
     }
     ctx.fillStyle = '#b8c8a2'; ctx.font = '27px monospace'; ctx.fillText(`${done} / ${total} ${PROGRESS_UNITS[state.step] ?? ''}`, 48, 448);
   } else if (state.stage === 1 || state.stage === 3) {
-    ctx.fillText(state.stage === 1 ? 'SILENCE THE FAULTS' : 'REPAIR THE OVERLOAD', 45, 120);
+    // Faults are found by ear, so the screen never marks which machine is failing; it lights only the rack key.
+    ctx.fillText(state.listening !== null && state.listening !== undefined ? 'LISTEN TO THE RACK' : 'FIND THE FAULTS BY EAR', 45, 120);
     for (let i = 0; i < 4; i++) {
-      const active = state.faults.includes(i), x = 48 + i * 240;
-      ctx.fillStyle = active ? '#b18b4c' : '#153425'; ctx.fillRect(x, 175, 211, 205);
-      ctx.strokeStyle = active ? '#eac58a' : '#476b47'; ctx.lineWidth = active ? 7 : 2; ctx.strokeRect(x, 175, 211, 205);
-      ctx.fillStyle = active ? '#172019' : '#8baf82'; ctx.font = 'bold 78px monospace'; ctx.fillText(String(i + 1), x + 78, 273);
-      ctx.font = '25px monospace'; ctx.fillText(active ? 'FAULT' : 'QUIET', x + 68, 333);
+      const lit = state.listening === i, x = 48 + i * 240;
+      ctx.fillStyle = lit ? '#b18b4c' : '#153425'; ctx.fillRect(x, 175, 211, 205);
+      ctx.strokeStyle = lit ? '#eac58a' : '#476b47'; ctx.lineWidth = lit ? 7 : 2; ctx.strokeRect(x, 175, 211, 205);
+      ctx.fillStyle = lit ? '#172019' : '#8baf82'; ctx.font = 'bold 78px monospace'; ctx.fillText(String(i + 1), x + 78, 300);
     }
     ctx.fillStyle = '#b8c8a2'; ctx.font = '27px monospace'; ctx.fillText(`${state.faultsResolved ?? 0} / ${state.faultsRequired ?? (state.stage === 1 ? 5 : 7)} FAULTS RESOLVED`, 48, 448);
   } else if (state.stage === 2 || state.stage === 4) {
@@ -75,16 +75,26 @@ export function drawTerminal(display: Display, state: RenderState): void {
   }
   wornGlass(display, 1024, 512); display.texture.needsUpdate = true;
 }
+/** In-room ping radar: rings for the close band and camera bands, a sweeping ping each detector
+ * reading, and a fading contact at the sampled range and bearing. It never prints a range number. */
 export function drawProximity(display: Display, state: RenderState): void {
   const on = state.power === 'on', ctx = display.context;
   ctx.fillStyle = '#0b0d07'; ctx.fillRect(0, 0, 512, 384); ctx.textAlign = 'center';
   if (!on) { display.texture.needsUpdate = true; return; }
-  ctx.fillStyle = '#b0a97c'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY', 256, 57);
-  const sampled = state.creature.sensorDistance;
-  ctx.font = 'bold 104px monospace'; ctx.fillText(typeof sampled === 'number' && Number.isFinite(sampled) ? `${sampled}` : '—', 256, 202);
-  ctx.font = '24px monospace'; ctx.fillText('STEPS FROM YOUR WALL / 24', 256, 252);
-  ctx.fillStyle = '#6c704e'; ctx.font = '23px monospace';
-  ctx.fillText('NEW READING EVERY 4 SECONDS', 256, 325);
+  const cx = 256, cy = 205, radius = 150, length = 24, sampled = state.creature.sensorDistance, since = Math.max(0, state.time - (state.creature.sensorSampleAt ?? state.time));
+  ctx.fillStyle = '#b0a97c'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY RADAR', 256, 38);
+  ctx.strokeStyle = '#4c5a3c'; ctx.lineWidth = 2;
+  for (const edge of [7, 14, 22, 24]) { ctx.strokeStyle = edge === 7 ? '#8a4430' : '#4c5a3c'; ctx.beginPath(); ctx.arc(cx, cy, edge / length * radius, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.fillStyle = '#c9c194'; ctx.fillRect(cx - 6, cy - 6, 12, 12);
+  if (typeof sampled === 'number' && Number.isFinite(sampled)) {
+    const sweep = Math.min(1, since / 1.2), share = sampled / length;
+    ctx.strokeStyle = `rgba(166, 188, 135, ${1 - sweep * .85})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, sweep * radius, 0, Math.PI * 2); ctx.stroke();
+    if (sweep >= share) {
+      const bearing = state.creature.sensorBearing ?? 0, fade = Math.max(.18, 1 - (since - share * 1.2) / 4);
+      ctx.fillStyle = `rgba(231, 164, 106, ${fade})`; ctx.beginPath(); ctx.arc(cx + Math.sin(bearing) * share * radius, cy - Math.cos(bearing) * share * radius, 9, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.fillStyle = '#6c704e'; ctx.font = '21px monospace'; ctx.fillText('PING EVERY 4 SECONDS', 256, 372);
   wornGlass(display, 512, 384); display.texture.needsUpdate = true;
 }
 export function drawCameraOverlay(display: Display, state: RenderState, corruption = 0, reducedMotion = false): void {

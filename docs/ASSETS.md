@@ -1,6 +1,6 @@
 # LOCK IN runtime assets
 
-The playable application serves **10 GLB models, 11 animation clips, 27 synthesized WAV effects, four fictional CCTV backgrounds, one original breach image and seven SVG graphics** from `public/assets`. [manifest.json](../public/assets/manifest.json) records all 54 shipped asset/support files, their provenance, byte sizes and SHA-256 hashes. The models/effects/CCTV/graphics originate in the preserved [LOCK IN kit](../lock-in-kit/). The runtime protocol placard is an explicitly recorded harder-mode variation; all other copied kit asset bytes remain unchanged. The previous Night Relay models are not used by the current game.
+The playable application serves **10 GLB models, 11 animation clips, 44 WAV effects (27 synthesized, 17 derived from CC0 recordings), four fictional CCTV backgrounds, one original breach image, seven SVG graphics and the opening cutscene video** from `public/assets`. [manifest.json](../public/assets/manifest.json) records all 73 shipped asset/support files, their provenance, byte sizes and SHA-256 hashes. The models/effects/CCTV/graphics originate in the preserved [LOCK IN kit](../lock-in-kit/). The runtime protocol placard is an explicitly recorded harder-mode variation; all other copied kit asset bytes remain unchanged. The previous Night Relay models are not used by the current game.
 
 The models, animations, effects and SVG graphics are original procedural or vector work. The generator adapts the permitted Night Relay GLB-writing approach; the new shelter layout, machines and sound synthesis belong to LOCK IN. Retain [LICENSE.txt](../public/assets/LICENSE.txt) and the [Night Relay notice](../public/assets/NIGHT_RELAY_LICENSE.txt) with redistribution. The four CCTV PNGs are original built-in image-generation outputs; their service terms and prompt provenance are described in the kit's [asset guide](../lock-in-kit/docs/ASSETS.md) and [art prompts](../lock-in-kit/prompts/CCTV_ART_PROMPTS.txt). They are fictional camera images, not webcam frames or live facility footage. No recorded person, cloned voice, sampled music, external model pack or provider-generated speech is bundled in these files.
 
@@ -46,7 +46,7 @@ All seven SVGs are used: `title`, `protocol_card`, `camera_notice`, `sensor_noti
 
 ## Audio and speech
 
-The 27 effects are mono, signed 16-bit PCM at 22,050 Hz. Their measured maximum source peak is **0.679993**. [audio-manifest.json](../public/assets/audio/audio-manifest.json) records exact durations, peaks, looping flags and synthesis provenance.
+The 44 effects are mono, signed 16-bit PCM at 22,050 Hz. Their measured maximum source peak is **0.679993**. [audio-manifest.json](../public/assets/audio/audio-manifest.json) records exact durations, peaks, looping flags and provenance. Twenty-seven are original procedural syntheses; seventeen are derived from CC0 1.0 recordings on OpenGameArt (below).
 
 | Group | WAV basenames |
 | --- | --- |
@@ -57,12 +57,27 @@ The 27 effects are mono, signed 16-bit PCM at 22,050 Hz. Their measured maximum 
 | Exterior creature | `steps_approaching`, `steps_receding`, `wall_breath`, `wall_scrape` |
 | Warning/results | `breach_warning`, `breach_impact`, `blackout`, `power_restart`, `containment_success` |
 | Radio/security | `radio_static`, `radio_chime`, `monitor_interrupt` |
+| Creature (CC0) | `creature_step_1`–`4`, `wall_pound_1`–`3`, `creature_growl_1`–`2`, `creature_scream` |
+| Night ambience (CC0) | `ambience_wind` (loop), `ambience_crickets` (loop), `ambient_creak_1`–`2`, `ambient_snap`, `ambient_groan`, `ambient_howl` |
 
-The Web Audio engine decodes all 27 after a player gesture. A bounded master gain (maximum 0.7), mute and compressor apply to effects and speech. The four authored loop beds have checked seams; runtime uses short gain transitions for room hum, individual fault noise and the remote heartbeat. All other sounds are event cues. Source-file peaks alone do not establish comfortable hardware output volume.
+The Web Audio engine decodes all 44 after a player gesture. A bounded master gain (maximum 0.7), mute and compressor apply to effects and speech. All six loop beds have checked seams; runtime uses short gain transitions for room hum, individual fault noise and the remote heartbeat. All other sounds are event cues. Source-file peaks alone do not establish comfortable hardware output volume.
 
-Approaching/receding footsteps follow the simulation's `lastMotion` and actual creature vector; they stop when that direction changes. Breath is eligible only within 4.2 m in listening/breach phases, and scraping only when circling within 4.2 m. These sources and creature-attached speech update from the same position used for CCTV and distance. A remote lure is placed at its actual emitter. The engine does not fabricate a second encounter clock or teleport audio between walls.
+There is no siren. Creature footsteps play from its heard position (range from the path, bearing from the seeded drift) with an explicit distance curve: faint and slow far out, loud and quick near the wall, a run during a hunt. Within two steps of the wall it pounds on the hull now and then, and a committed attack is a rapid barrage. Growls play within five steps. Crickets outside fall silent as it closes in; wind is always present and clearer with the machines off. Creaks, groans, snaps and distant howls play at random. Breath is eligible only within 4.2 m in listening/breach phases, and scraping only when circling within 4.2 m. CCTV silhouettes still use the path projection. A remote lure is placed at its actual emitter. The engine does not fabricate a second encounter clock or teleport audio between walls.
 
 Optional generated speech is distinct from the bundled effects. The queue accepts an exact caption plus expiry, priority, identity and optional live/cache source metadata. It cancels obsolete instructions, preempts lower priorities and avoids repeated IDs. Missing/unavailable audio falls back to captions with a chime. Live and cached labels describe actual request metadata; bundled WAVs are never labelled as provider output. Provider verification belongs in the integration status report.
+
+## Third-party CC0 sources
+
+Each source page dedicates the recording to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/); [THIRD_PARTY_SOUNDS.txt](../public/assets/THIRD_PARTY_SOUNDS.txt) maps every derived file to its source. All were converted to mono 22.05 kHz PCM and pitch-shifted, filtered, trimmed, echoed or crossfade-looped.
+
+| Files | Source (author) |
+| --- | --- |
+| `creature_step_1`–`3` | [Fantozzi's Footsteps (Grass/Sand & Stone)](https://opengameart.org/content/fantozzis-footsteps-grasssand-stone) (Fantozzi) |
+| `creature_step_4` | [80 CC0 creature SFX #2](https://opengameart.org/content/80-cc0-creture-sfx-2) (rubberduck) |
+| `creature_growl_1`–`2`, `creature_scream`, `ambient_howl` | [80 CC0 creature SFX](https://opengameart.org/content/80-cc0-creature-sfx) (rubberduck) |
+| `wall_pound_1`–`3`, `ambient_creak_1`–`2`, `ambient_snap`, `ambient_groan` | [100 CC0 metal and wood SFX](https://opengameart.org/content/100-cc0-metal-and-wood-sfx) (rubberduck) |
+| `ambience_wind` | [Loopable Dungeon Ambience](https://opengameart.org/content/loopable-dungeon-ambience) (JaggedStone) |
+| `ambience_crickets` | [Crickets Ambient Noise - loopable](https://opengameart.org/content/crickets-ambient-noise-loopable) (Ted Kerr, uploaded by Wolfgang_) |
 
 ## Opening cutscene video
 
@@ -77,7 +92,7 @@ npm run assets:validate
 node --import tsx --test src/render/*.test.ts src/audio/*.test.ts
 ```
 
-The asset validator checked all 55 inventory hashes, all 10 actual GLBs/209 meshes and 11 animated clips, the 27 WAV formats and bounded peaks, four loop boundaries, four CCTV PNG headers/resolutions and seven SVGs. It rejects asset paths outside `public/assets`, symlinks, duplicates and unlisted files. The current 12 render tests passed, covering actual GLB parsing, fixed door roots, independent fault targets, emergency lever endpoints, truthful CCTV projection, visible-object click occlusion, bounded alarm lighting, current-event-only scares and the absence of breach/countdown text on physical displays. Audio queue and Web Audio graph checks are separate from these rendering checks.
+The asset validator checked all 73 inventory hashes, all 10 actual GLBs/209 meshes and 11 animated clips, the 44 WAV formats and bounded peaks, four loop boundaries, four CCTV PNG headers/resolutions and seven SVGs. It rejects asset paths outside `public/assets`, symlinks, duplicates and unlisted files. The current 12 render tests passed, covering actual GLB parsing, fixed door roots, independent fault targets, emergency lever endpoints, truthful CCTV projection, visible-object click occlusion, bounded alarm lighting, current-event-only scares and the absence of breach/countdown text on physical displays. Audio queue and Web Audio graph checks are separate from these rendering checks.
 
 These checks establish file integrity and behavior contracts. Render screenshots, complete game playthroughs, physical output listening and live provider results are reported separately by the main application verification. The preserved kit's gallery screenshots do not establish those application results.
 

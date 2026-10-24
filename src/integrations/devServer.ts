@@ -60,7 +60,7 @@ export function createLocalApi(options: LocalApiOptions) {
    const route = url.slice(BASE.length);
    if (route === 'status') {
     if (request.method !== 'GET') throw new RequestError(405, 'GET required');
-    send(response, 200, { desktop: false, presage: false, offline: !!options.offline, gemini: !!(env.GEMINI_API_KEY && env.GEMINI_MODEL), elevenlabs: !!(env.ELEVENLABS_API_KEY && env.ELEVENLABS_VOICE_ID && env.ELEVENLABS_MODEL_ID), convex: false, reasons: ['Local development provider bridge', 'Live Presage sensing requires Electron'] });
+    send(response, 200, { desktop: false, presage: false, offline: !!options.offline, gemini: !!(env.GEMINI_API_KEY && env.GEMINI_MODEL), elevenlabs: !!(env.ELEVENLABS_API_KEY && env.ELEVENLABS_VOICE_ID && env.ELEVENLABS_MODEL_ID), spacetime: false, reasons: ['Local development provider bridge', 'Live Presage sensing requires Electron'] });
     return;
    }
    if (route !== 'director' && route !== 'speech' && route !== 'monster') throw new RequestError(404, 'Unknown local endpoint');

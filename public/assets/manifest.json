@@ -2,7 +2,7 @@
   "name": "LOCK IN playable runtime assets",
   "counts": {
     "models": 10,
-    "audio": 27,
+    "audio": 44,
     "cctvBackgrounds": 4,
     "decals": 7,
     "openingVideo": 1
@@ -11,8 +11,8 @@
     {
       "path": "public/assets/LICENSE.txt",
       "url": "/assets/LICENSE.txt",
-      "bytes": 1701,
-      "sha256": "da7b1e1e36ee016c1214558612b51ee6376cb698fdef17b2df47fd0f95169ef3",
+      "bytes": 1891,
+      "sha256": "3180ed222357d2cb485390b1511889de5e1d06a6f2de05c2f9f9901e50ced0d3",
       "source": "lock-in-kit/LICENSE.txt",
       "license": "public/assets/LICENSE.txt"
     },
@@ -27,8 +27,8 @@
     {
       "path": "public/assets/audio/audio-manifest.json",
       "url": "/assets/audio/audio-manifest.json",
-      "bytes": 12777,
-      "sha256": "5a1b0bee069c3be893275efbb65cb5c06969d1ef2ea043294dfec44c8fb472c6",
+      "bytes": 21341,
+      "sha256": "aca02713ce1873f850990cc38d3aee023e24b72eae7bb2c6eea5927cabed7734",
       "source": "lock-in-kit/assets/audio/audio-manifest.json",
       "license": "public/assets/LICENSE.txt"
     },
@@ -440,6 +440,150 @@
       "sha256": "6e6e7025b7e9f335d61f18e0529bb048969b1dad9e4bd33712a94c587b481452",
       "source": "OpenAI built-in image_gen; original LOCK IN breach image generated2026-10-23",
       "license": "Generated for this project; see docs/ASSETS.md"
+    },
+    {
+      "path": "public/assets/audio/creature_step_1.wav",
+      "url": "/assets/audio/creature_step_1.wav",
+      "bytes": 27794,
+      "sha256": "6e95d778573daed4b4eb2f488bcac7bc66c8f1235fdcd3c459718f3c45834bec",
+      "source": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/creature_step_2.wav",
+      "url": "/assets/audio/creature_step_2.wav",
+      "bytes": 26080,
+      "sha256": "ce21ecca0e6eca17ee1ef63cd6cad0cbfd2b9ceeaa589dacc678650b37f340c5",
+      "source": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/creature_step_3.wav",
+      "url": "/assets/audio/creature_step_3.wav",
+      "bytes": 21950,
+      "sha256": "6750c65f231c8c827193be9cfb4b0982dfa477747f0c0681881e1f979df445ef",
+      "source": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/creature_step_4.wav",
+      "url": "/assets/audio/creature_step_4.wav",
+      "bytes": 25076,
+      "sha256": "43d58a80e1a8f8e9c388cbd938307b852c9504e24f4ca7a771c5a2686565cc10",
+      "source": "https://opengameart.org/content/80-cc0-creture-sfx-2",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/wall_pound_1.wav",
+      "url": "/assets/audio/wall_pound_1.wav",
+      "bytes": 28428,
+      "sha256": "da1372f231433e61e49fa33ca389e177923c2c4636626ba5f2d0e8af7198b02d",
+      "source": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/wall_pound_2.wav",
+      "url": "/assets/audio/wall_pound_2.wav",
+      "bytes": 39942,
+      "sha256": "a3e9429269c278290ba4d74ae474e0f97717bd7d8eed8624ab595c8eda275a8b",
+      "source": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/wall_pound_3.wav",
+      "url": "/assets/audio/wall_pound_3.wav",
+      "bytes": 26648,
+      "sha256": "db6fc4b851aed0a70b38ba79b11e1c2eaf75ddfee59fa63894e30d8b8b741225",
+      "source": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/creature_growl_1.wav",
+      "url": "/assets/audio/creature_growl_1.wav",
+      "bytes": 67892,
+      "sha256": "e354b08cce498b18990e7ef5713262f4ab2cd5544318946518a989cb2bc45709",
+      "source": "https://opengameart.org/content/80-cc0-creature-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/creature_growl_2.wav",
+      "url": "/assets/audio/creature_growl_2.wav",
+      "bytes": 52796,
+      "sha256": "3faad4a8a3fd0b8fbcfcf182b5346c1e5fa4ae90e5800d805f87980a4bdf2bce",
+      "source": "https://opengameart.org/content/80-cc0-creature-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/creature_scream.wav",
+      "url": "/assets/audio/creature_scream.wav",
+      "bytes": 50182,
+      "sha256": "1af5e6ad8024687787123f7d864dd27ec84babb6a23bee5b812b481ef5ddc79d",
+      "source": "https://opengameart.org/content/80-cc0-creature-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/ambient_creak_1.wav",
+      "url": "/assets/audio/ambient_creak_1.wav",
+      "bytes": 32478,
+      "sha256": "10be6a2312b6f76841d5a4f16d9984dfa6f64f45c79583d37efc39e7cf9f4192",
+      "source": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/ambient_creak_2.wav",
+      "url": "/assets/audio/ambient_creak_2.wav",
+      "bytes": 31642,
+      "sha256": "e4b549e835d3b17d1dc0663bafba56a104894512060249a23b7f0ff93be62569",
+      "source": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/ambient_snap.wav",
+      "url": "/assets/audio/ambient_snap.wav",
+      "bytes": 20696,
+      "sha256": "97bc20228a0e8471912ccdf5bb143c30d80403dc6b9c7c0972cde732794d4397",
+      "source": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/ambient_groan.wav",
+      "url": "/assets/audio/ambient_groan.wav",
+      "bytes": 49690,
+      "sha256": "006acd708b2ccb39b0b9f729c48b28aadde46718a123eba7dc67f83e5c7eb5dd",
+      "source": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/ambient_howl.wav",
+      "url": "/assets/audio/ambient_howl.wav",
+      "bytes": 71434,
+      "sha256": "1c5b57f422c56ab11859b07fd921647555857ab755c305e9040669a42a01d94a",
+      "source": "https://opengameart.org/content/80-cc0-creature-sfx",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/ambience_wind.wav",
+      "url": "/assets/audio/ambience_wind.wav",
+      "bytes": 2645892,
+      "sha256": "d102500af5b0a4e51f5f0e6577e95fc78e77fbd12d70243164135c6dd86e5bbe",
+      "source": "https://opengameart.org/content/loopable-dungeon-ambience",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/audio/ambience_crickets.wav",
+      "url": "/assets/audio/ambience_crickets.wav",
+      "bytes": 439172,
+      "sha256": "de5b66374733d327ce078fe0faf474ec526387f93b3a0d3a8997d8e2c57e7925",
+      "source": "https://opengameart.org/content/crickets-ambient-noise-loopable",
+      "license": "CC0-1.0; public/assets/THIRD_PARTY_SOUNDS.txt"
+    },
+    {
+      "path": "public/assets/THIRD_PARTY_SOUNDS.txt",
+      "url": "/assets/THIRD_PARTY_SOUNDS.txt",
+      "bytes": 1632,
+      "sha256": "912b878e41c4c8cec163eb4c8cbce38e2a4ede5a8b2d3d954f97de06dd4f8dd4",
+      "source": "this project (third-party sound provenance)",
+      "license": "public/assets/LICENSE.txt"
     },
     {
       "path": "public/assets/video/opening.mp4",

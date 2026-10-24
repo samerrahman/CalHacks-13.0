@@ -38,12 +38,14 @@ test('visual scares require a current authoritative event and respect comfort se
 });
 
 test('physical displays expose no breach warning or countdown text', () => {
-  const lines: string[] = [], context = { fillRect() {}, clearRect() {}, fillText(text: string) { lines.push(text); }, createRadialGradient() { return { addColorStop() {} }; } };
+  const lines: string[] = [], arcs: number[][] = [], noop = () => {};
+  const context = { fillRect: noop, clearRect: noop, beginPath: noop, stroke: noop, fill: noop, arc(x: number, y: number, r: number) { arcs.push([x, y, r]); }, fillText(text: string) { lines.push(text); }, createRadialGradient() { return { addColorStop: noop }; } };
   const display = { context, texture: { needsUpdate: false } } as unknown as Display;
-  const state: RenderState = { time: 10, power: 'on', stage: 1, faults: [], creature: { position: [0, 0, -3], distance: 3, sensorDistance: 8, sensorSampleAt: 8, phase: 'breach' }, warningRemaining: 1.25, alarm: { active: true, urgency: 1 }, cameraFeed: 'C' };
+  const state: RenderState = { time: 10, power: 'on', stage: 1, faults: [], creature: { position: [0, 0, -3], distance: 3, sensorDistance: 8, sensorSampleAt: 8, sensorBearing: Math.PI / 2, phase: 'breach' }, warningRemaining: 1.25, alarm: { active: true, urgency: 1 }, cameraFeed: 'C' };
   drawProximity(display, state); drawCameraOverlay(display, state);
-  assert.ok(lines.includes('8'), 'the last sampled distance is displayed');
-  assert.ok(!lines.includes('3'), 'the hidden current position is not leaked between samples');
+  assert.ok(!lines.some(line => /\d+\s*$/.test(line) && !/SECONDS/.test(line)), 'the radar never prints a range number');
+  const contact = arcs.find(([, , r]) => r === 9)!; assert.ok(contact, 'the sampled contact is drawn');
+  assert.ok(Math.abs(contact[0] - (256 + 8 / 24 * 150)) < 1e-6 && Math.abs(contact[1] - 205) < 1e-6, 'it sits at the sampled range and bearing, not the hidden current position');
   assert.doesNotMatch(lines.join(' '), /breach|warning|countdown|1\.25/i);
   for (const power of ['blackout', 'quiet'] as const) {
     lines.length = 0; drawProximity(display, { ...state, power }); assert.deepEqual(lines, [], 'unpowered detector is completely dark');
@@ -55,10 +57,11 @@ test('the in-room terminal mirrors the live task step instead of a stale fault b
   const context = { fillRect: noop, strokeRect: noop, clearRect: noop, beginPath: noop, arc: noop, fill: noop, stroke: noop, fillText(text: string) { lines.push(text); }, createRadialGradient() { return { addColorStop: noop }; } };
   const display = { context, texture: { needsUpdate: false } } as unknown as Display;
   const base: RenderState = { time: 10, power: 'on', stage: 1, faults: [], faultsResolved: 20, faultsRequired: 20, creature: { position: [0, 0, -12], distance: 12, phase: 'search' } };
-  for (const [step, title, progress] of [['wires', 'PATCH THE RELAY', '7 / 10 CABLES LINKED'], ['routing', 'ROUTE POWER QUIETLY', '1 / 3 CIRCUITS ENGAGED'], ['locate', 'MARK ITS POSITION', '2 / 4 POSITIONS MARKED'], ['pulse', 'MASK YOUR HEARTBEAT', '3 / 8 BEATS IN RHYTHM'], ['calm', 'LET IT LOSE YOUR TRAIL', '5 / 12 CALM SECONDS']] as const) {
+  for (const [step, title, progress] of [['wires', 'PATCH THE RELAY', '7 / 10 CABLES LINKED'], ['routing', 'RECONNECT THE CONDUIT', '1 / 2 CONDUITS JOINED'], ['locate', 'MARK ITS POSITION', '2 / 4 POSITIONS MARKED'], ['pulse', 'MASK YOUR HEARTBEAT', '3 / 8 BEATS IN RHYTHM'], ['calm', 'LET IT LOSE YOUR TRAIL', '5 / 12 CALM SECONDS']] as const) {
     lines.length = 0; const [done, total] = progress.split(' / ').map(part => Number.parseInt(part, 10));
     drawTerminal(display, { ...base, step, progress: [done, total], pulseFlash: .5, breath: .5 });
     assert.ok(lines.includes(title), step); assert.ok(lines.includes(progress), step); assert.ok(!lines.some(line => line.includes('FAULTS RESOLVED')), step);
   }
-  lines.length = 0; drawTerminal(display, { ...base, step: 'faults' }); assert.ok(lines.includes('20 / 20 FAULTS RESOLVED'), 'fault steps keep the fault board');
+  lines.length = 0; drawTerminal(display, { ...base, step: 'faults', faults: [2] }); assert.ok(lines.includes('20 / 20 FAULTS RESOLVED'), 'fault steps keep the fault board');
+  assert.ok(!lines.includes('FAULT') && !lines.includes('QUIET'), 'the screen never reveals which machine is failing');
 });

@@ -3,27 +3,75 @@ import { applyLure, contextualTaunt } from './creature';
 import { emit, random, type CalmState, type GameState, type LocateState, type MemoryState, type PulseMaskState, type RoutingState, type Sector, type Stage, type WireState } from './state';
 
 export function emptyWires(): WireState { return { targetOrder: [], connections: [] }; }
-export function emptyRouting(): RoutingState { return { round: 0, rounds: 0, power: [], noise: [], on: [], required: 0, limit: 0 }; }
+export function emptyRouting(): RoutingState { return { round: 0, rounds: 0, size: 0, kinds: [], turns: [], answer: [], start: 0, end: 0 }; }
 export function emptyPulse(): PulseMaskState { return { periodSeconds: 1, startedAt: 0, streak: 0, lastTap: null }; }
 export function emptyLocate(): LocateState { return { marks: 0, required: 0, lastMarkAt: -1000 }; }
 export function emptyCalm(): CalmState { return { progress: 0, required: 0, pacerStartedAt: 0, holding: false }; }
-const mask = (bits: number, values: number[]) => values.reduce((sum, value, i) => bits & (1 << i) ? sum + value : sum, 0);
-const ones = (bits: number) => bits.toString(2).replaceAll('0', '').length;
-/** Every round has at least one quiet-enough combination, never the full set and never a single machine. */
-function createRouting(state: GameState, round: number): RoutingState {
-  const machines = [0, 1, 2, 3], subsets = Array.from({ length: 15 }, (_, i) => i + 1);
-  for (let attempt = 0; attempt < 60; attempt++) {
-    const top = config.tasks.routing.maximumRating, power = machines.map(() => 1 + Math.floor(random(state) * top)), noise = machines.map(() => 1 + Math.floor(random(state) * top));
-    const candidates = subsets.filter(bits => ones(bits) >= 2 && ones(bits) <= 3), target = candidates[Math.floor(random(state) * candidates.length)];
-    const required = mask(target, power), limit = mask(target, noise);
-    const valid = subsets.filter(bits => mask(bits, power) >= required && mask(bits, noise) <= limit);
-    // Exactly one right answer: the obvious high-power picks are always too loud.
-    if (required >= 8 && valid.length === 1 && ones(valid[0]) >= 2) return { round, rounds: config.tasks.routing.rounds, power, noise, on: machines.map(() => false), required, limit };
-  }
-  return { round, rounds: config.tasks.routing.rounds, power: [5, 2, 4, 3], noise: [5, 1, 3, 4], on: [false, false, false, false], required: 7, limit: 4 };
+/** Conduit tiles. Openings are bits N=1, E=2, S=4, W=8 at zero turns; each turn rotates clockwise. */
+const KIND_OPENINGS = [0, 5, 3, 7];
+const STEPS: [number, number, number, number][] = [[-1, 0, 1, 4], [0, 1, 2, 8], [1, 0, 4, 1], [0, -1, 8, 2]]; // row, col, own bit, neighbour bit
+export function tileOpenings(kind: number, turns: number): number {
+  let bits = KIND_OPENINGS[kind] ?? 0;
+  for (let i = 0; i < ((turns % 4) + 4) % 4; i++) bits = ((bits << 1) | (bits >> 3)) & 15;
+  return bits;
 }
-export function routingTotals(routing: RoutingState): { power: number; noise: number } {
-  return routing.on.reduce((sum, on, i) => on ? { power: sum.power + routing.power[i], noise: sum.noise + routing.noise[i] } : sum, { power: 0, noise: 0 });
+/** Tiles reachable from the left inlet through matching openings. */
+export function energizedTiles(routing: RoutingState): Set<number> {
+  const { size, kinds, turns, start } = routing, seen = new Set<number>(), first = start * size;
+  if (!size || !(tileOpenings(kinds[first]!, turns[first]!) & 8)) return seen;
+  const queue = [first]; seen.add(first);
+  while (queue.length) {
+    const cell = queue.shift()!, row = Math.floor(cell / size), col = cell % size, open = tileOpenings(kinds[cell]!, turns[cell]!);
+    for (const [dr, dc, own, theirs] of STEPS) {
+      const r = row + dr, c = col + dc, next = r * size + c;
+      if (r < 0 || c < 0 || r >= size || c >= size || seen.has(next) || !(open & own) || !(tileOpenings(kinds[next]!, turns[next]!) & theirs)) continue;
+      seen.add(next); queue.push(next);
+    }
+  }
+  return seen;
+}
+export function conduitConnected(routing: RoutingState): boolean {
+  const outlet = routing.end * routing.size + routing.size - 1;
+  return energizedTiles(routing).has(outlet) && !!(tileOpenings(routing.kinds[outlet]!, routing.turns[outlet]!) & 2);
+}
+/** A random self-avoiding path from the inlet to the outlet guarantees a solution; other tiles are decoys. */
+function createRouting(state: GameState, round: number): RoutingState {
+  const size = config.tasks.routing.size, start = Math.floor(random(state) * size), end = Math.floor(random(state) * size);
+  // Column by column: move up or down to a random row, then step right. Linear time, never backtracks.
+  const path: number[] = [];
+  for (let col = 0, row = start; col < size; col++) {
+    const target = col === size - 1 ? end : Math.floor(random(state) * size);
+    path.push(row * size + col);
+    while (row !== target) { row += Math.sign(target - row); path.push(row * size + col); }
+  }
+  const kinds = Array.from({ length: size * size }, () => random(state) < .25 ? 0 : 1 + Math.floor(random(state) * 3)), answer = kinds.map(() => -1);
+  path.forEach((cell, i) => {
+    const direction = (from: number, to: number) => STEPS.findIndex(([dr, dc]) => Math.floor(from / size) + dr === Math.floor(to / size) && from % size + dc === to % size);
+    const entry = i === 0 ? 8 : STEPS[direction(cell, path[i - 1]!)]![2], exit = i === path.length - 1 ? 2 : STEPS[direction(cell, path[i + 1]!)]![2], need = entry | exit;
+    const kind = need === 5 || need === 10 ? (random(state) < .25 ? 3 : 1) : (random(state) < .25 ? 3 : 2);
+    kinds[cell] = kind; answer[cell] = [0, 1, 2, 3].find(t => (tileOpenings(kind, t) & need) === need)!;
+  });
+  const turns = kinds.map(() => Math.floor(random(state) * 4)), routing: RoutingState = { round, rounds: config.tasks.routing.rounds, size, kinds, turns, answer, start, end };
+  if (conduitConnected(routing)) routing.turns[path[0]!] = (routing.turns[path[0]!]! + 1) % 4;
+  return routing;
+}
+/** Fault-sound key: each stage shuffles which machine makes which sound. Derived from the seed, no extra state. */
+export const FAULT_SOUNDS = ['LOW THUMPING', 'HIGH WHINE', 'FAST TICKING', 'ELECTRIC BUZZING'] as const;
+export function faultSounds(state: Pick<GameState, 'seed' | 'tasks'>): number[] {
+  const order = [0, 1, 2, 3];
+  for (let i = 3; i > 0; i--) { const j = (Math.imul((state.seed ^ 0x51ed27) + state.tasks.stage * 0x9e3779b1 + i * 0x85ebca6b, 2654435761) >>> 0) % (i + 1); [order[i], order[j]] = [order[j]!, order[i]!]; }
+  return order;
+}
+/** Which machine the rack key is currently playing, or null when it is not playing. */
+export function listeningTo(state: GameState): number | null {
+  if (state.tasks.step !== 'faults' || state.equipment !== 'on') return null;
+  const index = Math.floor((state.time - state.tasks.faults.listenFrom) / config.tasks.listen.secondsPerMachine);
+  return index >= 0 && index < 4 ? index : null;
+}
+export function listenToRack(state: GameState): void {
+  if (state.tasks.step !== 'faults' || state.equipment !== 'on' || state.station !== 'terminal' || listeningTo(state) !== null) return;
+  state.tasks.faults.listenFrom = state.time; emit(state, 'RACK_KEY');
+  state.notice = 'Each machine plays its fault sound in turn. Remember which number makes which sound.';
 }
 /** Sectors match the CCTV coverage; boundary positions are visible on two feeds. */
 export function sectorsAt(position: number): Sector[] {
@@ -97,10 +145,10 @@ export function startStage(state: GameState, stage: Stage): void {
   state.tasks.step = stage === 1 || stage === 3 ? 'faults' : stage === 2 || stage === 4 ? 'memory' : 'final';
   if (stage === 1 || stage === 3) {
     const settings = stage === 1 ? config.tasks.stage1 : config.tasks.stage3;
-    state.tasks.faults = { active: [Math.floor(random(state) * 4)], completed: 0, required: settings.required, spawned: 1, spawnElapsed: 0, maximumActive: settings.maxActive };
+    state.tasks.faults = { active: [], completed: 0, required: settings.required, spawned: 0, spawnElapsed: settings.spawnIntervalSeconds, maximumActive: settings.maxActive, listenFrom: state.time };
     state.tasks.memory = emptyMemory();
     state.tasks.wires = createWires(state, settings.wires);
-    state.notice = stage === 1 ? `Clear ${settings.required} faults, then patch ${settings.wires} cables. Working is loud; Q isolates when it comes.` : `${settings.required} overload faults, then ${settings.wires} more cables. Listen while you work.`;
+    state.notice = stage === 1 ? `Listen to the rack: each machine plays its fault sound. Then fix ${settings.required} faults by ear and patch ${settings.wires} cables.` : `The rack sounds have changed. Learn them again, then fix ${settings.required} faults by ear; two can fail at once.`;
   } else if (stage === 2 || stage === 4) {
     state.tasks.faults.active = [];
     state.tasks.memory = { ...emptyMemory(), sequence: sequenceFor(state) };
@@ -136,23 +184,18 @@ function readyToTransmit(state: GameState, event: string, notice: string): void 
   state.tasks.step = 'transmit'; state.tasks.memory.armed = true; state.notice = notice;
   emit(state, event); state.version++;
 }
-/** Quiet routing: toggling is silent thinking; engaging is loud, and a wrong engage is louder. */
-export function toggleRoute(state: GameState, machine: number): void {
-  if (state.equipment !== 'on' || state.station !== 'terminal' || state.tasks.step !== 'routing' || !Number.isInteger(machine) || machine < 0 || machine > 3) return;
-  state.tasks.routing.on[machine] = !state.tasks.routing.on[machine];
-  // No running totals: adding up power against noise is the puzzle.
-  state.notice = `Machine ${machine + 1} ${state.tasks.routing.on[machine] ? 'on' : 'off'}. Press T to engage when the sums are right.`;
+/** Conduit: rotating a tile is quiet; engaging is loud, and engaging a broken conduit is louder. */
+export function rotateTile(state: GameState, tile: number): void {
+  const routing = state.tasks.routing;
+  if (state.equipment !== 'on' || state.station !== 'terminal' || state.tasks.step !== 'routing' || !Number.isInteger(tile) || tile < 0 || tile >= routing.kinds.length) return;
+  routing.turns[tile] = (routing.turns[tile]! + 1) % 4;
 }
 export function engageRoute(state: GameState): void {
   if (state.equipment !== 'on' || state.station !== 'terminal' || state.tasks.step !== 'routing') return;
-  const routing = state.tasks.routing, totals = routingTotals(routing);
-  if (totals.power < routing.required || totals.noise > routing.limit) {
-    routing.on = routing.on.map(() => false);
-    mistake(state, 'ROUTING', totals.power < routing.required ? `Underpowered: ${totals.power} of ${routing.required}. The relay coughed loudly.` : `Too loud: noise ${totals.noise} is over what it can hear (${routing.limit}). It heard that.`);
-    return;
-  }
+  const routing = state.tasks.routing;
+  if (!conduitConnected(routing)) { mistake(state, 'ROUTING', 'The conduit is broken. The surge arced loudly. Connect the inlet to the outlet first.'); return; }
   workNoise(state); emit(state, 'ROUTING_ENGAGED');
-  if (routing.round + 1 < routing.rounds) { state.tasks.routing = createRouting(state, routing.round + 1); state.notice = 'Relay engaged. A second circuit needs quiet power.'; return; }
+  if (routing.round + 1 < routing.rounds) { state.tasks.routing = createRouting(state, routing.round + 1); state.notice = 'Relay engaged. Another conduit is broken.'; return; }
   completeStage(state); startStage(state, 2);
 }
 /** Locate: from the monitor, name the sector the creature occupies now or at the last detector reading. */
@@ -221,7 +264,7 @@ export function connectWire(state: GameState, from: number, to: number): void {
   const complete = wires.connections.filter(value => value >= 0).length, panel = wirePanel(wires);
   state.notice = complete % config.tasks.wirePanelSize === 0 && complete < wires.connections.length ? `Panel ${complete / config.tasks.wirePanelSize} of ${panel.count} patched. Next panel live.` : `${complete} / ${wires.connections.length} cables connected.`;
   if (complete === wires.connections.length) {
-    if (state.tasks.stage === 1) { state.tasks.step = 'routing'; state.tasks.routing = createRouting(state, 0); state.notice = 'Cables patched. Route power through machines quiet enough that it cannot hear them.'; }
+    if (state.tasks.stage === 1) { state.tasks.step = 'routing'; state.tasks.routing = createRouting(state, 0); state.notice = 'Cables patched. Rotate the conduit tiles to join the inlet to the relay outlet, then press T.'; }
     else { state.tasks.step = 'locate'; state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 }; state.notice = `Cables patched. Use the security monitor to mark its position ${config.tasks.locate.marks} times.`; }
     state.version++;
   }
@@ -232,13 +275,13 @@ export function taskInput(state: GameState, value: number): void {
   const step = state.tasks.step;
   if (step === 'locate') { markSector(state, SECTORS[value - 1]); return; }
   if (state.station !== 'terminal') return;
-  if (step === 'routing') { toggleRoute(state, value - 1); return; }
+  if (step === 'routing') return;
   if (step === 'pulse') { tapPulse(state); return; }
   const stage = state.tasks.stage;
   if (step === 'faults') {
     const faults = state.tasks.faults, index = value - 1;
     if (faults.completed >= faults.required) return;
-    if (!faults.active.includes(index)) { mistake(state, 'FAULT'); return; }
+    if (!faults.active.includes(index)) { mistake(state, 'FAULT', 'Wrong machine. It clanged loudly. Listen for which sound is playing.'); return; }
     faults.active = faults.active.filter(fault => fault !== index); faults.completed++;
     emit(state, 'FAULT_CLEARED', String(stage)); workNoise(state);
     state.notice = `${faults.completed} / ${faults.required} faults resolved.`;
@@ -289,6 +332,7 @@ export function tickTasks(state: GameState, dt: number): void {
   if (step === 'faults') {
     const faults = state.tasks.faults;
     const interval = stage === 1 ? config.tasks.stage1.spawnIntervalSeconds : config.tasks.stage3.spawnIntervalSeconds;
+    if (listeningTo(state) !== null) return; // no new faults while the rack plays its key
     faults.spawnElapsed += dt;
     if (faults.spawnElapsed >= interval - 1e-8 && faults.active.length < faults.maximumActive && faults.spawned < faults.required) {
       const available = [0, 1, 2, 3].filter(index => !faults.active.includes(index));

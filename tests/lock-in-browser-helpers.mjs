@@ -1,4 +1,6 @@
 import { expect } from '@playwright/test';
+/** Captions that describe the creature close to the wall: the cue a player acts on. */
+export const CLOSE_CAPTION = /HEAVY FOOTSTEPS CLOSE|FOOTSTEPS RIGHT OUTSIDE|POUNDING ON THE WALL/;
 export const TEST_URL = process.env.LOCK_IN_TEST_URL ?? 'http://127.0.0.1:5180';
 const trace = process.env.LOCK_IN_DEBUG ? (...parts) => console.log(new Date().toISOString().slice(11, 19), ...parts) : () => {};
 const observations = new WeakMap();
@@ -25,10 +27,19 @@ export async function begin(page, { tutorial = false, seed = 17, simulated = fal
   evidenceFor(page);
 }
 export async function openTerminal(page) {
-  if (await page.getByRole('dialog', { name: 'Research terminal' }).isVisible()) return;
-  await page.getByRole('button', { name: '01 Look at terminal' }).click();
-  await page.keyboard.press('e');
-  await expect(page.getByRole('dialog', { name: 'Research terminal' })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Research terminal' }), off = page.locator('[data-tutorial="emergency-restore"]');
+  // Power can drop between any two actions; bring it back the way a player would, then reopen.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (await dialog.isVisible()) return;
+    if (await off.isEnabled()) {
+      if (/active/.test(await page.locator('[data-tutorial="emergency-quiet"]').getAttribute('class') ?? '')) await endOfIsolation(page);
+      else { evidenceFor(page).blackouts++; await restore(page); }
+    }
+    await page.getByRole('button', { name: '01 Look at terminal' }).click();
+    await page.keyboard.press('e');
+    try { await expect(dialog).toBeVisible({ timeout: 2500 }); return; } catch { /* power dropped again; retry */ }
+  }
+  await expect(dialog).toBeVisible();
 }
 export async function restore(page) {
   const button = page.locator('[data-tutorial="emergency-restore"]');
@@ -43,7 +54,7 @@ export async function resources(page) {
   const danger = page.getByRole('meter', { name: 'Danger value', exact: true });
   const value = await danger.count() ? Number(await danger.getAttribute('aria-valuenow')) : null;
   const result = { cells: remaining, danger: value, deadline: await page.getByTestId('run-deadline').innerText() };
-  if (!Number.isInteger(remaining) || remaining < 0 || remaining > 5 || value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) throw Error(`Invalid visible survival resources: ${JSON.stringify(result)}`);
+  if (!Number.isInteger(remaining) || remaining < 0 || remaining > 3 || value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) throw Error(`Invalid visible survival resources: ${JSON.stringify(result)}`);
   evidenceFor(page).resourceSamples.push(result);
   return result;
 }
@@ -64,18 +75,25 @@ export async function defend(page, { reopen = true } = {}) {
   if (reopen) await openTerminal(page);
   return true;
 }
-/** Isolation ends on its own; a blackout can begin right after it, which F restores for free. */
-async function endOfIsolation(page) {
-  const quiet = page.locator('[data-tutorial="emergency-quiet"]');
-  await expect(quiet).not.toHaveClass(/active/, { timeout: 16000 });
+/** The player ends isolation: once the restore window opens and the footsteps are no longer close,
+ * hold F (otherwise it ends by itself at the cap). A blackout can follow, which F restores for free. */
+export async function endOfIsolation(page) {
+  const quiet = page.locator('[data-tutorial="emergency-quiet"]'), restoreButton = page.locator('[data-tutorial="emergency-restore"]'), end = Date.now() + 30000;
+  while (/active/.test(await quiet.getAttribute('class') ?? '') && Date.now() < end) {
+    const caption = await page.locator('.sound-caption').innerText().catch(() => '');
+    if (/ready/.test(await restoreButton.getAttribute('class') ?? '') && !CLOSE_CAPTION.test(caption) && !/RUNNING FOOTSTEPS/.test(caption)) {
+      await page.keyboard.down('f'); await page.waitForTimeout(1250); await page.keyboard.up('f'); evidenceFor(page).manualRestores = (evidenceFor(page).manualRestores ?? 0) + 1;
+    } else await page.waitForTimeout(150);
+  }
+  await expect(quiet).not.toHaveClass(/active/, { timeout: 30000 });
   evidenceFor(page).automaticRestores++;
-  if (await page.locator('[data-tutorial="emergency-restore"]').isEnabled()) { evidenceFor(page).blackouts++; await restore(page); }
+  if (await restoreButton.isEnabled()) { evidenceFor(page).blackouts++; await restore(page); }
 }
 /** Read only player-visible sound captions and equipment controls. */
 export async function guardDanger(page) {
   if (await page.locator('.jump-scare.breach').isVisible() || await page.getByRole('heading', { name: 'The shelter fell silent.', exact: true }).isVisible()) throw Error('Lost during early-defense playthrough');
   const caption = await page.locator('.sound-caption').innerText();
-  if (/METAL STRAINING — HEAVY IMPACTS/.test(caption)) throw Error('Defense was late: committed impact sound reached the shelter');
+  if (/IT IS BREAKING IN/.test(caption)) throw Error('Defense was late: the committed attack reached the shelter');
   const quiet = page.locator('[data-tutorial="emergency-quiet"]');
   if (await page.locator('[data-tutorial="emergency-restore"]').isEnabled()) {
     if (/active/.test(await quiet.getAttribute('class') ?? '')) {
@@ -86,7 +104,7 @@ export async function guardDanger(page) {
     }
     await openTerminal(page); return true;
   }
-  if (/PROXIMITY ALARM/.test(caption) && await quiet.isEnabled()) {
+  if (CLOSE_CAPTION.test(caption) && await quiet.isEnabled()) {
     const defended = await defend(page);
     if (defended) {
       const data = evidenceFor(page);
@@ -122,19 +140,63 @@ export async function connectWires(page) {
   }
   data.wireBoards++;
 }
-/** Read the visible machine ratings and add them up, as a player would. */
-export async function routePower(page) {
-  const data = evidenceFor(page), terminal = page.getByRole('dialog', { name: 'Research terminal' });
-  const copy = await terminal.innerText();
-  const limit = Number(/louder than (\d+)/.exec(copy)?.[1]), required = Number(/at least (\d+) power/.exec(copy)?.[1]);
-  const machines = terminal.locator('.routing-grid button'), ratings = [];
-  for (let i = 0; i < 4; i++) { const text = await machines.nth(i).innerText(); const [, power, noise] = /POWER (\d+) · NOISE (\d+)/.exec(text.replace(/\s+/g, ' ')) ?? []; ratings.push({ power: Number(power), noise: Number(noise), on: await machines.nth(i).getAttribute('aria-pressed') === 'true' }); }
-  if (!Number.isFinite(limit) || !Number.isFinite(required) || ratings.some(r => !Number.isFinite(r.power))) throw Error('Routing ratings are not visible');
-  const answer = Array.from({ length: 15 }, (_, i) => i + 1).find(bits => ratings.reduce((sum, r, i) => bits & 1 << i ? sum + r.power : sum, 0) >= required && ratings.reduce((sum, r, i) => bits & 1 << i ? sum + r.noise : sum, 0) <= limit);
-  if (!answer) throw Error('No visible routing answer');
-  for (let i = 0; i < 4; i++) if (!!(answer & 1 << i) !== ratings[i].on) await machines.nth(i).click();
+/** Faults by ear, played the way a deaf player can: learn the number for each sound while the
+ * rack key names it on the buttons, then match the YOU HEAR caption. */
+export async function learnRackKey(page) {
+  const data = evidenceFor(page), playing = page.locator('.listen-grid .machine.playing');
+  if (!await playing.count()) return;
+  const match = /^Machine (\d): (.+)$/.exec(await playing.getAttribute('aria-label').catch(() => '') ?? '');
+  if (!match) return;
+  if (match[1] === '1') data.faultKey = {}; // a new key always starts with machine 1
+  (data.faultKey ??= {})[match[2]] = Number(match[1]);
+}
+export async function heardFaults(page) {
+  const text = await page.getByTestId('fault-hearing').innerText({ timeout: 1000 }).catch(() => '');
+  const heard = text.replace(/^YOU HEAR\s*/, '').trim();
+  return heard && heard !== 'The rack key' && !heard.startsWith('Nothing') ? heard.split(' + ') : [];
+}
+export async function fixFaultByEar(page, { wrong = false } = {}) {
+  const data = evidenceFor(page); await learnRackKey(page);
+  const heard = await heardFaults(page);
+  if (!heard.length) { await page.waitForTimeout(60); return false; }
+  const key = data.faultKey ?? {}, known = heard.map(sound => key[sound]).filter(Boolean);
+  if (!known.length) { await page.getByRole('button', { name: /Listen to the rack again/ }).click({ timeout: 2000 }).catch(() => {}); await page.waitForTimeout(120); return false; }
+  const machine = wrong ? [1, 2, 3, 4].find(n => !known.includes(n)) : known[0];
+  await page.getByRole('button', { name: `Machine ${machine}`, exact: true }).click({ timeout: 2000 }).catch(() => {});
+  if (!wrong) data.faultsByEar = (data.faultsByEar ?? 0) + 1;
+  await page.waitForTimeout(70); return true;
+}
+/** Read each tile's drawn pipe openings, then search for a path from the inlet to the outlet. */
+export async function solveConduit(page) {
+  const data = evidenceFor(page);
+  const board = await page.locator('.conduit').evaluate(element => {
+    const rows = [...element.querySelectorAll('.conduit-row')], size = rows.length;
+    const bits = { 'M20 20V0': 1, 'M20 20H40': 2, 'M20 20V40': 4, 'M20 20H0': 8 };
+    const tiles = rows.flatMap(row => [...row.querySelectorAll('.conduit-tile')].map(tile => [...tile.querySelectorAll('path')].reduce((sum, path) => sum | (bits[path.getAttribute('d')] ?? 0), 0)));
+    return { size, tiles, start: rows.findIndex(row => row.querySelector('.conduit-port.in')), end: rows.findIndex(row => row.querySelector('.conduit-port.out')) };
+  });
+  const rotate = bits => ((bits << 1) | (bits >> 3)) & 15, turns = bits => [0, 1, 2, 3].map(k => { let b = bits; for (let i = 0; i < k; i++) b = rotate(b); return b; });
+  const steps = [[-1, 0, 1, 4], [0, 1, 2, 8], [1, 0, 4, 1], [0, -1, 8, 2]], { size, tiles, start, end } = board, plan = new Map();
+  const walk = (cell, entry, seen) => {
+    const row = Math.floor(cell / size), col = cell % size;
+    for (const [k, open] of turns(tiles[cell]).entries()) {
+      if (!(open & entry)) continue;
+      if (cell === end * size + size - 1 && open & 2) { plan.set(cell, k); return true; }
+      for (const [dr, dc, own, theirs] of steps) {
+        const next = (row + dr) * size + col + dc;
+        if (!(open & own) || own === entry || row + dr < 0 || col + dc < 0 || row + dr >= size || col + dc >= size || seen.has(next)) continue;
+        seen.add(next); plan.set(cell, k);
+        if (walk(next, theirs, seen)) return true;
+        seen.delete(next); plan.delete(cell);
+      }
+    }
+    return false;
+  };
+  if (!walk(start * size, 8, new Set([start * size]))) throw Error('No visible conduit solution');
+  const buttons = page.locator('.conduit-tile');
+  for (const [cell, k] of plan) for (let i = 0; i < k; i++) { await guardDanger(page); await openTerminal(page); await buttons.nth(cell).click({ timeout: 3000 }); }
   await guardDanger(page); await openTerminal(page);
-  await terminal.getByRole('button', { name: 'T Engage relay', exact: true }).click();
+  await page.getByRole('button', { name: 'T Engage relay', exact: true }).click({ timeout: 3000 });
   data.routes = (data.routes ?? 0) + 1;
 }
 /** Time the visible false pulse, then tap 1 at that rhythm. */
@@ -163,7 +225,11 @@ export async function locateCreature(page) {
     if (await guardDanger(page)) { await page.getByRole('button', { name: '02 Look at monitor' }).click(); await page.keyboard.press('e'); continue; }
     const first = panel.locator('button').first();
     if (await first.isDisabled()) { await page.waitForTimeout(150); continue; }
-    const reading = Number(await page.getByTestId('sampled-distance').innerText());
+    // Read the radar like a player: the contact's distance from the centre gives its band.
+    const dot = page.getByTestId('radar-dot');
+    if (!await dot.count()) { await page.waitForTimeout(150); continue; }
+    const [x, y] = await Promise.all([dot.getAttribute('cx'), dot.getAttribute('cy')]);
+    const reading = Math.hypot(Number(x) - 84, Number(y) - 84) / 74 * 24;
     if (!Number.isFinite(reading)) { await page.waitForTimeout(150); continue; }
     const key = reading < 7 ? '1' : reading <= 14 ? '2' : reading <= 22 ? '3' : '4';
     await page.keyboard.press(key); data.marks = (data.marks ?? 0) + 1;
@@ -177,7 +243,7 @@ export async function holdCalm(page) {
   let holding = false; const end = Date.now() + 120000;
   while (await heading.count() && Date.now() < end) {
     const caption = await page.locator('.sound-caption').innerText();
-    if (/PROXIMITY ALARM/.test(caption) || await page.locator('[data-tutorial="emergency-restore"]').isEnabled()) { if (holding) { await page.keyboard.up('b'); holding = false; } await guardDanger(page); await openTerminal(page); continue; }
+    if (CLOSE_CAPTION.test(caption) || await page.locator('[data-tutorial="emergency-restore"]').isEnabled()) { if (holding) { await page.keyboard.up('b'); holding = false; } await guardDanger(page); await openTerminal(page); continue; }
     const label = await terminal.locator('.calm-ring span').innerText().catch(() => '');
     const inhale = label.startsWith('BREATHE IN');
     if (inhale && !holding) { await page.keyboard.down('b'); holding = true; }
@@ -192,7 +258,10 @@ export async function watchSequence(page, { tutorial = false, retry = 0 } = {}) 
   const copy = await page.getByRole('dialog', { name: 'Research terminal' }).innerText();
   const expected = Number(/watch (\d+) pulses/i.exec(copy)?.[1]);
   if (!(expected >= 3 && expected <= 8)) throw Error('Visible sequence length missing from terminal instructions');
-  await page.getByRole('button', { name: 'Replay sequence' }).click();
+  if (!await page.getByRole('button', { name: 'Replay sequence' }).click({ timeout: 3000 }).then(() => true, () => false)) {
+    if (retry >= 4) throw Error('Replay kept being interrupted');
+    await guardDanger(page); await openTerminal(page); return watchSequence(page, { tutorial, retry: retry + 1 });
+  }
   const digits = []; let last = ''; const deadline = Date.now() + 120000;
   while (Date.now() < deadline) {
     if (!tutorial && await guardDanger(page)) continue;
@@ -216,7 +285,13 @@ export async function watchSequence(page, { tutorial = false, retry = 0 } = {}) 
   }
   for (const digit of digits) {
     if (!tutorial) await guardDanger(page);
-    await page.getByRole('button', { name: `Sequence digit ${digit}`, exact: true }).click();
+    try { await page.getByRole('button', { name: `Sequence digit ${digit}`, exact: true }).click({ timeout: 3000 }); }
+    catch {
+      // A blackout or isolation interrupted entry: restore power, then replay and enter the round again.
+      if (retry >= 4) throw Error('Sequence entry kept being interrupted');
+      await guardDanger(page); await openTerminal(page);
+      return watchSequence(page, { tutorial, retry: retry + 1 });
+    }
   }
   if (tutorial) await expect(page.getByRole('button', { name: 'T Transmit', exact: true })).toBeEnabled();
   evidenceFor(page).sequenceLengths.push(expected);
@@ -229,7 +304,8 @@ export async function solve(page, { delayStageThree = false } = {}) {
     // Winning hides inspection shortly before the result modal; wait for that transition.
     if (/CONTAINMENT COMPLETE/.test(await page.locator('.sound-caption').innerText())) { await page.waitForTimeout(100); continue; }
     await guardDanger(page); await openTerminal(page);
-    const title = await page.getByRole('dialog', { name: 'Research terminal' }).locator('h2').innerText();
+    const title = await page.getByRole('dialog', { name: 'Research terminal' }).locator('h2').innerText({ timeout: 1500 }).catch(() => null);
+    if (title === null) continue; // power dropped between opening and reading; the next loop restores it
     if (!data.stages.includes(title)) { data.stages.push(title); console.log('stage:', title); }
     trace('solve', title, await page.getByTestId('run-deadline').innerText(), (await page.locator('.sound-caption').innerText()).split('\n')[0]);
     if (delayStageThree && !delayed && title === 'Clear the overload.') {
@@ -239,12 +315,11 @@ export async function solve(page, { delayStageThree = false } = {}) {
       continue;
     }
     if (title === 'Reconnect the relay.') { await connectWires(page); continue; }
-    if (title === 'Route power quietly.') { await routePower(page); continue; }
+    if (title === 'Reconnect the conduit.') { await solveConduit(page).catch(() => {}); continue; }
     if (title === 'Mark its position.') { await locateCreature(page); continue; }
     if (title === 'Mask your heartbeat.') { await maskHeartbeat(page); continue; }
     if (title === 'Let it lose your trail.') { await holdCalm(page); continue; }
-    const faults = page.getByRole('button', { name: /^Machine [1-4] FAULT$/ });
-    if (await faults.count()) { await faults.first().click(); await page.waitForTimeout(70); continue; }
+    if (await page.getByTestId('fault-hearing').count()) { await fixFaultByEar(page); continue; }
     if (title === 'Transmit a false heartbeat.' || title === 'Lead it toward containment.') {
       const transmit = page.getByRole('button', { name: 'T Transmit', exact: true });
       if (await transmit.isEnabled()) { await guardDanger(page); await transmit.click(); continue; }

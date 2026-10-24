@@ -1,10 +1,9 @@
 import type { CSSProperties } from 'react';
 import type { GameAction, GameState, Sector } from '../game/state';
 import { config } from '../game/config';
-import { calmBreath, calmInhale, calmMatched, heartElevated, pulseFlash, pulseRequirement } from '../game/tasks';
+import { calmBreath, calmInhale, calmMatched, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, heartElevated, listeningTo, pulseFlash, pulseRequirement, tileOpenings } from '../game/tasks';
 import './thinking.css';
 
-const MACHINES = ['COOLANT', 'VENTILATION', 'RELAY', 'TRANSMITTER'];
 const SECTORS: [Sector, string, string][] = [['NEAR', 'Near the wall', '0–6 · off camera'], ['A', 'CAM A', 'Clearing · 7–14'], ['B', 'CAM B', 'Service path · 14–22'], ['C', 'CAM C', 'Containment · 22–24']];
 type Send = (action: GameAction) => void;
 
@@ -14,14 +13,36 @@ function heartLine(g: GameState, elevated: string, steady: string): string {
   return heartElevated(g) ? elevated : g.sensor.trend === 'STEADY' || g.sensor.trend === 'RECOVERED' ? steady : 'Live pulse connected; no sustained trend yet.';
 }
 
-export function RoutingTask({ g, send }: { g: GameState; send: Send }) {
-  const r = g.tasks.routing;
+const PIPE: [number, string][] = [[1, 'M20 20V0'], [2, 'M20 20H40'], [4, 'M20 20V40'], [8, 'M20 20H0']];
+export function ConduitTask({ g, send }: { g: GameState; send: Send }) {
+  const r = g.tasks.routing, lit = energizedTiles(r), joined = conduitConnected(r);
   return <>
-    <p>It hears anything louder than <b>{r.limit}</b> at this range. Switch on machines that give at least <b>{r.required}</b> power while their noise adds up to {r.limit} or less. Add it up yourself: switching is silent, engaging is loud, and a wrong engage is louder.</p>
-    <div className="routing-grid">{MACHINES.map((label, i) => <button key={label} aria-pressed={r.on[i]} className={r.on[i] ? 'on' : ''} onClick={() => send({ type: 'route', machine: i })}>
-      <kbd>{i + 1}</kbd><span>{label}</span><small>POWER <b>{r.power[i]}</b> · NOISE <b>{r.noise[i]}</b></small><em>{r.on[i] ? 'ON' : 'OFF'}</em></button>)}</div>
+    <p>The relay conduit is broken. Click tiles to rotate them until the inlet on the left joins the outlet on the right, then press T. Rotating is quiet; engaging a broken conduit arcs loudly. Powered pipe glows.</p>
+    <div className="conduit" style={{ gridTemplateColumns: `14px repeat(${r.size}, 1fr) 14px` }}>
+      {Array.from({ length: r.size }, (_, row) => <div key={row} className="conduit-row">
+        <i className={row === r.start ? 'conduit-port in' : 'conduit-port'} aria-hidden="true"/>
+        {Array.from({ length: r.size }, (_, col) => { const tile = row * r.size + col, open = tileOpenings(r.kinds[tile]!, r.turns[tile]!);
+          return <button key={tile} className={`conduit-tile ${lit.has(tile) ? 'lit' : ''}`} aria-label={`Conduit tile row ${row + 1} column ${col + 1}${lit.has(tile) ? ', powered' : ''}`} onClick={() => send({ type: 'rotate', tile })}>
+            <svg viewBox="0 0 40 40" aria-hidden="true">{PIPE.filter(([bit]) => open & bit).map(([bit, d]) => <path key={bit} d={d}/>)}{open ? <circle cx="20" cy="20" r="4.5"/> : null}</svg></button>; })}
+        <i className={row === r.end ? `conduit-port out ${joined ? 'joined' : ''}` : 'conduit-port'} aria-hidden="true"/>
+      </div>)}
+    </div>
     <div className="terminal-actions"><button className="transmit" onClick={() => send({ type: 'engage' })}><kbd>T</kbd> Engage relay</button></div>
-    <div className="task-progress"><span>Circuit {r.round + 1} / {r.rounds}</span><span>NEED ≥{r.required} POWER · ≤{r.limit} NOISE</span></div>
+    <div className="task-progress"><span>Conduit {r.round + 1} / {r.rounds}</span><span>{joined ? 'CONNECTED · PRESS T' : 'NOT CONNECTED'}</span></div>
+  </>;
+}
+
+/** Faults are found by ear: plain numbered buttons, the rack's sound key while it plays, and a caption of what is audible. */
+export function FaultTask({ g, send }: { g: GameState; send: Send }) {
+  const f = g.tasks.faults, sounds = faultSounds(g), playing = listeningTo(g);
+  const heard = f.active.map(machine => FAULT_SOUNDS[sounds[machine]!]);
+  return <>
+    <p>{playing !== null ? 'Listen: each machine plays its fault sound in turn. Remember which number makes which sound.' : `Fix the machine that is making the noise. Up to ${f.maximumActive} can fail at once. Wrong guesses clang loudly.`}</p>
+    <div className="fault-grid listen-grid">{[0, 1, 2, 3].map(i => <button key={i} data-tutorial={i === f.active[0] ? 'fault-box-1' : undefined} className={`machine ${playing === i ? 'playing' : ''}`} aria-label={playing === i ? `Machine ${i + 1}: ${FAULT_SOUNDS[sounds[i]!]}` : `Machine ${i + 1}`} onClick={() => send({ type: 'input', value: i + 1 })}>
+      <kbd>{i + 1}</kbd><b>{playing === i ? FAULT_SOUNDS[sounds[i]!] : ''}</b></button>)}</div>
+    <div className="you-hear" data-testid="fault-hearing" aria-live="polite"><span>YOU HEAR</span><b>{playing !== null ? 'The rack key' : heard.length ? heard.join(' + ') : 'Nothing from the rack'}</b></div>
+    <div className="terminal-actions"><button onClick={() => send({ type: 'listen' })} disabled={playing !== null}><kbd>L</kbd> Listen to the rack again</button></div>
+    <div className="task-progress"><span>{f.completed} / {f.required} faults fixed</span><span>1–4 · BY EAR</span></div>
   </>;
 }
 
