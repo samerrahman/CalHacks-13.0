@@ -1,6 +1,6 @@
 # Opening cutscene
 
-A 36-second first-person film. You never see the monster. You stand at the observation console in a clean, wide hall built around a sealed containment tube, a colleague beside you. The screen goes from STABLE to SENSOR FAULT to CONTAINMENT BREACH. Something pounds on the tube until its hatch bursts open in a blast of steam, and a clawed hand grips the frame. Then its arm shoots across the room, seizes your colleague right beside you and drags them into the dark. You run the red corridor and a short, winding forest path, and pull open the shelter door onto pitch black. Inside, you look back: a shadow is coming fast out of the fog. You haul the door shut while it's still far off. In the dark there's only your heartbeat, then it slams into the door and dents it inward. The game plays the pre-rendered `public/assets/video/opening.mp4` (`src/ui/OpeningFilm.tsx`), so it looks and sounds identical every run, with captions and a **Skip cutscene →** button. With reduced motion on, or if the video can't play, the game falls back to the old text cards.
+A 36-second first-person film. You never see the monster. You stand at the observation console in a clean, wide hall built around a sealed containment tube, a colleague beside you. The screen goes from STABLE to SENSOR FAULT to CONTAINMENT BREACH. Something pounds on the tube until its hatch bursts open in a blast of steam, and a clawed hand grips the frame. Then its arm shoots across the room, seizes your colleague right beside you and drags them into the dark. You run the red corridor and a short, winding forest path, and pull open the shelter door onto pitch black. Inside, you look back: a shadow is coming fast out of the fog. You haul the door shut while it's still far off. In the dark there's only your heartbeat and breathing, then it slams into the door and dents it inward. The game plays the pre-rendered `public/assets/video/opening.mp4` (`src/ui/OpeningFilm.tsx`), so it looks and sounds identical every run, with captions and a **Skip cutscene →** button. With reduced motion on, or if the video can't play, the game falls back to the old text cards.
 
 | Path | What it is |
 |---|---|
@@ -10,7 +10,7 @@ A 36-second first-person film. You never see the monster. You stand at the obser
 | `src/cutscene/style.ts` | Shared palette and low-poly helpers. |
 | `src/cutscene/look.ts` | The film's look: `ironlung` (default) or `flat`. Texture assignments per palette key, and the final image pass. |
 | `cutscene/textures/` | CC0 Poly Haven textures for the `ironlung` look (credits in `SOURCES.md`). |
-| `cutscene/audio/` | Public-domain door and metal recordings mixed into the soundtrack (credits in `SOURCES.md`). |
+| `cutscene/audio/` | Door, metal and breathing recordings mixed into the soundtrack (credits in `SOURCES.md`). |
 | `cutscene/models/*.glb` | The props the renderer actually loads. **Replace these to change the art.** |
 | `tools/cutscene.mjs` | Offline tool: previews, GLB export, stills, final render. |
 
@@ -52,7 +52,7 @@ It renders in headless Chrome on the GPU and encodes with `ffmpeg` (`brew instal
 
 - Never use `Math.random()` or `Date` in `src/cutscene/`.
 - Keep props **low detail**: simple blocky placeholders of a few hundred triangles. They're meant to be replaced.
-- The soundtrack is synthesised by ffmpeg from the `SYNTH` layers in `timeline.ts` (impacts, hiss, steps, heartbeat, rain, wind, drone), except the doors and the groaning metal. Those use two public-domain recordings in `cutscene/audio/` (credits in its `SOURCES.md`), mixed by `SOUND_CUES`. Breathing is off for now. It uses none of the game's WAVs. Change either list, then re-render.
+- The soundtrack is synthesised by ffmpeg from the `SYNTH` layers in `timeline.ts` (impacts, hiss, steps, heartbeat, rain, wind, drone), except the doors, the groaning metal and your breathing. Those use public-domain and CC0 recordings in `cutscene/audio/` (credits in its `SOURCES.md`), mixed by `SOUND_CUES`. Breathing and the heartbeat sit well under the impacts on purpose: loud, they make the film feel cluttered. It uses none of the game's WAVs. Change either list, then re-render.
 - Keep the run sparse: footsteps, breathing and light weather. Layers that pile up there read as mush.
 - Materials named `void` render pure black and unlit. Use them for openings into darkness.
 - Textures must be CC0 or similarly free, and credited in `cutscene/textures/SOURCES.md`.

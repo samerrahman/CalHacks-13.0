@@ -444,8 +444,8 @@
     {
       "path": "public/assets/video/opening.mp4",
       "url": "/assets/video/opening.mp4",
-      "bytes": 9027072,
-      "sha256": "64b7dacad84924d026cf5f69d3dbe282bebc189af56d0cc700da6f5df0645341",
+      "bytes": 9025856,
+      "sha256": "6ea9292c3d26dcef70f2eab82916a1f45cca4e64b6f9a50668e2f56d5b5368f9",
       "mediaType": "video/mp4",
       "source": "cutscene/ + src/cutscene/ (rendered by tools/cutscene.mjs render)",
       "license": "Generated for this project; see docs/ASSETS.md"

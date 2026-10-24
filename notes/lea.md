@@ -2,6 +2,8 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24 (via Samer): cutscene breathing (re-sequenced CC0 OpenGameArt breaths) and a soft heartbeat are back under the escape, kept well below the impacts.
+
 - 2026-10-24 (via Samer): cutscene colleague now stands beside you and the arm stretches across the room to take them. No first-person hands until you run. Creaks are real public-domain door/metal recordings; breathing is off for now; fewer drum-like thumps (no heartbeat until the shed, quieter impacts and footsteps).
 
 - 2026-10-24 (via Samer): cutscene breathing is now two public-domain Wikimedia Commons recordings (`cutscene/audio/`), and the run is thinned to footsteps, breathing and light weather (no heartbeat or drone under it).

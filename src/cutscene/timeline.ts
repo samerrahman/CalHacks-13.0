@@ -41,7 +41,11 @@ export const CAPTIONS: Caption[] = [
  * (and raises the pitch), `until` ends it. */
 export type SoundCue = { at: number; file: string; gain: number; from?: number; until?: number; fadeIn?: number; fadeOut?: number; loop?: number; rate?: number };
 export const SOUND_CUES: SoundCue[] = [
-  // (No breathing for now: it is being redone.)
+  // Your breathing, built from real breaths and kept under everything else: shallow and scared
+  // as it breaks loose, panting on the run, held after the slam, panic after the hit.
+  { at: B.thud1 - 0.3, file: 'breath_scared.opus', gain: 0.45, until: B.turn + 0.2, fadeIn: 0.8, fadeOut: 0.3 },
+  { at: B.turn, file: 'breath_run.opus', gain: 0.55, until: B.slam, fadeIn: 0.4, fadeOut: 0.1 },
+  { at: B.crash + 0.35, file: 'breath_panic.opus', gain: 0.6, until: B.end - 0.4, fadeIn: 0.2, fadeOut: 2 },
   // Real metal: the tube groaning, the hatch tearing open, the arm dragging back over the frame.
   { at: B.thud2 + 0.1, file: 'metal_grind.opus', from: 0.5, rate: 0.55, gain: 0.35, until: B.thud2 + 0.9, fadeOut: 0.3 },
   { at: B.open, file: 'metal_grind.opus', from: 10.5, rate: 0.7, gain: 0.6, until: B.open + 0.6, fadeOut: 0.25 },
@@ -106,11 +110,11 @@ export const SYNTH: SynthLayer[] = [
   { kind: 'hit', at: B.barge, level: 0.7, ring: [260, 410, 590], decay: 9, crack: 0.4 },
   { kind: 'steps', surface: 'hard', gain: [[B.turn + 0.1, 0], [B.turn + 0.3, 0.55], [B.barge - 0.1, 0.55], [B.barge + 0.1, 0]] },
   { kind: 'steps', surface: 'soft', gain: [[B.forest - 0.2, 0], [B.forest, 0.58], [B.arrive - 0.4, 0.58], [B.arrive, 0], [B.enter, 0], [B.enter + 0.1, 0.25], [B.enter + 0.5, 0.2], [B.enter + 0.7, 0]] },
-  // The heartbeat comes in at the shed and owns the silence after the slam.
+  // The heartbeat: a soft pulse under the escape, stronger at the shed, the loudest thing in the silence after the slam.
   {
     kind: 'heartbeat',
     rate: [[0, 1.1], [B.open, 1.3], [B.flashlight, 1.7], [B.forest, 1.9], [B.arrive, 2.0], [B.lookBack, 2.1], [B.rush, 2.35], [B.slam, 2.4], [B.crash + 2, 2.2], [B.end, 1.5]],
-    gain: [[B.arrive - 0.5, 0], [B.lookBack, 0.55], [B.slam, 0.6], [B.slam + 0.2, 0.5], [B.crash - 0.05, 0.5], [B.crash, 0.35], [B.black, 0.9], [B.end - 1, 0.6], [B.end, 0]],
+    gain: [[B.alarm, 0], [B.open, 0.1], [B.snatch, 0.15], [B.turn + 1, 0.12], [B.arrive, 0.15], [B.lookBack, 0.35], [B.slam, 0.45], [B.slam + 0.2, 0.45], [B.crash - 0.05, 0.45], [B.crash, 0.3], [B.black, 0.5], [B.end - 1, 0.35], [B.end, 0]],
   },
   { kind: 'drone', gain: [[0, 0.03], [B.alarm, 0.1], [B.open, 0.3], [B.turn + 0.8, 0.1], [B.forest, 0.07], [B.arrive - 1, 0.08], [B.lookBack, 0.26], [B.rush, 0.42], [B.slam - 0.05, 0.62], [B.slam + 0.05, 0], [B.crash - 0.05, 0], [B.crash + 0.05, 0.7], [B.black, 0.32], [B.end, 0]] },
   { kind: 'rain', gain: [[B.barge + 0.1, 0], [B.forest, 0.1], [B.slam - 0.1, 0.12], [B.slam + 0.05, 0]] },
