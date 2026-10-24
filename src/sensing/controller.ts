@@ -95,7 +95,7 @@ export class SensorController {
       return;
     }
     try {
-      const available = await window.hush?.status();
+      const available = await window.lockIn?.status();
       if (!available?.presage) throw new Error(available?.reasons[0] ?? 'Live Presage requires the Electron app and a configured key');
       const [{ SmartSpectraSDK: SDK, MetricType }, { decodeMetrics }] = await Promise.all([import('@smartspectra/node-sdk/renderer'), import('@smartspectra/node-sdk/messages')]);
       if (generation !== this.generation) return;

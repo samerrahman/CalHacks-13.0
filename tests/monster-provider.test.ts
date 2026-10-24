@@ -97,7 +97,7 @@ test('invalid outer shape, expired context and missing credentials cannot cause 
 
 test('a delayed monster result from a previous run is discarded before caption or audio can escape', async () => {
  const oldWindow = globalThis.window; const req = request('old-run'); let release!: (value: any) => void; let transported!: MonsterRequest;
- Object.defineProperty(globalThis, 'window', { configurable: true, writable: true, value: { hush: { monster: async (value: MonsterRequest) => { transported = value; return new Promise(resolve => { release = resolve; }); } } } });
+ Object.defineProperty(globalThis, 'window', { configurable: true, writable: true, value: { lockIn: { monster: async (value: MonsterRequest) => { transported = value; return new Promise(resolve => { release = resolve; }); } } } });
  try {
   beginIntegrationRun(); const pending = requestMonster(req); beginIntegrationRun();
   release({ requestId: transported.requestId, caption: 'This delayed model line must never play.', textSource: 'gemini', textLatencyMs: 1, evidenceEventIds: [], totalLatencyMs: 2, speech: { source: 'elevenlabs', audioBase64: 'UNWANTED', mimeType: 'audio/mpeg', latencyMs: 1 } });

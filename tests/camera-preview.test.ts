@@ -6,7 +6,7 @@ function globals(getUserMedia: (constraints: MediaStreamConstraints) => Promise<
  const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
  const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { mediaDevices: { getUserMedia } } });
- Object.defineProperty(globalThis, 'window', { configurable: true, value: desktop ? { hush: { status: async () => ({ presage: true, reasons: [] }) } } : {} });
+ Object.defineProperty(globalThis, 'window', { configurable: true, value: desktop ? { lockIn: { status: async () => ({ presage: true, reasons: [] }) } } : {} });
  return () => { if (navigatorDescriptor) Object.defineProperty(globalThis, 'navigator', navigatorDescriptor); else Reflect.deleteProperty(globalThis, 'navigator'); if (windowDescriptor) Object.defineProperty(globalThis, 'window', windowDescriptor); else Reflect.deleteProperty(globalThis, 'window'); };
 }
 function camera() {

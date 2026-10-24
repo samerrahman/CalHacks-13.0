@@ -193,7 +193,7 @@ test('provider transport IDs differ across deterministic replays and obsolete re
   const sent: string[] = [];
   let resolvePending: ((value: { proposal: unknown; source: 'gemini'; latencyMs: number }) => void) | null = null;
   let delayed = false;
-  (globalThis as unknown as { window: unknown }).window = { hush: { director: async (r: DirectorRequest) => {
+  (globalThis as unknown as { window: unknown }).window = { lockIn: { director: async (r: DirectorRequest) => {
     sent.push(r.requestId);
     if (delayed) return new Promise(resolve => { resolvePending = resolve; });
     return { proposal: { requestId: r.requestId, stateVersion: r.stateVersion, tactic: 'WAIT', target: 'NONE', tauntId: 'NONE', evidenceEventIds: [], reasonCode: 'NO_VALID_SIGNAL' }, source: 'gemini', latencyMs: 10 };

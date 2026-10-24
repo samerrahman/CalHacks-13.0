@@ -102,6 +102,6 @@ export function bindPresage(window: BrowserWindow): () => void {
     port.on('close', () => { ports.delete(port); closed = true; invalidate(); if (retireActivePort === invalidate) retireActivePort = null; });
     port.start();
   };
-  ipcMain.on('hush:sensor-attach', listener);
-  return () => { ipcMain.removeListener('hush:sensor-attach', listener); for (const port of ports) port.close(); };
+  ipcMain.on('lock-in:sensor-attach', listener);
+  return () => { ipcMain.removeListener('lock-in:sensor-attach', listener); for (const port of ports) port.close(); };
 }

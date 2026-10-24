@@ -100,9 +100,9 @@ export function createScene(container: HTMLElement): SceneView {
     for (const [name, asset] of Object.entries(assets) as [ModelName, typeof assets.shelter][]) {
       models.set(name, asset.scene);
       if (name !== 'creature_cctv') { const [pos, rotation] = placement[name]; asset.scene.position.set(...pos); asset.scene.rotation.y = rotation; weathering.apply(asset.scene); scene.add(asset.scene); }
-      if (name === 'terminal') asset.scene.userData.hushStation = 'terminal';
-      if (name === 'security_monitor') asset.scene.userData.hushStation = 'cameras';
-      if (name === 'machine_rack' || name === 'emergency_switch' || name === 'proximity_detector') asset.scene.userData.hushStation = 'equipment';
+      if (name === 'terminal') asset.scene.userData.lockInStation = 'terminal';
+      if (name === 'security_monitor') asset.scene.userData.lockInStation = 'cameras';
+      if (name === 'machine_rack' || name === 'emergency_switch' || name === 'proximity_detector') asset.scene.userData.lockInStation = 'equipment';
       asset.animations.forEach(clip => diagnostics.animationClips.push(`${name}.${clip.name}`));
     }
     function replaceMaterial(mesh: THREE.Mesh, next: THREE.Material) { orphanMaterials.push(...(Array.isArray(mesh.material) ? mesh.material : [mesh.material])); mesh.material = next; }

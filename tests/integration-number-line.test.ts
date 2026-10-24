@@ -43,5 +43,5 @@ test('judge trace exposes the same coarse gameplay state without detector sample
  assert.equal(trace.summary.danger, Math.round(state.danger));
  assert.equal(trace.summary.quietChargesRemaining, state.shutdown.chargesRemaining);
  for (const forbidden of ['pulseBpm', 'sampleAtMs', 'sensorDistance', 'sensorSampleAt', 'movementRng', 'wireEndpoints']) assert.equal(JSON.stringify(trace).includes(forbidden), false);
- assert.equal(TRACE_SCHEMA_VERSION, 'hush-v2', 'new trace fields require an explicit compatible deployment');
+ assert.equal(TRACE_SCHEMA_VERSION, 'lock-in-v2', 'new trace fields require an explicit compatible deployment');
 });

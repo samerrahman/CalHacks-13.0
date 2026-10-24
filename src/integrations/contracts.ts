@@ -11,7 +11,7 @@ export type MonsterFallbackId = typeof MONSTER_FALLBACK_IDS[number];
 export const MONSTER_TEXT_TIMEOUT_MS = 5000;
 export const MONSTER_TOTAL_TIMEOUT_MS = 12000;
 export const MONSTER_MIN_INTERVAL_MS = 18000;
-export const TRACE_SCHEMA_VERSION = 'hush-v2';
+export const TRACE_SCHEMA_VERSION = 'lock-in-v2';
 export type MonsterRequest = { requestId: string; context: DirectorRequest; fallbackId: MonsterFallbackId; expiresAtMs: number };
 export type MonsterResult = { requestId: string; caption: string; textSource: 'gemini' | 'authored-fallback'; textLatencyMs: number; textReason?: string; textProviderRequestId?: string; evidenceEventIds: string[]; speech: SpeechResult; totalLatencyMs: number };
 export type IntegrationStatus = { desktop: boolean; offline?: boolean; presage: boolean; gemini: boolean; elevenlabs: boolean; spacetime: boolean; reasons: string[] };
@@ -21,7 +21,7 @@ export interface DesktopBridge {
   speech(request: SpeechRequest): Promise<SpeechResult>;
   monster(request: MonsterRequest): Promise<MonsterResult>;
 }
-declare global { interface Window { hush?: DesktopBridge } }
+declare global { interface Window { lockIn?: DesktopBridge } }
 
 /** The public speech route accepts authored captions only. Generated speech
  * can be reached only by the server's contextual monster pipeline. */

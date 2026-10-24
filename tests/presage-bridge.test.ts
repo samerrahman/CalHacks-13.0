@@ -32,7 +32,7 @@ async function harness() {
   const webContents = { mainFrame: {} }, window = { webContents };
   const unbind = module.exports.bindPresage(window);
   class Port extends EventEmitter { messages: Packet[] = []; closed = false; postMessage(value: Packet) { this.messages.push(value); } start() {} close() { if (!this.closed) { this.closed = true; this.emit('close'); } } }
-  const attach = () => { const port = new Port(); ipcMain.emit('hush:sensor-attach', { sender: webContents, senderFrame: webContents.mainFrame, ports: [port] }); return port; };
+  const attach = () => { const port = new Port(); ipcMain.emit('lock-in:sensor-attach', { sender: webContents, senderFrame: webContents.mainFrame, ports: [port] }); return port; };
   const port = attach();
   return { port, attach, instances, history, send: (packet: Packet) => port.emit('message', { data: packet }), unbind, delay: (value: Promise<void>) => { delayStop = value; } };
 }

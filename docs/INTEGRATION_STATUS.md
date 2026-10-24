@@ -28,7 +28,7 @@ This is a process-only director override. The director does not silently replace
 
 Targeted integration tests cover malformed/stale/future/missing timestamps, non-finite native confidence, SDK warmup, frozen baseline, duplicate measurement timestamps, sustained trend and recovery, capture segments/lifecycle races, hidden-data projection, strict actual-state proposal validation, replay transport identities, missing-key fallbacks, intercepted Gemini SDK schema/settings, speech caching/expiry/eviction, and capability separation.
 
-Bundled 27 WAV effects and ten GLBs are authored HUSH kit assets. They are not outputs of a live provider. Simulated sensing remains visibly SIMULATED. Browser/manual play uses neutral physiology. A same-browser judge channel is labeled LOCAL BROADCAST, independently of whether the remote SpacetimeDB module is available.
+Bundled 27 WAV effects and ten GLBs come from the original Lock In kit. They are not outputs of a live provider. Simulated sensing remains visibly SIMULATED. Browser/manual play uses neutral physiology. A same-browser judge channel is labeled LOCAL BROADCAST, independently of whether the remote SpacetimeDB module is available.
 
 ## Ordered checks and local configuration
 
@@ -79,11 +79,11 @@ New offline tests cover exact generated-caption TTS handoff, configured dialogue
 
 Trace sharing has separate consent. The active SpacetimeDB module stores current number-line position, line length, rounded danger, remaining isolation charges, projected creature movement, tactic and target, and coarse sensing source/quality/trend/age. It stores no raw pulse, private puzzle sequence or wire solution, camera frame, local report or baseline BPM. Private tables are visible only to reducers and the database owner; a view takes a random judge capability and returns one matching trace. Owner and judge capabilities are separate random values, event batches deduplicate on sequence, and a scheduled reducer deletes each session after 24 hours. Stopping trace immediately closes local publication even if remote deletion is unavailable; failed remote deletion is reported. This module has passed local type and web builds but has not been published or checked against Maincloud. The earlier Convex authorization tests and deployment records remain historical evidence.
 
-The Electron shell uses `hush://app`, restricted navigation, content policy, sandboxing, context isolation and no renderer Node integration. The judge window has no privileged preload. IPC accepts only the main application's top-level frame. Signing, notarization and an installer are outside this laptop build.
+The Electron shell retains `lockin://app`, restricted navigation, content policy, sandboxing, context isolation and no renderer Node integration. Its IPC and local provider paths also retain their pre-rename names. The judge window has no privileged preload. IPC accepts only the main application's top-level frame. Signing, notarization and an installer are outside this laptop build.
 
 ## Official documentation inspected
 
-Sources were reviewed for the HUSH kit on 2026-10-23 PDT. No prize eligibility, current event award or future provider availability is inferred from them.
+Sources were reviewed for the original Lock In kit on 2026-10-23 PDT. No prize eligibility, current event award or future provider availability is inferred from them.
 
 - [Presage Node/Electron overview](https://smartspectra.presagetech.com/docs/nodejs/), [installed API architecture sample](https://github.com/Presage-Security/SmartSpectra/tree/main/nodejs/samples/electron-quickstart), [API reference](https://smartspectra.presagetech.com/docs/nodejs/api-reference), [metrics](https://smartspectra.presagetech.com/docs/nodejs/metrics).
 - [Measurement quality](https://smartspectra.presagetech.com/docs/measurement-quality/), [model limitations](https://smartspectra.presagetech.com/docs/model-cards-and-limitations/), [telemetry/privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy/). No unsupported confidence-to-error conversion was invented.
