@@ -13,5 +13,5 @@
     "noEmit": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "tests", "electron", "convex", "vite.config.ts"]
+  "include": ["src", "tests", "electron", "spacetimedb", "vite.config.ts"]
 }

@@ -14,7 +14,7 @@ export const MONSTER_MIN_INTERVAL_MS = 18000;
 export const TRACE_SCHEMA_VERSION = 'lock-in-v2';
 export type MonsterRequest = { requestId: string; context: DirectorRequest; fallbackId: MonsterFallbackId; expiresAtMs: number };
 export type MonsterResult = { requestId: string; caption: string; textSource: 'gemini' | 'authored-fallback'; textLatencyMs: number; textReason?: string; textProviderRequestId?: string; evidenceEventIds: string[]; speech: SpeechResult; totalLatencyMs: number };
-export type IntegrationStatus = { desktop: boolean; offline?: boolean; presage: boolean; gemini: boolean; elevenlabs: boolean; convex: boolean; reasons: string[] };
+export type IntegrationStatus = { desktop: boolean; offline?: boolean; presage: boolean; gemini: boolean; elevenlabs: boolean; spacetime: boolean; reasons: string[] };
 export interface DesktopBridge {
   status(): Promise<IntegrationStatus>;
   director(request: DirectorRequest): Promise<DirectorResult>;

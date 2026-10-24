@@ -1,6 +1,6 @@
 # /src/integrations — Lucy (`providers.ts`) · Samer (`client.ts`) · team (`contracts.ts`)
 
-`providers.ts` holds the Gemini and ElevenLabs adapters. They run only in the Electron main process, the loopback Vite development middleware, or Convex actions, never in the renderer. `client.ts` is the renderer transport. `contracts.ts` defines public payloads and must never include puzzle answers, camera frames, or raw pulse.
+`providers.ts` holds the Gemini and ElevenLabs adapters. They run only in the Electron main process or loopback Vite development middleware, never in the renderer. `client.ts` is the renderer transport. `spacetime.ts` connects to the private SpacetimeDB trace module. `contracts.ts` defines public payloads and must never include puzzle answers, camera frames, or raw pulse.
 
 ## Gemini (`@google/genai` 2.31, model `gemini-3.5-flash-lite`, live-tested)
 - Structured output: `config.responseMimeType: 'application/json'` plus `config.responseJsonSchema` (plain JSON Schema). Narrow the tactic enum to the legal set per request. The model only proposes; the reducer revalidates.
@@ -16,6 +16,6 @@
 - ElevenLabs needs `ELEVENLABS_API_KEY`, an authorized `ELEVENLABS_VOICE_ID`, and `ELEVENLABS_MODEL_ID`. Prior successful LOCK IN voice tests used authored text; they do not prove the new contextual generation path. Current test evidence belongs in `docs/qa/`.
 - Official APIs: [Gemini structured output](https://ai.google.dev/gemini-api/docs/structured-output), [ElevenLabs streaming TTS](https://elevenlabs.io/docs/api-reference/text-to-speech/stream). Reviewed October 24, 2026.
 
-## Convex client
-- Always create it with `convexOptions` (`unsavedChangesWarning: false`). Otherwise its beforeunload handler can block closing the Electron window while a mutation is pending.
-- `TRACE_SCHEMA_VERSION` is now `lock-in-v2`: number-line position, danger and isolation charges replace the old metre-labelled trace distance. Client and server share this compatibility gate. This revision has not been deployed or verified remotely; do not run Convex provisioning CLI commands.
+## SpacetimeDB trace
+- Private sessions hold only projected events and coarse summaries. A capability checked view serves the judge screen; scheduled expiration deletes sessions after 24 hours.
+- Generated bindings in `src/module_bindings/` must be regenerated after module schema changes. The remote module has not yet been published or verified live.
