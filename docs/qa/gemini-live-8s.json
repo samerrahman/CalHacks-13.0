@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-10-24T03:10:37.821Z",
+  "model": "gemini-3.8-flash",
+  "source": "fallback",
+  "latencyMs": 8010,
+  "reason": "Gemini timeout",
+  "requestId": "live-probe-1792811429809",
+  "validation": "Gemini timeout",
+  "observation": {
+    "requestId": "live-probe-1792811429809",
+    "stateVersion": 4,
+    "allowedTactics": [
+      "WAIT",
+      "RETREAT"
+    ],
+    "trend": "UNKNOWN",
+    "events": [
+      {
+        "id": "e1",
+        "seq": 1,
+        "time": 0,
+        "type": "SHIFT_STARTED",
+        "detail": ""
+      },
+      {
+        "id": "e2",
+        "seq": 2,
+        "time": 0,
+        "type": "RADIO_CALL",
+        "detail": ""
+      },
+      {
+        "id": "e3",
+        "seq": 3,
+        "time": 0,
+        "type": "DOOR",
+        "detail": "right shutter open."
+      },
+      {
+        "id": "e4",
+        "seq": 4,
+        "time": 0,
+        "type": "DOOR",
+        "detail": "left shutter closed."
+      },
+      {
+        "id": "e5",
+        "seq": 5,
+        "time": 0,
+        "type": "APPROACH",
+        "detail": "left"
+      }
+    ],
+    "evidenceEventIds": [
+      "e1",
+      "e2",
+      "e3",
+      "e4",
+      "e5"
+    ],
+    "expiresAt": 8
+  }
+}

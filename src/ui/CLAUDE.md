@@ -1,10 +1,9 @@
-# /src/ui — Lea (Person 3: art & UI)
+# /src/ui, /src/audio/engine.ts, /public/assets — Lea (Person 3: art, audio & UI)
 
-Menus, title and setup screens, HUD, subtitles, and the journal or judge views. They're plain JS/DOM layered over the Three.js canvas. Agree with James before adding a UI framework; Samer installs it.
+React menus, setup, HUD, pause and judge view (`style.css`, `icons.tsx`). The audio engine handles positional effects, master volume, mute and the radio filter. Assets: 8 GLBs, 9 WAVs and 5 SVG decals in `public/assets/`, listed in `manifest.json` (a team contract). Every entry has a path, byte count and `sha256`, so update all three when art changes. `docs/ASSETS.md` records provenance, licenses and how each asset is used at runtime; keep it current.
 
-- UI never touches scene objects directly. It reads game state that James exposes and calls functions exported from `src/game`.
-- Session and event data come from `src/storage` (Convex). Records with `isSample: true` must be **visibly labeled as sample data**.
-- Every spoken line needs a subtitle. Never signal true or false information by color alone.
-- Wellness tips and their copy come from `/src/wellness` (Lucy). Don't write tip text here.
-- Art comes from `/assets` via the manifest.
-- Anything the game must call (e.g. `showPause()`) gets exported from `src/ui/index.js`. Tell James the function name.
+- React handles menus and overlays only. The Three.js scene is not re-rendered by React.
+- Every spoken line has an exact caption, and normal captions say RADIO for both Mara and the fake. Never signal true or false information by color alone. Keep reduced motion, master volume and mute working.
+- Models are GLB, in meters, Y up. The game looks up node and clip names (`shutter_leaf`, `idle`/`listen`/`reach`), so don't rename them. Add new keys to the manifest instead of renaming existing ones.
+- The look comes from the spec: dirty teal steel, warm desk light, muted cream labels, restrained orange warnings. No full-screen flashes.
+- The speech queue (`src/audio/queue.ts`) is Lucy's.

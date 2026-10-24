@@ -1,11 +1,9 @@
 # /electron — Samer (Person 1: signals & platform)
 
-Electron main process (`main.js`) and the preload bridge (`preload.js`). Main is the composition root: it loads `.env` and calls `registerAiIpc` (Lucy).
+Main process (`main.ts`), preload bridge (`preload.ts`), Presage binding (`presageAdapter.ts`), the esbuild script, and smoke checks. `liveChecks.ts` is shared with Lucy, since it checks her providers.
 
-- `preload.js` must implement exactly `ScaryBridge` from `shared/types/bridge.js`. New channels go into that contract first.
-- The window keeps `contextIsolation` on and `nodeIntegration` off (the defaults). Don't change them.
-- `process.loadEnvFile()` reads only `.env` from the working directory, and it runs **after** every import is evaluated. Main-process modules must read `process.env` inside functions.
-- Presage runs here (see `src/signals/CLAUDE.md`): the SDK stays in main, and only small decoded numbers go to the renderer over `IPC.signalFrame`.
-- macOS camera: call `systemPreferences.askForMediaAccess('camera')` before starting capture.
-- If Electron exits immediately in a VS Code terminal, unset `ELECTRON_RUN_AS_NODE` (`env -u ELECTRON_RUN_AS_NODE npm run dev`).
-- You own `package.json`. Other people's agents ask for libraries instead of installing them.
+- Keep `contextIsolation`, `sandbox` and `nodeIntegration: false`, the `trusted()` sender check on every IPC handler, and the navigation/popup blocks. New IPC goes into `preload.ts` (a team contract) first.
+- `.env` and `.env.local` are loaded at startup. Secrets never leave this process except as validated results.
+- Presage: never call the SDK's synchronous `stop()`/`waitUntilComplete()` on the main thread, because they can deadlock. Use `await stopAsync()` and then `destroy()`, and still destroy if `start()` throws.
+- If Electron exits immediately, unset `ELECTRON_RUN_AS_NODE`. VS Code terminals set it; `npm run desktop` already clears it.
+- `npm run native:smoke` loads the Presage runtime without touching the camera. It passes on this Mac (SDK 3.4.0, arm64).

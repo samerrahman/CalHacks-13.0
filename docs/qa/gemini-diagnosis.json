@@ -1,0 +1,18 @@
+{
+  "model": "gemini-3.8-flash",
+  "modelAvailability": "passed",
+  "interactiveGeneration": "blocked_by_latency_or_provider_availability",
+  "diagnosis": "The original HTTP 400 was a server deadline configuration error: the configured model requires at least 10 seconds. The adapter now sends a 10 second server deadline while independently aborting locally after 3.5 seconds.",
+  "attemptsAfterDeadlineFix": [
+    { "outcome": "HTTP 503", "latencyMs": 625 },
+    { "outcome": "local timeout", "latencyMs": 3510 },
+    { "outcome": "local timeout", "latencyMs": 3506, "requestId": "live-probe-1792811313703", "thinkingLevel": "LOW", "maxOutputTokens": 1024 }
+  ],
+  "acceptedProposal": false,
+  "modelChanged": false,
+  "references": [
+    "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash",
+    "https://ai.google.dev/gemini-api/docs/whats-new-gemini-3.8",
+    "https://ai.google.dev/gemini-api/docs/generate-content/thinking.md"
+  ]
+}

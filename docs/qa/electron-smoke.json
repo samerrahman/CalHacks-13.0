@@ -1,0 +1,97 @@
+{
+  "status": {
+    "desktop": true,
+    "presage": false,
+    "gemini": false,
+    "elevenlabs": false,
+    "convex": false,
+    "reasons": [
+      "Presage key not configured"
+    ]
+  },
+  "security": [
+    {
+      "nodeIntegration": false,
+      "contextIsolation": true,
+      "sandbox": true
+    },
+    {
+      "nodeIntegration": false,
+      "contextIsolation": true,
+      "sandbox": true
+    }
+  ],
+  "judgeHasPrivilegedBridge": false,
+  "judgeTraceReceived": true,
+  "resources": [
+    {
+      "path": "/assets/models/radio.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/relay.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/booth.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/mimic.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/floodlight.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/shutter.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/console.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/models/fuse.glb",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/room_hum.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/radio_static.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/radio_chime.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/relay_click.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/knock.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/success.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/mimic_rustle.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/shutter_motor.wav",
+      "status": 200
+    },
+    {
+      "path": "/assets/audio/warning_pulse.wav",
+      "status": 200
+    }
+  ],
+  "errors": []
+}

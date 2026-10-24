@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "stateVersion",
+    "tactic",
+    "evidenceEventIds",
+    "reasonCode"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "stateVersion": {
+      "type": "integer"
+    },
+    "tactic": {
+      "type": "string",
+      "enum": [
+        "WAIT",
+        "PROBE_LEFT",
+        "PROBE_RIGHT",
+        "REPLAY_ORDER",
+        "WRONG_HATCH",
+        "FEINT",
+        "RETREAT"
+      ]
+    },
+    "evidenceEventIds": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string"
+      }
+    },
+    "reasonCode": {
+      "type": "string",
+      "enum": [
+        "UNVERIFIED_OBEDIENCE",
+        "REPEATED_DOOR_PATTERN",
+        "VERIFIES_CALLS",
+        "RECOVERY_NEEDED",
+        "VARY_ENCOUNTER",
+        "NO_VALID_SIGNAL"
+      ]
+    }
+  }
+}

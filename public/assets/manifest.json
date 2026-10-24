@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "source": "night-relay-kit",
+  "counts": {
+    "models": 8,
+    "audio": 9,
+    "decals": 5
+  },
+  "license": {
+    "id": "LicenseRef-Night-Relay-Kit",
+    "path": "public/assets/LICENSE.txt",
+    "source": "night-relay-kit/LICENSE.txt",
+    "sha256": "7f61b8f1ff1bb57e215acc3aff52da27b175ec004762a556c3b5c50187ca59fb",
+    "notice": "Retain this notice with redistributed source or asset packs."
+  },
+  "assets": [
+    {
+      "path": "public/assets/models/booth.glb",
+      "url": "/assets/models/booth.glb",
+      "source": "night-relay-kit/assets/models/booth.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 27840,
+      "sha256": "dcb8a7ecc060d3a9b2ef71672d911d01c8719f770c28f773a616d58bd27d71c8",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/models/console.glb",
+      "url": "/assets/models/console.glb",
+      "source": "night-relay-kit/assets/models/console.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 9324,
+      "sha256": "c0fd48f79f44bce2a9daf67ad105a3561a2d814e06e977ae7fce054663534c5f",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/models/floodlight.glb",
+      "url": "/assets/models/floodlight.glb",
+      "source": "night-relay-kit/assets/models/floodlight.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 6608,
+      "sha256": "8b708ef651ab3b8aba8d5d997a146f3d17c47838e23455a5503332b37b4c5258",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/models/fuse.glb",
+      "url": "/assets/models/fuse.glb",
+      "source": "night-relay-kit/assets/models/fuse.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 5336,
+      "sha256": "394a6bdfb008f945e59722ce9a5960ddb899d49455806c77826e39927d8d2ff9",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/models/mimic.glb",
+      "url": "/assets/models/mimic.glb",
+      "source": "night-relay-kit/assets/models/mimic.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 18384,
+      "sha256": "61cb1984867f0e5ba009f45a00ff759cfbf31dbba74009dfa9f995d5c24c0930",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/models/radio.glb",
+      "url": "/assets/models/radio.glb",
+      "source": "night-relay-kit/assets/models/radio.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 11980,
+      "sha256": "4b42df673eb5356e3236c1437d4c3ccbcd5f226d51e6cd869dede83575ccb682",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/models/relay.glb",
+      "url": "/assets/models/relay.glb",
+      "source": "night-relay-kit/assets/models/relay.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 10628,
+      "sha256": "b2b5033f877fd033a89c6cc734c09d49b1340be7f7b4ca852d2335342c5898c9",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/models/shutter.glb",
+      "url": "/assets/models/shutter.glb",
+      "source": "night-relay-kit/assets/models/shutter.glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 16512,
+      "sha256": "1b314af555bf662fd71a15db6d27a4d5db1f85ff716c35ba838e0079ea1f46b6",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/knock.wav",
+      "url": "/assets/audio/knock.wav",
+      "source": "night-relay-kit/assets/audio/knock.wav",
+      "mediaType": "audio/wav",
+      "bytes": 48554,
+      "sha256": "a48050a21ff636da58d088c74719587a097dbe39723d88af9d15e9a512f27f11",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/mimic_rustle.wav",
+      "url": "/assets/audio/mimic_rustle.wav",
+      "source": "night-relay-kit/assets/audio/mimic_rustle.wav",
+      "mediaType": "audio/wav",
+      "bytes": 70604,
+      "sha256": "b60271843c05f1d7842434c209f04b642f9dd50c5362f1587445e5accce654ba",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/radio_chime.wav",
+      "url": "/assets/audio/radio_chime.wav",
+      "source": "night-relay-kit/assets/audio/radio_chime.wav",
+      "mediaType": "audio/wav",
+      "bytes": 28708,
+      "sha256": "2d27bbdedfa72e6249efe5ea7b1cda18621b8e242b2ce141b5a542741648b362",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/radio_static.wav",
+      "url": "/assets/audio/radio_static.wav",
+      "source": "night-relay-kit/assets/audio/radio_static.wav",
+      "mediaType": "audio/wav",
+      "bytes": 52964,
+      "sha256": "1489b155ec015e6644e0398faa1d90342f0491c1d5ba0957516c839d2b23288f",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/relay_click.wav",
+      "url": "/assets/audio/relay_click.wav",
+      "source": "night-relay-kit/assets/audio/relay_click.wav",
+      "mediaType": "audio/wav",
+      "bytes": 11068,
+      "sha256": "08b1dde6c49046b09532856bc9366a07e499b84bd642bfcc2d4c3b3551dbc5a9",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/room_hum.wav",
+      "url": "/assets/audio/room_hum.wav",
+      "source": "night-relay-kit/assets/audio/room_hum.wav",
+      "mediaType": "audio/wav",
+      "bytes": 264644,
+      "sha256": "91375ca3dcb700ff0d26d76513d64d540e101562503f144b19798df11ea47809",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/shutter_motor.wav",
+      "url": "/assets/audio/shutter_motor.wav",
+      "source": "night-relay-kit/assets/audio/shutter_motor.wav",
+      "mediaType": "audio/wav",
+      "bytes": 48554,
+      "sha256": "0ec353655a77ff52870e745b6b8f52c02dcbf3912f6e6c171a44663166f70995",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/success.wav",
+      "url": "/assets/audio/success.wav",
+      "source": "night-relay-kit/assets/audio/success.wav",
+      "mediaType": "audio/wav",
+      "bytes": 61782,
+      "sha256": "fce3f3d55d8fe4968b49c42d3f5d7932f8a601372afd322edc8c14729fe255bd",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/audio/warning_pulse.wav",
+      "url": "/assets/audio/warning_pulse.wav",
+      "source": "night-relay-kit/assets/audio/warning_pulse.wav",
+      "mediaType": "audio/wav",
+      "bytes": 52964,
+      "sha256": "b42acba980d5227db1f5d874ac215888c063a9b0e7345978d8c86cf0232c4aec",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/decals/challenge_card.svg",
+      "url": "/assets/decals/challenge_card.svg",
+      "source": "night-relay-kit/assets/decals/challenge_card.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 673,
+      "sha256": "2db2902fd4ecfc399978ff25ee9a8df7116a5ae231ade50bd77b613465274b0c",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/decals/rules_card.svg",
+      "url": "/assets/decals/rules_card.svg",
+      "source": "night-relay-kit/assets/decals/rules_card.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 758,
+      "sha256": "a27129bd15d603c5b772e5265827d061e636468dde91b6418e660de23619bd08",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/decals/title.svg",
+      "url": "/assets/decals/title.svg",
+      "source": "night-relay-kit/assets/decals/title.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 550,
+      "sha256": "64904ac4ac286abb4c2ccacd525800a86beac1d6dac760b12c39780d1c8be39d",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/decals/warning.svg",
+      "url": "/assets/decals/warning.svg",
+      "source": "night-relay-kit/assets/decals/warning.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 598,
+      "sha256": "0f9c83178190864cc2d250c0fd8383d7a36215d6e1c4b8b2f167ce4eac2dcddd",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    },
+    {
+      "path": "public/assets/decals/work_order.svg",
+      "url": "/assets/decals/work_order.svg",
+      "source": "night-relay-kit/assets/decals/work_order.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 755,
+      "sha256": "42b4c46faa391aaf24ad54cfcd6109c737b9c92dcbd96000eae9d95bb64fc91c",
+      "license": "LicenseRef-Night-Relay-Kit",
+      "licensePath": "public/assets/LICENSE.txt",
+      "modified": false
+    }
+  ]
+}

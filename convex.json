@@ -1,5 +1,4 @@
 {
   "$schema": "./node_modules/convex/schemas/convex.schema.json",
-  "aiFiles": { "enabled": false },
-  "codegen": { "fileType": "js/dts" }
+  "aiFiles": { "enabled": false }
 }

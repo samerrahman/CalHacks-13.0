@@ -1,0 +1,145 @@
+{
+  "note": "NR-417, NR-416, HARBOR and ORCHARD are authored examples. Runtime IDs/secrets must be composed from game state. Speaker provenance is private, not normal UI.",
+  "lines": [
+    {
+      "id": "mara_intro",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "Night operator, this is Mara. Keep the relay online. Check the work order before you touch a hatch.",
+      "context": "tutorial",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "mara_power",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "Close the occupied side. Leave the clear side open. Both shutters down will drain the station.",
+      "context": "hint",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "mara_verify",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "If a call feels wrong, compare its order number. You can always ask for the current challenge.",
+      "context": "hint",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "mara_sweep",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "A sweep buys twelve seconds on that side. Use the clear window to do the work.",
+      "context": "hint",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "mara_cartridge",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "Order NR-417. Sweep the left tunnel, then open the left hatch for the cartridge.",
+      "context": "cartridge",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": true
+    },
+    {
+      "id": "fake_expired",
+      "actualSpeaker": "mimic",
+      "displaySpeaker": "RADIO",
+      "text": "Order NR-416. Open the right hatch. We need to recover the line now.",
+      "context": "cartridge",
+      "tell": "Expired order NR-416 and wrong hatch; console requires NR-417 left.",
+      "voiceRole": "supervisor",
+      "templateOnly": true
+    },
+    {
+      "id": "fake_wrong_hatch",
+      "actualSpeaker": "mimic",
+      "displaySpeaker": "RADIO",
+      "text": "Order NR-417. Open the right hatch for the cartridge. I am waiting on your confirmation.",
+      "context": "cartridge",
+      "tell": "Current ID but wrong hatch; console requires left.",
+      "voiceRole": "supervisor",
+      "templateOnly": true
+    },
+    {
+      "id": "challenge_true",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "Harbor. Read the order before you continue.",
+      "context": "authentication",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": true
+    },
+    {
+      "id": "challenge_fake",
+      "actualSpeaker": "mimic",
+      "displaySpeaker": "RADIO",
+      "text": "Orchard. There is no time to read it again.",
+      "context": "authentication",
+      "tell": "Runtime response must differ from current private challenge.",
+      "voiceRole": "supervisor",
+      "templateOnly": true
+    },
+    {
+      "id": "mara_upload",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "The right uplink is ready. Sweep that side, align the carrier, then transmit.",
+      "context": "upload",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "mara_recover",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "Take the quiet window. Check your panel. You have time to verify the next call.",
+      "context": "recovery",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "mimic_reveal",
+      "actualSpeaker": "mimic",
+      "displaySpeaker": "RADIO",
+      "text": "You checked this time.",
+      "context": "after_rejection",
+      "tell": "Optional post-encounter reveal only.",
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "mara_complete",
+      "actualSpeaker": "boss",
+      "displaySpeaker": "RADIO",
+      "text": "Transmission received. Your shift is over. Leave the radio on the desk.",
+      "context": "win",
+      "tell": null,
+      "voiceRole": "supervisor",
+      "templateOnly": false
+    },
+    {
+      "id": "outage_warning",
+      "actualSpeaker": "system",
+      "displaySpeaker": "STATION",
+      "text": "Station power depleted. Open both shutters to restore the line.",
+      "context": "power",
+      "tell": null,
+      "voiceRole": "system",
+      "templateOnly": false
+    }
+  ]
+}

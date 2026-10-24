@@ -1,0 +1,156 @@
+{
+  "checkedAt": "2026-10-24T03:27:42.137Z",
+  "platform": "darwin/arm64",
+  "results": {
+    "presage": {
+      "status": "blocked",
+      "detail": "SDK 3.4.0 native import passed on darwin/arm64. PRESAGE_API_KEY absent; live camera capture not tested.",
+      "checkedAt": "2026-10-24T03:03:40.278Z"
+    },
+    "gemini": {
+      "status": "passed",
+      "checkedAt": "2026-10-24T03:27:42.137Z",
+      "model": "gemini-3.5-flash-lite",
+      "source": "gemini",
+      "detail": "Model availability, a real structured proposal checked by the full current-state validator, and an accepted proposal in the actual Electron game all passed. The user approved selecting this model after the original model exceeded the response budget.",
+      "validation": "ACCEPTED_IN_ACTUAL_GAME",
+      "latencyMs": 2882,
+      "requestId": "request-1",
+      "selectedTactic": "PROBE_LEFT",
+      "evidenceEventIds": [
+        "e3",
+        "e4"
+      ],
+      "actualGame": {
+        "checkedAt": "2026-10-24T03:27:42.137Z",
+        "evidenceFile": "docs/qa/electron-live-providers.json",
+        "screenshot": "docs/qa/electron-live-providers.png",
+        "source": "gemini",
+        "latencyMs": 2882,
+        "observedRequestToOutcomeMs": 2835,
+        "events": [
+          {
+            "time": "14.9s",
+            "identity": "e7 / DIRECTOR_APPLIED",
+            "detail": "GEMINI selected PROBE_LEFT; evidence e3, e4."
+          },
+          {
+            "time": "12.0s",
+            "identity": "e5 / DIRECTOR_REQUEST",
+            "detail": "request-1; allowed WAIT, PROBE_LEFT, PROBE_RIGHT, FEINT; trend UNKNOWN."
+          },
+          {
+            "time": "0.2s",
+            "identity": "e4 / DOOR",
+            "detail": "left shutter closed."
+          },
+          {
+            "time": "0.2s",
+            "identity": "e3 / DOOR",
+            "detail": "left shutter open."
+          }
+        ],
+        "errors": [],
+        "cameraRequested": false,
+        "traceSharingEnabled": false,
+        "providerRequestIdCaptured": false
+      },
+      "structuredProbe": {
+        "checkedAt": "2026-10-24T03:27:05.432Z",
+        "evidenceFile": "docs/qa/gemini-live-lite.json",
+        "modelAvailability": "passed",
+        "source": "gemini",
+        "latencyMs": 3887,
+        "requestId": "lite-probe-1792812420965",
+        "providerRequestId": "hSXcate0Kvie_uMPpcWh8QU",
+        "validation": "ACCEPTED",
+        "selectedTactic": "WAIT",
+        "evidenceEventIds": [
+          "e2",
+          "e3",
+          "e5"
+        ],
+        "observation": {
+          "requestId": "lite-probe-1792812420965",
+          "stateVersion": 4,
+          "allowedTactics": [
+            "WAIT",
+            "RETREAT"
+          ],
+          "trend": "UNKNOWN",
+          "events": [
+            {
+              "id": "e1",
+              "seq": 1,
+              "time": 0,
+              "type": "SHIFT_STARTED",
+              "detail": ""
+            },
+            {
+              "id": "e2",
+              "seq": 2,
+              "time": 0,
+              "type": "RADIO_CALL",
+              "detail": ""
+            },
+            {
+              "id": "e3",
+              "seq": 3,
+              "time": 0,
+              "type": "DOOR",
+              "detail": "right shutter open."
+            },
+            {
+              "id": "e4",
+              "seq": 4,
+              "time": 0,
+              "type": "DOOR",
+              "detail": "left shutter closed."
+            },
+            {
+              "id": "e5",
+              "seq": 5,
+              "time": 0,
+              "type": "APPROACH",
+              "detail": "left"
+            }
+          ],
+          "evidenceEventIds": [
+            "e1",
+            "e2",
+            "e3",
+            "e4",
+            "e5"
+          ],
+          "expiresAt": 8
+        }
+      },
+      "earlierModelEvidence": [
+        "docs/qa/gemini-diagnosis.json",
+        "docs/qa/gemini-live-8s.json"
+      ]
+    },
+    "elevenlabs": {
+      "status": "blocked",
+      "detail": "ElevenLabs key, voice ID and/or model ID absent",
+      "checkedAt": "2026-10-24T03:03:40.278Z"
+    },
+    "convex": {
+      "status": "blocked",
+      "detail": "VITE_CONVEX_URL absent; no deployment created",
+      "checkedAt": "2026-10-24T03:03:40.278Z"
+    }
+  },
+  "note": "Per-provider timestamps identify checks performed separately. Gemini combines existing real structured-probe and actual-game evidence; this report merge made no provider requests. The provider response ID belongs to the structured probe, while the actual game has its own local request/event IDs.",
+  "configurationCheckedAt": "2026-10-24T03:30:12.731Z",
+  "configurationPresence": {
+    "GEMINI_API_KEY": true,
+    "GEMINI_MODEL": true,
+    "ELEVENLABS_API_KEY": false,
+    "ELEVENLABS_VOICE_ID": false,
+    "ELEVENLABS_MODEL_ID": false,
+    "PRESAGE_API_KEY": false,
+    "VITE_CONVEX_URL": false,
+    "CONVEX_DEPLOYMENT": false
+  }
+}

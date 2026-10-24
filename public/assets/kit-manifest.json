@@ -1,0 +1,242 @@
+[
+  {
+    "path": ".env.example",
+    "bytes": 196,
+    "sha256": "5bf85a4d6e78c1ca65694294b3bc1197bb33b0bd6a19b6743171e7c96cb572ba"
+  },
+  {
+    "path": "LICENSE.txt",
+    "bytes": 900,
+    "sha256": "7f61b8f1ff1bb57e215acc3aff52da27b175ec004762a556c3b5c50187ca59fb"
+  },
+  {
+    "path": "README.md",
+    "bytes": 3319,
+    "sha256": "468d2c71bce5016d77a3e119343f593e6c97bcd63a3e214688c85e75a3e75971"
+  },
+  {
+    "path": "VALIDATION.txt",
+    "bytes": 1342,
+    "sha256": "ff71fecb2514f251e9c3959a36c91a97cae25a09b4b961d1a473e0eef9f69c4c"
+  },
+  {
+    "path": "assets/audio/knock.wav",
+    "bytes": 48554,
+    "sha256": "a48050a21ff636da58d088c74719587a097dbe39723d88af9d15e9a512f27f11"
+  },
+  {
+    "path": "assets/audio/mimic_rustle.wav",
+    "bytes": 70604,
+    "sha256": "b60271843c05f1d7842434c209f04b642f9dd50c5362f1587445e5accce654ba"
+  },
+  {
+    "path": "assets/audio/radio_chime.wav",
+    "bytes": 28708,
+    "sha256": "2d27bbdedfa72e6249efe5ea7b1cda18621b8e242b2ce141b5a542741648b362"
+  },
+  {
+    "path": "assets/audio/radio_static.wav",
+    "bytes": 52964,
+    "sha256": "1489b155ec015e6644e0398faa1d90342f0491c1d5ba0957516c839d2b23288f"
+  },
+  {
+    "path": "assets/audio/relay_click.wav",
+    "bytes": 11068,
+    "sha256": "08b1dde6c49046b09532856bc9366a07e499b84bd642bfcc2d4c3b3551dbc5a9"
+  },
+  {
+    "path": "assets/audio/room_hum.wav",
+    "bytes": 264644,
+    "sha256": "91375ca3dcb700ff0d26d76513d64d540e101562503f144b19798df11ea47809"
+  },
+  {
+    "path": "assets/audio/shutter_motor.wav",
+    "bytes": 48554,
+    "sha256": "0ec353655a77ff52870e745b6b8f52c02dcbf3912f6e6c171a44663166f70995"
+  },
+  {
+    "path": "assets/audio/success.wav",
+    "bytes": 61782,
+    "sha256": "fce3f3d55d8fe4968b49c42d3f5d7932f8a601372afd322edc8c14729fe255bd"
+  },
+  {
+    "path": "assets/audio/warning_pulse.wav",
+    "bytes": 52964,
+    "sha256": "b42acba980d5227db1f5d874ac215888c063a9b0e7345978d8c86cf0232c4aec"
+  },
+  {
+    "path": "assets/decals/challenge_card.svg",
+    "bytes": 673,
+    "sha256": "2db2902fd4ecfc399978ff25ee9a8df7116a5ae231ade50bd77b613465274b0c"
+  },
+  {
+    "path": "assets/decals/rules_card.svg",
+    "bytes": 758,
+    "sha256": "a27129bd15d603c5b772e5265827d061e636468dde91b6418e660de23619bd08"
+  },
+  {
+    "path": "assets/decals/title.svg",
+    "bytes": 550,
+    "sha256": "64904ac4ac286abb4c2ccacd525800a86beac1d6dac760b12c39780d1c8be39d"
+  },
+  {
+    "path": "assets/decals/warning.svg",
+    "bytes": 598,
+    "sha256": "0f9c83178190864cc2d250c0fd8383d7a36215d6e1c4b8b2f167ce4eac2dcddd"
+  },
+  {
+    "path": "assets/decals/work_order.svg",
+    "bytes": 755,
+    "sha256": "42b4c46faa391aaf24ad54cfcd6109c737b9c92dcbd96000eae9d95bb64fc91c"
+  },
+  {
+    "path": "assets/models/booth.glb",
+    "bytes": 27840,
+    "sha256": "dcb8a7ecc060d3a9b2ef71672d911d01c8719f770c28f773a616d58bd27d71c8"
+  },
+  {
+    "path": "assets/models/console.glb",
+    "bytes": 9324,
+    "sha256": "c0fd48f79f44bce2a9daf67ad105a3561a2d814e06e977ae7fce054663534c5f"
+  },
+  {
+    "path": "assets/models/floodlight.glb",
+    "bytes": 6608,
+    "sha256": "8b708ef651ab3b8aba8d5d997a146f3d17c47838e23455a5503332b37b4c5258"
+  },
+  {
+    "path": "assets/models/fuse.glb",
+    "bytes": 5336,
+    "sha256": "394a6bdfb008f945e59722ce9a5960ddb899d49455806c77826e39927d8d2ff9"
+  },
+  {
+    "path": "assets/models/mimic.glb",
+    "bytes": 18384,
+    "sha256": "61cb1984867f0e5ba009f45a00ff759cfbf31dbba74009dfa9f995d5c24c0930"
+  },
+  {
+    "path": "assets/models/radio.glb",
+    "bytes": 11980,
+    "sha256": "4b42df673eb5356e3236c1437d4c3ccbcd5f226d51e6cd869dede83575ccb682"
+  },
+  {
+    "path": "assets/models/relay.glb",
+    "bytes": 10628,
+    "sha256": "b2b5033f877fd033a89c6cc734c09d49b1340be7f7b4ca852d2335342c5898c9"
+  },
+  {
+    "path": "assets/models/shutter.glb",
+    "bytes": 16512,
+    "sha256": "1b314af555bf662fd71a15db6d27a4d5db1f85ff716c35ba838e0079ea1f46b6"
+  },
+  {
+    "path": "assets/previews/asset-sheet.png",
+    "bytes": 36384,
+    "sha256": "3efd412c7be4e53245b77aeefe7d00aa7e7ec995cc7233154ea86f93b715e9b6"
+  },
+  {
+    "path": "assets/previews/booth.geometry.json",
+    "bytes": 18972,
+    "sha256": "b13830aed24d63f0bfee17176138085b86824f92325d8068a2084ac0783eeec9"
+  },
+  {
+    "path": "assets/previews/console.geometry.json",
+    "bytes": 7086,
+    "sha256": "746f29a9a03b92b25a72d33429bd5393c634fb724b993b62dfefcd8da70b514c"
+  },
+  {
+    "path": "assets/previews/floodlight.geometry.json",
+    "bytes": 4158,
+    "sha256": "543adf11bf3ab77e0f9d8e87d2db87ceb7435b794751b432156162f7645bc316"
+  },
+  {
+    "path": "assets/previews/fuse.geometry.json",
+    "bytes": 2751,
+    "sha256": "51bf63572fb8101c381db24bcc7359ee6052cf7138541fa9c2e7a8eecffed3ca"
+  },
+  {
+    "path": "assets/previews/mimic.geometry.json",
+    "bytes": 12201,
+    "sha256": "8570c22a5857c9291b8daf1c213d677a047a06ec3faa8f054af66b42b696c3e5"
+  },
+  {
+    "path": "assets/previews/radio.geometry.json",
+    "bytes": 11436,
+    "sha256": "a8b7ee550374d691df372f255780aa6b61dc48686e5b72cf8fb81c331d5ecef4"
+  },
+  {
+    "path": "assets/previews/relay.geometry.json",
+    "bytes": 8925,
+    "sha256": "00c44ce2a289f668c4fc579cd4c3cc85fed1b53fb5143597c24b417d0c5435b2"
+  },
+  {
+    "path": "assets/previews/shutter.geometry.json",
+    "bytes": 12453,
+    "sha256": "2cf39945a6d4e8025a8d27ba08cdd3ab901d3b4c200309063ae3434ca01cb289"
+  },
+  {
+    "path": "design/GAME_SPEC.md",
+    "bytes": 15297,
+    "sha256": "0cf146b7d3069dcb1e4e8b3c8a93358b2042c72d62425316d9837928de6b52aa"
+  },
+  {
+    "path": "design/config.json",
+    "bytes": 1624,
+    "sha256": "84133850817b98f5a3273e84bb68228073f871ce9adb3d8771752f9574f080f9"
+  },
+  {
+    "path": "design/dialogue.json",
+    "bytes": 4661,
+    "sha256": "fe8ba8ffb3e5de15daef1e32a74768089b401ccc98acd1258455006763003ea6"
+  },
+  {
+    "path": "docs/INTEGRATIONS.md",
+    "bytes": 12301,
+    "sha256": "939904c03a7b3e57aaa2a1d6cdc30a175b59edfc30659c5dae44e6da63229fde"
+  },
+  {
+    "path": "docs/TRACKS_AND_DEMO.md",
+    "bytes": 6783,
+    "sha256": "21b1459b717e2b70d3cdfdc1f7607f30e2d1a3141c39ff8d7a50fe50a5ea890d"
+  },
+  {
+    "path": "prompts/CODEX_BUILD_PROMPT.txt",
+    "bytes": 14917,
+    "sha256": "82be7caad0f6c4cdfbd1c60e471e257588d7760f00c2a67049212b15fd26b814"
+  },
+  {
+    "path": "prompts/MONSTER_DIRECTOR.txt",
+    "bytes": 1421,
+    "sha256": "c0e26bf232c3c41c03cfd2bbf64e019486a4192fc933bae0d497f64f8dbdaac8"
+  },
+  {
+    "path": "reference/director.schema.json",
+    "bytes": 879,
+    "sha256": "078165a3497ba464218ebc2e243f9b9e0d1dcd056ce1b96e9e7b6b11ac361cf3"
+  },
+  {
+    "path": "reference/rules.mjs",
+    "bytes": 4013,
+    "sha256": "9a27d680fba383aee1c87003f7207c520f8d829f1c93cf9af8f9080c1b1198e1"
+  },
+  {
+    "path": "reference/rules.test.mjs",
+    "bytes": 3274,
+    "sha256": "e354bdc786aaaff132105b41f45e428e0a4c65bfedc72d241b1c0a0c0b352b95"
+  },
+  {
+    "path": "tools/generate_assets.py",
+    "bytes": 12081,
+    "sha256": "568b6f879d8d95ab567843f0c7f3a9b6734ab6e1315700ac200acf8a2a1f1bd4"
+  },
+  {
+    "path": "tools/generate_voices.py",
+    "bytes": 2049,
+    "sha256": "7b9e8d8fa7b0ae6028e75a99f582f483b0cff08be54400f2d949e7a79e97f291"
+  },
+  {
+    "path": "tools/validate_assets.py",
+    "bytes": 2297,
+    "sha256": "e08391739a2b9cd4b108b22fba9a662d0889ae7754867e37de0e0fa04f91b90b"
+  }
+]
