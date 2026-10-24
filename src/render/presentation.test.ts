@@ -8,13 +8,13 @@ import type { RenderState } from './state';
 import { disposeObject } from './assets';
 
 test('equipment clicks respect the first visible physical surface and its model ancestor', () => {
-  const scene = new Scene(), equipment = new Group(), occluder = new Group(); equipment.userData.lockInStation = 'terminal';
+  const scene = new Scene(), equipment = new Group(), occluder = new Group(); equipment.userData.hushStation = 'terminal';
   const makeBox = (z: number) => { const mesh = new Mesh(new BoxGeometry(1, 1, .2), new MeshBasicMaterial()); mesh.position.z = z; return mesh; };
   equipment.add(makeBox(-5)); occluder.add(makeBox(-2)); scene.add(equipment, occluder); scene.updateMatrixWorld(true);
   const ray = new Raycaster(new Vector3(), new Vector3(0, 0, -1));
   assert.equal(hitStation(ray, scene), null, 'a wall in front blocks the terminal');
   occluder.visible = false; assert.equal(hitStation(ray, scene), 'terminal', 'hidden ancestors cannot occlude');
-  equipment.userData.lockInStation = 'cameras'; assert.equal(hitStation(ray, scene), 'cameras');
+  equipment.userData.hushStation = 'cameras'; assert.equal(hitStation(ray, scene), 'cameras');
   equipment.visible = false; assert.equal(hitStation(ray, scene), null, 'hidden equipment is not interactive');
   disposeObject(scene);
 });

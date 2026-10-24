@@ -48,7 +48,7 @@ try {
     finally { rmSync(temp, { recursive: true, force: true }); }
   }
   const evidence = {
-    checkedAt: new Date().toISOString(), testKind: 'live provider probe with synthetic sanitized LOCK IN context',
+    checkedAt: new Date().toISOString(), testKind: 'live provider probe with synthetic sanitized HUSH context',
     promptRevision: 'stationary-player-outside-creature',
     model: process.env.GEMINI_DIALOGUE_MODEL || DEFAULT_DIALOGUE_MODEL,
     requestId: result.requestId, trigger: request.fallbackId, caption: result.caption,

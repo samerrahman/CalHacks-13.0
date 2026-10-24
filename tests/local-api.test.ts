@@ -11,8 +11,8 @@ function invoke(api: ReturnType<typeof createLocalApi>, path: string, options: {
  return new Promise(resolve => {
   const raw = options.raw ?? (options.body === undefined ? '' : JSON.stringify(options.body));
   const request = Readable.from(raw ? [Buffer.from(raw)] : []) as unknown as IncomingMessage;
-  request.url = '/api/lock-in/' + path; request.method = options.method ?? (options.body === undefined && options.raw === undefined ? 'GET' : 'POST');
-  request.headers = { host: '127.0.0.1:5173', origin: 'http://127.0.0.1:5173', 'sec-fetch-site': 'same-origin', 'x-lock-in-client': '1', 'content-type': 'application/json', ...options.headers };
+  request.url = '/api/hush/' + path; request.method = options.method ?? (options.body === undefined && options.raw === undefined ? 'GET' : 'POST');
+  request.headers = { host: '127.0.0.1:5173', origin: 'http://127.0.0.1:5173', 'sec-fetch-site': 'same-origin', 'x-hush-client': '1', 'content-type': 'application/json', ...options.headers };
   Object.defineProperty(request, 'socket', { value: { remoteAddress: options.peer ?? '127.0.0.1' } });
   const result: Result = { status: 0, headers: {}, body: null };
   const response = { writableEnded: false, writeHead(status: number, headers: Record<string,string>) { result.status = status; result.headers = headers; }, end(this: { writableEnded: boolean }, body: string) { this.writableEnded = true; result.body = JSON.parse(body); resolve(result); } } as unknown as ServerResponse;
@@ -50,7 +50,7 @@ test('foreign origin, DNS-rebinding host, nonlocal peers, missing app header and
   { headers: { origin: 'https://attacker.invalid' } },
   { headers: { host: 'attacker.invalid:5173', origin: 'http://attacker.invalid:5173' } },
   { peer: '192.168.0.8' },
-  { headers: { 'x-lock-in-client': undefined } },
+  { headers: { 'x-hush-client': undefined } },
   { headers: { origin: undefined } },
   { headers: { 'sec-fetch-site': 'cross-site' } },
  ]) assert.equal((await invoke(api, 'speech', { body: speech(), ...opts })).status, 403);

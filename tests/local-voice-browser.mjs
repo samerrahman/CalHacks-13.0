@@ -2,13 +2,13 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 if (!process.argv.includes('--live')) throw new Error('Requires --live');
-const result={checkedAt:new Date().toISOString(),application:'LOCK IN',scope:'Actual Chrome gameplay with Gemini-written monster dialogue through local Vite provider bridge',cameraRequested:false,traceSharingEnabled:false,status:'failed',errors:[],monsterResponses:[]};
+const result={checkedAt:new Date().toISOString(),application:'HUSH',scope:'Actual Chrome gameplay with Gemini-written monster dialogue through local Vite provider bridge',cameraRequested:false,traceSharingEnabled:false,status:'failed',errors:[],monsterResponses:[]};
 const browser=await chromium.launch({channel:'chrome',headless:true});
 await mkdir('docs/qa',{recursive:true});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}});page.on('pageerror',error=>result.errors.push(error.message.slice(0,200)));
- page.on('response',async response=>{if(!response.url().endsWith('/api/lock-in/monster'))return;try{const value=await response.json();if(!value.speech)return;result.monsterResponses.push({requestId:value.requestId,caption:value.caption,textSource:value.textSource,textLatencyMs:value.textLatencyMs,textReason:value.textReason??null,textProviderRequestId:value.textProviderRequestId??null,evidenceEventIds:value.evidenceEventIds,totalLatencyMs:value.totalLatencyMs,speech:{source:value.speech.source,latencyMs:value.speech.latencyMs,providerRequestId:value.speech.providerRequestId??null,reason:value.speech.reason??null,bytes:value.speech.audioBase64?Buffer.from(value.speech.audioBase64,'base64').length:0}});}catch{result.errors.push('Invalid contextual dialogue response');}});
- await page.goto(process.env.LOCK_IN_TEST_URL||'http://127.0.0.1:5174');
+ page.on('response',async response=>{if(!response.url().endsWith('/api/hush/monster'))return;try{const value=await response.json();if(!value.speech)return;result.monsterResponses.push({requestId:value.requestId,caption:value.caption,textSource:value.textSource,textLatencyMs:value.textLatencyMs,textReason:value.textReason??null,textProviderRequestId:value.textProviderRequestId??null,evidenceEventIds:value.evidenceEventIds,totalLatencyMs:value.totalLatencyMs,speech:{source:value.speech.source,latencyMs:value.speech.latencyMs,providerRequestId:value.speech.providerRequestId??null,reason:value.speech.reason??null,bytes:value.speech.audioBase64?Buffer.from(value.speech.audioBase64,'base64').length:0}});}catch{result.errors.push('Invalid contextual dialogue response');}});
+ await page.goto(process.env.HUSH_TEST_URL||'http://127.0.0.1:5174');
  await expect(page.getByRole('button',{name:'Skip guidance & start',exact:true})).toBeEnabled({timeout:20000});
  await expect(page.getByText('Monster speech enabled · ElevenLabs',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Skip guidance & start',exact:true}).click();

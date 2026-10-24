@@ -11,7 +11,7 @@ let integrationRun = 0;
 let integrationPrefix = 'boot';
 function localDevApi(): boolean { return !!import.meta.env?.DEV && typeof location !== 'undefined' && ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname); }
 async function localRequest<T>(endpoint: string, body?: unknown): Promise<T> {
-  const response = await fetch(`/api/lock-in/${endpoint}`, { method: body === undefined ? 'GET' : 'POST', credentials: 'omit', headers: { 'X-Lock-In-Client': '1', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(endpoint === 'director' ? DIRECTOR_TIMEOUT_MS : endpoint === 'monster' ? MONSTER_TOTAL_TIMEOUT_MS + 500 : endpoint === 'speech' ? 7500 : 1500) });
+  const response = await fetch(`/api/hush/${endpoint}`, { method: body === undefined ? 'GET' : 'POST', credentials: 'omit', headers: { 'X-Hush-Client': '1', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(endpoint === 'director' ? DIRECTOR_TIMEOUT_MS : endpoint === 'monster' ? MONSTER_TOTAL_TIMEOUT_MS + 500 : endpoint === 'speech' ? 7500 : 1500) });
   if (!response.ok) throw new Error(`Local provider HTTP ${response.status}`);
   return response.json() as Promise<T>;
 }
@@ -19,7 +19,7 @@ async function localRequest<T>(endpoint: string, body?: unknown): Promise<T> {
  * of the same deterministic seed with a reconnect of the current session. */
 export function beginIntegrationRun(): void { integrationRun++; integrationPrefix = `${integrationRun}-${token().slice(0, 12)}`; }
 export async function integrationStatus(): Promise<IntegrationStatus> {
-  if (window.lockIn) return window.lockIn.status();
+  if (window.hush) return window.hush.status();
   if (localDevApi()) {
     try { return await localRequest<IntegrationStatus>('status'); }
     catch { return { desktop: false, presage: false, gemini: false, elevenlabs: false, spacetime: false, reasons: ['Local development provider bridge unavailable', 'Live Presage sensing requires Electron'] }; }
@@ -32,7 +32,7 @@ export async function requestDirector(request: DirectorRequest): Promise<Directo
   try {
     const safe = publicDirectorRequest(request);
     const remote = { ...safe, requestId: `${integrationPrefix}:${safe.requestId.slice(-96)}` };
-    const result = window.lockIn ? await window.lockIn.director(remote) : local ? await localRequest<DirectorResult>('director', remote) : null;
+    const result = window.hush ? await window.hush.director(remote) : local ? await localRequest<DirectorResult>('director', remote) : null;
     if (result) {
       if (run !== integrationRun) return { proposal: null, source: 'fallback', latencyMs: result.latencyMs, reason: 'Response from previous shift discarded' };
       // Restore local identity only when the provider echoed the transported ID.
@@ -47,7 +47,7 @@ export async function requestSpeech(request: SpeechRequest): Promise<SpeechResul
   const local = localDevApi();
   try {
     const remote = { ...request, requestId: `${integrationPrefix}:${request.requestId.slice(-96)}` };
-    const result = window.lockIn ? await window.lockIn.speech(remote) : local ? await localRequest<SpeechResult>('speech', remote) : null;
+    const result = window.hush ? await window.hush.speech(remote) : local ? await localRequest<SpeechResult>('speech', remote) : null;
     if (result && run === integrationRun) return result;
   } catch { /* Captions plus radio beep are always usable. */ }
   return { audioBase64: null, mimeType: 'audio/mpeg', source: 'fallback', latencyMs: 0, reason: local ? 'Local voice unavailable or timed out · captions remain available' : 'No live voice bridge · captions and radio beep' };
@@ -58,7 +58,7 @@ export async function requestMonster(request: MonsterRequest): Promise<MonsterRe
   try {
     const safe = publicMonsterRequest(request);
     const remote = { ...safe, requestId: `${integrationPrefix}:${safe.requestId.slice(-96)}` };
-    const result = window.lockIn ? await window.lockIn.monster(remote) : localDevApi() ? await localRequest<MonsterResult>('monster', remote) : null;
+    const result = window.hush ? await window.hush.monster(remote) : localDevApi() ? await localRequest<MonsterResult>('monster', remote) : null;
     if (result && result.requestId === remote.requestId && run === integrationRun && Date.now() < request.expiresAtMs) return { ...result, requestId: request.requestId };
     return authoredMonsterFallback(request, 'Stale or unavailable contextual dialogue');
   } catch { return authoredMonsterFallback(request, 'Contextual dialogue unavailable · authored fallback'); }
@@ -90,14 +90,14 @@ export class TraceBridge {
   async connect(consent: boolean, seed: number, mode: string): Promise<void> {
     if (!consent || this.channel || this.disposed || this.connecting) return;
     const generation = ++this.generation;
-    const channelName = `lock-in-${token()}`;
+    const channelName = `hush-${token()}`;
     this.channel = new BroadcastChannel(channelName);
     this.access = { channel: channelName };
     this.status = 'Local trace · same browser only';
     if (!import.meta.env.VITE_SPACETIMEDB_DB_NAME) return;
     this.connecting = true;
     try {
-      if ((await window.lockIn?.status())?.offline) return;
+      if ((await window.hush?.status())?.offline) return;
       if (generation !== this.generation || this.disposed) return;
       this.client = await connectSpacetime(
         () => { if (!this.disposed) this.status = 'SpacetimeDB reconnecting · local trace continues'; },
@@ -152,7 +152,7 @@ export function subscribeJudge(listener: (snapshot: TraceSnapshot) => void, repo
   try {
     const raw = new URLSearchParams(location.hash.slice(1)).get('judge');
     const access = JSON.parse(atob(raw ?? '')) as JudgeAccess;
-    if (!/^lock-in-[a-f0-9]{64}$/.test(access.channel)) throw new Error('Invalid trace access');
+    if (!/^hush-[a-f0-9]{64}$/.test(access.channel)) throw new Error('Invalid trace access');
     channel = new BroadcastChannel(access.channel);
     channel.onmessage = e => listener(e.data as TraceSnapshot);
     reportStatus('Waiting for consenting local session');

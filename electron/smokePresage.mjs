@@ -3,15 +3,15 @@
 import { _electron } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
 if (!process.argv.includes('--camera')) { console.error('Requires --camera and operator consent in the current session'); process.exit(2); }
-const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.LOCK_IN_DEV_URL; delete env.LOCK_IN_OFFLINE;
-const result = { application: 'LOCK IN', checkedAt: new Date().toISOString(), cameraRequested: true, rawPulseRecorded: false, traceSharingEnabled: false, status: 'blocked', checks: [] };
+const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.HUSH_DEV_URL; delete env.HUSH_OFFLINE;
+const result = { application: 'HUSH', checkedAt: new Date().toISOString(), cameraRequested: true, rawPulseRecorded: false, traceSharingEnabled: false, status: 'blocked', checks: [] };
 mkdirSync('docs/qa', { recursive: true }); let app;
 try {
  app = await _electron.launch({ args: ['dist-electron/main.mjs'], env, timeout: 30000 });
  const page = await app.firstWindow(); page.setDefaultTimeout(10000);
  await app.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; window.show(); window.focus(); });
  await page.getByRole('button', { name: /Skip guidance & start/ }).waitFor({ state: 'visible', timeout: 30000 });
- const status = await page.evaluate(() => window.lockIn.status());
+ const status = await page.evaluate(() => window.hush.status());
  if (!status.presage) throw new Error('Native runtime/key unavailable; capture not started');
  await page.getByRole('button', { name: /Operator settings/ }).click();
  await page.getByLabel('Pulse input').selectOption('presage');

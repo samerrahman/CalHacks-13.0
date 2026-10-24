@@ -1,6 +1,6 @@
-# LOCK IN harder revision — 2026-10-24
+# HUSH harder revision — 2026-10-24
 
-The root application is LOCK IN. Run `npm run dev` for browser play or `npm run desktop` for the native Presage camera path. The opening cutscene, `src/main.tsx`, intro dialogue and asset files were left unchanged in this revision. Both original build kits and local credentials are preserved.
+The root application is HUSH. Run `npm run dev` for browser play or `npm run desktop` for the native Presage camera path. The opening cutscene, `src/main.tsx`, intro dialogue and asset files were left unchanged in this revision. Both original build kits and local credentials are preserved.
 
 ## Current behavior
 
@@ -34,6 +34,6 @@ The user reports successful30-second calibration. **A new real-camera measuremen
 
 The last live final-prompt monster probe generated Gemini text in891ms and ElevenLabs speech in359ms, then decoded the exact generated caption's audio. See [generated-monster narrative evidence](qa/generated-monster-narrative-check.json). That predates this rule revision; this turn does not claim a new live provider run. Existing narration/queue regressions cover nonoverlap and delayed/out-of-order responses.
 
-The local provider contracts now carry bounded line position, danger and remaining cells without private wire answers, memory inputs, raw physiology or camera frames. The Convex contract is now `lock-in-v2`; corresponding functions/schema are prepared locally but were not deployed. The previously reachable deployment lacked LOCK IN functions. Remote subscription/reconnect/delete remain unverified. Local judge sharing is separate and works offline.
+The local provider contracts now carry bounded line position, danger and remaining cells without private wire answers, memory inputs, raw physiology or camera frames. The Convex contract is now `hush-v2`; corresponding functions/schema are prepared locally but were not deployed. The previously reachable deployment lacked HUSH functions. Remote subscription/reconnect/delete remain unverified. Local judge sharing is separate and works offline.
 
 No keys, account settings, paid resources or deployments were changed. Packaging, signing, notarization and human speaker-quality assessment are not claimed. The large Three.js bundle warning remains nonfatal. The supplied asset bytes are unchanged; no new images or cutscene assets were generated.

@@ -27,7 +27,7 @@ export function createScene(container: HTMLElement): SceneView {
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .79;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;cursor:grab';
-  renderer.domElement.setAttribute('aria-label', 'Sealed LOCK IN shelter. Click equipment to inspect it. Drag to look; keyboard controls also select each station.');
+  renderer.domElement.setAttribute('aria-label', 'Sealed HUSH shelter. Click equipment to inspect it. Drag to look; keyboard controls also select each station.');
   container.appendChild(renderer.domElement);
   const hemisphere = new THREE.HemisphereLight(0x59644c, 0x070807, .21); scene.add(hemisphere);
   const fill = new THREE.AmbientLight(0x6b6952, .065); scene.add(fill);
@@ -61,7 +61,7 @@ export function createScene(container: HTMLElement): SceneView {
   }
   box([2.35, .075, .12], [-.35, .60, -2.33], brass);
   // Wall ribs project into the shelter; mount signage in front of their faces.
-  const titlePlate = plate('LOCK IN / 04', ['EMERGENCY OBSERVATION', 'FOREST RESEARCH DIVISION'], [.1, 2.38, -2.32], 1.15);
+  const titlePlate = plate('HUSH / 04', ['EMERGENCY OBSERVATION', 'FOREST RESEARCH DIVISION'], [.1, 2.38, -2.32], 1.15);
   const protocolPlate = plate('CONTAINMENT PROTOCOL', ['SILENCE / CALIBRATE', 'REPAIR / REDIRECT', 'COMPLETE THE BROADCAST'], [-1.85, 1.66, -2.32], .8);
   const cameraPlate = plate('SECURITY FEEDS', ['REMOTE FACILITY CAMERAS', 'LIMITED COVERAGE'], [.75, 1.95, -2.32], .73);
   const sensorPlate = plate('CAMERA INPUT', ['OPTIONAL PERSONAL SENSOR', 'NOT A SECURITY FEED'], [1.9, 2.16, -2.32], .65);
@@ -100,9 +100,9 @@ export function createScene(container: HTMLElement): SceneView {
     for (const [name, asset] of Object.entries(assets) as [ModelName, typeof assets.shelter][]) {
       models.set(name, asset.scene);
       if (name !== 'creature_cctv') { const [pos, rotation] = placement[name]; asset.scene.position.set(...pos); asset.scene.rotation.y = rotation; weathering.apply(asset.scene); scene.add(asset.scene); }
-      if (name === 'terminal') asset.scene.userData.lockInStation = 'terminal';
-      if (name === 'security_monitor') asset.scene.userData.lockInStation = 'cameras';
-      if (name === 'machine_rack' || name === 'emergency_switch' || name === 'proximity_detector') asset.scene.userData.lockInStation = 'equipment';
+      if (name === 'terminal') asset.scene.userData.hushStation = 'terminal';
+      if (name === 'security_monitor') asset.scene.userData.hushStation = 'cameras';
+      if (name === 'machine_rack' || name === 'emergency_switch' || name === 'proximity_detector') asset.scene.userData.hushStation = 'equipment';
       asset.animations.forEach(clip => diagnostics.animationClips.push(`${name}.${clip.name}`));
     }
     function replaceMaterial(mesh: THREE.Mesh, next: THREE.Material) { orphanMaterials.push(...(Array.isArray(mesh.material) ? mesh.material : [mesh.material])); mesh.material = next; }

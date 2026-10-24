@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-const base = process.env.LOCK_IN_TEST_URL ?? 'http://127.0.0.1:5182';
+const base = process.env.HUSH_TEST_URL ?? 'http://127.0.0.1:5182';
 const url = `${base}/tests/fixtures/vitals.html`;
 await mkdir('artifacts', { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });

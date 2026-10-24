@@ -1,10 +1,10 @@
 // Offline desktop gate. Child-process-only override; .env stays untouched.
 import { _electron } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
-const env = { ...process.env, LOCK_IN_OFFLINE: '1' };
-delete env.ELECTRON_RUN_AS_NODE; delete env.LOCK_IN_DEV_URL;
+const env = { ...process.env, HUSH_OFFLINE: '1' };
+delete env.ELECTRON_RUN_AS_NODE; delete env.HUSH_DEV_URL;
 const errors = [], resources = [];
-const result = { application: 'LOCK IN', checkedAt: new Date().toISOString(), mode: 'offline', cameraRequested: false, providerCallsEnabled: false, errors, resources, outcome: 'failed' };
+const result = { application: 'HUSH', checkedAt: new Date().toISOString(), mode: 'offline', cameraRequested: false, providerCallsEnabled: false, errors, resources, outcome: 'failed' };
 mkdirSync('docs/qa', { recursive: true });
 let app;
 try {
@@ -13,13 +13,13 @@ try {
  page.on('pageerror', error => errors.push(error.message.slice(0, 200)));
  page.on('response', response => { if (/\.(glb|wav)(?:\?|$)/.test(response.url())) resources.push({ path: new URL(response.url()).pathname, status: response.status() }); });
  await page.getByRole('button', { name: /Skip guidance & start/ }).waitFor({ state: 'visible', timeout: 30000 });
- result.bridge = await page.evaluate(() => window.lockIn.status());
+ result.bridge = await page.evaluate(() => window.hush.status());
  if (!result.bridge.offline || result.bridge.gemini || result.bridge.elevenlabs || result.bridge.presage) throw new Error('Offline transport gate did not apply');
- result.monsterBridgeType = await page.evaluate(() => typeof window.lockIn.monster);
+ result.monsterBridgeType = await page.evaluate(() => typeof window.hush.monster);
  if (result.monsterBridgeType !== 'function') throw new Error('Contextual dialogue bridge missing');
  // This exercises only the offline IPC route; it never mutates game state.
  result.offlineMonster = await page.evaluate(async () => {
-  const value = await window.lockIn.monster({ requestId: 'offline-ipc-monster', fallbackId: 'FIRST_APPROACH', expiresAtMs: Date.now() + 25000, context: { requestId: 'offline-context', stateVersion: 0, issuedAtGameMs: 0, expiresAtGameMs: 8000, allowedTactics: ['WAIT'], allowedTargets: ['NONE'], allowedTauntIds: ['NONE'], allowedPairs: [{ tactic: 'WAIT', target: 'NONE' }], publicEventIds: ['e1'], events: [{ id: 'e1', seq: 1, time: 0, type: 'RUN_STARTED', detail: 'standard' }], observations: { equipmentState: 'on', researchStage: 1, creatureNode: 'NEAR_PATH', sedationBand: 'SEDATED', machineryClue: 0, transientClue: 0, physiologyClue: 0, linePosition: 18, lineLength: 24, danger: 18, quietChargesRemaining: 4, sensor: { source: 'manual', quality: 'unknown', trend: 'UNKNOWN' }, earnedLure: null } } });
+  const value = await window.hush.monster({ requestId: 'offline-ipc-monster', fallbackId: 'FIRST_APPROACH', expiresAtMs: Date.now() + 25000, context: { requestId: 'offline-context', stateVersion: 0, issuedAtGameMs: 0, expiresAtGameMs: 8000, allowedTactics: ['WAIT'], allowedTargets: ['NONE'], allowedTauntIds: ['NONE'], allowedPairs: [{ tactic: 'WAIT', target: 'NONE' }], publicEventIds: ['e1'], events: [{ id: 'e1', seq: 1, time: 0, type: 'RUN_STARTED', detail: 'standard' }], observations: { equipmentState: 'on', researchStage: 1, creatureNode: 'NEAR_PATH', sedationBand: 'SEDATED', machineryClue: 0, transientClue: 0, physiologyClue: 0, linePosition: 18, lineLength: 24, danger: 18, quietChargesRemaining: 4, sensor: { source: 'manual', quality: 'unknown', trend: 'UNKNOWN' }, earnedLure: null } } });
   return { textSource: value.textSource, speechSource: value.speech.source, hasAudio: value.speech.audioBase64 !== null, caption: value.caption, reason: value.textReason };
  });
  if (result.offlineMonster.textSource !== 'authored-fallback' || result.offlineMonster.speechSource !== 'fallback' || result.offlineMonster.hasAudio) throw new Error('Offline contextual dialogue gate failed');
@@ -50,7 +50,7 @@ try {
  await judge.getByRole('heading', { name: 'Behind the signal.' }).waitFor();
  await judge.getByText('LOCAL BROADCAST · OFFLINE').waitFor({ timeout: 10000 });
  result.security = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map(w => ({ nodeIntegration: w.webContents.getLastWebPreferences().nodeIntegration, contextIsolation: w.webContents.getLastWebPreferences().contextIsolation, sandbox: w.webContents.getLastWebPreferences().sandbox })));
- result.judgeHasPrivilegedBridge = await judge.evaluate(() => !!window.lockIn);
+ result.judgeHasPrivilegedBridge = await judge.evaluate(() => !!window.hush);
  result.judgeTraceReceived = true;
  await page.screenshot({ path: 'docs/qa/lock-in-electron-game.png' });
  await judge.screenshot({ path: 'docs/qa/lock-in-electron-judge.png' });

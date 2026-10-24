@@ -1,6 +1,6 @@
 # /src/render — James (gameplay & integrator)
 
-Three.js presentation for LOCK IN: the enclosed shelter, weathered materials, canvas displays, fictional CCTV composition, local animation, equipment picking, close inspection, bounded mouse look and resource disposal. Gameplay authority remains in `src/game/`; React owns controls and captions. See `docs/ASSETS.md` for the runtime inventory and the preserved `lock-in-kit/docs/ASSETS.md` for geometry/node contracts.
+Three.js presentation for HUSH: the enclosed shelter, weathered materials, canvas displays, fictional CCTV composition, local animation, equipment picking, close inspection, bounded mouse look and resource disposal. Gameplay authority remains in `src/game/`; React owns controls and captions. See `docs/ASSETS.md` for the runtime inventory and the preserved `lock-in-kit/docs/ASSETS.md` for geometry/node contracts.
 
 - Load all ten GLBs from `public/assets/models`. The room is windowless and solid; the sealed door never opens. There are no gameplay shutters or interior creature reveals.
 - `RenderState` is a presentation adapter over authoritative game state. Never invent creature movement, distance, warnings, faults, power state or task progress in a render loop.

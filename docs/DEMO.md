@@ -1,4 +1,4 @@
-# LOCK IN demo route
+# HUSH demo route
 
 Start `npm run desktop` for the native integration demo; `npm run dev` is the complete browser game with neutral or explicitly simulated sensing. Use the status table in `INTEGRATION_STATUS.md` before claiming any live service.
 
@@ -15,4 +15,4 @@ A concise demo:
 
 A practiced expert route is roughly two minutes before explanation or pauses. A guided first play and defensive interruptions take longer. Do not promise a fixed duration.
 
-Integration contribution: Gemini selects real legal movement tactics, ElevenLabs voices exact state-conditioned captions, Presage supplies an optional quality-gated close-range clue and bounded memory tempo, and Convex can mirror consenting sanitized events to a second client. Claim only the parts exercised successfully in this LOCK IN build. The full sponsor assessment remains in `lock-in-kit/docs/TRACKS_AND_DEMO.md`; unrelated tracks do not justify unrelated features.
+Integration contribution: Gemini selects real legal movement tactics, ElevenLabs voices exact state-conditioned captions, Presage supplies an optional quality-gated close-range clue and bounded memory tempo, and Convex can mirror consenting sanitized events to a second client. Claim only the parts exercised successfully in this HUSH build. The full sponsor assessment remains in `lock-in-kit/docs/TRACKS_AND_DEMO.md`; unrelated tracks do not justify unrelated features.

@@ -6,10 +6,10 @@ if (!process.argv.includes('--live')) { console.error('Requires --live after off
 for (const file of ['.env', '.env.local']) if (existsSync(file)) process.loadEnvFile(file);
 const secrets = Object.entries(process.env).filter(([name, value]) => /KEY|TOKEN|SECRET|PASSWORD|VOICE_ID/.test(name) && value && value.length > 3).map(([, value]) => value);
 function safeError(error) { let message = String(error?.message ?? error); for (const secret of secrets) message = message.split(secret).join('[REDACTED]'); return message.replace(/https?:\/\/\S+/g, '[URL]').slice(0, 350); }
-const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.LOCK_IN_DEV_URL; delete env.LOCK_IN_OFFLINE;
+const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.HUSH_DEV_URL; delete env.HUSH_OFFLINE;
 const errors = [];
 const suffix = process.argv.includes('--alternate') ? '-alternate' : '';
-const result = { configuredModel: process.env.GEMINI_MODEL, application: 'LOCK IN', checkedAt: new Date().toISOString(), method: 'Actual Electron game, visible manual controls, sanitized judge DOM', cameraRequested: false, traceSharingEnabled: false, status: 'failed', errors };
+const result = { configuredModel: process.env.GEMINI_MODEL, application: 'HUSH', checkedAt: new Date().toISOString(), method: 'Actual Electron game, visible manual controls, sanitized judge DOM', cameraRequested: false, traceSharingEnabled: false, status: 'failed', errors };
 mkdirSync('docs/qa', { recursive: true }); let app;
 try {
  app = await _electron.launch({ args: ['dist-electron/main.mjs'], env, timeout: 30000 });
@@ -17,7 +17,7 @@ try {
  await app.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; window.show(); window.focus(); });
  page.on('pageerror', error => errors.push(safeError(error)));
  await page.getByRole('button', { name: /Skip guidance & start/ }).waitFor({ state: 'visible', timeout: 30000 });
- result.configured = await page.evaluate(() => window.lockIn.status());
+ result.configured = await page.evaluate(() => window.hush.status());
  if (!result.configured.gemini) { result.status = 'blocked'; result.reason = 'Gemini configuration unavailable; no game started'; }
  else {
   await page.getByRole('button', { name: /Operator settings/ }).click();
@@ -57,7 +57,7 @@ try {
   result.speechGenerated = /^LIVE/.test(snapshot?.providers?.ELEVENLABS ?? '');
   result.speechPlaybackVerified = result.speechGenerated && snapshot?.audio?.decodedSpeech > 0 && snapshot?.audio?.startedSpeech > 0 && snapshot?.audio?.playbackErrors === 0 && snapshot?.audio?.contextState === 'running';
   result.status = accepted && !errors.length ? 'passed' : 'failed';
-  result.reason = accepted ? 'Real LOCK IN proposal accepted by actual reducer; manual sensing, no camera or shared trace' : 'No accepted live proposal in bounded first-request window';
+  result.reason = accepted ? 'Real HUSH proposal accepted by actual reducer; manual sensing, no camera or shared trace' : 'No accepted live proposal in bounded first-request window';
  }
 } catch (error) { result.reason = safeError(error); }
 finally { if (app) await app.close().catch(error => errors.push(safeError(error))); writeFileSync(`docs/qa/lock-in-electron-live-providers${suffix}.json`, JSON.stringify(result, null, 2) + '\n'); console.log(JSON.stringify(result, null, 2)); if (result.status !== 'passed') process.exitCode = 1; }

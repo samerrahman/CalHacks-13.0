@@ -137,17 +137,36 @@ export function createAudioEngine(): AudioEngine {
   /** Direction-only placement for the creature soundscape: loudness comes from the explicit distance curve. */
   function playAt(name: EffectName, gainValue: number, location: AudioPosition, rate = 1): AudioBufferSourceNode | null {
     const buffer = buffers.get(name); if (!buffer) return null;
-    const source = playBuffer(buffer, gainValue, location, false, 0);
+    const source = playBuffer(buffer, gainValue, location, 'plain', 0);
     if (source) source.playbackRate.value = rate;
     return source;
   }
-  function playBuffer(buffer: AudioBuffer, gainValue: number, location: AudioPosition = [-1.3, 1.1, -1.8], radio = false, rolloff?: number): AudioBufferSourceNode | null {
+  function playBuffer(buffer: AudioBuffer, gainValue: number, location: AudioPosition = [-1.3, 1.1, -1.8], treatment: 'plain' | 'radio' | 'monster' = 'plain', rolloff?: number): AudioBufferSourceNode | null {
     // Bounded polyphony: room for a hunt's run, a pounding barrage, effects and radio speech at once.
     if (!context || !master || disposed || paused || active.size >= 16) return null;
     const source = context.createBufferSource(); source.buffer = buffer;
     const gain = context.createGain(); gain.gain.value = Math.min(.85, Math.max(0, gainValue));
     const nodes: AudioNode[] = [gain];
-    if (radio) {
+    if (treatment === 'monster') {
+      // Keep one source for queue timing and positional audio. Parallel paths
+      // add a crushed throat and a short dark double beneath the spoken words.
+      source.playbackRate.value = .78;
+      const high = context.createBiquadFilter(); high.type = 'highpass'; high.frequency.value = 85;
+      const low = context.createBiquadFilter(); low.type = 'lowpass'; low.frequency.value = 2600;
+      const body = context.createGain(); body.gain.value = .52;
+      const drive = context.createGain(); drive.gain.value = 3.3;
+      const shaper = context.createWaveShaper(); shaper.curve = distortion(18); shaper.oversample = '2x';
+      const growlFilter = context.createBiquadFilter(); growlFilter.type = 'lowpass'; growlFilter.frequency.value = 1450;
+      const growl = context.createGain(); growl.gain.value = .48;
+      const delay = context.createDelay(.25); delay.delayTime.value = .085;
+      const echoFilter = context.createBiquadFilter(); echoFilter.type = 'lowpass'; echoFilter.frequency.value = 1050;
+      const echo = context.createGain(); echo.gain.value = .23;
+      source.connect(high); high.connect(low);
+      low.connect(body); body.connect(gain);
+      low.connect(drive); drive.connect(shaper); shaper.connect(growlFilter); growlFilter.connect(growl); growl.connect(gain);
+      low.connect(delay); delay.connect(echoFilter); echoFilter.connect(echo); echo.connect(gain);
+      nodes.push(high, low, body, drive, shaper, growlFilter, growl, delay, echoFilter, echo);
+    } else if (treatment === 'radio') {
       const high = context.createBiquadFilter(); high.type = 'highpass'; high.frequency.value = 350;
       const low = context.createBiquadFilter(); low.type = 'lowpass'; low.frequency.value = 2900;
       source.connect(high); high.connect(low); low.connect(gain); nodes.push(high, low);
@@ -317,7 +336,7 @@ export function createAudioEngine(): AudioEngine {
       diagnostics.decodedSpeech++; syncContextState();
       // The game may have changed while the provider or decoder was working.
       if (disposed || version !== generation || queue.active?.id !== request.id || request.expiresAt <= now) return;
-      const source = playBuffer(buffer, .65, request.position, true);
+      const source = playBuffer(buffer, .65, request.position, request.followCreature ? 'monster' : 'radio');
       if (!source) { fallback(request); return; }
       diagnostics.startedSpeech++;
       speechSource = source; diagnostics.speech = request.source === 'cached' ? 'cached' : 'live';

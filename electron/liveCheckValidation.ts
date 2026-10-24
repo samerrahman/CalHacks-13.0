@@ -3,7 +3,7 @@ import { buildDirectorRequest, validateProposal } from '../src/game/directorVali
 import type { GameState } from '../src/game/state';
 import { publicDirectorRequest } from '../src/integrations/contracts';
 
-/** Labeled synthetic LOCK IN authority, separate from an actual UI playthrough.
+/** Labeled synthetic HUSH authority, separate from an actual UI playthrough.
  * A visible quiet-box mistake supplies sound evidence, never memory answers. */
 export function createDirectorProbe(requestId: string) {
   let state = step(createGame(17, 'demo'), 2);

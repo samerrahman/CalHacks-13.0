@@ -339,9 +339,9 @@
     {
       "path": "public/assets/decals/title.svg",
       "url": "/assets/decals/title.svg",
-      "bytes": 491,
-      "sha256": "1662ecbce6310b961dddab295a69f704c7411ed6ea06e65c4f6a2a008e16a823",
-      "source": "lock-in-kit/assets/decals/title.svg",
+      "bytes": 488,
+      "sha256": "341a17cfd22aff8fb6e76bb248deed1c8a81fb7a99f92f38bd875c9814d42f4a",
+      "source": "adapted from lock-in-kit/assets/decals/title.svg",
       "license": "public/assets/LICENSE.txt"
     },
     {

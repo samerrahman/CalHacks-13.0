@@ -11,10 +11,10 @@ if (!['native', 'gemini', 'elevenlabs', 'spacetime'].includes(selected)) throw n
 if (selected !== 'native' && !process.argv.includes('--live')) throw new Error('Provider checks require explicit --live after the offline game gate');
 for (const filename of ['.env', '.env.local']) if (existsSync(filename)) process.loadEnvFile(filename);
 type Outcome = { status: 'passed' | 'blocked' | 'failed' | 'not_tested'; detail: string; checkedAt?: string; [key: string]: unknown };
-const results: Record<string, Outcome> = Object.fromEntries(['presage', 'gemini', 'elevenlabs', 'spacetime'].map(name => [name, { status: 'not_tested', detail: 'Not yet tested in LOCK IN; previous-game evidence does not qualify' }]));
+const results: Record<string, Outcome> = Object.fromEntries(['presage', 'gemini', 'elevenlabs', 'spacetime'].map(name => [name, { status: 'not_tested', detail: 'Not yet tested in HUSH; previous-game evidence does not qualify' }]));
 if (existsSync('docs/integration-checks.json')) {
   const prior = JSON.parse(readFileSync('docs/integration-checks.json', 'utf8'));
-  if (prior.application === 'LOCK IN') Object.assign(results, prior.results);
+  if (prior.application === 'HUSH') Object.assign(results, prior.results);
 }
 delete results.convex;
 const checkedAt = new Date().toISOString();
@@ -39,7 +39,7 @@ if (selected === 'gemini') {
       const result = await geminiProposal(probe.request, process.env);
       const rejection = result.proposal ? validateDirectorProbe(probe.state, result.proposal, result.latencyMs) : 'PROVIDER_FAILED';
       const proposal = rejection === null ? result.proposal as DirectorProposal : null;
-      results.gemini = { status: proposal ? 'passed' : 'failed', checkedAt, scope: 'structured probe; actual game proof separate', model: process.env.GEMINI_MODEL, detail: proposal ? 'Real LOCK IN proposal passed the full current-state validator' : result.reason ?? `Rejected: ${rejection}`, latencyMs: result.latencyMs, requestId: probe.request.requestId, providerRequestId: result.providerRequestId, source: result.source, validation: rejection ?? 'ACCEPTED', observation: probe.request, ...(proposal ? { selectedTactic: proposal.tactic, selectedTarget: proposal.target, evidenceEventIds: proposal.evidenceEventIds, tauntId: proposal.tauntId } : {}) };
+      results.gemini = { status: proposal ? 'passed' : 'failed', checkedAt, scope: 'structured probe; actual game proof separate', model: process.env.GEMINI_MODEL, detail: proposal ? 'Real HUSH proposal passed the full current-state validator' : result.reason ?? `Rejected: ${rejection}`, latencyMs: result.latencyMs, requestId: probe.request.requestId, providerRequestId: result.providerRequestId, source: result.source, validation: rejection ?? 'ACCEPTED', observation: probe.request, ...(proposal ? { selectedTactic: proposal.tactic, selectedTarget: proposal.target, evidenceEventIds: proposal.evidenceEventIds, tauntId: proposal.tauntId } : {}) };
     } catch (error) { results.gemini = { status: 'failed', checkedAt, detail: providerFailure(error, 'Gemini availability/request failed') }; }
   }
 }
@@ -94,7 +94,7 @@ if (selected === 'spacetime') {
 mkdirSync('docs', { recursive: true });
 const alternate = selected === 'gemini' && process.argv.includes('--alternate');
 if (alternate) mkdirSync('docs/qa', { recursive: true });
-const evidence = alternate ? { application: 'LOCK IN', checkedAt, platform: `${process.platform}/${process.arch}`, processOnlyModelOverride: true, result: results.gemini } : { application: 'LOCK IN', checkedAt, platform: `${process.platform}/${process.arch}`, results };
+const evidence = alternate ? { application: 'HUSH', checkedAt, platform: `${process.platform}/${process.arch}`, processOnlyModelOverride: true, result: results.gemini } : { application: 'HUSH', checkedAt, platform: `${process.platform}/${process.arch}`, results };
 writeFileSync(alternate ? 'docs/qa/lock-in-gemini-alternate.json' : 'docs/integration-checks.json', JSON.stringify(evidence, null, 2) + '\n');
 console.log(JSON.stringify(alternate ? results.gemini : results, null, 2));
 const selectedResult = results[selected === 'native' ? 'presage' : selected]!;

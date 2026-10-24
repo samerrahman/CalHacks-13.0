@@ -36,4 +36,4 @@ Running several agents on one machine? Give each one its own worktree: `git work
 
 ## Current implementation and gates
 
-The user explicitly authorized replacing the root NIGHT RELAY implementation with LOCK IN, including necessary shared contracts. Original team responsibilities still guide subsequent maintenance. Refer to `docs/INTEGRATION_STATUS.md` and `docs/HANDOFF.md` for current LOCK IN results; prior NIGHT RELAY live results are historical only.
+The user explicitly authorized replacing the root NIGHT RELAY implementation with HUSH, including necessary shared contracts. Original team responsibilities still guide subsequent maintenance. Refer to `docs/INTEGRATION_STATUS.md` and `docs/HANDOFF.md` for current HUSH results; prior NIGHT RELAY live results are historical only.
