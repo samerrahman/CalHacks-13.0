@@ -17,3 +17,5 @@
 .camera-prompt .camera-prompt-actions{max-width:none;margin:22px 0 14px}.camera-prompt .camera-prompt-actions .primary{margin-top:0}
 .camera-prompt .camera-decline{width:100%;text-align:left}.camera-prompt-note{color:#d2b98b;margin-bottom:10px}
 .camera-prompt .camera-prompt-actions.split{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0 0}.camera-prompt .split button{text-align:center;font-size:12px}
+/* The ending plays over the HUD after a win; the run report (z 20) follows it. */
+.ending-film,.ending-cards{z-index:15}

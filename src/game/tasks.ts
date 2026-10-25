@@ -155,8 +155,10 @@ export function startStage(state: GameState, stage: Stage): void {
     replayMemory(state);
   } else if (stage === 5) {
     state.tasks.memory = emptyMemory(); state.tasks.faults.active = [];
-    state.notice = 'All four research stages complete. Press T to broadcast the final containment signal.';
+    state.notice = 'All four basement locks are released. Press T to send the last decoy heartbeat; the door motor starts once it holds. The motor is loud.';
   }
+  // Each research stage releases one of the basement door's four locks.
+  if (stage >= 2 && stage <= 4 && state.mode !== 'tutorial') state.notice = `Basement lock ${stage - 1} of 4 released. ${state.notice}`;
 }
 function completeStage(state: GameState): void {
   const stage = state.tasks.stage;

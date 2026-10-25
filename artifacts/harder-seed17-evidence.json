@@ -33,9 +33,9 @@
       "Mask your heartbeat.",
       "Clear the overload.",
       "Mark its position.",
-      "Lead it toward containment.",
+      "Lead it away from the door.",
       "Let it lose your trail.",
-      "Bring it back inside."
+      "Open the basement door."
     ],
     "resourceSamples": [
       {
@@ -65,13 +65,14 @@
     "faultsByEar": 14,
     "routes": 1,
     "pulsePeriods": [
-      673
+      669
     ],
     "pulseBeatsNeeded": [
       8
     ],
     "marks": 3,
-    "calmHolds": 1
+    "calmHolds": 1,
+    "ending": "Ending"
   },
-  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n135s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+  "result": "FIELD RESEARCH / RUN REPORT\n↗\nYou escaped.\n\nThe basement door opened just in time. You dropped it on its claws and went down into the dark.\n\n4/4\nRESEARCH STAGES\n128s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
 }

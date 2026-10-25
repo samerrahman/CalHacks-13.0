@@ -29,4 +29,8 @@ export interface RenderState {
   scare?: ScareEvent | null;
   softScares?: boolean;
   inspection?: boolean;
+  /** Basement locks released (completed research stages, 0–4). */
+  locks?: number;
+  /** The last decoy is out and the basement door motor is spinning up. */
+  doorMotor?: boolean;
 }

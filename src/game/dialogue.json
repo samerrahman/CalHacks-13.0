@@ -21,7 +21,7 @@
       "event": "intro",
       "priority": 5,
       "maxAgeSeconds": 9,
-      "text": "The shelter is sealed. You have a terminal, three remote emitters, and one emergency isolation switch."
+      "text": "The shelter is sealed. You have a terminal, three remote emitters, one emergency isolation switch, and a locked basement door."
     },
     {
       "id": "INTRO_PROTOCOL",
@@ -29,7 +29,7 @@
       "event": "intro",
       "priority": 5,
       "maxAgeSeconds": 10,
-      "text": "Silence the faults. Test the emitters. Route the signal back into containment."
+      "text": "Silence the faults. Each stage releases one basement lock. Four locks, then you get out."
     },
     {
       "id": "INTRO_SEDATIVE",
@@ -133,7 +133,7 @@
       "event": "stage-complete",
       "priority": 3,
       "maxAgeSeconds": 8,
-      "text": "Overload cleared. Emitter B will lead it toward the containment approach."
+      "text": "Overload cleared. Third lock released. Emitter B will draw it further from the door."
     },
     {
       "id": "LURE_B_START",
@@ -149,7 +149,7 @@
       "event": "lure-success",
       "priority": 4,
       "maxAgeSeconds": 8,
-      "text": "Route confirmed. Final containment broadcast is available."
+      "text": "Fourth lock released. One last decoy, then the basement door."
     },
     {
       "id": "FINAL_READY",
@@ -157,7 +157,7 @@
       "event": "final-ready",
       "priority": 4,
       "maxAgeSeconds": 8,
-      "text": "Press T to activate the final lure. The containment system will seal after it enters."
+      "text": "Press T to send the last decoy. The door motor starts once it holds, and it is loud."
     },
     {
       "id": "CONTAINMENT_ROUTE",
@@ -165,7 +165,7 @@
       "event": "final-transmit",
       "priority": 4,
       "maxAgeSeconds": 8,
-      "text": "Containment broadcast active. Remote capture sequence running."
+      "text": "Decoy broadcast active. Basement lock cycle running."
     },
     {
       "id": "CONTAINMENT_COMPLETE",
@@ -173,7 +173,7 @@
       "event": "win",
       "priority": 5,
       "maxAgeSeconds": 8,
-      "text": "Containment confirmed. The emergency protocol is complete."
+      "text": "Basement door opening. Go."
     },
     {
       "id": "BLACKOUT",

@@ -20,14 +20,14 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 /** 0 before `a`, 1 after `b`, eased between. */
 export const ramp = (t: number, a: number, b: number) => smooth(clamp01((t - a) / (b - a)));
 /** Piecewise value track: [[time, value], …], eased between keys. */
-const track = (t: number, keys: [number, number][]) => {
+export const track = (t: number, keys: [number, number][]) => {
   if (t <= keys[0][0]) return keys[0][1];
   for (let i = 1; i < keys.length; i++) if (t <= keys[i][0]) return keys[i - 1][1] + (keys[i][1] - keys[i - 1][1]) * smooth((t - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]));
   return keys[keys.length - 1][1];
 };
 /** Deterministic 0..1 noise per integer step (for flicker). */
-const hash = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-const pulse = (t: number, hz: number, sharpness = 3) => Math.pow(0.5 + 0.5 * Math.sin(t * Math.PI * 2 * hz), sharpness);
+export const hash = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+export const pulse = (t: number, hz: number, sharpness = 3) => Math.pow(0.5 + 0.5 * Math.sin(t * Math.PI * 2 * hz), sharpness);
 const deg = THREE.MathUtils.degToRad;
 
 function catmull(p0: number, p1: number, p2: number, p3: number, u: number): number {
@@ -35,11 +35,11 @@ function catmull(p0: number, p1: number, p2: number, p3: number, u: number): num
   return 0.5 * (2 * p1 + (-p0 + p2) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u2 + (-p0 + 3 * p1 - 3 * p2 + p3) * u3);
 }
 
-/** Deterministic first-person rig. Running is footfall-driven (STEP_RATE, shared with the
+/** Deterministic first-person rig. Running is footfall-driven (`stepRate`, shared with the
  * footstep audio): a sharp dip and a pitch nod on every step, sway alternating per foot,
  * constant speed between keys, and a FOV pump. Impacts shake and shove the view. */
 export class CameraRig {
-  constructor(private keys: CameraKey[], private impacts: Impact[] = []) {}
+  constructor(private keys: CameraKey[], private impacts: Impact[] = [], private stepRate: number = STEP_RATE) {}
   apply(camera: THREE.PerspectiveCamera, t: number): void {
     const k = this.keys, last = k.length - 1;
     let i = 0;
@@ -52,7 +52,7 @@ export class CameraRig {
     const yaw = catmull(a.yaw, b.yaw, c.yaw, d.yaw, e), pitch = catmull(a.pitch ?? 0, b.pitch ?? 0, c.pitch ?? 0, d.pitch ?? 0, e);
     const roll = catmull(a.roll ?? 0, b.roll ?? 0, c.roll ?? 0, d.roll ?? 0, e);
 
-    const phase = t * STEP_RATE, step = phase - Math.floor(phase), side = Math.sin(Math.PI * phase);
+    const phase = t * this.stepRate, step = phase - Math.floor(phase), side = Math.sin(Math.PI * phase);
     const bob = (Math.pow(Math.sin(Math.PI * step), 0.7) - 0.65) * 0.085 * run; // lowest exactly at each footfall
     const nod = Math.exp(-step * 9) * 2.2 * run, sway = side * 0.035 * run, stepRoll = side * 1.8 * run;
     const gasp = Math.sin(t * Math.PI * 2 * 1.05);

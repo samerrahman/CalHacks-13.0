@@ -70,8 +70,8 @@ export function drawTerminal(display: Display, state: RenderState): void {
     }
     ctx.fillStyle = '#bdc9a0'; ctx.font = '32px monospace'; ctx.fillText(state.armed ? 'SIGNAL CALIBRATED / TRANSMIT' : `INPUT  ${(state.entered ?? []).map(() => '●').join(' ')}${' _'.repeat(Math.max(0, (state.sequenceLength ?? 4) - (state.entered?.length ?? 0)))}`, 48, 421);
   } else {
-    ctx.fillText(state.status === 'won' ? 'CONTAINMENT SECURED' : 'FINAL BROADCAST', 48, 225);
-    ctx.font = '29px monospace'; ctx.fillText(state.status === 'won' ? 'RESEARCH ARCHIVED / SURVIVED' : 'ALL FOUR STAGES COMPLETE', 48, 300);
+    ctx.fillText(state.status === 'won' ? 'DOOR MOTOR ENGAGED' : 'BASEMENT ACCESS', 48, 225);
+    ctx.font = '29px monospace'; ctx.fillText(state.status === 'won' ? 'OPENING / MOTOR NOISE HIGH' : 'LOCKS 4/4 RELEASED / SEND DECOY', 48, 300);
   }
   wornGlass(display, 1024, 512); display.texture.needsUpdate = true;
 }
@@ -102,10 +102,8 @@ export function drawCameraOverlay(display: Display, state: RenderState, corrupti
   ctx.clearRect(0, 0, 1024, 576);
   ctx.fillStyle = 'rgba(7,6,3,.20)'; ctx.fillRect(0, 0, 1024, 576);
   ctx.fillStyle = 'rgba(0,15,8,.48)'; ctx.fillRect(0, 0, 1024, 69); ctx.fillRect(0, 529, 1024, 47);
-  ctx.fillStyle = on ? '#d1dbc2' : '#566a52'; ctx.font = 'bold 28px monospace'; ctx.fillText(`SECURITY FEED ${feed} / ${feed === 'A' ? 'CLEARING' : feed === 'B' ? 'SERVICE PATH' : 'CONTAINMENT'}`, 25, 45);
+  ctx.fillStyle = on ? '#d1dbc2' : '#566a52'; ctx.font = 'bold 28px monospace'; ctx.fillText(`SECURITY FEED ${feed} / ${feed === 'A' ? 'CLEARING' : feed === 'B' ? 'SERVICE PATH' : 'FACILITY'}`, 25, 45);
   ctx.font = '19px monospace'; ctx.fillText('FICTIONAL FACILITY CAMERA   ·   LIMITED COVERAGE', 25, 559);
-  // The supplied offline plate already contains its centered status label.
-  if (state.status === 'won' && feed === 'C' && on) { ctx.fillStyle = '#ccd6ad'; ctx.font = '32px monospace'; ctx.fillText('CONTAINMENT SEALED', 313, 475); }
   if (corruption > 0 && on) {
     ctx.fillStyle = `rgba(1,3,2,${corruption * .85})`; ctx.fillRect(0, 69, 1024, 460);
     const tick = reducedMotion ? 0 : Math.floor(state.time * 14);

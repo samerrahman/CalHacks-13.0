@@ -33,6 +33,8 @@ try {
   const result = page.getByRole('dialog', { name: 'Run results' });
   await expect(result).toContainText('4/4');
   await expect(result).toContainText('Physiological statistics unrecorded.');
+  if (evidenceFor(page).ending !== 'Ending') throw Error('The win did not play the ending before the run report');
+  await expect(result).toContainText('The basement door opened just in time.');
   await page.screenshot({ path: 'artifacts/harder-seed17-win.png' });
   evidence.checks.push('Seed17 won 6 + 8 faults found by ear from the rack key, 6 + 12 cables, a conduit board, growing 3→5 memory + heartbeat mask, three monitor marks, growing 4→6 memory + calm hold, and containment through observed controls');
   evidence.observations = evidenceFor(page); evidence.result = await result.innerText();

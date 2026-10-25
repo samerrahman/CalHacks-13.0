@@ -7,6 +7,7 @@ import type { RenderState } from './state';
 import { createWeathering } from './weathering';
 import { alarmIntensity, scareStrength } from './presentation';
 import { hitStation } from './interaction';
+import { BASEMENT_DOOR, buildBasementDoor } from '../cutscene/props/basementDoor';
 export type { RenderState } from './state';
 
 export interface SceneView {
@@ -56,13 +57,24 @@ export function createScene(container: HTMLElement): SceneView {
   // Exposed cable runs and a corroded cable tray break up the clean kit surfaces.
   const rubber = weathering.material('dark');
   for (let i = 0; i < 4; i++) {
-    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-2.58 + i * .045, 2.95, -2.31), new THREE.Vector3(-2.55 + i * .045, 2.20, -2.32), new THREE.Vector3(-2.45 + i * .05, .74, -2.21), new THREE.Vector3(-1.83 + i * .05, .35, -2.18)]);
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-2.9 + i * .03, 2.95, -2.33), new THREE.Vector3(-2.88 + i * .03, 2.20, -2.34), new THREE.Vector3(-2.84 + i * .03, .74, -2.33), new THREE.Vector3(-2.8 + i * .03, .25, -2.3)]);
     const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, .014, 6, false), rubber); cable.castShadow = true; scene.add(cable);
   }
-  box([2.35, .075, .12], [-.35, .60, -2.33], brass);
+  box([2.1, .075, .12], [-.22, .60, -2.33], brass);
   // Wall ribs project into the shelter; mount signage in front of their faces.
   const titlePlate = plate('HUSH / 04', ['EMERGENCY OBSERVATION', 'FOREST RESEARCH DIVISION'], [.1, 2.38, -2.32], 1.15);
-  const protocolPlate = plate('CONTAINMENT PROTOCOL', ['SILENCE / CALIBRATE', 'REPAIR / REDIRECT', 'COMPLETE THE BROADCAST'], [-1.85, 1.66, -2.32], .8);
+  const protocolPlate = plate('BASEMENT ACCESS', ['FOUR STAGES / FOUR LOCKS', 'REPAIR / REDIRECT', 'DECOY, THEN THE MOTOR'], [-.8, 1.66, -2.32], .62);
+  // The basement door left of the desk: each research stage releases one of its four locks, and
+  // after the last decoy its beacon turns while the motor spins up. The ending film opens it.
+  const basement = buildBasementDoor(); basement.position.set(-2.0, 0, -2.5); weathering.apply(basement); scene.add(basement);
+  basement.traverse(object => { if (object instanceof THREE.Mesh) { object.castShadow = object.receiveShadow = true; const material = object.material as THREE.MeshStandardMaterial; if (material.name === 'hazard_yellow') material.color.setHex(0xc9a33a); if (material.name === 'hazard_black') material.color.setHex(0x2c2c2a); } });
+  const lockLamps = [0, 1, 2, 3].map(i => { const mesh = basement.getObjectByName(`lock_lamp_${i}`) as THREE.Mesh, material = new THREE.MeshStandardMaterial({ color: 0x1c0605, emissive: 0xff2a1a, emissiveIntensity: .8 }); mesh.material = material; return material; });
+  const lockBolts = [0, 1, 2, 3].map(i => basement.getObjectByName(`lock_bolt_${i}`)!), boltRest = lockBolts.map(bolt => bolt.position.x);
+  const beaconMaterial = new THREE.MeshStandardMaterial({ color: 0x3a2508, emissive: 0xffa040, emissiveIntensity: .08 }); (basement.getObjectByName('beacon_lens') as THREE.Mesh).material = beaconMaterial;
+  const beacon = new THREE.PointLight(0xff9530, 0, 3.2, 2); beacon.position.set(-1.34, 2.45, -2.15); scene.add(beacon);
+  const doorLamp = new THREE.PointLight(0xd8a060, 1.4, 2.4, 2); doorLamp.position.set(-1.85, 2.25, -1.95); scene.add(doorLamp);
+  { const canvas = Object.assign(document.createElement('canvas'), { width: 256, height: 62 }), ctx = canvas.getContext('2d')!; ctx.fillStyle = '#a49d84'; ctx.fillRect(0, 0, 256, 62); ctx.fillStyle = '#191a16'; ctx.font = 'bold 40px monospace'; ctx.textAlign = 'center'; ctx.fillText('BASEMENT', 128, 46);
+    const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; (basement.getObjectByName('door_label') as THREE.Mesh).material = new THREE.MeshStandardMaterial({ map, roughness: .9 }); }
   const cameraPlate = plate('SECURITY FEEDS', ['REMOTE FACILITY CAMERAS', 'LIMITED COVERAGE'], [.75, 1.95, -2.32], .73);
   const sensorPlate = plate('CAMERA INPUT', ['OPTIONAL PERSONAL SENSOR', 'NOT A SECURITY FEED'], [1.9, 2.16, -2.32], .65);
   const doorPlate = plate('SEALED SHELTER', ['DO NOT ATTEMPT TO OPEN', 'USE EMERGENCY QUIET'], [-1.75, 2.2, 2.255], .70, Math.PI);
@@ -184,6 +196,11 @@ export function createScene(container: HTMLElement): SceneView {
         const lamp = faultLamps[i]; if (lamp) { lamp.color.setHex(active.includes(i) ? 0xbb8241 : 0x233528); lamp.emissive.setHex(active.includes(i) ? 0xdf8531 : 0); lamp.emissiveIntensity = active.includes(i) ? .75 : 0; }
       } }
       machineMixer?.update(dt);
+      const locks = Math.max(0, Math.min(4, state.locks ?? 0)), motor = !!state.doorMotor && powered;
+      lockLamps.forEach((lamp, i) => { const open = i < locks; lamp.emissive.setHex(open ? 0x3dff6e : 0xff2a1a); lamp.emissiveIntensity = (open ? 1.1 : .8) * (powered ? 1 : .25); });
+      lockBolts.forEach((bolt, i) => { bolt.position.x = boltRest[i]! + (i < locks ? BASEMENT_DOOR.lockTravel : 0); });
+      const sweep = motor && !reducedMotion ? .5 + .5 * Math.sin(state.time * Math.PI * 2 * 1.1) : motor ? .6 : 0;
+      doorLamp.intensity = 1.4 * light; beacon.intensity = motor ? .6 + 2.4 * sweep : 0; beaconMaterial.emissiveIntensity = motor ? .6 + 1.8 * sweep : .08;
       if (state.status === 'lost' && lostAt === null) { lostAt = state.time; doorImpact?.stop(); doorDent?.reset().play(); }
       if (state.status !== 'lost' && lostAt !== null) { lostAt = null; doorDent?.stop(); doorImpact?.stop(); }
       if (state.time < lastStateTime) lastScareId = null; lastStateTime = state.time;

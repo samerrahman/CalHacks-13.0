@@ -7,7 +7,13 @@ import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { PROPS, PROP_NAMES, type PropName } from './props';
 import { LOOKS, type Look } from './look';
 import { createCutscene, type Cutscene } from './scene';
+import { createEnding } from './endingScene';
 import { CUTSCENE, captionAt } from './timeline';
+import { FILM as ENDING, captionAt as endingCaptionAt } from './ending';
+
+/** The two films: the opening, and the ending that plays after a win. */
+const FILMS = { opening: { meta: CUTSCENE, captionAt }, ending: { meta: ENDING, captionAt: endingCaptionAt } } as const;
+export type Film = keyof typeof FILMS;
 
 const loader = new GLTFLoader();
 const glbs = new Map<string, Promise<THREE.Group>>();
@@ -23,6 +29,19 @@ function glb(url: string): Promise<THREE.Group> {
   }
   // SkeletonUtils.clone keeps a rigged replacement's skin bound to its own bones.
   return pending.then(g => cloneSkinned(g) as THREE.Group);
+}
+/** One of the game's shelter GLBs (public/assets/models), with its clips, for the ending. */
+const models = new Map<string, Promise<{ scene: THREE.Group; animations: THREE.AnimationClip[] }>>();
+function gameModel(name: string): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }> {
+  let pending = models.get(name);
+  if (!pending) {
+    pending = loader.loadAsync(`/assets/models/${name}.glb`).then(g => {
+      g.scene.traverse(o => { if (o instanceof THREE.Mesh) { o.receiveShadow = true; o.castShadow = !(o.material as THREE.Material).transparent; } });
+      return { scene: g.scene, animations: g.animations };
+    });
+    models.set(name, pending);
+  }
+  return pending.then(g => ({ scene: cloneSkinned(g.scene), animations: g.animations }));
 }
 
 function makeRenderer(width: number, height: number): THREE.WebGLRenderer {
@@ -43,7 +62,7 @@ function gpuName(renderer: THREE.WebGLRenderer): string {
   return info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : 'unknown';
 }
 
-let cutscene: Cutscene | null = null, renderer: THREE.WebGLRenderer | null = null;
+let cutscene: Cutscene | null = null, renderer: THREE.WebGLRenderer | null = null, film: Film = 'opening';
 
 /** Where a person standing in or near each prop would look from, for the "player view" tile. */
 const VIEWPOINTS: Partial<Record<PropName, { from: [number, number, number]; to: [number, number, number] }>> = {
@@ -113,20 +132,23 @@ async function exportGlb(name: PropName): Promise<string> {
   return btoa(binary);
 }
 
-async function init(options: { procedural?: boolean; scale?: number; look?: Look } = {}): Promise<{ gpu: string; frames: number }> {
+async function init(options: { procedural?: boolean; scale?: number; look?: Look; film?: Film } = {}): Promise<{ gpu: string; frames: number }> {
   const look = options.look ?? 'ironlung';
+  film = options.film ?? 'opening';
+  if (!FILMS[film]) throw new Error(`unknown film ${film} (${Object.keys(FILMS).join(', ')})`);
+  const meta = FILMS[film].meta;
   if (!LOOKS.includes(look)) throw new Error(`unknown look ${look} (${LOOKS.join(', ')})`);
   const scale = options.scale ?? 1;
-  renderer = makeRenderer(Math.round(CUTSCENE.width * scale), Math.round(CUTSCENE.height * scale));
+  renderer = makeRenderer(Math.round(meta.width * scale), Math.round(meta.height * scale));
   const prop = (name: PropName) => options.procedural ? Promise.resolve(PROPS[name].build()) : glb(`/cutscene/models/${name}.glb`);
-  cutscene = await createCutscene(renderer, prop, look);
-  return { gpu: gpuName(renderer), frames: Math.round(CUTSCENE.duration * CUTSCENE.renderFps) };
+  cutscene = film === 'ending' ? await createEnding(renderer, prop, gameModel, look) : await createCutscene(renderer, prop, look);
+  return { gpu: gpuName(renderer), frames: Math.round(meta.duration * meta.renderFps) };
 }
 
 /** Frame `index` at the render rate (renderFps); the tool blends pairs down to fps for motion blur. */
 function frame(index: number, type: 'image/jpeg' | 'image/png' = 'image/jpeg', quality = 0.93): string {
   if (!cutscene || !renderer) throw new Error('call init() first');
-  cutscene.renderAt(index / CUTSCENE.renderFps);
+  cutscene.renderAt(index / FILMS[film].meta.renderFps);
   return renderer.domElement.toDataURL(type, quality);
 }
 
@@ -149,16 +171,17 @@ function propNodes(name: PropName): string {
 }
 
 declare global { interface Window { __cutscene: unknown } }
-window.__cutscene = { init, frame, still, propSheet, propNodes, exportGlb, names: PROP_NAMES, timeline: CUTSCENE };
+window.__cutscene = { init, frame, still, propSheet, propNodes, exportGlb, names: PROP_NAMES, timeline: CUTSCENE, films: Object.keys(FILMS) };
 
 // Real-time preview for people: /cutscene/index.html?preview (add &procedural to skip GLBs,
-// &look=flat for the original flat colours).
+// &look=flat for the original flat colours, &film=ending for the ending).
 if (new URLSearchParams(location.search).has('preview')) {
   const params = new URLSearchParams(location.search);
-  void init({ procedural: params.has('procedural'), scale: 0.6, look: (params.get('look') ?? undefined) as Look | undefined }).then(() => {
+  const preview = FILMS[(params.get('film') ?? 'opening') as Film] ?? FILMS.opening, duration = preview.meta.duration;
+  void init({ procedural: params.has('procedural'), scale: 0.6, look: (params.get('look') ?? undefined) as Look | undefined, film: (params.get('film') ?? undefined) as Film | undefined }).then(() => {
     const ui = document.createElement('div');
     ui.style.cssText = 'position:fixed;left:0;right:0;bottom:0;padding:8px 12px;background:rgba(0,0,0,.6);display:flex;gap:12px;align-items:center';
-    const slider = Object.assign(document.createElement('input'), { type: 'range', min: '0', max: String(CUTSCENE.duration), step: '0.01', value: '0' });
+    const slider = Object.assign(document.createElement('input'), { type: 'range', min: '0', max: String(duration), step: '0.01', value: '0' });
     slider.style.flex = '1';
     const label = document.createElement('span'), caption = document.createElement('div');
     caption.style.cssText = 'position:fixed;left:0;right:0;bottom:56px;text-align:center;font:18px sans-serif;color:#eee;text-shadow:0 1px 3px #000';
@@ -168,9 +191,9 @@ if (new URLSearchParams(location.search).has('preview')) {
     slider.oninput = () => { time = Number(slider.value); };
     addEventListener('keydown', e => { if (e.code === 'Space') playing = !playing; });
     const tick = (now: number) => {
-      if (playing) time = (time + (now - last) / 1000) % CUTSCENE.duration;
+      if (playing) time = (time + (now - last) / 1000) % duration;
       last = now; slider.value = String(time); label.textContent = `${time.toFixed(2)}s ${playing ? '▶' : '❚❚'} (space)`;
-      caption.textContent = captionAt(time)?.text ?? '';
+      caption.textContent = preview.captionAt(time)?.text ?? '';
       cutscene!.renderAt(time);
       requestAnimationFrame(tick);
     };

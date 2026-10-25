@@ -4,7 +4,7 @@ import { config } from '../game/config';
 import { calmBreath, calmInhale, calmMatched, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, heartElevated, listeningTo, pulseFlash, pulseRequirement, tileOpenings } from '../game/tasks';
 import './thinking.css';
 
-const SECTORS: [Sector, string, string][] = [['NEAR', 'Near the wall', '0–6 · off camera'], ['A', 'CAM A', 'Clearing · 7–14'], ['B', 'CAM B', 'Service path · 14–22'], ['C', 'CAM C', 'Containment · 22–24']];
+const SECTORS: [Sector, string, string][] = [['NEAR', 'Near the wall', '0–6 · off camera'], ['A', 'CAM A', 'Clearing · 7–14'], ['B', 'CAM B', 'Service path · 14–22'], ['C', 'CAM C', 'Facility · 22–24']];
 type Send = (action: GameAction) => void;
 
 /** Live-data line shared by the Presage-aware tasks. Coarse accepted trend only; no BPM. */
