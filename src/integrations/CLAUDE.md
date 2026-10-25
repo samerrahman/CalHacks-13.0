@@ -1,4 +1,4 @@
-# /src/integrations — Lucy (`providers.ts`) · Samer (`client.ts`) · team (`contracts.ts`)
+# /src/integrations — Lucy (`providers.ts`) · Samer (`client.ts`, `spacetime.ts`, `spectate.ts`, `physics.ts`) · team (`contracts.ts`)
 
 `providers.ts` holds the Gemini and ElevenLabs adapters. They run only in the Electron main process or loopback Vite development middleware, never in the renderer. `client.ts` is the renderer transport. `spacetime.ts` connects to the private SpacetimeDB trace module. `contracts.ts` defines public payloads and must never include puzzle answers, camera frames, or raw pulse.
 
@@ -18,4 +18,7 @@
 
 ## SpacetimeDB trace
 - Private sessions hold only projected events and coarse summaries. A capability checked view serves the judge screen; scheduled expiration deletes sessions after 24 hours.
-- Generated bindings in `src/module_bindings/` must be regenerated after module schema changes. The remote module has not yet been published or verified live.
+- Generated bindings in `src/module_bindings/` must be regenerated after module schema changes. The remote module has not yet been published to Maincloud; a local 2.13 server run is recorded in `docs/qa/spectate-physics-local-spacetime.json`.
+- View rows (`judge_trace`, `spectator_vitals_feed`, `physics_feed`) have no client-side primary key: one update arrives as a separate insert and delete callback in server order. Re-read the settled cache (`iter()`) in callbacks; never treat a delete callback alone as "gone".
+- The SDK compiles codecs with `Function()`: the page CSP needs `'unsafe-eval'` and the database host in `connect-src` (`index.html`, `electron/main.ts`).
+- Spectators (`spectate.ts`, `#watch=` links) receive physiology only under the separate heart-rate consent: whole-BPM pulse and baseline, trend, quality, source. Simulated stays labelled. No history, clocks, diagnostics or camera data. See `docs/SPECTATE.md`.

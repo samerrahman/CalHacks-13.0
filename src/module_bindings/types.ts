@@ -36,6 +36,55 @@ export const JudgeTrace = __t.object("JudgeTrace", {
 });
 export type JudgeTrace = __Infer<typeof JudgeTrace>;
 
+export const PhysicsBody = __t.object("PhysicsBody", {
+  id: __t.u64(),
+  sessionId: __t.string(),
+  slot: __t.u8(),
+  x: __t.f64(),
+  y: __t.f64(),
+  z: __t.f64(),
+  vx: __t.f64(),
+  vy: __t.f64(),
+  vz: __t.f64(),
+  rest: __t.u8(),
+  sleeping: __t.bool(),
+});
+export type PhysicsBody = __Infer<typeof PhysicsBody>;
+
+export const PhysicsFeed = __t.object("PhysicsFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type PhysicsFeed = __Infer<typeof PhysicsFeed>;
+
+export const PhysicsFeedRow = __t.object("PhysicsFeedRow", {
+  slot: __t.u8(),
+  kind: __t.string(),
+  radius: __t.f64(),
+  x: __t.f64(),
+  y: __t.f64(),
+  z: __t.f64(),
+  sleeping: __t.bool(),
+  tick: __t.u32(),
+});
+export type PhysicsFeedRow = __Infer<typeof PhysicsFeedRow>;
+
+export const PhysicsTick = __t.object("PhysicsTick", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+});
+export type PhysicsTick = __Infer<typeof PhysicsTick>;
+
+export const PhysicsWorld = __t.object("PhysicsWorld", {
+  sessionId: __t.string(),
+  tick: __t.u32(),
+  awake: __t.bool(),
+  lastEventSeq: __t.u32(),
+  knocks: __t.u32(),
+  lastKnockAtMs: __t.u64(),
+});
+export type PhysicsWorld = __Infer<typeof PhysicsWorld>;
+
 export const PublicEvent = __t.object("PublicEvent", {
   id: __t.string(),
   seq: __t.u32(),
@@ -62,6 +111,37 @@ export const Session = __t.object("Session", {
 });
 export type Session = __Infer<typeof Session>;
 
+export const SpectatorVitals = __t.object("SpectatorVitals", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  source: __t.string(),
+  status: __t.string(),
+  quality: __t.string(),
+  trend: __t.string(),
+  pulseBpm: __t.option(__t.u8()),
+  baselineBpm: __t.option(__t.u8()),
+  updatedAtMs: __t.u64(),
+});
+export type SpectatorVitals = __Infer<typeof SpectatorVitals>;
+
+export const SpectatorVitalsFeed = __t.object("SpectatorVitalsFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type SpectatorVitalsFeed = __Infer<typeof SpectatorVitalsFeed>;
+
+export const SpectatorVitalsRow = __t.object("SpectatorVitalsRow", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  source: __t.string(),
+  status: __t.string(),
+  quality: __t.string(),
+  trend: __t.string(),
+  pulseBpm: __t.option(__t.u8()),
+  baselineBpm: __t.option(__t.u8()),
+});
+export type SpectatorVitalsRow = __Infer<typeof SpectatorVitalsRow>;
+
 export const TraceSummary = __t.object("TraceSummary", {
   time: __t.f64(),
   stage: __t.u32(),
@@ -82,3 +162,4 @@ export const TraceSummary = __t.object("TraceSummary", {
   sensorAgeMs: __t.option(__t.u32()),
 });
 export type TraceSummary = __Infer<typeof TraceSummary>;
+

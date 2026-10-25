@@ -2,6 +2,7 @@ import { DbConnection } from '../module_bindings';
 import { connectSpacetime, judgeQuery, spacetimeConfig } from './spacetime';
 import type { GameState, DirectorRequest, PublicEvent } from '../game/state';
 import type { SensorView } from '../sensing/types';
+import { spectatorVitals, type SpectatorVitals } from './spectate';
 import { publicDirectorRequest, publicEvent, publicMonsterRequest, authoredMonsterFallback, MONSTER_TOTAL_TIMEOUT_MS, type MonsterRequest, type MonsterResult, type DirectorResult, type SpeechRequest, type SpeechResult, type IntegrationStatus } from './contracts';
 import { DIRECTOR_TIMEOUT_MS } from '../game/directorValidation';
 import { config } from '../game/config';
@@ -65,7 +66,8 @@ export async function requestMonster(request: MonsterRequest): Promise<MonsterRe
 }
 
 export type TraceSummary = { time: number; stage: number; status: string; equipment: string; creatureNode: string; creaturePhase: string; linePosition: number; lineLength: number; danger: number; quietChargesRemaining: number; tactic: string; target: string; proposalSource: string; sensorSource: string; sensorQuality: string; trend: string; sensorAgeMs: number | null };
-export type TraceSnapshot = { seed: number; mode: string; summary: TraceSummary; events: PublicEvent[]; transport: 'local' | 'spacetime' };
+/** `vitals` is present only while the player keeps the separate heart-rate consent on. */
+export type TraceSnapshot = { seed: number; mode: string; summary: TraceSummary; events: PublicEvent[]; transport: 'local' | 'spacetime'; vitals?: SpectatorVitals | null };
 export function sanitizedTrace(state: GameState, sensor: SensorView): TraceSnapshot {
   return { seed: state.seed, mode: state.mode, summary: { time: state.time, stage: state.tasks.stage, status: state.status, equipment: state.equipment, creatureNode: state.creature.node, creaturePhase: state.creature.phase, linePosition: state.creature.linePosition, lineLength: config.line.length, danger: Math.round(state.danger), quietChargesRemaining: state.shutdown.chargesRemaining, tactic: state.director.lastTactic, target: state.director.lastTarget, proposalSource: state.director.source, sensorSource: sensor.source, sensorQuality: sensor.quality, trend: state.trend, sensorAgeMs: sensor.ageMs === null ? null : Math.min(120_000, Math.round(sensor.ageMs)) }, events: state.events.slice(-100).map(publicEvent), transport: 'local' };
 }
@@ -87,6 +89,12 @@ export class TraceBridge {
   private access: JudgeAccess | null = null;
   private connecting = false;
   private generation = 0;
+  private vitalsConsent = false;
+  private vitalsRemote = false;
+  private vitalsBusy = false;
+  private vitalsSequence = 0;
+  private lastVitalsWrite = -Infinity;
+  private lastSnapshot: TraceSnapshot | null = null;
   async connect(consent: boolean, seed: number, mode: string): Promise<void> {
     if (!consent || this.channel || this.disposed || this.connecting) return;
     const generation = ++this.generation;
@@ -94,7 +102,7 @@ export class TraceBridge {
     this.channel = new BroadcastChannel(channelName);
     this.access = { channel: channelName };
     this.status = 'Local trace · same browser only';
-    if (!import.meta.env.VITE_SPACETIMEDB_DB_NAME) return;
+    if (!import.meta.env?.VITE_SPACETIMEDB_DB_NAME) return;
     this.connecting = true;
     try {
       if ((await window.hush?.status())?.offline) return;
@@ -121,19 +129,50 @@ export class TraceBridge {
     finally { this.connecting = false; if ((this.disposed || generation !== this.generation) && !this.sessionId) this.client?.disconnect(); }
   }
   judgeUrl(): string | null { return this.access ? `${location.origin}${location.pathname}#judge=${encodeURIComponent(btoa(JSON.stringify(this.access)))}` : null; }
+  /** Read-only friend link: same capability as the second screen, friendlier page. */
+  spectateUrl(): string | null { return this.access ? `${location.origin}${location.pathname}#watch=${encodeURIComponent(btoa(JSON.stringify(this.access)))}` : null; }
+  get sharingVitals(): boolean { return this.vitalsConsent; }
+  /** Separate, revocable consent for the live heart rate. It needs trace sharing; turning it
+   * off withdraws vitals from the local link at once and deletes the remote row. */
+  setVitalsConsent(consent: boolean): boolean {
+    this.vitalsConsent = consent && !!this.channel && !this.disposed;
+    if (!this.vitalsConsent) this.withdrawVitals();
+    return this.vitalsConsent;
+  }
+  private withdrawVitals(): void {
+    if (this.channel && this.lastSnapshot?.vitals) { this.lastSnapshot = { ...this.lastSnapshot, vitals: null }; this.channel.postMessage(this.lastSnapshot); }
+    if (!this.vitalsRemote || !this.client?.isActive || !this.sessionId) return;
+    const generation = this.generation;
+    void this.client.reducers.stopVitals({ id: this.sessionId, ownerCapability: this.owner }).then(() => { if (generation === this.generation) this.vitalsRemote = false; }).catch(() => { if (generation === this.generation) this.status = 'Heart rate withdrawn locally · remote row is deleted with the session'; });
+  }
   publish(state: GameState, sensor: SensorView): void {
     if (!this.channel || this.disposed) return;
     const snapshot = sanitizedTrace(state, sensor);
     snapshot.transport = this.connected && !!this.client?.isActive ? 'spacetime' : 'local';
+    snapshot.vitals = this.vitalsConsent ? spectatorVitals(sensor) : null;
+    this.lastSnapshot = snapshot;
     this.channel.postMessage(snapshot);
+    this.publishVitals(snapshot.vitals);
     if (!this.connected || !this.client?.isActive || !this.sessionId || this.busy || performance.now() - this.lastWrite < 1000) return;
     this.busy = true; this.lastWrite = performance.now();
     const generation = this.generation;
     const events = snapshot.events.filter(e => e.seq > this.sequence);
     void this.client.reducers.appendTrace({ id: this.sessionId, ownerCapability: this.owner, events, summary: { ...snapshot.summary, sensorAgeMs: snapshot.summary.sensorAgeMs ?? undefined } }).then(() => { if (generation === this.generation && this.connected) { this.sequence = events.at(-1)?.seq ?? this.sequence; this.status = 'SpacetimeDB live trace'; } }).catch(() => { if (generation === this.generation && this.connected) this.status = 'SpacetimeDB disconnected · retrying trace'; }).finally(() => { this.busy = false; });
   }
+  private publishVitals(vitals: SpectatorVitals | null): void {
+    if (!this.vitalsConsent || !this.connected || !this.client?.isActive || !this.sessionId || this.vitalsBusy || performance.now() - this.lastVitalsWrite < 1000) return;
+    if (!vitals) { if (this.vitalsRemote) this.withdrawVitals(); return; }
+    this.vitalsBusy = true; this.lastVitalsWrite = performance.now();
+    const generation = this.generation;
+    void this.client.reducers.shareVitals({ id: this.sessionId, ownerCapability: this.owner, sequence: ++this.vitalsSequence, source: vitals.source, status: vitals.status, quality: vitals.quality, trend: vitals.trend, pulseBpm: vitals.pulseBpm ?? undefined, baselineBpm: vitals.baselineBpm ?? undefined })
+      .then(() => { if (generation === this.generation && this.vitalsConsent) this.vitalsRemote = true; else if (generation === this.generation) this.withdrawVitals(); })
+      .catch(() => { /* The next reading retries; the local link is unaffected. */ })
+      .finally(() => { this.vitalsBusy = false; });
+  }
   async deleteSession(): Promise<void> {
     // Stop local publication immediately even if the remote deletion is offline.
+    this.vitalsConsent = false;
+    if (this.channel && this.lastSnapshot?.vitals) this.channel.postMessage({ ...this.lastSnapshot, vitals: null });
     this.generation++; this.connected = false;
     this.channel?.close(); this.channel = null; this.access = null;
     if (activeTrace === this) activeTrace = null;
@@ -142,7 +181,7 @@ export class TraceBridge {
     this.client?.disconnect(); this.client = null;
     this.status = 'Session deleted';
   }
-  async dispose(): Promise<void> { this.disposed = true; this.generation++; this.channel?.close(); this.channel = null; if (activeTrace === this) activeTrace = null; this.client?.disconnect(); this.connected = false; }
+  async dispose(): Promise<void> { this.disposed = true; this.vitalsConsent = false; if (this.channel && this.lastSnapshot?.vitals) this.channel.postMessage({ ...this.lastSnapshot, vitals: null }); this.generation++; this.channel?.close(); this.channel = null; if (activeTrace === this) activeTrace = null; this.client?.disconnect(); this.connected = false; }
 }
 
 export function subscribeJudge(listener: (snapshot: TraceSnapshot) => void, reportStatus: (status: string) => void): () => void {
@@ -163,7 +202,8 @@ export function subscribeJudge(listener: (snapshot: TraceSnapshot) => void, repo
         const show = (row: { seed: number; mode: string; summary: Omit<TraceSummary, 'sensorAgeMs'> & { sensorAgeMs?: number }; events: PublicEvent[] }) => { listener({ seed: row.seed, mode: row.mode, summary: { ...row.summary, sensorAgeMs: row.summary.sensorAgeMs ?? null }, events: row.events, transport: 'spacetime' }); reportStatus('SpacetimeDB live subscription'); };
         connection.db.judgeTrace.onInsert((_ctx, row) => show(row));
         connection.db.judgeTrace.onUpdate((_ctx, _old, row) => show(row));
-        connection.db.judgeTrace.onDelete(() => reportStatus('Shared session deleted or unavailable'));
+        // An update arrives as insert + delete (view rows have no client key); only an empty cache means deleted.
+        connection.db.judgeTrace.onDelete(() => { if (![...connection.db.judgeTrace.iter()].length) reportStatus('Shared session deleted or unavailable'); });
         connection.subscriptionBuilder().onApplied(ctx => { for (const row of ctx.db.judgeTrace.iter()) show(row); }).onError(() => reportStatus('SpacetimeDB trace unavailable')).subscribe(judgeQuery(access.sessionId!, access.capability!));
       }).catch(() => reportStatus('SpacetimeDB unavailable · local trace only'));
     }

@@ -24,6 +24,10 @@ export function connectSpacetime(onDisconnect?: () => void, onReconnect?: () => 
 }
 
 export function judgeQuery(id: string, capability: string): string {
+  return capabilityQuery('judge_trace', id, capability);
+}
+/** Every read view takes the session id and judge capability; both are validated hex. */
+export function capabilityQuery(view: 'judge_trace' | 'spectator_vitals_feed' | 'physics_feed', id: string, capability: string): string {
   if (!/^[a-f0-9]{64}$/.test(id) || !/^[a-f0-9]{64}$/.test(capability)) throw new Error('Invalid judge access');
-  return `SELECT * FROM judge_trace('${id}', '${capability}')`;
+  return `SELECT * FROM ${view}('${id}', '${capability}')`;
 }

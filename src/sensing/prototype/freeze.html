@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HUSH freeze prototype</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0b0c0b; --panel: #151714; --ink: #e8e0c8; --muted: #8d8a7c; --amber: #d99a4e; --red: #c4381f; --ok: #8fb07a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 ui-monospace, Menlo, monospace; }
+    main { max-width: 640px; margin: 0 auto; padding: 32px 16px; }
+    .eyebrow { color: var(--muted); letter-spacing: .14em; font-size: 12px; }
+    h1 { font-size: 28px; margin: 6px 0 4px; }
+    p { color: var(--muted); }
+    .stage { position: relative; background: var(--panel); border: 1px solid #2a2c27; border-radius: 6px; padding: 16px; margin: 18px 0; }
+    video { width: 160px; aspect-ratio: 4 / 3; object-fit: cover; transform: scaleX(-1); border-radius: 4px; background: #000; filter: grayscale(1) contrast(1.2) brightness(.7); }
+    .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .meter { flex: 1; min-width: 200px; }
+    .bar { height: 14px; background: #22241f; border-radius: 7px; overflow: hidden; }
+    .fill { height: 100%; width: 0; background: var(--ok); transition: width .1s linear, background .2s; }
+    .state { font-size: 22px; margin-top: 8px; }
+    button { font: inherit; color: var(--ink); background: #23251f; border: 1px solid #3a3d34; border-radius: 4px; padding: 8px 14px; cursor: pointer; }
+    button.primary { border-color: var(--amber); color: var(--amber); }
+    button:disabled { opacity: .45; cursor: default; }
+    .verdict { font-size: 20px; min-height: 1.5em; margin-top: 10px; }
+    .heard { color: var(--red); } .safe { color: var(--ok); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">HUSH / WEBCAM PROTOTYPE · DEV ONLY</div>
+    <h1>Freeze.</h1>
+    <p>When it reaches the wall, it listens for movement. Hold perfectly still until the footsteps fade. Frames stay in this tab as a 32×24 brightness grid and are never saved or sent.</p>
+    <div class="stage">
+      <div class="row">
+        <video id="video" muted playsinline></video>
+        <div class="meter">
+          <div class="bar"><div class="fill" id="fill"></div></div>
+          <div class="state" id="state">Camera off</div>
+          <div class="eyebrow" id="detail">motion energy —</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="start">Start camera (local only)</button>
+        <button id="wall" disabled>It's at the wall</button>
+        <button id="stop" disabled>Stop camera</button>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+    </div>
+    <p>This prototype opens its own camera stream. In the game it would read frames from the existing Presage capture stream instead of opening a second one.</p>
+  </main>
+  <script type="module" src="./freeze.ts"></script>
+</body>
+</html>

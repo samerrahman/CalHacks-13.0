@@ -1,5 +1,7 @@
 import { schema, table, t, SenderError } from 'spacetimedb/server';
 import { ScheduleAt } from 'spacetimedb';
+import { applyTraceImpulses, dropPhysics, physicsBody, physicsExports, physicsTick, physicsWorld } from './physics';
+import { dropVitals, spectateExports, spectatorVitals } from './spectate';
 
 // All stored rows are private. The judge sees one capability-filtered view.
 const event = t.row('PublicEvent', {
@@ -24,7 +26,7 @@ const expiry = table({ name: 'expiry' }, {
   scheduledAt: t.scheduleAt(),
   sessionId: t.string(),
 });
-const db = schema({ session, expiry });
+const db = schema({ session, expiry, physicsWorld, physicsBody, physicsTick, spectatorVitals });
 export default db;
 
 const DAY_MS = 86_400_000n;
@@ -71,7 +73,7 @@ export const createSession = db.reducer({
 
 export const expireSession = db.reducer({ onSchedule: expiry }, { arg: expiry.rowType }, (ctx, { arg }) => {
   const row = ctx.db.session.id.find(arg.sessionId);
-  if (row && row.expiresAtMs <= ctx.timestamp.toMillis()) ctx.db.session.id.delete(arg.sessionId);
+  if (row && row.expiresAtMs <= ctx.timestamp.toMillis()) { ctx.db.session.id.delete(arg.sessionId); dropPhysics(ctx, arg.sessionId); dropVitals(ctx, arg.sessionId); }
 });
 
 export const appendTrace = db.reducer({
@@ -92,11 +94,13 @@ export const appendTrace = db.reducer({
     lastSequence = item.seq;
   }
   ctx.db.session.id.update({ ...row, lastSequence, summary: s, events: next.slice(-100) });
+  applyTraceImpulses(ctx, row.id, next.filter(e => e.seq > row.lastSequence));
 });
 
 export const removeSession = db.reducer({ id: t.string(), ownerCapability: t.string() }, (ctx, args) => {
   ownerSession(ctx, args.id, args.ownerCapability);
   ctx.db.session.id.delete(args.id);
+  dropPhysics(ctx, args.id); dropVitals(ctx, args.id);
 });
 
 const judgeRow = t.row('JudgeSnapshotRow', {
@@ -112,3 +116,7 @@ export const judgeTrace = db.anonymousView(
     return [{ id: row.id, seed: row.seed, mode: row.mode, summary: row.summary, events: row.events }];
   },
 );
+
+// Additive layers: cosmetic prop physics and consented spectator vitals (docs/PHYSICS.md, docs/SPECTATE.md).
+export const physics = physicsExports(db);
+export const spectate = spectateExports(db);

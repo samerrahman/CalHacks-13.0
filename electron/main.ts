@@ -39,7 +39,10 @@ function restrictNavigation(window: BrowserWindow): void {
 }
 function contentPolicy(): string {
   const dev = !!process.env.HUSH_DEV_URL;
-  return `default-src 'self'; script-src 'self'${dev ? " 'unsafe-inline'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 ws://localhost:3000 https://maincloud.spacetimedb.com wss://maincloud.spacetimedb.com; object-src 'none'; base-uri 'self'; frame-src 'none'`;
+  // The SpacetimeDB client compiles its row codecs with Function(), so eval is allowed only
+  // when a database is configured; the renderer otherwise keeps the strict script policy.
+  const spacetime = !!process.env.VITE_SPACETIMEDB_DB_NAME;
+  return `default-src 'self'; script-src 'self'${dev ? " 'unsafe-inline'" : ''}${spacetime ? " 'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 ws://localhost:3000 ws://127.0.0.1:3000 http://localhost:3000 http://127.0.0.1:3000 https://maincloud.spacetimedb.com wss://maincloud.spacetimedb.com; object-src 'none'; base-uri 'self'; frame-src 'none'`;
 }
 ipcMain.handle('hush:status', event => {
   trusted(event);

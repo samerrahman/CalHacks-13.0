@@ -36,12 +36,17 @@ import {
 // Import all reducer arg schemas
 import AppendTraceReducer from "./append_trace_reducer";
 import CreateSessionReducer from "./create_session_reducer";
+import PhysicsKnockReducer from "./physics_knock_reducer";
 import RemoveSessionReducer from "./remove_session_reducer";
+import ShareVitalsReducer from "./share_vitals_reducer";
+import StopVitalsReducer from "./stop_vitals_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
 import JudgeTraceRow from "./judge_trace_table";
+import PhysicsFeedRow from "./physics_feed_table";
+import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -54,13 +59,30 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, JudgeTraceRow),
+  physicsFeed: __table({
+    name: 'physics_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PhysicsFeedRow),
+  spectatorVitalsFeed: __table({
+    name: 'spectator_vitals_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, SpectatorVitalsFeedRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("append_trace", AppendTraceReducer),
   __reducerSchema("create_session", CreateSessionReducer),
+  __reducerSchema("physics_knock", PhysicsKnockReducer),
   __reducerSchema("remove_session", RemoveSessionReducer),
+  __reducerSchema("share_vitals", ShareVitalsReducer),
+  __reducerSchema("stop_vitals", StopVitalsReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
@@ -73,7 +95,7 @@ const REMOTE_MODULE = {
     cliVersion: "2.13.0" as const,
   },
   tables: tablesSchema.schemaType.tables,
-  viewsWithArgs: ["judge_trace"],
+  viewsWithArgs: ["judge_trace", "physics_feed", "spectator_vitals_feed"],
   reducers: reducersSchema.reducersType.reducers,
   ...proceduresSchema,
 } satisfies __RemoteModule<
@@ -120,3 +142,4 @@ export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
     return new SubscriptionBuilder(this);
   };
 }
+
