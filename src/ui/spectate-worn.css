@@ -1,0 +1,71 @@
+/* Spectator view in the start screen's language: near-black, a faint forest at the bottom,
+ * worn typewriter title and heartbeat, no boxes, small spaced labels and dried-blood accents.
+ * Fonts, --erode and --forest-* come from handdrawn.css and forest-layers.css. */
+body .judge-page.spectate-page{background:#020303;color:#a49b86;font-family:var(--typed);padding:8vh 7vw 6vh;isolation:isolate}
+body .spectate-backdrop{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 70% 55% at 55% 35%,#16201b 0%,#060908 60%,#010202 100%)}
+body .spectate-backdrop::before{content:'';position:absolute;inset:auto -3% 0;height:46vh;background:var(--forest-near) center bottom/cover no-repeat;opacity:.55;filter:blur(2px)}
+body .spectate-backdrop::after{content:'';position:absolute;inset:0;background-image:var(--paper-noise);opacity:.14;mix-blend-mode:overlay}
+body .spectate-head{margin-bottom:4vh}
+body .spectate-page :is(h1,h2).worn-title{font-size:clamp(56px,7vw,108px)}
+body .spectate-page .worn-pulse{margin:8px 0 10px}
+body .spectate-status{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a5244;margin:0}
+
+/* No cards: each section is a label, a thin rule and its content. */
+body .spectate-page .spectate-card{background:none;border:0;border-top:1px solid #2a2620;border-radius:0;padding:16px 0 0;gap:10px;box-shadow:none}
+body .spectate-page .spectate-card>small{font-family:var(--typed);font-size:10px;letter-spacing:4px;color:#6a6252}
+body .spectate-page .spectate-card>small em{color:#b8261a;letter-spacing:3px}
+body .spectate-page .spectate-card>strong{font-family:var(--typed);font-size:26px;letter-spacing:2px;color:#e4dccb}
+body .spectate-page .spectate-card>span{font-family:var(--typed);font-size:12px;line-height:1.6;color:#8c8371}
+body .spectate-page .spectate-card.off{opacity:.55}
+body .spectate-page .spectate-main{gap:4vw;margin-top:4vh}
+body .spectate-page .spectate-side{gap:22px}
+body .spectate-page .spectate-grid{gap:4vw;margin-top:5vh}
+
+/* The manual: the one thing the friend must read, so it is the largest text on the page. */
+body .spectate-page .coop-manual{border-top:2px solid #b8261a;max-width:760px}
+body .spectate-page .coop-page h2{font-family:var(--typed);font-weight:400;font-size:20px;letter-spacing:5px;text-transform:uppercase;color:#e4dccb;display:flex;justify-content:space-between;align-items:baseline}
+body .spectate-page .coop-page h2 small{font-size:10px;letter-spacing:4px;color:#6a6252}
+body .spectate-page .coop-page p{font-family:var(--typed);font-size:13px;color:#8c8371;margin:4px 0 10px}
+body .spectate-page .coop-key{border-collapse:collapse;width:100%;max-width:460px}
+body .spectate-page .coop-key th{font-family:var(--typed);font-weight:400;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#5a5244;text-align:left;padding:0 0 6px}
+body .spectate-page .coop-key td{font-family:var(--typed);font-size:16px;letter-spacing:3px;text-transform:uppercase;color:#d8cdb8;padding:9px 0;border-top:1px dashed #2a2620}
+body .spectate-page .coop-key kbd,body .spectate-page .coop-cables strong{font-family:var(--typed);font-size:18px;color:#fff3dc;background:none;border:1px solid #b8261a;border-radius:0;padding:2px 10px}
+body .spectate-page .coop-note,body .spectate-page .coop-empty span{font-family:var(--typed);font-size:11px;letter-spacing:2px;color:#5a5244}
+body .spectate-page .coop-empty strong{font-family:var(--typed);font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#d8cdb8}
+body .spectate-page .coop-tile{background:#060807;border-color:#2a2620}body .spectate-page .coop-tile.route svg path,body .spectate-page .coop-tile.route svg circle{stroke:#d8cdb8;fill:none}
+body .spectate-page .coop-axis{font-family:var(--typed);color:#6a6252}body .spectate-page .coop-axis.port{color:#b8261a}
+
+/* Camera frames: dark glass with a red rec dot, no bright borders. */
+body .spectate-page .spectate-cctv,body .spectate-page .camera-frame{background:#050605;border:1px solid #1d1b17;box-shadow:inset 0 0 40px #000}
+body .spectate-page .spectate-cctv-osd{font-family:var(--typed);color:#cfc6b0}
+body .spectate-page .spectate-cctv-osd .rec{background:#b8261a}
+body .spectate-page .camera-frame p{font-family:var(--typed);font-size:11px;letter-spacing:2px;color:#5a5244}
+
+/* Heart rate and the run: big worn numbers, thin dried-blood bars instead of browser meters. */
+body .spectate-page .spectate-vitals>strong{font-family:var(--typed);font-size:56px;color:#e4dccb}
+body .spectate-page .spectate-vitals .beat{color:#b8261a}
+body .spectate-page .spectate-vitals.elevated>strong{color:#ff7a52}
+body .spectate-page .spectate-meter{font-family:var(--typed);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8c8371}
+body .spectate-page .spectate-meter meter{-webkit-appearance:none;appearance:none;height:4px;background:#1d1b17;border:0}
+body .spectate-page .spectate-meter meter::-webkit-meter-bar{background:#1d1b17;border:0;border-radius:0;height:4px}
+body .spectate-page .spectate-meter meter::-webkit-meter-optimum-value,body .spectate-page .spectate-meter meter::-webkit-meter-suboptimum-value,body .spectate-page .spectate-meter meter::-webkit-meter-even-less-good-value{background:#b8261a;border-radius:0}
+body .spectate-page .spectate-meter meter::-moz-meter-bar{background:#b8261a}
+body .spectate-page .spectate-room canvas{background:#050605;border:1px solid #1d1b17}
+body .spectate-page .spectate-moments{font-family:var(--typed);font-size:12px}
+body .spectate-page .spectate-moments li{border-top:1px dashed #2a2620;color:#a49b86}
+body .spectate-page .spectate-moments time{font-family:var(--typed);color:#b8261a}
+body .spectate-page .spectate-privacy{font-family:var(--typed);font-size:10px;letter-spacing:2px;color:#4a4437;margin-top:5vh}
+@media(max-width:820px){body .judge-page.spectate-page{padding:6vh 20px}}
+/* Two columns: the footage is pinned on the left; hints, numbers, map and moments scroll on the right. */
+body .spectate-columns{margin-top:2vh}
+body .spectate-scroll{display:grid;gap:5vh;min-width:0}
+body .spectate-page .spectate-scroll .spectate-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px}
+body .spectate-page .spectate-scroll .spectate-grid{margin-top:0;grid-template-columns:1fr}
+body .spectate-footage{display:grid;gap:20px;min-width:0}
+body .spectate-page .spectate-footage .camera-frame{aspect-ratio:16/9;max-height:26vh}
+@media(min-width:1000px){
+ body .spectate-columns{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,1fr);column-gap:5vw;align-items:start}
+ body .spectate-footage{grid-column:1;grid-row:1;position:sticky;top:3vh;max-height:94vh;overflow:hidden}
+ body .spectate-scroll{grid-column:2;grid-row:1}
+}
+@media(max-width:999px){body .spectate-footage{order:-1;position:sticky;top:0;z-index:2;background:#020303;padding-bottom:10px}body .spectate-columns{display:flex;flex-direction:column;gap:4vh}}

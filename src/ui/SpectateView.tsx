@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { SpectateFeed, type SpectateState, type SpectatorVitals } from '../integrations/spectate';
+import type { TraceSnapshot } from '../integrations/client';
 import CctvFeed from '../spectate/CctvFeed';
 import ExteriorFeed from '../spectate/ExteriorFeed';
 import PulseTrace from '../spectate/PulseTrace';
 import Recap, { recapData } from '../spectate/Recap';
+import { PlayerWalker, type PlayerView } from '../spectate/player';
 import { creatureDistance, METRES_PER_UNIT } from '../spectate/distance';
 import { newHighlights, trackHighlights, type Highlight, type HighlightTracker } from '../spectate/highlights';
 import { SpectatorSound } from '../spectate/audio';
@@ -18,8 +20,10 @@ import './spectate.css';
 import CoopManual from './CoopManual';
 import FriendControls from '../spectate/FriendControls';
 import { CoopManualFeed } from '../integrations/coop';
+import { Heartbeat, WornTitle } from './Worn';
+import './spectate-worn.css';
 import SpectateCamera from './SpectateCamera';
-import { emotionLabel, fearFromPulse, type EmotionLabel } from './vitalsHold';
+import { readSpectatorFear, spectatorFearMemory } from './vitalsHold';
 
 const HELD_MS = 5000, GONE_MS = 15000, REACTION_MS = 3200;
 const TREND: Record<SpectatorVitals['trend'], string> = { UNKNOWN: 'No sustained change yet', STEADY: 'Holding steady', ELEVATED: 'Up and staying up', RECOVERED: 'Coming back down' };
@@ -29,17 +33,10 @@ const MOMENTS: Record<string, (detail: string) => string> = {
   LURE_TRANSMITTED: d => `Lure sent to ${d.replace('_', ' ').toLowerCase()}`, QUIET_ENTERED: () => 'Equipment isolated', RESTORED: () => 'Power restored',
   BLACKOUT_STARTED: () => 'Blackout', FRIEND_WARNING: () => 'You warned them', FRIEND_DECOY: () => 'Your decoy fired', DOOR_UNLOCKED: () => 'Your door key turned', RECOVERY_REWARD: () => 'They steadied · it lost their trail', VOICE_HEARD: () => 'It heard them talking', FINAL_BROADCAST: () => 'Final broadcast', WON: () => 'Escaped', LOST: () => 'Lost', TIMEOUT: () => 'Out of time', PAUSED: () => 'Paused', RESUMED: () => 'Resumed',
 };
-const MOOD: Record<EmotionLabel, string> = { 'FEAR / STARTLE': 'FEAR / ELEVATED', TENSE: 'TENSE', CALM: 'CALM', CALIBRATING: 'CALIBRATING' };
-/** Only heart rate is shared, never the player's breathing or expressions, so spectators get an
- * estimate from heart rate, always labelled as one. */
-function breathingFromPulse(bpm: number | null, baseline: number | null, trend: SpectatorVitals['trend']): number | null {
-  if (bpm === null) return null;
-  return Math.max(10, Math.min(32, Math.round(14 + (baseline === null ? 0 : bpm - baseline) * 0.3 + (trend === 'ELEVATED' ? 2 : 0))));
-}
-const PROP_COLOUR: Record<string, string> = { can: '#a9b28a', mug: '#d1b98a', bolt: '#8d9188', bottle: '#7f9f8f', flashlight: '#d49a5e' };
 const clock = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+const PROP_COLOUR: Record<string, string> = { can: '#a9b28a', mug: '#d1b98a', bolt: '#8d9188', bottle: '#7f9f8f', flashlight: '#d49a5e' };
 
-function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[]): void {
+function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[], player: PlayerView | null): void {
   const ctx = canvas?.getContext('2d');
   if (!canvas || !ctx) return;
   const ratio = devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
@@ -62,22 +59,35 @@ function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[]): void 
     ctx.fillStyle = PROP_COLOUR[p.kind] ?? '#999'; ctx.globalAlpha = p.sleeping ? 0.75 : 1;
     ctx.beginPath(); ctx.arc(x, z, r, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
   }
+  if (player) {
+    // The player's researcher, the same figure the shelter camera shows: a dot facing their way.
+    const x = px(player.x), z = pz(player.z), r = Math.max(4, .17 * scale);
+    ctx.strokeStyle = '#e6dfc0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, z); ctx.lineTo(x + Math.sin(player.heading) * r * 2, z + Math.cos(player.heading) * r * 2); ctx.stroke();
+    ctx.fillStyle = '#e6dfc0'; ctx.beginPath(); ctx.arc(x, z, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7b7a68'; ctx.fillText('PLAYER', x + r + 4, z - r);
+  }
 }
 
-function Vitals({ vitals, age, children }: { vitals: SpectatorVitals | null; age: number | null; children?: ReactNode }) {
-  if (!vitals || age === null || age > GONE_MS) return <section className="spectate-card spectate-vitals off"><small>HEART RATE</small><strong>—</strong><span>{vitals ? 'No recent reading from the player.' : 'No heart rate is being shared right now. You can still follow the run.'}</span></section>;
-  const held = age > HELD_MS, bpm = vitals.pulseBpm, delta = bpm !== null && vitals.baselineBpm !== null ? bpm - vitals.baselineBpm : null;
-  const note = bpm !== null ? TREND[vitals.trend] : vitals.quality === 'rejected' ? 'Reading rejected (movement or lighting)' : vitals.status === 'calibrating' || vitals.status === 'starting' ? 'Calibrating the camera' : vitals.status === 'paused' ? 'Capture paused' : 'No accepted reading right now';
-  const fear = fearFromPulse(bpm, vitals.baselineBpm, vitals.trend), mood = fear === null ? null : MOOD[emotionLabel(fear)], rpm = breathingFromPulse(bpm, vitals.baselineBpm, vitals.trend);
-  return <section className={`spectate-card spectate-vitals${held ? ' held' : ''}${vitals.trend === 'ELEVATED' ? ' elevated' : ''}`}>
-    <small>THEIR STATE <em className={vitals.source}>{vitals.source === 'simulated' ? 'SIMULATED · not a real heart rate' : 'PRESAGE · camera estimate'}</em></small>
-    <div className="spectate-readouts">
-      <div className={`spectate-readout primary mood-${(mood ?? 'none').split(' ')[0].toLowerCase()}`}><small>EMOTION <em>est. from heart rate</em></small><strong>{fear === null ? '—' : `${fear}%`}</strong><span>{mood ?? 'Calibrating'}</span></div>
-      <div className="spectate-readout primary"><small>BREATHING <em>est. from heart rate · not measured</em></small><strong>{rpm ?? '—'}<span>RPM</span></strong></div>
-      <div className="spectate-readout"><small>HEART RATE</small><strong><i className="beat" style={bpm ? { animationDuration: `${(60 / bpm).toFixed(2)}s` } : undefined} aria-hidden="true">♥</i>{bpm ?? '—'}<span>BPM</span></strong></div>
-    </div>
+/** One FEAR reading for the spectator in place of separate heart-rate and breathing numbers: the
+ * player's device combines its camera estimates (face, heart rate, breathing, skin response) into
+ * one percentage, held through dropouts; an older player build only lets it be estimated from heart
+ * rate (vitalsHold.ts). */
+function Fear({ vitals, age, now, children }: { vitals: SpectatorVitals | null; age: number | null; now: number; children?: ReactNode }) {
+  const memory = useRef(spectatorFearMemory());
+  if (!vitals || age === null || age > GONE_MS) {
+    // Not shared (or gone): forget the last reading, so a re-enabled share never resurfaces it.
+    memory.current = spectatorFearMemory();
+    return <section className="spectate-card spectate-vitals spectate-fear off"><small>FEAR</small><strong>—</strong><span>{vitals ? 'No recent reading' : 'Not shared'}</span></section>;
+  }
+  const fear = readSpectatorFear(memory.current, vitals, now), held = age > HELD_MS || fear.fearPct !== null && !fear.live;
+  const status = vitals.status === 'calibrating' || vitals.status === 'starting' ? 'Calibrating their camera' : vitals.status === 'paused' ? 'Capture paused' : vitals.quality === 'rejected' ? 'Reading rejected (movement or lighting)' : 'Waiting for a reading';
+  const note = fear.fearPct === null ? status : fear.live ? TREND[fear.trend] : `${status} · showing their last reading`;
+  return <section className={`spectate-card spectate-vitals spectate-fear mood-${fear.label.toLowerCase()}${held ? ' held' : ''}`}>
+    <small>FEAR <em className={vitals.source}>{vitals.source === 'simulated' ? 'SIMULATED' : fear.basis === 'heart rate' ? 'FROM THEIR HEART RATE' : 'FROM THEIR CAMERA'}</em></small>
+    <strong>{fear.fearPct === null ? '—' : `${fear.fearPct}%`}<span>{fear.label}</span></strong>
+    <div className="spectate-meter"><meter aria-label="Fear level" min={0} max={100} low={25} high={50} optimum={0} value={fear.fearPct ?? 0} /></div>
     {children}
-    <span>{delta !== null && <b>{delta > 0 ? '+' : ''}{delta} vs their baseline · </b>}{note}{held && ` · held, no update for ${Math.floor(age / 1000)} s`}</span>
+    <span>{note}{age > HELD_MS && ` · held, no update for ${Math.floor(age / 1000)} s`}</span>
   </section>;
 }
 
@@ -111,6 +121,9 @@ export default function SpectateView() {
   const canvas = useRef<HTMLCanvasElement>(null), feed = useRef<SpectateFeed | null>(null);
   const [state, setState] = useState<SpectateState | null>(null), [now, setNow] = useState(() => performance.now());
   const propsAt = useCallback((t: number) => feed.current?.props(t) ?? [], []);
+  // One walker for the camera and the map, so both show the researcher in the same place.
+  const [walker] = useState(() => new PlayerWalker()), [motion] = useState(() => matchMedia('(prefers-reduced-motion: reduce)')), latestTrace = useRef<TraceSnapshot | null>(null);
+  const playerAt = useCallback((t: number) => walker.at(latestTrace.current, t, motion.matches), [walker, motion]);
   // Highlights, every event seen this run (deduplicated), sound, narrator, reaction and predictions.
   const highlights = useRef<HighlightTracker>(newHighlights()), seenEvents = useRef(new Map<number, PublicEvent>()), lastSeq = useRef<number | null>(null), lastBpm = useRef<number | null>(null);
   const [found, setFound] = useState<Highlight[]>([]), sound = useRef<SpectatorSound | null>(null), narrator = useRef<Narrator | null>(null);
@@ -119,20 +132,20 @@ export default function SpectateView() {
   const [predictions, setPredictions] = useState<PredictionFeed | null>(null), [predicted, setPredicted] = useState<PredictionState>({ rows: [], mine: null, status: 'Connecting' });
   const live = useRef(state); live.current = state;
   useEffect(() => {
-    const current = feed.current = new SpectateFeed(location.hash), off = current.subscribe(setState), tick = setInterval(() => setNow(performance.now()), 500);
+    const current = feed.current = new SpectateFeed(location.hash), off = current.subscribe(next => { latestTrace.current = next.trace; setState(next); }), clock = setInterval(() => setNow(performance.now()), 500);
     let raf = requestAnimationFrame(function frame(t) {
-      drawShelter(canvas.current, current.props(t));
+      drawShelter(canvas.current, current.props(t), playerAt(t));
       const s = live.current;
       sound.current?.update(s?.trace ?? null, s?.vitals ?? null, runSeconds(s, t), t);
       raf = requestAnimationFrame(frame);
     });
     const calls = new PredictionFeed(location.hash), offPredict = calls.subscribe(setPredicted); setPredictions(calls);
-    return () => { off(); offPredict(); clearInterval(tick); cancelAnimationFrame(raf); current.dispose(); calls.dispose(); sound.current?.dispose(); narrator.current?.stop(); if (feed.current === current) feed.current = null; };
+    return () => { off(); offPredict(); clearInterval(clock); cancelAnimationFrame(raf); current.dispose(); calls.dispose(); sound.current?.dispose(); narrator.current?.stop(); if (feed.current === current) feed.current = null; };
   }, []);
-  const trace = state?.trace, s = trace?.summary, traceAge = state?.traceReceivedAt == null ? null : now - state.traceReceivedAt;
-  const coop = trace?.mode === 'coop', [coopFeed, setCoopFeed] = useState<CoopManualFeed | null>(null);
+  const coop = state?.trace?.mode === 'coop', [coopFeed, setCoopFeed] = useState<CoopManualFeed | null>(null);
   // One manual feed per page in co-op: it carries the live pacer page and the friend's warning and decoys.
   useEffect(() => { if (!coop) return; const next = new CoopManualFeed(location.hash); setCoopFeed(next); return () => { next.dispose(); setCoopFeed(null); }; }, [coop]);
+  const trace = state?.trace, s = trace?.summary, traceAge = state?.traceReceivedAt == null ? null : now - state.traceReceivedAt;
   const bpm = state?.vitals?.pulseBpm ?? null;
 
   // Every new update: fold highlights, record events, react to scares, narrate.
@@ -149,7 +162,8 @@ export default function SpectateView() {
     if (primed) {
       const metres = trace.summary.linePosition * METRES_PER_UNIT, context = { bpm, metres, locks: Math.max(0, trace.summary.stage - 1), equipment: trace.summary.equipment };
       for (const e of trace.events) if (e.seq > before) {
-        if ((e.type === 'SCARE' && e.detail !== 'breach') || e.type === 'ATTACK_COMMITTED') { const t = performance.now(); setReaction({ at: t, until: t + REACTION_MS, time: e.time, from: lastBpm.current ?? bpm, kind: e.type }); } // measured from the reading before the scare
+        // The rise is measured from the reading before this update (the one carrying the scare may already show it).
+        if ((e.type === 'SCARE' && e.detail !== 'breach') || e.type === 'ATTACK_COMMITTED') { const t = performance.now(); setReaction({ at: t, until: t + REACTION_MS, time: e.time, from: lastBpm.current ?? bpm, kind: e.type }); }
         if (narrator.current) narrator.current.say(narrateEvent(e, { ...context, locks: e.type === 'TASK_COMPLETE' ? Number(e.detail) || context.locks : context.locks }));
       }
       if (narrator.current) for (const h of fresh) narrator.current.say(narrateHighlight(h));
@@ -169,7 +183,7 @@ export default function SpectateView() {
     voice.skip(trace?.events.map(e => e.id) ?? []); voice.skip(highlights.current.highlights.map(h => h.id));
     setNarrate(true);
   }
-  const moments = (trace?.events ?? []).filter(e => MOMENTS[e.type]).slice(-6).reverse();
+  const moments = (trace?.events ?? []).filter(e => MOMENTS[e.type]).slice(-4).reverse();
   // Run time carried forward between updates (at most 2 s) so the distance keeps drifting smoothly.
   const seconds = runSeconds(state, now), distance = s ? creatureDistance(s.linePosition, seconds, trace!.seed) : null;
   const playing = s?.status === 'playing', over = s && (s.status === 'won' || s.status === 'lost') ? s.status : null;
@@ -178,58 +192,60 @@ export default function SpectateView() {
   const recap = over && s ? recapData(over, s.time, s.stage, trace!.mode, [...seenEvents.current.values()], found, highlights.current.pulse, standings(predicted.rows, over)) : null;
   const interference = coop && playing && !!s && s.linePosition <= config.line.nearPosition;
   return <main className="judge-page spectate-page">
-    <div className="eyebrow">HUSH / SPECTATING · READ ONLY</div>
-    <h1>{trace?.mode === 'coop' ? "You're their lifeline." : "You're watching."}</h1>
-    <p className="small muted">{state?.status ?? 'Connecting'}{traceAge !== null && traceAge > HELD_MS && ` · no update for ${Math.floor(traceAge / 1000)} s`}</p>
-    <div className="spectate-sound" role="group" aria-label="Sound">
-      <button className={soundOn ? 'on' : ''} aria-pressed={soundOn} onClick={() => void toggleSound()}>{soundOn ? '🔊 Sound on' : '🔈 Tap for sound'}</button>
-      {soundOn && <label><input type="checkbox" checked={heartbeat} onChange={e => { setHeartbeat(e.target.checked); sound.current?.setOptions({ heartbeat: e.target.checked }); }}/> Their heartbeat</label>}
-      {soundOn && <label><input type="checkbox" checked={narrate} onChange={toggleNarrator} disabled={!Narrator.available}/> Narrator <em>browser voice</em></label>}
-      <span className="muted">{soundOn ? 'What they hear, rebuilt on this device from the game events. Headphones help.' : 'Footsteps, the pounding, the scares, and their heartbeat if shared.'}</span>
-    </div>
+    <div className="spectate-backdrop" aria-hidden="true"/>
+    <header className="spectate-head"><WornTitle text={trace?.mode==='coop'?'LIFELINE':'WATCHING'}/><Heartbeat/>
+      <p className="spectate-status">{state?.status ?? 'Connecting'}{traceAge !== null && traceAge > HELD_MS && ` · no update for ${Math.floor(traceAge / 1000)} s`}</p>
+      <div className="spectate-sound" role="group" aria-label="Sound">
+        <button className={soundOn ? 'on' : ''} aria-pressed={soundOn} onClick={() => void toggleSound()}>{soundOn ? 'Sound on' : 'Tap for sound'}</button>
+        {soundOn && <label><input type="checkbox" checked={heartbeat} onChange={e => { setHeartbeat(e.target.checked); sound.current?.setOptions({ heartbeat: e.target.checked }); }}/> Their heartbeat</label>}
+        {soundOn && <label><input type="checkbox" checked={narrate} onChange={toggleNarrator} disabled={!Narrator.available}/> Narrator</label>}
+      </div></header>
+    <div className="spectate-columns">
+    {/* The footage stays pinned on the left; everything to read scrolls on the right. */}
+    <div className="spectate-scroll">
     {recap && <Recap data={recap}/>}
-    {coop && coopFeed && trace && <CoopManual hash={location.hash} feed={coopFeed} seed={trace.seed} metres={distance ? distance.metres : null} interference={interference}/>}
-    <div className="spectate-main">
-      <div className="spectate-feeds">
-        <section className={`spectate-card spectate-cctv-card${cctvSpotlight ? ' spotlight' : ''}`} aria-label="Shelter camera">
-          <small>SHELTER CAMERA <em>DRAWN ON THIS DEVICE FROM THE GAME STATE · NOT THE PLAYER’S WEBCAM</em></small>
-          <CctvFeed trace={trace ?? null} propsAt={propsAt} />
-        </section>
-        <section className="spectate-card spectate-exterior-card" aria-label="Outside camera">
-          <small>OUTSIDE CAMERA <em>ONLY YOU CAN SEE THIS · THE PLAYER HAS NO CAMERAS</em></small>
-          <ExteriorFeed trace={trace ?? null} seconds={() => runSeconds(live.current, performance.now())}/>
-        </section>
-      </div>
-      <div className="spectate-side">
-        {coop && coopFeed && <FriendControls feed={coopFeed} trace={trace ?? null}/>}
-        <SpectateCamera hash={location.hash} spotlight={spotlight} onLive={setCameraLive}/>
-        <Vitals vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt}>
+    {coop&&coopFeed&&trace&&<CoopManual hash={location.hash} feed={coopFeed} seed={trace.seed} metres={distance ? distance.metres : null} interference={interference}/>}
+    {coop&&coopFeed&&<FriendControls feed={coopFeed} trace={trace ?? null}/>}
+    <div className="spectate-side">
+        <Fear vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt} now={now}>
           {s && <PulseTrace samples={highlights.current.pulse} baseline={state?.vitals?.baselineBpm ?? null} events={trace!.events} now={s.time}/>}
-        </Vitals>
+        </Fear>
         {s && distance ? <section className="spectate-card">
           <small>THE RUN</small>
           <strong>{s.status === 'won' ? 'Escaped' : s.status === 'lost' ? 'Lost' : s.stage >= 5 ? 'Final broadcast' : `Stage ${s.stage} of 4`}</strong>
-          <span>{clock(s.time)} · equipment {s.equipment} · {'●'.repeat(s.quietChargesRemaining)}{'○'.repeat(Math.max(0, 3 - s.quietChargesRemaining))} isolation</span>
-          <label className="spectate-meter"><span>Creature · {distance.atWall ? distance.label : `${distance.label} from the wall`} · {s.creaturePhase}</span><meter min={0} max={s.lineLength * METRES_PER_UNIT} low={7 * METRES_PER_UNIT} high={10 * METRES_PER_UNIT} optimum={s.lineLength * METRES_PER_UNIT} value={distance.metres} /></label>
+          <span>{clock(s.time)} · power {s.equipment} · {'●'.repeat(s.quietChargesRemaining)}{'○'.repeat(Math.max(0, 3 - s.quietChargesRemaining))}</span>
+          <label className="spectate-meter"><span>Creature · {distance.atWall ? distance.label : `${distance.label} from the wall`}</span><meter min={0} max={s.lineLength * METRES_PER_UNIT} low={7 * METRES_PER_UNIT} high={10 * METRES_PER_UNIT} optimum={s.lineLength * METRES_PER_UNIT} value={distance.metres} /></label>
           <label className="spectate-meter"><span>Exposure · {s.danger}%</span><meter min={0} max={100} low={40} high={70} optimum={0} value={s.danger} /></label>
-        </section> : <section className="spectate-card off"><small>THE RUN</small><strong>Waiting</strong><span>Keep this page open. It updates when the player is in a run with sharing on.</span></section>}
+        </section> : <section className="spectate-card off"><small>THE RUN</small><strong>Waiting</strong><span>Keep this page open.</span></section>}
         {s && predictions && trace?.mode !== 'tutorial' && <Predictions feed={predictions} state={predicted} stage={s.stage} playing={!!playing} outcome={over}/>}
-      </div>
     </div>
     <div className="spectate-grid">
       <section className="spectate-card spectate-room">
-        <small>MAP <em>{state?.physics === 'spacetime' ? 'PROPS · SPACETIMEDB PHYSICS' : 'PROPS · LOCAL REPLAY (OFFLINE)'}</em></small>
-        <canvas ref={canvas} role="img" aria-label="Top-down map of the shelter. Loose props move when the creature hits the door." />
+        <small>MAP</small>
+        <canvas ref={canvas} role="img" aria-label="Top-down map of the shelter. The light dot is the player. Loose props move when the creature hits the door." />
       </section>
       <section className="spectate-card">
         <small>MOMENTS</small>
-        {found.length > 0 && <ul className="spectate-highlights" aria-label="Highlights">{found.slice(-4).reverse().map(h => <li key={h.id} className={h.kind}>{h.text}</li>)}</ul>}
+        {found.length > 0 && <ul className="spectate-highlights" aria-label="Highlights">{found.slice(-3).reverse().map(h => <li key={h.id} className={h.kind}>{h.text}</li>)}</ul>}
         <ol className="spectate-moments">{moments.length ? moments.map(e => <li key={e.id}><time>{clock(e.time)}</time>{MOMENTS[e.type]!(e.detail)}</li>) : <li>Nothing yet.</li>}</ol>
       </section>
     </div>
+    </div>
+    <aside className="spectate-footage" aria-label="Footage">
+      <section className={`spectate-card spectate-cctv-card${cctvSpotlight ? ' spotlight' : ''}`} aria-label="Shelter camera">
+        <small>SHELTER CAMERA</small>
+        <CctvFeed trace={trace ?? null} propsAt={propsAt} playerAt={playerAt} />
+      </section>
+      <section className="spectate-card spectate-exterior-card" aria-label="Outside camera">
+        <small>OUTSIDE <em>only you see this</em></small>
+        <ExteriorFeed trace={trace ?? null} seconds={() => runSeconds(live.current, performance.now())}/>
+      </section>
+      <SpectateCamera hash={location.hash} spotlight={spotlight} onLive={setCameraLive}/>
+    </aside>
+    </div>
     {reaction && reaction.from !== null && afterRise !== null && now < reaction.until + 6000 && <div className="spectate-reaction-toast" role="status"><b>♥ {afterRise - reaction.from >= 3 ? `${reaction.from} → ${afterRise}` : reaction.from} BPM</b><span>{reaction.kind === 'ATTACK_COMMITTED' ? 'as it came through' : 'after the hit on the door'}</span></div>}
     {caption && <p className="spectate-narration" aria-live="polite">{caption}</p>}
-    <p className="small muted spectate-privacy">You see game events, the creature's distance, cameras your own browser draws from those events (the player has none) and, only if the player turned it on, their current heart rate. Sound and the narrator are rebuilt on this device from the same events. When enabled, their webcam streams directly to you without being recorded. In co-op, the manual has every answer for this run: the player describes what they see and you look it up. Warn them when it gets close, and earn decoys; their game checks every action and decides what happens. Predictions are only seen by other spectators. A camera pulse estimate is a game input, not a medical reading.</p>
+    <p className="spectate-privacy">Nothing is recorded · sound, cameras and the narrator are rebuilt on this device from the game · fear is a camera estimate from their face, breathing and heart rate, not a medical reading · spectators can't change the run{coop ? " · their game checks every warning and decoy" : ""}.</p>
   </main>;
 }
 

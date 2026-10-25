@@ -265,6 +265,29 @@ export const Session = __t.object("Session", {
 });
 export type Session = __Infer<typeof Session>;
 
+export const SpectatorFear = __t.object("SpectatorFear", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  source: __t.string(),
+  fearPct: __t.option(__t.u8()),
+  updatedAtMs: __t.u64(),
+});
+export type SpectatorFear = __Infer<typeof SpectatorFear>;
+
+export const SpectatorFearFeed = __t.object("SpectatorFearFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type SpectatorFearFeed = __Infer<typeof SpectatorFearFeed>;
+
+export const SpectatorFearRow = __t.object("SpectatorFearRow", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  source: __t.string(),
+  fearPct: __t.option(__t.u8()),
+});
+export type SpectatorFearRow = __Infer<typeof SpectatorFearRow>;
+
 export const SpectatorVitals = __t.object("SpectatorVitals", {
   sessionId: __t.string(),
   sequence: __t.u32(),

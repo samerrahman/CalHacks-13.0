@@ -1,0 +1,95 @@
+{
+  "checkedAt": "2026-10-25T08:27:25.572Z",
+  "server": "wss://maincloud.spacetimedb.com",
+  "database": "scary-5zsk8",
+  "durationMs": 30399,
+  "passed": 14,
+  "failed": 0,
+  "results": [
+    {
+      "check": "a fear write before any vitals row is dropped",
+      "ok": true
+    },
+    {
+      "check": "the combined fear reaches the spectator, labelled simulated, without a server clock",
+      "ok": true,
+      "detail": {
+        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sequence": 2,
+        "source": "simulated",
+        "fearPct": 64
+      }
+    },
+    {
+      "check": "a fear above 100 is rejected",
+      "ok": true
+    },
+    {
+      "check": "a wrong owner capability cannot write fear",
+      "ok": true
+    },
+    {
+      "check": "an unknown source is rejected",
+      "ok": true
+    },
+    {
+      "check": "a fear write whose source differs from the vitals row is dropped (simulated stays labelled)",
+      "ok": true,
+      "detail": {
+        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sequence": 2,
+        "source": "simulated",
+        "fearPct": 64
+      }
+    },
+    {
+      "check": "a later reading replaces the row",
+      "ok": true,
+      "detail": {
+        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sequence": 4,
+        "source": "simulated",
+        "fearPct": 81
+      }
+    },
+    {
+      "check": "an older sequence never overwrites a newer reading",
+      "ok": true,
+      "detail": {
+        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sequence": 4,
+        "source": "simulated",
+        "fearPct": 81
+      }
+    },
+    {
+      "check": "a reading with nothing to go on clears the number but keeps the row",
+      "ok": true,
+      "detail": {
+        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sequence": 5,
+        "source": "simulated"
+      }
+    },
+    {
+      "check": "withdrawing consent deletes the fear row for the spectator",
+      "ok": true
+    },
+    {
+      "check": "a fear write landing after the withdrawal is dropped",
+      "ok": true
+    },
+    {
+      "check": "an abandoned fear row is swept with its vitals within 21 s",
+      "ok": true
+    },
+    {
+      "check": "a spectator with the wrong capability receives no fear rows",
+      "ok": true
+    },
+    {
+      "check": "removing the session removes the fear row",
+      "ok": true
+    }
+  ]
+}

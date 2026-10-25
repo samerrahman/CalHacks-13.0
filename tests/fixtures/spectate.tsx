@@ -8,6 +8,9 @@ import { sanitizedTrace } from '../../src/integrations/client';
 import type { SensorView } from '../../src/sensing/types';
 import SpectateView from '../../src/ui/SpectateView';
 import '../../src/ui/style.css';
+// The real app loads these through the setup screen (fonts, forest and paper textures).
+import '../../src/ui/handdrawn.css';
+import '../../src/ui/forest-layers.css';
 
 // Test-only entry point: a real reducer run posted to the spectate page over the same-browser link, with
 // SIMULATED vitals. ?mode=coop for a co-op run. The buttons push the run into the states worth checking.
@@ -27,7 +30,7 @@ function Fixture() {
       if (target.current !== null && s.creature.linePosition !== target.current) { s.creature.linePosition += Math.sign(target.current - s.creature.linePosition); projectCreature(s); emit(s, 'MONSTER_STEP'); if (s.creature.linePosition <= 7 && !s.creature.alarmLatched) { s.creature.alarmLatched = true; emit(s, 'PROXIMITY_ALARM'); } if (s.creature.linePosition >= 10) s.creature.alarmLatched = false; }
       pulse.current += (72 + Math.max(0, 9 - s.creature.linePosition) * 4 - pulse.current) * .15;
       const snapshot = sanitizedTrace(s, sensor);
-      snapshot.vitals = { source: 'simulated', status: 'ready', quality: 'accepted', trend: pulse.current > 85 ? 'ELEVATED' : 'STEADY', pulseBpm: Math.round(pulse.current), baselineBpm: 72 };
+      snapshot.vitals = { source: 'simulated', status: 'ready', quality: 'accepted', trend: pulse.current > 85 ? 'ELEVATED' : 'STEADY', pulseBpm: Math.round(pulse.current), baselineBpm: 72, fearPct: Math.max(0, Math.min(100, Math.round((pulse.current - 72) * 2.2))) };
       out.postMessage(snapshot);
     }, 400);
     return () => { clearInterval(timer); out.close(); };

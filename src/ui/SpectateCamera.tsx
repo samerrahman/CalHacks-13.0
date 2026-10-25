@@ -52,16 +52,15 @@ export default function SpectateCamera({ hash, spotlight = false, onLive }: { ha
   const voiceLine = live && state.voice, picture = live && !videoMuted;
   useEffect(() => { onLive?.(picture); }, [picture, onLive]);
   return <section className={`spectate-card spectate-camera ${state.status}${spotlight && picture ? ' spotlight' : ''}`} aria-label="Player camera and voice">
-    <small>PLAYER CAMERA <em>{live && videoMuted ? state.voice ? 'Voice only' : 'No picture yet' : TITLE[state.status]}</em></small>
+    <small>THEIR CAMERA <em>{live && videoMuted ? state.voice ? 'Voice only' : 'No picture yet' : TITLE[state.status]}</em></small>
     <div className="camera-frame">
       <video ref={video} muted playsInline autoPlay hidden={!live || videoMuted} aria-label="Live video from the player's camera"/>
-      {live && !videoMuted ? <span className="camera-label"><i aria-hidden="true"/>LIVE · PLAYER CAMERA</span> : <p role="status">{live ? state.voice ? 'Camera off · voice chat available' : 'Waiting for the player’s camera picture' : state.message}</p>}
+      {live && !videoMuted ? <span className="camera-label"><i aria-hidden="true"/>LIVE</span> : <p role="status">{live ? state.voice ? 'Camera off · voice chat available' : 'Waiting for their camera picture' : state.message}</p>}
     </div>
     <audio ref={audio} autoPlay hidden/>
     {voiceLine && <div className="spectate-voice">
       <button className={voice === 'on' ? 'on' : ''} aria-pressed={voice === 'on'} onClick={() => void joinVoice()}>{voice === 'on' ? '● Leave voice' : voice === 'opening' ? 'Opening mic…' : 'Join voice'}</button>
       <span>{voice === 'on' ? 'Your mic is on. They hear you only if they turned voice chat on.' : voice === 'denied' ? 'Microphone blocked. Allow it in your browser settings, or use the warning button.' : 'Optional: talk to the player and hear them. Use headphones.'}</span>
     </div>}
-    <span>Peer to peer from the player's device, only while they keep it on. Nothing is recorded or stored.</span>
   </section>;
 }

@@ -46,6 +46,7 @@ import LeaveCameraReducer from "./leave_camera_reducer";
 import SignalToSpectatorReducer from "./signal_to_spectator_reducer";
 import SignalToPlayerReducer from "./signal_to_player_reducer";
 import ShareVitalsReducer from "./share_vitals_reducer";
+import ShareFearReducer from "./share_fear_reducer";
 import StopVitalsReducer from "./stop_vitals_reducer";
 import PredictOutcomeReducer from "./predict_outcome_reducer";
 
@@ -60,6 +61,7 @@ import CoopRemoteInboxRow from "./coop_remote_inbox_table";
 import JudgeTraceRow from "./judge_trace_table";
 import PhysicsFeedRow from "./physics_feed_table";
 import PredictionFeedRow from "./prediction_feed_table";
+import SpectatorFearFeedRow from "./spectator_fear_feed_table";
 import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
 
 /** Type-only namespace exports for generated type groups. */
@@ -122,6 +124,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, PredictionFeedRow),
+  spectatorFearFeed: __table({
+    name: 'spectator_fear_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, SpectatorFearFeedRow),
   spectatorVitalsFeed: __table({
     name: 'spectator_vitals_feed',
     indexes: [
@@ -145,6 +154,7 @@ const reducersSchema = __reducers(
   __reducerSchema("signal_to_spectator", SignalToSpectatorReducer),
   __reducerSchema("signal_to_player", SignalToPlayerReducer),
   __reducerSchema("share_vitals", ShareVitalsReducer),
+  __reducerSchema("share_fear", ShareFearReducer),
   __reducerSchema("stop_vitals", StopVitalsReducer),
   __reducerSchema("predict_outcome", PredictOutcomeReducer),
 );
@@ -159,7 +169,7 @@ const REMOTE_MODULE = {
     cliVersion: "2.13.0" as const,
   },
   tables: tablesSchema.schemaType.tables,
-  viewsWithArgs: ["camera_player_inbox", "camera_share_feed", "camera_spectator_inbox", "coop_manual_feed", "coop_remote_inbox", "judge_trace", "physics_feed", "prediction_feed", "spectator_vitals_feed"],
+  viewsWithArgs: ["camera_player_inbox", "camera_share_feed", "camera_spectator_inbox", "coop_manual_feed", "coop_remote_inbox", "judge_trace", "physics_feed", "prediction_feed", "spectator_fear_feed", "spectator_vitals_feed"],
   reducers: reducersSchema.reducersType.reducers,
   ...proceduresSchema,
 } satisfies __RemoteModule<

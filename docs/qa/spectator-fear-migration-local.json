@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-25T08:14:14+00:00",
+  "server": "ws://127.0.0.1:3000 (local SpacetimeDB 2.13 CLI server)",
+  "purpose": "Migration and compatibility checks for the spectator_fear table before publishing to Maincloud scary-5zsk8",
+  "results": [
+    {
+      "check": "the module currently on Maincloud (git HEAD d39f05f) publishes to a fresh local database hush-migrate-test",
+      "ok": true
+    },
+    {
+      "check": "seeded with a live co-op session, a trace batch and a spectator_vitals row (pulse 80) under the old module",
+      "ok": true
+    },
+    {
+      "check": "publishing the new module over it without --delete-data is accepted as an automatic migration ('Updated database'; creates table spectator_fear and view spectator_fear_feed)",
+      "ok": true
+    },
+    {
+      "check": "the pre-existing session's trace and vitals survive the upgrade",
+      "ok": true,
+      "detail": {
+        "trace": 1,
+        "vitalsPulseBpm": 80,
+        "fearRows": 0
+      }
+    },
+    {
+      "check": "on the upgraded database the same session shares vitals and a combined fear number",
+      "ok": true,
+      "detail": {
+        "vitalsPulseBpm": 82,
+        "fearPct": 44
+      }
+    },
+    {
+      "check": "a new client against the old module (hush-old-test): the spectator feed stays live with heart rate, fearPct is null (page falls back to its heart-rate estimate) and shareFear fails cleanly",
+      "ok": true,
+      "detail": {
+        "status": "Live · SpacetimeDB",
+        "trace": true,
+        "pulseBpm": 81,
+        "fearPct": null,
+        "shareFearError": "InternalError: no such reducer"
+      }
+    }
+  ],
+  "passed": 6,
+  "failed": 0
+}

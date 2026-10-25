@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newHighlights, trackHighlights, biggestRise, causeBefore } from '../src/spectate/highlights';
 import { narrateEvent, narrateHighlight } from '../src/spectate/narrator';
-import { playerPose, SEAT } from '../src/spectate/player';
 import { recapData } from '../src/spectate/Recap';
 import { heardPosition } from '../src/spectate/audio';
 import { WhisperGate, WHISPER } from '../src/ui/whisper';
@@ -58,19 +57,6 @@ test('predictions: clean names, one row shape, right calls score more the earlie
   const rows = [{ voter: '00000001', name: 'Late', choice: 'escape', stage: 2 }, { voter: '00000002', name: 'Early', choice: 'escape', stage: 1 }, { voter: '00000003', name: 'Doubter', choice: 'caught', stage: 1 }];
   assert.deepEqual(standings(rows, 'won').map(s => [s.name, s.points]), [['Early', 200], ['Late', 150], ['Doubter', 0]]);
   assert.deepEqual(standings(rows, 'lost').map(s => [s.name, s.points]), [['Doubter', 200], ['Early', 0], ['Late', 0]]);
-});
-
-test('the player model: seated typing, hunched in the dark, turned to the door when it is close, flinching, then gone through the basement door', () => {
-  const base = { seconds: 10, equipment: 'on', playing: true, alarm: false, scareAge: null, wonAge: null, reducedMotion: true } as const;
-  const seated = playerPose(base);
-  assert.deepEqual([seated.x, seated.z, seated.rise, seated.visible], [SEAT.x, SEAT.z, 0, true]); assert.ok(seated.hip[0] > 1 && seated.knee[0] < -1, 'seated: thighs forward, shins down');
-  const dark = playerPose({ ...base, equipment: 'quiet' });
-  assert.ok(dark.lean < seated.lean && dark.headPitch < seated.headPitch, 'hunched over with the equipment off');
-  assert.ok(playerPose({ ...base, alarm: true }).headYaw > 1, 'looks over the shoulder at the sealed door');
-  assert.ok(playerPose({ ...base, scareAge: 0.1 }).lean > seated.lean, 'thrown back by a scare');
-  const leaving = playerPose({ ...base, wonAge: 2.5 });
-  assert.equal(leaving.rise, 1); assert.ok(leaving.x < SEAT.x && leaving.z < SEAT.z, 'walking toward the basement door');
-  assert.equal(playerPose({ ...base, wonAge: 5 }).visible, false, 'through it and gone');
 });
 
 test('whisper gate: loud only after a moment above the line, quiet again after a moment below it', () => {

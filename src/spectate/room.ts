@@ -5,14 +5,18 @@ import type { PropView } from '../integrations/physics';
 import type { TraceSnapshot } from '../integrations/client';
 import { camLighting, newTracker, trackFeed, type DoorCue, type Signal } from './feedState';
 import { SpringLook } from './look';
-import { createPlayerModel, playerPose, type PlayerModel } from './player';
+import type { PlayerView } from './player';
+import { createResearcher } from './researcher';
 import { BASEMENT_DOOR, buildBasementDoor } from '../cutscene/props/basementDoor';
 
 type V3 = [number, number, number];
 // Copied from createScene in src/render/scene.ts (model placements, signage, lamp, alarm, lights, the
 // sonar scope, wall status unit and basement door); keep in step with it. As in the game the security
 // monitor and wall radar stay loaded but hidden. The creature is never added: the room is windowless.
-// The player sits at the desk (./player.ts).
+// The only figure inside is the player's researcher, placed from the public trace (player.ts); after
+// a win they walk out through the basement door as it opens.
+/** Just through the basement doorway, where the researcher walks after a win. */
+const EXIT = { x: -2.0, z: -2.8 } as const;
 const PLACEMENT: Record<Exclude<ModelName, 'creature_cctv'>, [V3, number]> = {
   shelter: [[0, 0, 0], 0], sealed_door: [[-1.75, 0, 2.39], Math.PI], workdesk: [[0, 0, -1.8], 0], terminal: [[-.62, .92, -1.8], 0], security_monitor: [[.72, .92, -1.8], 0], proximity_detector: [[1.85, 1.60, -2.35], 0], radio_speaker: [[-1.30, .92, -1.8], 0], machine_rack: [[2.67, 0, .05], -Math.PI / 2], emergency_switch: [[-.70, 1.35, 2.36], Math.PI],
 };
@@ -50,7 +54,7 @@ void main() {
   gl_FragColor = vec4(col, 1.);
 }`;
 
-export type ShelterCamInput = { trace: TraceSnapshot | null; props: () => readonly PropView[]; nowMs: number; reducedMotion: boolean };
+export type ShelterCamInput = { trace: TraceSnapshot | null; props: () => readonly PropView[]; player?: () => PlayerView | null; nowMs: number; reducedMotion: boolean };
 export interface ShelterCam {
   /** Resolves when the models are in; rejects if a required model failed to load. */
   ready: Promise<void>;
@@ -100,8 +104,8 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
   container.addEventListener('keydown', keyDown); container.addEventListener('keyup', keyUp); container.addEventListener('blur', releaseLook);
   window.addEventListener('blur', releaseLook);
   let disposed = false, lostContext = false, lastRender = -Infinity, frameNo = 0, gain = 1, noise = .06, shakeAt = -Infinity, shakeAmp = 0;
-  let tracker = newTracker(), lastTrace: TraceSnapshot | null | undefined, scareAt: number | null = null, wonAt: number | null = null;
-  let player: PlayerModel | null = null, lockLamps: THREE.MeshStandardMaterial[] = [], beaconLens: THREE.MeshStandardMaterial | null = null, doorLeaf: THREE.Object3D | null = null;
+  let tracker = newTracker(), lastTrace: TraceSnapshot | null | undefined, wonAt: number | null = null, leaveFrom: { x: number; z: number } | null = null;
+  let lockLamps: THREE.MeshStandardMaterial[] = [], beaconLens: THREE.MeshStandardMaterial | null = null, doorLeaf: THREE.Object3D | null = null;
 
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x020303); scene.fog = new THREE.FogExp2(0x040504, .025);
   const camera = new THREE.PerspectiveCamera(CAMERA.fov, 16 / 9, .05, 20);
@@ -123,6 +127,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
   // The camera's own weak infrared illuminator: geometry stays faintly readable in a blackout.
   const infrared = new THREE.PointLight(0xffffff, 1.4, 9, 1.2); infrared.position.set(...CAMERA.position);
   scene.add(hemisphere, fill, overhead, deskLamp, taskSpot, taskSpot.target, emergency, screenGlow, alarm, infrared);
+  const researcher = createResearcher(); researcher.root.visible = false; scene.add(researcher.root);
   const lampSurface = new THREE.MeshStandardMaterial({ color: 0x82745a, emissive: 0xe29049, emissiveIntensity: .22 });
   const alarmLens = new THREE.MeshStandardMaterial({ color: 0x330604, emissive: 0xc52b0d, emissiveIntensity: .16, roughness: .38 });
   const screens: { material: THREE.MeshBasicMaterial; colour: number }[] = [], orphans: THREE.Material[] = [], mixers: THREE.AnimationMixer[] = [];
@@ -164,7 +169,6 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
     lockLamps = [0, 1, 2, 3].map(i => { const mesh = basement.getObjectByName(`lock_lamp_${i}`) as THREE.Mesh, material = new THREE.MeshStandardMaterial({ color: 0x1c0605, emissive: 0xff2a1a, emissiveIntensity: .8 }); mesh.material = material; orphans.push(material); return material; });
     beaconLens = new THREE.MeshStandardMaterial({ color: 0x3a2508, emissive: 0xffa040, emissiveIntensity: .08 }); (basement.getObjectByName('beacon_lens') as THREE.Mesh).material = beaconLens; orphans.push(beaconLens);
     doorLeaf = basement.getObjectByName('door_leaf') ?? null;
-    player = createPlayerModel(steel); scene.add(player.chair, player.root);
     const loader = new THREE.TextureLoader();
     for (const [name, pos, width, rotation] of SIGNS) {
       const material = w.material('cream'); material.color.setHex(0xa29a7c);
@@ -217,16 +221,15 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
 
   return {
     ready, diagnostics,
-    frame({ trace, props: propsAt, nowMs, reducedMotion }) {
+    frame({ trace, props: propsAt, player, nowMs, reducedMotion }) {
       if (disposed) return tracker.signal;
       if (trace !== lastTrace) {
         lastTrace = trace;
         const { next, cues, restarted } = trackFeed(tracker, trace);
-        if (restarted) { door?.impact.stop(); door?.dent.stop(); look.reset(); scareAt = wonAt = null; }
-        if (cues.length) scareAt = nowMs;
+        if (restarted) { door?.impact.stop(); door?.dent.stop(); look.reset(); wonAt = leaveFrom = null; }
         // A win seen live walks the player out; joining after it, they are already gone.
         if (trace?.summary.status === 'won' && wonAt === null) wonAt = tracker.primed && !restarted ? nowMs : -1e9;
-        if (trace?.summary.status === 'playing') wonAt = null;
+        if (trace?.summary.status === 'playing') wonAt = leaveFrom = null;
         const joinedDented = next.dented && !tracker.dented && !cues.includes('dent');
         tracker = next; diagnostics.signal = next.signal;
         if (joinedDented) settleDent();
@@ -253,7 +256,14 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
         if (beaconLens) beaconLens.emissiveIntensity = motor ? .6 + 1.6 * Math.max(0, Math.sin(nowMs / 1000 * Math.PI * 2.2)) : .08;
         const wonAge = won && wonAt !== null ? (nowMs - wonAt) / 1000 : null;
         if (doorLeaf) doorLeaf.position.x = -BASEMENT_DOOR.maxTravel * Math.min(1, Math.max(0, wonAge === null ? 0 : (wonAge - 1.6) / 1.6)) * (wonAge !== null && wonAge > 5.6 ? Math.max(0, 1 - (wonAge - 5.6) / .8) : 1);
-        player?.apply(playerPose({ seconds: nowMs / 1000, equipment: s.equipment, playing: s.status === 'playing', alarm: tracker.alarm, scareAge: scareAt === null ? null : (nowMs - scareAt) / 1000, wonAge, reducedMotion }));
+        // After a win the researcher walks from where they stand out through the opening basement door, and is gone.
+        let view = player?.() ?? null;
+        if (view && wonAge !== null) {
+          const from = leaveFrom ??= { x: view.x, z: view.z }, k = reducedMotion ? 1 : Math.min(1, Math.max(0, (wonAge - .8) / 2.6));
+          view = wonAge > 4.2 ? null : { ...view, x: from.x + (EXIT.x - from.x) * k, z: from.z + (EXIT.z - from.z) * k, heading: Math.atan2(EXIT.x - from.x, EXIT.z - from.z), walking: k > 0 && k < 1, working: false, stride: (wonAge * .95) % 1 };
+        }
+        researcher.root.visible = !!view;
+        if (view) researcher.update(view, dt, nowMs / 1000, reducedMotion);
         camera.position.set(...CAMERA.position); camera.lookAt(...CAMERA.target);
         camera.rotateY(look.yaw); camera.rotateX(look.pitch);
         const shake = reducedMotion ? 0 : shakeAmp * Math.max(0, 1 - (nowMs - shakeAt) / 600);
@@ -271,7 +281,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
       container.removeEventListener('keydown', keyDown); container.removeEventListener('keyup', keyUp); container.removeEventListener('blur', releaseLook);
       window.removeEventListener('blur', releaseLook);
       for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()); }
-      player?.dispose(); disposeObject(scene); new Set([...orphans, lampSurface, alarmLens]).forEach(material => material.dispose()); weathering?.dispose();
+      disposeObject(scene); new Set([...orphans, lampSurface, alarmLens]).forEach(material => material.dispose()); weathering?.dispose();
       target.dispose(); quad.geometry.dispose(); post.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove();
     },
   };

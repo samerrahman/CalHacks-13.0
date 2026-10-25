@@ -18,14 +18,14 @@ export type BookLive = { metres: number | null; calm: Extract<Manual, { kind: 'c
 
 function Faults({ book }: { book: CoopBook }) {
   return <>
-    <p>Ask which research stage they are on and what the failing machine sounds like. Tell them the machine number to press. Each stage's rack is wired differently.</p>
+    <p>Ask which stage and what they hear. Tell them the number. Each stage is wired differently.</p>
     <div className="book-columns">{book.faults.map(({ stage, machines }) => <table key={stage} className="coop-key"><caption>RESEARCH {stage}</caption><thead><tr><th>If they hear</th><th>Press</th></tr></thead>
       <tbody>{FAULT_SOUNDS.map((name, sound) => <tr key={name}><td>{name.toLowerCase()}</td><td><kbd>{machines[sound]! + 1}</kbd></td></tr>)}</tbody></table>)}</div>
   </>;
 }
 function Cables({ book }: { book: CoopBook }) {
   return <>
-    <p>Ask for the research stage, the panel number, and each cable's symbol. Tell them the code on the socket it plugs into.</p>
+    <p>Ask for the stage, the panel and a cable's symbol. Tell them its socket code.</p>
     <div className="book-columns">{book.cables.map(({ stage, panel, panels, codes }) => <div key={`${stage}-${panel}`} className="book-panel">
       <h3>RESEARCH {stage} · PANEL {panel + 1}{panels > 1 ? ` OF ${panels}` : ''}</h3>
       <ol className="coop-cables">{codes.map((code, cable) => <li key={cable} style={{ '--wire-color': WIRE_COLORS[cable] } as CSSProperties}>
@@ -51,20 +51,20 @@ function Board({ board }: { board: CoopBook['boards'][number] }) {
 }
 function Conduit({ book }: { book: CoopBook }) {
   return <>
-    <p>Ask which rows IN and OUT are on and find that board. Then talk them through each drawn tile: row, column and which sides it joins. Tiles marked · are off the route and can stay as they are. Then they press T.</p>
+    <p>Ask which rows IN and OUT are on; find that board. Tell them how each tile points. Tiles marked · don't matter. Then T.</p>
     <div className="book-boards">{book.boards.map(board => <Board key={`${board.start}-${board.end}`} board={board}/>)}</div>
   </>;
 }
 function Signal({ book }: { book: CoopBook }) {
   return <>
-    <p>During playback they see symbols, not digits. Ask them to name each symbol in order, and read back the digits. A wrong digit wipes their entry; start from the first.</p>
+    <p>They see symbols, not digits. Ask for them in order; read back the digits. A wrong digit starts it over.</p>
     <div className="book-columns">{book.memory.map(({ stage, glyphFor }) => <table key={stage} className="coop-key"><caption>RESEARCH {stage}</caption><thead><tr><th>If they see</th><th>Digit</th></tr></thead>
       <tbody>{glyphFor.map((glyph, digit) => ({ glyph, digit })).sort((a, b) => a.glyph - b.glyph).map(({ glyph, digit }) => <tr key={glyph}><td><span className="book-glyph" aria-hidden="true">{MEMORY_GLYPHS[glyph]!.glyph}</span>{MEMORY_GLYPHS[glyph]!.name.toLowerCase()}</td><td><kbd>{digit + 1}</kbd></td></tr>)}</tbody></table>)}</div>
   </>;
 }
 function Radar({ book, metres }: { book: CoopBook; metres: number | null }) {
   return <>
-    <p>Their radar is dark while they mark. Read its range (here, or on your outside camera), find the band, and tell them the key. It keeps moving, so check before every mark. On a band edge either key works.</p>
+    <p>Their radar is dark. Read the range, find the band, give the key. It keeps moving: check before every mark. On an edge, either key works.</p>
     <table className="coop-key"><thead><tr><th>If it is</th><th>Key</th></tr></thead>
       <tbody>{LOCATE_BANDS.map((b, i) => <tr key={b.sector}><td>{b.name}</td><td><kbd>{book.locate[i]}</kbd></td></tr>)}</tbody></table>
     <div className={`book-live${metres !== null ? ' on' : ''}`} role="status"><small>RANGE NOW</small><strong>{metres === null ? '—' : `${Math.round(metres)} m`}</strong></div>
@@ -75,7 +75,7 @@ function Breathing({ calm }: { calm: BookLive['calm'] }) {
   const [anchor, setAnchor] = useState(() => performance.now()), [now, setNow] = useState(() => performance.now());
   useEffect(() => { setAnchor(performance.now()); }, [calm?.inhale, calm?.halfTenths, calm?.elapsedTenths]);
   useEffect(() => { const timer = setInterval(() => setNow(performance.now()), 100); return () => clearInterval(timer); }, []);
-  const intro = <p>They hold B to breathe in and let go to breathe out, but they can't see the pacer. Call it for them: "in" while they should hold, "out" while they let go. Matching it builds calm; drifting off it doesn't.</p>;
+  const intro = <p>They can't see the pacer. Say "in" while they should hold B, "out" while they let go.</p>;
   if (!calm) return <>{intro}<div className="coop-pacer idle" role="status"><strong>THE PACER SHOWS HERE</strong><span>while they are on the calm hold</span></div></>;
   const half = calm.halfTenths / 10, t = calm.elapsedTenths / 10 + Math.max(0, now - anchor) / 1000;
   const inhale = Math.floor(t / half) % 2 === 0 ? calm.inhale : !calm.inhale, left = half - (t % half);
@@ -85,13 +85,13 @@ function Breathing({ calm }: { calm: BookLive['calm'] }) {
 }
 function Door({ book }: { book: CoopBook }) {
   return <>
-    <p>Once all four locks are released, the basement door motor needs your key too. Read these digits to the player in order; they press 1–4 at the terminal. A wrong digit buzzes loudly and they start over.</p>
+    <p>After the fourth lock the door needs your key. Read these in order; they press 1–4. A wrong digit starts it over.</p>
     <div className="coop-door-key" role="img" aria-label={`Door key ${book.door.join(' ')}`}>{book.door.map((digit, i) => <kbd key={i}>{digit}</kbd>)}</div>
   </>;
 }
 function Contents({ go }: { go: (page: BookPageId) => void }) {
   return <>
-    <p>The player describes what they see; you find the answer here and tell them. They cannot see this book. Every answer changes with each new run, and so does the order the puzzles come in, so ask what they're on.</p>
+    <p>They describe what they see; you find the answer. Every answer, and the order of the puzzles, changes each run, so ask what they're on.</p>
     <ol className="book-contents">{BOOK_PAGES.slice(1).map((id, i) => <li key={id}><button onClick={() => go(id)}><span>{TITLES[id]}</span><i aria-hidden="true"/><b>{i + 1}</b></button></li>)}</ol>
   </>;
 }
@@ -103,7 +103,7 @@ export function BookPage({ id, book, live, go = () => {} }: { id: BookPageId; bo
     <h2>{TITLES[id]} <small>{index ? `PAGE ${index}` : 'CONTENTS'}</small></h2>
     {id === 'contents' ? <Contents go={go}/> : id === 'faults' ? <Faults book={book}/> : id === 'cables' ? <Cables book={book}/> : id === 'conduit' ? <Conduit book={book}/> : id === 'signal' ? <Signal book={book}/>
       : id === 'radar' ? <Radar book={book} metres={live.metres}/> : id === 'breathing' ? <Breathing calm={live.calm}/> : id === 'door' ? <Door book={book}/>
-        : <p>Nothing to look up: the false heartbeat flashes on their screen and they tap 1 with it. Help them keep the beat, and keep them calm.</p>}
+        : <p>Nothing to look up. They tap 1 with the beat on their screen; help them keep it.</p>}
   </div>;
 }
 
@@ -128,13 +128,13 @@ export default function CoopManual({ hash, feed: shared, seed, metres, interfere
   const step = (delta: number) => go(BOOK_PAGES[Math.max(0, Math.min(BOOK_PAGES.length - 1, index + delta))]!);
   const keys = (event: KeyboardEvent) => { if (event.key === 'ArrowRight' || event.key === 'PageDown') { event.preventDefault(); step(1); } else if (event.key === 'ArrowLeft' || event.key === 'PageUp') { event.preventDefault(); step(-1); } };
   return <section className={`spectate-card coop-manual coop-book${interference ? ' interference' : ''}`} aria-label="The manual" onKeyDown={keys}>
-    <small>THE MANUAL · CO-OP <em>{interference ? 'INTERFERENCE · it is close' : `Run ${seed} · only you have this book`}</em></small>
+    <small>THE MANUAL{interference && <em>INTERFERENCE · it is close</em>}</small>
     <nav className="book-tabs" aria-label="Manual pages">{BOOK_PAGES.map((id, i) => <button key={id} className={`${id === page ? 'open' : ''}${id === 'breathing' && live.calm ? ' live' : ''}`} aria-current={id === page ? 'page' : undefined} aria-label={TITLES[id]} title={TITLES[id]} onClick={() => go(id)}>{i ? i : '≡'}</button>)}</nav>
     <div className="book-spread">
       <div key={page} className={`book-sheet${turn ? ` turn-${turn}` : ''}`} tabIndex={-1}><BookPage id={page} book={book} live={live} go={go}/></div>
       {interference && <div className="book-static" aria-hidden="true"/>}
     </div>
     <div className="book-turn"><button onClick={() => step(-1)} disabled={index === 0} aria-label="Previous page">◀ {index > 0 ? TITLES[BOOK_PAGES[index - 1]!] : ''}</button><span>{index} / {BOOK_PAGES.length - 1}</span><button onClick={() => step(1)} disabled={index === BOOK_PAGES.length - 1} aria-label="Next page">{index < BOOK_PAGES.length - 1 ? TITLES[BOOK_PAGES[index + 1]!] : ''} ▶</button></div>
-    <span className="coop-note">The player can't see this book; talk them through it. ← and → turn the pages. {state?.status ?? ''}</span>
+    <span className="coop-note">Only you can see this. ← → turn the pages.</span>
   </section>;
 }

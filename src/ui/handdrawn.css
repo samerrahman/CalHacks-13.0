@@ -163,4 +163,7 @@ body .setup-loader-bar{width:min(380px,68vw);height:2px;background:#1a1412;overf
 body .setup-loader-fill{height:100%;background:#b8261a;box-shadow:0 0 10px #ff3a1a88;transition:width .18s ease-out}
 body .results .screen-left>p.small+.worn-menu{margin-top:5vh}
 /* Sharing choices sit in the main setup flow, not only behind Operator settings. */
-.setup-sharing{display:grid;gap:5px;margin:12px auto 0;max-width:440px;text-align:left}.setup-sharing .check:has(input:disabled){opacity:.5}.setup-sharing p{margin:2px 0 0}
+body .setup-sharing{display:grid;gap:6px;margin:3vh 0 0;max-width:440px;text-align:left;font-family:var(--typed);font-size:12px;color:#8c8371}body .setup-sharing .check:has(input:disabled){opacity:.5}body .setup-sharing p{margin:2px 0 0;font-family:var(--typed);font-size:11px;letter-spacing:1px;color:#5a5244}
+/* Start menu: all three choices share one colour and height (the base primary button is taller). */
+body .setup .setup-actions button.primary{color:#a49b86;min-height:0}
+body .worn-menu button.primary{min-height:0}
