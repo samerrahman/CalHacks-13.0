@@ -2,6 +2,8 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-25: Loss scream with no jump scare: every loss plays the breach scream (App), but only a committed attack set the breach scare; a timeout loss (8-minute deadline, more common solo) never showed the face. The deadline now triggers the breach scare too (tested), and the 6,144-block face SVG is fetched and decoded at startup so the first breach can't lag behind the sound.
+
 - 2026-10-25: Voice chat looked gone on the spectator page because the desktop footage column (shelter cam + outside cam + player camera) is sticky at 94vh with overflow hidden, which clipped the camera card holding Join voice. Removed the outside (monster) camera from the spectator page as asked (deleted `src/spectate/exterior.ts` / `ExteriorFeed.tsx`), let the footage column scroll, and added a hint where Join voice appears.
 
 - 2026-10-24 (on `main`, local commit, not pushed; user-authorized across owners): co-op friend as a second player. Warning lamp button, remote decoys earned by solving the player's own conduit/memory puzzles on the spectator page, a two-key basement door (friend reads a 4-digit key), and optional two-way voice on the existing WebRTC link. Game rules in `src/game/coop.ts` + `config.coop`; transport `FriendSignalReceiver`/`CoopManualFeed.send`; module `friendSignal` + `coop_remote_inbox` + `door` manual kind (needs republish + `spacetime:generate`; bindings hand-written to match). Also fixed my earlier `RECOVERY_REWARD` event stalling remote traces on the published module (fallback to UNKNOWN). Docs: COOP.md, CAMERA.md. Tests: `tests/coop-friend.test.ts`, `src/integrations/friend.test.ts`, webrtc voice cases. Not verified on two devices.

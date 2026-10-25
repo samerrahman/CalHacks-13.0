@@ -294,3 +294,11 @@ test('the creature wanders smoothly around the shelter: no jumps, deterministic,
   updateCaption(state); assert.match(state.caption, /— (AHEAD|RIGHT|BEHIND|LEFT)$/); assert.doesNotMatch(state.caption, /\d/);
   state.creature.linePosition = 1; projectCreature(state); updateCaption(state); assert.match(state.caption, /^POUNDING ON THE WALL/);
 });
+
+test('running out of time ends on the breach scare, the same as a committed attack', () => {
+  let state = createGame(17); state.creature.nextMoveAt = 1e9; state.blackout.nextAt = 1e9;
+  state = step(state, config.line.deadlineSeconds + .1);
+  assert.equal(state.status, 'lost'); assert.ok(state.events.some(e => e.type === 'TIMEOUT'));
+  assert.equal(state.scare?.kind, 'breach', 'the loss scream needs the breach face to go with it');
+  assert.equal(state.lossReason, `The ${config.line.deadlineSeconds / 60}-minute protocol window expired.`);
+});
