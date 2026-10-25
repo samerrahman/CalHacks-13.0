@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SpectateFeed, type SpectateState, type SpectatorVitals } from '../integrations/spectate';
+import type { TraceSnapshot } from '../integrations/client';
 import CctvFeed from '../spectate/CctvFeed';
+import { PlayerWalker, type PlayerView } from '../spectate/player';
 import { creatureDistance, METRES_PER_UNIT } from '../spectate/distance';
 import type { PropView } from '../integrations/physics';
 import { DOOR, OBSTACLES, ROOM } from '../../spacetimedb/src/physicsSim';
@@ -8,8 +10,10 @@ import './spectate.css';
 import CoopManual from './CoopManual';
 import FriendControls from '../spectate/FriendControls';
 import { CoopManualFeed } from '../integrations/coop';
+import { Heartbeat, WornTitle } from './Worn';
+import './spectate-worn.css';
 import SpectateCamera from './SpectateCamera';
-import { emotionLabel, fearFromPulse, type EmotionLabel } from './vitalsHold';
+import { readSpectatorFear, spectatorFearMemory } from './vitalsHold';
 
 const HELD_MS = 5000, GONE_MS = 15000;
 const TREND: Record<SpectatorVitals['trend'], string> = { UNKNOWN: 'No sustained change yet', STEADY: 'Holding steady', ELEVATED: 'Up and staying up', RECOVERED: 'Coming back down' };
@@ -19,16 +23,9 @@ const MOMENTS: Record<string, (detail: string) => string> = {
   LURE_TRANSMITTED: d => `Lure sent to ${d.replace('_', ' ').toLowerCase()}`, QUIET_ENTERED: () => 'Equipment isolated', RESTORED: () => 'Power restored',
   BLACKOUT_STARTED: () => 'Blackout', FRIEND_WARNING: () => 'You warned them', FRIEND_DECOY: () => 'Your decoy fired', DOOR_UNLOCKED: () => 'Your door key turned', RECOVERY_REWARD: () => 'They steadied · it lost their trail', FINAL_BROADCAST: () => 'Final broadcast', WON: () => 'Contained', LOST: () => 'Lost', TIMEOUT: () => 'Out of time', PAUSED: () => 'Paused', RESUMED: () => 'Resumed',
 };
-const MOOD: Record<EmotionLabel, string> = { 'FEAR / STARTLE': 'FEAR / ELEVATED', TENSE: 'TENSE', CALM: 'CALM', CALIBRATING: 'CALIBRATING' };
-/** Only heart rate is shared, never the player's breathing or expressions, so spectators get an
- * estimate from heart rate, always labelled as one. */
-function breathingFromPulse(bpm: number | null, baseline: number | null, trend: SpectatorVitals['trend']): number | null {
-  if (bpm === null) return null;
-  return Math.max(10, Math.min(32, Math.round(14 + (baseline === null ? 0 : bpm - baseline) * 0.3 + (trend === 'ELEVATED' ? 2 : 0))));
-}
 const PROP_COLOUR: Record<string, string> = { can: '#a9b28a', mug: '#d1b98a', bolt: '#8d9188', bottle: '#7f9f8f', flashlight: '#d49a5e' };
 
-function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[]): void {
+function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[], player: PlayerView | null): void {
   const ctx = canvas?.getContext('2d');
   if (!canvas || !ctx) return;
   const ratio = devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
@@ -51,21 +48,34 @@ function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[]): void 
     ctx.fillStyle = PROP_COLOUR[p.kind] ?? '#999'; ctx.globalAlpha = p.sleeping ? 0.75 : 1;
     ctx.beginPath(); ctx.arc(x, z, r, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
   }
+  if (player) {
+    // The player's researcher, the same figure the shelter camera shows: a dot facing their way.
+    const x = px(player.x), z = pz(player.z), r = Math.max(4, .17 * scale);
+    ctx.strokeStyle = '#e6dfc0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, z); ctx.lineTo(x + Math.sin(player.heading) * r * 2, z + Math.cos(player.heading) * r * 2); ctx.stroke();
+    ctx.fillStyle = '#e6dfc0'; ctx.beginPath(); ctx.arc(x, z, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7b7a68'; ctx.fillText('PLAYER', x + r + 4, z - r);
+  }
 }
 
-function Vitals({ vitals, age }: { vitals: SpectatorVitals | null; age: number | null }) {
-  if (!vitals || age === null || age > GONE_MS) return <section className="spectate-card spectate-vitals off"><small>HEART RATE</small><strong>—</strong><span>{vitals ? 'No recent reading from the player.' : 'No heart rate is being shared right now. You can still follow the run.'}</span></section>;
-  const held = age > HELD_MS, bpm = vitals.pulseBpm, delta = bpm !== null && vitals.baselineBpm !== null ? bpm - vitals.baselineBpm : null;
-  const note = bpm !== null ? TREND[vitals.trend] : vitals.quality === 'rejected' ? 'Reading rejected (movement or lighting)' : vitals.status === 'calibrating' || vitals.status === 'starting' ? 'Calibrating the camera' : vitals.status === 'paused' ? 'Capture paused' : 'No accepted reading right now';
-  const fear = fearFromPulse(bpm, vitals.baselineBpm, vitals.trend), mood = fear === null ? null : MOOD[emotionLabel(fear)], rpm = breathingFromPulse(bpm, vitals.baselineBpm, vitals.trend);
-  return <section className={`spectate-card spectate-vitals${held ? ' held' : ''}${vitals.trend === 'ELEVATED' ? ' elevated' : ''}`}>
-    <small>THEIR STATE <em className={vitals.source}>{vitals.source === 'simulated' ? 'SIMULATED · not a real heart rate' : 'PRESAGE · camera estimate'}</em></small>
-    <div className="spectate-readouts">
-      <div className={`spectate-readout primary mood-${(mood ?? 'none').split(' ')[0].toLowerCase()}`}><small>EMOTION <em>est. from heart rate</em></small><strong>{fear === null ? '—' : `${fear}%`}</strong><span>{mood ?? 'Calibrating'}</span></div>
-      <div className="spectate-readout primary"><small>BREATHING <em>est. from heart rate · not measured</em></small><strong>{rpm ?? '—'}<span>RPM</span></strong></div>
-      <div className="spectate-readout"><small>HEART RATE</small><strong><i className="beat" style={bpm ? { animationDuration: `${(60 / bpm).toFixed(2)}s` } : undefined} aria-hidden="true">♥</i>{bpm ?? '—'}<span>BPM</span></strong></div>
-    </div>
-    <span>{delta !== null && <b>{delta > 0 ? '+' : ''}{delta} vs their baseline · </b>}{note}{held && ` · held, no update for ${Math.floor(age / 1000)} s`}</span>
+/** One FEAR reading for the spectator in place of separate heart-rate and breathing numbers: the
+ * player's device combines its camera estimates (face, heart rate, breathing, skin response) into
+ * one percentage, held through dropouts; an older player build only lets it be estimated from heart
+ * rate (vitalsHold.ts). */
+function Fear({ vitals, age, now }: { vitals: SpectatorVitals | null; age: number | null; now: number }) {
+  const memory = useRef(spectatorFearMemory());
+  if (!vitals || age === null || age > GONE_MS) {
+    // Not shared (or gone): forget the last reading, so a re-enabled share never resurfaces it.
+    memory.current = spectatorFearMemory();
+    return <section className="spectate-card spectate-vitals spectate-fear off"><small>FEAR</small><strong>—</strong><span>{vitals ? 'No recent reading' : 'Not shared'}</span></section>;
+  }
+  const fear = readSpectatorFear(memory.current, vitals, now), held = age > HELD_MS || fear.fearPct !== null && !fear.live;
+  const status = vitals.status === 'calibrating' || vitals.status === 'starting' ? 'Calibrating their camera' : vitals.status === 'paused' ? 'Capture paused' : vitals.quality === 'rejected' ? 'Reading rejected (movement or lighting)' : 'Waiting for a reading';
+  const note = fear.fearPct === null ? status : fear.live ? TREND[fear.trend] : `${status} · showing their last reading`;
+  return <section className={`spectate-card spectate-vitals spectate-fear mood-${fear.label.toLowerCase()}${held ? ' held' : ''}`}>
+    <small>FEAR <em className={vitals.source}>{vitals.source === 'simulated' ? 'SIMULATED' : fear.basis === 'heart rate' ? 'FROM THEIR HEART RATE' : 'FROM THEIR CAMERA'}</em></small>
+    <strong>{fear.fearPct === null ? '—' : `${fear.fearPct}%`}<span>{fear.label}</span></strong>
+    <div className="spectate-meter"><meter aria-label="Fear level" min={0} max={100} low={25} high={50} optimum={0} value={fear.fearPct ?? 0} /></div>
+    <span>{note}{age > HELD_MS && ` · held, no update for ${Math.floor(age / 1000)} s`}</span>
   </section>;
 }
 
@@ -73,51 +83,59 @@ export default function SpectateView() {
   const canvas = useRef<HTMLCanvasElement>(null), feed = useRef<SpectateFeed | null>(null);
   const [state, setState] = useState<SpectateState | null>(null), [now, setNow] = useState(() => performance.now());
   const propsAt = useCallback((t: number) => feed.current?.props(t) ?? [], []);
+  // One walker for the camera and the map, so both show the researcher in the same place.
+  const [walker] = useState(() => new PlayerWalker()), [motion] = useState(() => matchMedia('(prefers-reduced-motion: reduce)')), latestTrace = useRef<TraceSnapshot | null>(null);
+  const playerAt = useCallback((t: number) => walker.at(latestTrace.current, t, motion.matches), [walker, motion]);
   useEffect(() => {
-    const current = feed.current = new SpectateFeed(location.hash), off = current.subscribe(setState), clock = setInterval(() => setNow(performance.now()), 500);
-    let raf = requestAnimationFrame(function frame(t) { drawShelter(canvas.current, current.props(t)); raf = requestAnimationFrame(frame); });
+    const current = feed.current = new SpectateFeed(location.hash), off = current.subscribe(next => { latestTrace.current = next.trace; setState(next); }), clock = setInterval(() => setNow(performance.now()), 500);
+    let raf = requestAnimationFrame(function frame(t) { drawShelter(canvas.current, current.props(t), playerAt(t)); raf = requestAnimationFrame(frame); });
     return () => { off(); clearInterval(clock); cancelAnimationFrame(raf); current.dispose(); if (feed.current === current) feed.current = null; };
   }, []);
   const coop = state?.trace?.mode === 'coop', [coopFeed, setCoopFeed] = useState<CoopManualFeed | null>(null);
   // One manual feed per page in co-op: it reads the manual and carries the friend's warning and decoys.
   useEffect(() => { if (!coop) return; const next = new CoopManualFeed(location.hash); setCoopFeed(next); return () => { next.dispose(); setCoopFeed(null); }; }, [coop]);
   const trace = state?.trace, s = trace?.summary, traceAge = state?.traceReceivedAt == null ? null : now - state.traceReceivedAt;
-  const moments = (trace?.events ?? []).filter(e => MOMENTS[e.type]).slice(-6).reverse();
+  const moments = (trace?.events ?? []).filter(e => MOMENTS[e.type]).slice(-4).reverse();
   // Run time carried forward between updates (at most 2 s) so the distance keeps drifting smoothly.
   const distance = s ? creatureDistance(s.linePosition, s.time + (s.status === 'playing' && traceAge !== null ? Math.min(2, traceAge / 1000) : 0), trace!.seed) : null;
   return <main className="judge-page spectate-page">
-    <div className="eyebrow">HUSH / SPECTATING · READ ONLY</div>
-    <h1>{trace?.mode==='coop'?"You're their lifeline.":"You're watching."}</h1>
-    <p className="small muted">{state?.status ?? 'Connecting'}{traceAge !== null && traceAge > HELD_MS && ` · no update for ${Math.floor(traceAge / 1000)} s`}</p>
+    <div className="spectate-backdrop" aria-hidden="true"/>
+    <header className="spectate-head"><WornTitle text={trace?.mode==='coop'?'LIFELINE':'WATCHING'}/><Heartbeat/>
+      <p className="spectate-status">{state?.status ?? 'Connecting'}{traceAge !== null && traceAge > HELD_MS && ` · no update for ${Math.floor(traceAge / 1000)} s`}</p></header>
+    <div className="spectate-columns">
+    {/* The footage stays pinned on the left; everything to read scrolls on the right. */}
+    <div className="spectate-scroll">
     {coop&&coopFeed&&<CoopManual hash={location.hash} feed={coopFeed}/>}
-    <div className="spectate-main">
-      <section className="spectate-card spectate-cctv-card" aria-label="Shelter camera">
-        <small>SHELTER CAMERA <em>DRAWN ON THIS DEVICE FROM THE GAME STATE · NOT THE PLAYER’S WEBCAM</em></small>
-        <CctvFeed trace={trace ?? null} propsAt={propsAt} />
-      </section>
-      <div className="spectate-side">
-        {coop&&coopFeed&&<FriendControls feed={coopFeed} trace={trace ?? null}/>}
-        <SpectateCamera hash={location.hash}/>
-        <Vitals vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt} />
+    {coop&&coopFeed&&<FriendControls feed={coopFeed} trace={trace ?? null}/>}
+    <div className="spectate-side">
+        <Fear vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt} now={now} />
         {s && distance ? <section className="spectate-card">
           <small>THE RUN</small>
           <strong>{s.status === 'won' ? 'Contained' : s.status === 'lost' ? 'Lost' : s.stage >= 5 ? 'Final containment' : `Stage ${s.stage} of 4`}</strong>
-          <span>{Math.floor(s.time / 60)}:{String(Math.floor(s.time % 60)).padStart(2, '0')} · equipment {s.equipment} · {'●'.repeat(s.quietChargesRemaining)}{'○'.repeat(Math.max(0, 3 - s.quietChargesRemaining))} isolation</span>
-          <label className="spectate-meter"><span>Creature · {distance.atWall ? distance.label : `${distance.label} from the wall`} · {s.creaturePhase}</span><meter min={0} max={s.lineLength * METRES_PER_UNIT} low={7 * METRES_PER_UNIT} high={10 * METRES_PER_UNIT} optimum={s.lineLength * METRES_PER_UNIT} value={distance.metres} /></label>
+          <span>{Math.floor(s.time / 60)}:{String(Math.floor(s.time % 60)).padStart(2, '0')} · power {s.equipment} · {'●'.repeat(s.quietChargesRemaining)}{'○'.repeat(Math.max(0, 3 - s.quietChargesRemaining))}</span>
+          <label className="spectate-meter"><span>Creature · {distance.atWall ? distance.label : `${distance.label} from the wall`}</span><meter min={0} max={s.lineLength * METRES_PER_UNIT} low={7 * METRES_PER_UNIT} high={10 * METRES_PER_UNIT} optimum={s.lineLength * METRES_PER_UNIT} value={distance.metres} /></label>
           <label className="spectate-meter"><span>Exposure · {s.danger}%</span><meter min={0} max={100} low={40} high={70} optimum={0} value={s.danger} /></label>
-        </section> : <section className="spectate-card off"><small>THE RUN</small><strong>Waiting</strong><span>Keep this page open. It updates when the player is in a run with sharing on.</span></section>}
-      </div>
+        </section> : <section className="spectate-card off"><small>THE RUN</small><strong>Waiting</strong><span>Keep this page open.</span></section>}
     </div>
     <div className="spectate-grid">
       <section className="spectate-card spectate-room">
-        <small>MAP <em>{state?.physics === 'spacetime' ? 'PROPS · SPACETIMEDB PHYSICS' : 'PROPS · LOCAL REPLAY (OFFLINE)'}</em></small>
-        <canvas ref={canvas} role="img" aria-label="Top-down map of the shelter. Loose props move when the creature hits the door." />
+        <small>MAP</small>
+        <canvas ref={canvas} role="img" aria-label="Top-down map of the shelter. The light dot is the player. Loose props move when the creature hits the door." />
       </section>
       <section className="spectate-card">
         <small>MOMENTS</small>
         <ol className="spectate-moments">{moments.length ? moments.map(e => <li key={e.id}><time>{Math.floor(e.time / 60)}:{String(Math.floor(e.time % 60)).padStart(2, '0')}</time>{MOMENTS[e.type]!(e.detail)}</li>) : <li>Nothing yet.</li>}</ol>
       </section>
     </div>
-    <p className="small muted spectate-privacy">You see game events, the creature's distance, a shelter camera your own browser draws from those events and, only if the player turned it on, their current heart rate. When enabled, their webcam streams directly to you without being recorded. In co-op, use the manual to talk them through the puzzles, warn them when it gets close, and earn decoys; their game checks every action and decides what happens. A camera pulse estimate is a game input, not a medical reading.</p>
+    </div>
+    <aside className="spectate-footage" aria-label="Footage">
+      <section className="spectate-card spectate-cctv-card" aria-label="Shelter camera">
+        <small>SHELTER CAMERA</small>
+        <CctvFeed trace={trace ?? null} propsAt={propsAt} playerAt={playerAt} />
+      </section>
+      <SpectateCamera hash={location.hash}/>
+    </aside>
+    </div>
+    <p className="spectate-privacy">Nothing is recorded · fear is a camera estimate from their face, breathing and heart rate, not a medical reading{coop ? " · their game checks every warning and decoy" : ""}.</p>
   </main>;
 }

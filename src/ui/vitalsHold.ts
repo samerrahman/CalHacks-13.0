@@ -61,3 +61,33 @@ export function readEmotion(sensor: SensorView, memory: EmotionMemory = sharedEm
   const estimate = fearFromPulse(livePulse(sensor) ?? held, sensor.baselineBpm, sensor.trend);
   return estimate === null ? { fearPct: null, label: 'CALIBRATING', live: false } : { fearPct: estimate, label: emotionLabel(estimate), live: false };
 }
+
+/** The spectator's single FEAR readout. The player's device sends one combined fear percentage
+ * from its camera estimates (face, heart rate, breathing, skin response; `spectatorFear` in
+ * src/integrations/spectate.ts). An older player build sends only heart rate, so FEAR is then
+ * estimated from the pulse against the frozen baseline and the trend. Accepted readings arrive
+ * between frequent dropouts, so the last shared fear is held for up to SPECTATOR_FEAR_HOLD_MS
+ * (marked not live) and the last pulse and trend until the next accepted one. Once shared fear stops
+ * arriving for longer (an older module, the player's back-off, a re-enabled share still
+ * calibrating) the page falls back to the heart-rate estimate rather than freezing the last number.
+ * Switching source (camera ↔ simulated) clears everything; SpectateView also clears it whenever
+ * vitals are not shared. */
+export type SpectatorFearLabel = 'SCARED' | 'TENSE' | 'CALM' | 'CALIBRATING';
+export type SpectatorFear = { fearPct: number | null; label: SpectatorFearLabel; trend: Trend; live: boolean; basis: 'camera' | 'heart rate' | null };
+export type SpectatorFearMemory = { source: string | null; fear: number | null; fearAtMs: number; pulse: number | null; trend: Trend };
+export const SPECTATOR_FEAR_HOLD_MS = 8000;
+export const spectatorFearMemory = (): SpectatorFearMemory => ({ source: null, fear: null, fearAtMs: -Infinity, pulse: null, trend: 'UNKNOWN' });
+const SPECTATOR_LABEL: Record<Exclude<EmotionLabel, 'CALIBRATING'>, SpectatorFearLabel> = { 'FEAR / STARTLE': 'SCARED', TENSE: 'TENSE', CALM: 'CALM' };
+const spectatorLabel = (fearPct: number | null): SpectatorFearLabel => fearPct === null ? 'CALIBRATING' : SPECTATOR_LABEL[emotionLabel(fearPct) as Exclude<EmotionLabel, 'CALIBRATING'>];
+
+/** `nowMs`: the spectator page's own clock (performance.now), never a remote one. */
+export function readSpectatorFear(memory: SpectatorFearMemory, vitals: { source: string; pulseBpm: number | null; baselineBpm: number | null; trend: Trend; fearPct?: number | null }, nowMs: number): SpectatorFear {
+  if (memory.source !== vitals.source) Object.assign(memory, spectatorFearMemory(), { source: vitals.source });
+  const pulseLive = finite(vitals.pulseBpm), fearLive = finite(vitals.fearPct);
+  if (pulseLive) { memory.pulse = vitals.pulseBpm; if (vitals.trend !== 'UNKNOWN') memory.trend = vitals.trend; }
+  if (fearLive) { memory.fear = Math.round(Math.max(0, Math.min(100, vitals.fearPct!))); memory.fearAtMs = nowMs; }
+  else if (memory.fear !== null && nowMs - memory.fearAtMs > SPECTATOR_FEAR_HOLD_MS) memory.fear = null;
+  if (memory.fear !== null) return { fearPct: memory.fear, label: spectatorLabel(memory.fear), trend: memory.trend, live: fearLive, basis: 'camera' };
+  const fearPct = fearFromPulse(memory.pulse, vitals.baselineBpm, memory.trend);
+  return { fearPct, label: spectatorLabel(fearPct), trend: memory.trend, live: pulseLive, basis: fearPct === null ? null : 'heart rate' };
+}

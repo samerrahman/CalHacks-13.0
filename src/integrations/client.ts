@@ -1,6 +1,6 @@
 import { DbConnection } from '../module_bindings';
 import { connectSpacetime, judgeQuery, spacetimeConfig } from './spacetime';
-import type { GameState, DirectorRequest, PublicEvent } from '../game/state';
+import type { GameState, DirectorRequest, PublicEvent, Station } from '../game/state';
 import type { SensorView } from '../sensing/types';
 import { spectatorVitals, type SpectatorVitals } from './spectate';
 import { publicDirectorRequest, publicEvent, publicMonsterRequest, authoredMonsterFallback, MONSTER_TOTAL_TIMEOUT_MS, type MonsterRequest, type MonsterResult, type DirectorResult, type SpeechRequest, type SpeechResult, type IntegrationStatus } from './contracts';
@@ -66,10 +66,15 @@ export async function requestMonster(request: MonsterRequest): Promise<MonsterRe
 }
 
 export type TraceSummary = { time: number; stage: number; status: string; equipment: string; creatureNode: string; creaturePhase: string; linePosition: number; lineLength: number; danger: number; quietChargesRemaining: number; tactic: string; target: string; proposalSource: string; sensorSource: string; sensorQuality: string; trend: string; sensorAgeMs: number | null };
+/** Where the player is looking and whether a task panel is open there, for the spectator's
+ * researcher. Same-browser link only: SpacetimeDB rows never carry it, so remote spectators
+ * infer the pose from public events (src/spectate/player.ts). */
+export type SharedPlayer = { station: Station; working: boolean };
 /** `vitals` is present only while the player keeps the separate heart-rate consent on. */
-export type TraceSnapshot = { seed: number; mode: string; summary: TraceSummary; events: PublicEvent[]; transport: 'local' | 'spacetime'; vitals?: SpectatorVitals | null };
-export function sanitizedTrace(state: GameState, sensor: SensorView): TraceSnapshot {
-  return { seed: state.seed, mode: state.mode, summary: { time: state.time, stage: state.tasks.stage, status: state.status, equipment: state.equipment, creatureNode: state.creature.node, creaturePhase: state.creature.phase, linePosition: state.creature.linePosition, lineLength: config.line.length, danger: Math.round(state.danger), quietChargesRemaining: state.shutdown.chargesRemaining, tactic: state.director.lastTactic, target: state.director.lastTarget, proposalSource: state.director.source, sensorSource: sensor.source, sensorQuality: sensor.quality, trend: state.trend, sensorAgeMs: sensor.ageMs === null ? null : Math.min(120_000, Math.round(sensor.ageMs)) }, events: state.events.slice(-100).map(publicEvent), transport: 'local' };
+export type TraceSnapshot = { seed: number; mode: string; summary: TraceSummary; events: PublicEvent[]; transport: 'local' | 'spacetime'; vitals?: SpectatorVitals | null; player?: SharedPlayer | null };
+/** `working`: a task panel is open (UI state, not in GameState); never while paused or after the run. */
+export function sanitizedTrace(state: GameState, sensor: SensorView, working = false): TraceSnapshot {
+  return { seed: state.seed, mode: state.mode, summary: { time: state.time, stage: state.tasks.stage, status: state.status, equipment: state.equipment, creatureNode: state.creature.node, creaturePhase: state.creature.phase, linePosition: state.creature.linePosition, lineLength: config.line.length, danger: Math.round(state.danger), quietChargesRemaining: state.shutdown.chargesRemaining, tactic: state.director.lastTactic, target: state.director.lastTarget, proposalSource: state.director.source, sensorSource: sensor.source, sensorQuality: sensor.quality, trend: state.trend, sensorAgeMs: sensor.ageMs === null ? null : Math.min(120_000, Math.round(sensor.ageMs)) }, events: state.events.slice(-100).map(publicEvent), transport: 'local', player: { station: state.station, working: working && state.status === 'playing' && !state.paused } };
 }
 function token(): string { return Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join(''); }
 type JudgeAccess = { channel: string; sessionId?: string; capability?: string; host?: string; database?: string };
@@ -112,6 +117,9 @@ export class TraceBridge {
   private vitalsBusy = false;
   private vitalsSequence = 0;
   private lastVitalsWrite = -Infinity;
+  /** shareFear failures in a row; after three (say, a module published before the fear table) it is retried only every 30 s. */
+  private fearFailures = 0;
+  private fearRetryAt = -Infinity;
   private lastSnapshot: TraceSnapshot | null = null;
   /** Set when the database refuses newer event types (a module published before them); those then go as UNKNOWN. */
   private legacyEvents = false;
@@ -191,9 +199,9 @@ export class TraceBridge {
       .catch(() => { if (generation === this.generation) this.status = 'Heart rate withdrawn locally · remote deletion pending, retrying'; })
       .finally(() => { this.stopBusy = false; if (this.withdrawPending && !this.disposed) setTimeout(() => this.retryWithdraw(), 1100); });
   }
-  publish(state: GameState, sensor: SensorView): void {
+  publish(state: GameState, sensor: SensorView, working = false): void {
     if (!this.channel || this.disposed) return;
-    const snapshot = sanitizedTrace(state, sensor);
+    const snapshot = sanitizedTrace(state, sensor, working);
     snapshot.transport = this.connected && !!this.client?.isActive ? 'spacetime' : 'local';
     snapshot.vitals = this.vitalsConsent ? spectatorVitals(sensor) : null;
     this.lastSnapshot = snapshot;
@@ -215,8 +223,18 @@ export class TraceBridge {
     if (!vitals || !this.vitalsConsent || !this.connected || !this.client?.isActive || !this.sessionId || this.vitalsBusy || performance.now() - this.lastVitalsWrite < 520) return;
     this.vitalsBusy = true; this.lastVitalsWrite = performance.now(); this.vitalsRemote = true;
     const generation = this.generation;
-    void this.client.reducers.shareVitals({ id: this.sessionId, ownerCapability: this.owner, sequence: ++this.vitalsSequence, source: vitals.source, status: vitals.status, quality: vitals.quality, trend: vitals.trend, pulseBpm: vitals.pulseBpm ?? undefined, baselineBpm: vitals.baselineBpm ?? undefined })
-      .then(() => { if (generation === this.generation && !this.vitalsConsent) this.withdrawVitals(); })
+    const client = this.client, id = this.sessionId, sequence = ++this.vitalsSequence;
+    void client.reducers.shareVitals({ id, ownerCapability: this.owner, sequence, source: vitals.source, status: vitals.status, quality: vitals.quality, trend: vitals.trend, pulseBpm: vitals.pulseBpm ?? undefined, baselineBpm: vitals.baselineBpm ?? undefined })
+      .then(() => {
+        if (generation !== this.generation) return;
+        if (!this.vitalsConsent) { this.withdrawVitals(); return; }
+        // The combined fear goes second, so the server already holds the vitals row it belongs to; it
+        // drops a fear write that lands after a withdrawal.
+        if (performance.now() < this.fearRetryAt) return;
+        return client.reducers.shareFear({ id, ownerCapability: this.owner, sequence, source: vitals.source, fearPct: vitals.fearPct ?? undefined })
+          .then(() => { this.fearFailures = 0; if (generation === this.generation && !this.vitalsConsent) this.withdrawVitals(); },
+            () => { if (++this.fearFailures >= 3) { this.fearFailures = 0; this.fearRetryAt = performance.now() + 30_000; } });
+      })
       .catch(() => { /* The next reading retries; the local link is unaffected. */ })
       .finally(() => { this.vitalsBusy = false; });
   }

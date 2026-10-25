@@ -1,0 +1,97 @@
+{
+  "checkedAt": "2026-10-25T08:28:09.057Z",
+  "server": "wss://maincloud.spacetimedb.com",
+  "database": "scary-5zsk8",
+  "durationMs": 32428,
+  "passed": 15,
+  "failed": 0,
+  "results": [
+    {
+      "check": "first trace batch creates a resting 12-prop world visible to the spectator",
+      "ok": true,
+      "detail": {
+        "props": 12
+      }
+    },
+    {
+      "check": "SCARE impact wakes props and the server tick advances them",
+      "ok": true,
+      "detail": {
+        "moving": 12,
+        "tick": 7
+      }
+    },
+    {
+      "check": "props settle back to sleep within 4 s, displaced by the pound",
+      "ok": true,
+      "detail": {
+        "maxDisplacementM": 0.773,
+        "tick": 46
+      }
+    },
+    {
+      "check": "the world's tick freezes once every prop sleeps (verify the physics_tick row with owner SQL separately)",
+      "ok": true
+    },
+    {
+      "check": "a resent event batch does not re-apply its impulse",
+      "ok": true
+    },
+    {
+      "check": "no vitals row exists before the player opts in",
+      "ok": true
+    },
+    {
+      "check": "opted-in vitals reach the spectator, labelled simulated, without a server clock",
+      "ok": true,
+      "detail": {
+        "sessionId": "0ff89cfa848cd857870228a5e0575a6a87e9263d8004596ded5dbbc1bd3d4e12",
+        "sequence": 1,
+        "source": "simulated",
+        "status": "ready",
+        "quality": "accepted",
+        "trend": "STEADY",
+        "pulseBpm": 83,
+        "baselineBpm": 72
+      }
+    },
+    {
+      "check": "an accepted reading without a pulse is rejected",
+      "ok": true
+    },
+    {
+      "check": "a wrong owner capability cannot write vitals",
+      "ok": true
+    },
+    {
+      "check": "a later reading replaces the row (latest value only)",
+      "ok": true,
+      "detail": {
+        "updates": 2
+      }
+    },
+    {
+      "check": "withdrawing consent deletes the row for the spectator",
+      "ok": true
+    },
+    {
+      "check": "an abandoned heart-rate row is swept within 21 s",
+      "ok": true
+    },
+    {
+      "check": "an owner knock moves exactly that prop",
+      "ok": true
+    },
+    {
+      "check": "a spectator with the wrong capability receives no rows at all",
+      "ok": true
+    },
+    {
+      "check": "removing the session removes trace and props from the spectator",
+      "ok": true,
+      "detail": {
+        "props": 0
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { schema, table, t, SenderError } from 'spacetimedb/server';
 import { ScheduleAt } from 'spacetimedb';
 import { applyTraceImpulses, dropPhysics, physicsBody, physicsExports, physicsTick, physicsWorld } from './physics';
-import { dropVitals, spectateExports, spectatorVitals, vitalsSweep } from './spectate';
+import { dropVitals, spectateExports, spectatorFear, spectatorVitals, vitalsSweep } from './spectate';
 import { cameraPeer, cameraShare, cameraSignal, cameraSweep, dropSignal, signalExports } from './signal';
 import { coopExports, coopManual, coopRemote, dropCoop } from './coop';
 
@@ -28,7 +28,7 @@ const expiry = table({ name: 'expiry' }, {
   scheduledAt: t.scheduleAt(),
   sessionId: t.string(),
 });
-const db = schema({ session, expiry, physicsWorld, physicsBody, physicsTick, spectatorVitals, vitalsSweep, cameraShare, cameraPeer, cameraSignal, cameraSweep, coopManual, coopRemote });
+const db = schema({ session, expiry, physicsWorld, physicsBody, physicsTick, spectatorVitals, spectatorFear, vitalsSweep, cameraShare, cameraPeer, cameraSignal, cameraSweep, coopManual, coopRemote });
 export default db;
 
 const DAY_MS = 86_400_000n;

@@ -50,7 +50,9 @@ export type ExpressionName = 'angry' | 'contempt' | 'disgust' | 'fear' | 'happy'
 /** Coarse local camera estimates for game use, not medical readings. Every
  * value is null unless its signal's status is 'ok' (fear and lastBlinkAgeMs
  * may still be null when ok). Never part of traces, provider projections,
- * spectator vitals or SpacetimeDB. Waveforms stay in SensorController.waveforms(). */
+ * spectator vitals or SpacetimeDB; only one combined fear number derived from
+ * them may be shared, under the spectator vitals consent (spectatorFear).
+ * Waveforms stay in SensorController.waveforms(). */
 export type SensorSignals = {
   breathingBpm: number | null;
   breathPhase: 'in' | 'out' | null;

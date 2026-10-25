@@ -6,7 +6,7 @@ export const EFFECT_NAMES = ['intro_alarm', 'forest_run', 'door_slam', 'room_hum
 export type EffectName = typeof EFFECT_NAMES[number];
 export type AudioPosition = [number, number, number];
 export type ScareKind = 'impact' | 'monitor' | 'breach';
-const LIMITER_DB = -12, BREACH_LIMITER_DB = -1, SCREAM_BOOST = 3.2, SCREAM_CAP = 1.6;
+const LIMITER_DB = -12, BREACH_LIMITER_DB = -6, SCREAM_BOOST = 1.7, SCREAM_CAP = .85;
 export type SpeechEvent =
   | { type: 'started'; id: string; text: string; mode: 'live' | 'cached' | 'caption' }
   | { type: 'ended' | 'cancelled'; id: string }
@@ -192,7 +192,7 @@ export function createAudioEngine(): AudioEngine {
     lastScareAt = context.currentTime; stopScareTones();
     const impact = kind === 'breach' ? 'breach_impact' : kind === 'monitor' ? 'monitor_interrupt' : 'door_slam';
     const buffer = buffers.get(impact);
-    const hit = buffer ? playBuffer(buffer, (kind === 'monitor' ? .43 : kind === 'breach' ? .8 : .58) * (soft ? .42 : 1), location) : null;
+    const hit = buffer ? playBuffer(buffer, (kind === 'monitor' ? .34 : kind === 'breach' ? .55 : .45) * (soft ? .42 : 1), location) : null;
     if (hit) {
       scareBuffers.add(hit); const ended = hit.onended;
       hit.onended = event => { scareBuffers.delete(hit); ended?.call(hit, event); };
@@ -206,7 +206,7 @@ export function createAudioEngine(): AudioEngine {
     tone.frequency.exponentialRampToValueAtTime(kind === 'monitor' ? 155 : 34, at + duration);
     filter.type = 'lowpass'; filter.frequency.value = soft ? 700 : 1400;
     envelope.gain.setValueAtTime(0, at);
-    envelope.gain.linearRampToValueAtTime((kind === 'monitor' ? .09 : .28) * (soft ? .42 : 1), at + attack);
+    envelope.gain.linearRampToValueAtTime((kind === 'monitor' ? .07 : .2) * (soft ? .42 : 1), at + attack);
     envelope.gain.exponentialRampToValueAtTime(.0001, at + duration);
     tone.connect(filter); filter.connect(envelope); envelope.connect(position); position.connect(master);
     scareTones.add(tone); diagnostics.startedScares++;
@@ -319,7 +319,7 @@ export function createAudioEngine(): AudioEngine {
   }
   /** Short horror stab for nonfatal scares, routed from the scare's position. */
   function sting(kind: ScareKind, at: number, soft: boolean, location?: AudioPosition): void {
-    const monitor = kind === 'monitor', scale = soft ? .42 : 1;
+    const monitor = kind === 'monitor', scale = soft ? .32 : .75;
     const bus = context!.createGain(); bus.gain.value = scale;
     const position = makePanner(location ?? [-1.3, 1.1, -1.8]); bus.connect(position); position.connect(master!);
     const burst = envelope(at, monitor ? .3 : .38, .004, monitor ? .18 : .02, monitor ? .3 : .32), burstTone = context!.createBiquadFilter();

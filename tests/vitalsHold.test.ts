@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readVitals, type VitalsMemory } from '../src/ui/vitalsHold';
+import { readSpectatorFear, readVitals, SPECTATOR_FEAR_HOLD_MS, spectatorFearMemory, type VitalsMemory } from '../src/ui/vitalsHold';
 import type { SensorDiagnostics, SensorView } from '../src/sensing/types';
 
 const memory = (): VitalsMemory => ({ source: null, pulse: null, breathing: null, trend: 'UNKNOWN' });
@@ -31,4 +31,23 @@ test('rejected or uncalibrated samples never update the memory, and changing sou
   assert.equal(readVitals(m, view(dropped)).pulse, 70, 'a new camera session starts from the baseline, not the old reading');
   readVitals(m, view({ source: 'simulated', pulseBpm: 90 }));
   assert.equal(readVitals(m, view(dropped)).pulse, 70);
+});
+
+test('the spectator FEAR falls back to heart rate and holds the last accepted pulse and trend through dropouts', () => {
+  const m = spectatorFearMemory(), v = (extra: Partial<Parameters<typeof readSpectatorFear>[1]> = {}) => ({ source: 'presage', pulseBpm: 84, baselineBpm: 70, trend: 'STEADY' as const, ...extra });
+  assert.deepEqual(readSpectatorFear(m, v({ trend: 'ELEVATED' }), 0), { fearPct: 56, label: 'SCARED', trend: 'ELEVATED', live: true, basis: 'heart rate' });
+  assert.deepEqual(readSpectatorFear(m, v({ pulseBpm: null, trend: 'UNKNOWN' }), 500), { fearPct: 56, label: 'SCARED', trend: 'ELEVATED', live: false, basis: 'heart rate' }, 'a dropout keeps the last reading');
+  assert.deepEqual(readSpectatorFear(m, v({ pulseBpm: 75, trend: 'RECOVERED' }), 1000), { fearPct: 20, label: 'CALM', trend: 'RECOVERED', live: true, basis: 'heart rate' });
+  assert.equal(readSpectatorFear(m, v({ source: 'simulated', pulseBpm: null, trend: 'UNKNOWN' }), 1500).fearPct, null, 'switching source clears it');
+  assert.deepEqual(readSpectatorFear(spectatorFearMemory(), v({ baselineBpm: null }), 0), { fearPct: null, label: 'CALIBRATING', trend: 'STEADY', live: true, basis: null }, 'no fear before the baseline exists');
+});
+
+test("the spectator FEAR shows the player's combined camera number while it keeps arriving", () => {
+  const m = spectatorFearMemory(), v = (extra: Partial<Parameters<typeof readSpectatorFear>[1]> = {}) => ({ source: 'presage', pulseBpm: 72, baselineBpm: 72, trend: 'STEADY' as const, fearPct: 64, ...extra });
+  assert.deepEqual(readSpectatorFear(m, v(), 0), { fearPct: 64, label: 'SCARED', trend: 'STEADY', live: true, basis: 'camera' }, 'the shared number wins over the calm heart rate');
+  assert.deepEqual(readSpectatorFear(m, v({ fearPct: null, pulseBpm: null, trend: 'UNKNOWN' }), SPECTATOR_FEAR_HOLD_MS), { fearPct: 64, label: 'SCARED', trend: 'STEADY', live: false, basis: 'camera' }, 'held, marked not live, through a short dropout');
+  assert.deepEqual(readSpectatorFear(m, v({ fearPct: null }), SPECTATOR_FEAR_HOLD_MS + 1), { fearPct: 0, label: 'CALM', trend: 'STEADY', live: true, basis: 'heart rate' }, 'once shared fear stops arriving, the live heart rate takes over instead of a frozen number');
+  assert.equal(readSpectatorFear(m, v({ fearPct: 30 }), SPECTATOR_FEAR_HOLD_MS + 2).label, 'TENSE', 'and the camera number returns when it does');
+  assert.equal(readSpectatorFear(spectatorFearMemory(), v({ baselineBpm: null, fearPct: 12 }), 0).fearPct, 12, 'needs no baseline');
+  assert.equal(readSpectatorFear(m, v({ source: 'simulated', fearPct: null }), SPECTATOR_FEAR_HOLD_MS + 3).basis, 'heart rate', 'a new source starts over');
 });

@@ -12,7 +12,7 @@ const sides = (open: number) => SIDES.filter(([bit]) => open & bit).map(([, name
 
 function Faults({ manual }: { manual: Extract<Manual, { kind: 'faults' }> }) {
   return <>
-    <p>The player hears a machine fail. Ask what it sounds like, then tell them which number to press. {manual.stage === 3 ? 'Up to two can fail at once.' : 'One fails at a time.'}</p>
+    <p>Ask what they hear. Tell them the number.{manual.stage === 3 ? ' Two can fail at once.' : ''}</p>
     <table className="coop-key"><thead><tr><th>If they hear</th><th>Press</th></tr></thead>
       <tbody>{FAULT_SOUNDS.map((name, sound) => <tr key={name}><td>{name.toLowerCase()}</td><td><kbd>{manual.sounds.indexOf(sound) + 1}</kbd></td></tr>)}</tbody></table>
   </>;
@@ -20,7 +20,7 @@ function Faults({ manual }: { manual: Extract<Manual, { kind: 'faults' }> }) {
 
 function Wires({ manual }: { manual: Extract<Manual, { kind: 'wires' }> }) {
   return <>
-    <p>Panel {manual.panel + 1} of {manual.panels}. The player reads you a cable's symbol; tell them its socket letter. Sockets run A to {socketCode(manual.sockets.length - 1)} from the top.</p>
+    <p>Panel {manual.panel + 1} of {manual.panels}. They read a symbol; you give the socket, A to {socketCode(manual.sockets.length - 1)} from the top.</p>
     <ol className="coop-cables">{manual.sockets.map((socket, cable) => <li key={cable} style={{ '--wire-color': WIRE_COLORS[cable] } as CSSProperties}>
       <b aria-label={`Cable ${WIRE_SYMBOLS[cable]}`}>{WIRE_SYMBOLS[cable]}</b><i aria-hidden="true">→</i><strong aria-label={`socket ${socketCode(socket)}`}>{socketCode(socket)}</strong></li>)}</ol>
   </>;
@@ -29,7 +29,7 @@ function Wires({ manual }: { manual: Extract<Manual, { kind: 'wires' }> }) {
 function Routing({ manual }: { manual: Extract<Manual, { kind: 'routing' }> }) {
   const { size, start, end, tiles } = manual;
   return <>
-    <p>The player sees the same board with no power reading. Rows count from the top, columns from the left. Tell them how each drawn tile must point; tiles marked · are off the route and can stay as they are. Then they press T.</p>
+    <p>Tell them how each tile points. Tiles marked · don't matter. Then T.</p>
     <div className="coop-conduit" style={{ gridTemplateColumns: `22px repeat(${size}, 1fr) 22px` }}>
       <span/>{Array.from({ length: size }, (_, col) => <span key={col} className="coop-axis">{col + 1}</span>)}<span/>
       {Array.from({ length: size }, (_, row) => <div key={row} className="coop-conduit-row">
@@ -84,7 +84,7 @@ function Door({ manual }: { manual: Extract<Manual, { kind: 'door' }> }) {
 const TITLES: Record<Manual['kind'], string> = { faults: 'Rack sound key', wires: 'Cable patch', routing: 'Conduit route', memory: 'Signal sequence', locate: 'Radar reading', calm: 'Breathing pacer', door: 'Basement door key' };
 /** One page: the key for the player's live task only. */
 export function ManualPage({ manual }: { manual: Manual | null }) {
-  if (!manual) return <div className="coop-empty"><strong>No page right now.</strong><span>The heartbeat mask has no page. Watch the creature's distance: warn the player when it gets close, or earn a decoy below.</span></div>;
+  if (!manual) return <div className="coop-empty"><strong>No page right now.</strong><span>Help them listen for footsteps. Warn them when it gets close, or earn a decoy below.</span></div>;
   return <div className={`coop-page coop-${manual.kind}`}>
     <h2>{TITLES[manual.kind]} <small>STAGE {manual.stage}</small></h2>
     {manual.kind === 'faults' ? <Faults manual={manual}/> : manual.kind === 'wires' ? <Wires manual={manual}/> : manual.kind === 'memory' ? <Memory manual={manual}/> : manual.kind === 'locate' ? <Locate manual={manual}/> : manual.kind === 'calm' ? <Calm manual={manual}/> : manual.kind === 'door' ? <Door manual={manual}/> : <Routing manual={manual}/>}
@@ -100,8 +100,8 @@ export default function CoopManual({ hash, feed: shared }: { hash: string; feed?
   }, [hash, shared]);
   const manual = state ? currentManual(state, now) : null;
   return <section className="spectate-card coop-manual" aria-live="polite">
-    <small>THE MANUAL · CO-OP <em>{state?.status ?? 'Connecting'}</em></small>
+    <small>THE MANUAL</small>
     <ManualPage manual={manual}/>
-    <span className="coop-note">Only you have this page. The player cannot see it; talk them through it.</span>
+    <span className="coop-note">Only you can see this.</span>
   </section>;
 }

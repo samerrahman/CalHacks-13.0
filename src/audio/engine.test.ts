@@ -121,15 +121,15 @@ test('mechanical scares have short envelopes, positional routing, softer gain an
   const firstPanner = firstEnvelope.connected[0] as Panner;
   assert.deepEqual([firstPanner.positionX.value, firstPanner.positionY.value, firstPanner.positionZ.value], [1, 1.5, -2]);
   assert.equal(firstPanner.connected[0], context.gains[0]);
-  assert.ok(first.stopAt! <= .55); assert.equal(Math.max(...firstEnvelope.gain.automation), .28);
+  assert.ok(first.stopAt! <= .55); assert.equal(Math.max(...firstEnvelope.gain.automation), .2);
   assert.ok(context.sources.some(s => s.buffer?.tag === 'breach_impact.wav' && s.started));
   engine.playScare('breach'); assert.equal(engine.diagnostics.startedScares, 1, 'repeated frames cannot stack impacts');
   const scream = context.oscillators.slice(1), limiter = context.compressors[0]!;
   assert.ok(scream.filter(o => o.type === 'sawtooth').length >= 4 && scream.every(o => o.started && o.stopAt! <= 3.5), 'breach adds a bounded scream voice and growl');
   assert.ok(context.sources.some(s => s.buffer?.tag === 'noise' && s.started), 'breach adds rasp noise');
-  assert.equal(Math.max(...limiter.threshold.automation), -1, 'unsoftened breach briefly opens the limiter');
+  assert.equal(Math.max(...limiter.threshold.automation), -6, 'unsoftened breach briefly opens the limiter');
   const scareBus = context.gains.find(g => g !== context.gains[0] && g.connected.some(n => 'curve' in n && n.connected.includes(limiter)))!; assert.ok(scareBus, 'the scream has its own clipped bus into the limiter');
-  assert.equal(scareBus.gain.value, Math.min(1.6, .55 * 3.2));
+  assert.equal(scareBus.gain.value, Math.min(.85, .55 * 1.7));
   assert.equal(context.sources.filter(s => s.buffer?.tag === 'creature_scream.wav').length, 2, 'two recorded screams layer in'); engine.setMuted(true); assert.equal(scareBus.gain.value, 0, 'mute silences the scream'); engine.setMuted(false);
   context.currentTime = 1; const before = context.oscillators.length; const openings = limiter.threshold.automation.filter(v => v === -1).length;
   engine.playScare('breach', undefined, true);

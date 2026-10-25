@@ -5,7 +5,7 @@ import { config } from '../game/config';
 import { DIRECTOR_TIMEOUT_MS } from '../game/directorValidation';
 import { DIRECTOR_SCHEMA, publicDirectorRequest, publicMonsterRequest, authoredMonsterFallback, monsterFallbackCaption, MONSTER_FALLBACK_IDS, MONSTER_TEXT_TIMEOUT_MS, MONSTER_TOTAL_TIMEOUT_MS, type DirectorResult, type SpeechRequest, type SpeechResult, type MonsterRequest, type MonsterResult } from './contracts';
 
-export type ProviderEnv = { GEMINI_API_KEY?: string; GEMINI_MODEL?: string; GEMINI_DIALOGUE_MODEL?: string; ELEVENLABS_API_KEY?: string; ELEVENLABS_VOICE_ID?: string; ELEVENLABS_MODEL_ID?: string };
+export type ProviderEnv = { GEMINI_API_KEY?: string; GEMINI_MODEL?: string; GEMINI_DIALOGUE_MODEL?: string; ELEVENLABS_API_KEY?: string; ELEVENLABS_VOICE_ID?: string; ELEVENLABS_RADIO_VOICE_ID?: string; ELEVENLABS_MODEL_ID?: string };
 export const DEFAULT_DIALOGUE_MODEL = 'gemini-3.5-flash-lite';
 export function safeProviderId(value: unknown): string | undefined {
   return typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$/.test(value) ? value : undefined;
@@ -103,7 +103,7 @@ export async function generateMonster(raw: MonsterRequest, env: ProviderEnv): Pr
     } catch (error) { result.textReason = abort.signal.aborted ? 'Gemini dialogue timeout' : providerFailure(error, 'Gemini dialogue unavailable or failed validation'); }
     finally { clearTimeout(timer); result.textLatencyMs = Math.round(performance.now() - started); }
   } else if (env.GEMINI_API_KEY) result.textReason = 'No public event supports contextual dialogue';
-  if (Date.now() < deadline) result.speech = await elevenSpeech({ requestId: request.requestId, encounterId: request.fallbackId, caption: result.caption, expiresAtMs: deadline }, env);
+  if (Date.now() < deadline) result.speech = await elevenSpeech({ requestId: request.requestId, encounterId: request.fallbackId, caption: result.caption, expiresAtMs: deadline }, env, 'creature');
   else result.speech.reason = 'Monster dialogue expired before speech';
   result.totalLatencyMs = Math.round(performance.now() - started);
   return result;
@@ -133,19 +133,26 @@ function cacheSpeech(key: string, audioBase64: string): void {
   }
 }
 
-export async function elevenSpeech(request: SpeechRequest, env: ProviderEnv): Promise<SpeechResult> {
+/** The tutorial and radio voice: ElevenLabs' premade "Daniel - Steady Broadcaster" (British, male),
+ * so instructions never come out in the monster's voice. `ELEVENLABS_RADIO_VOICE_ID` overrides it. */
+export const RADIO_VOICE_ID = 'onwK4e9ZLuTAKqWW03F9';
+
+/** `voice`: 'creature' speaks with ELEVENLABS_VOICE_ID (monster dialogue only); everything else,
+ * the authored tutorial/supervisor/system lines, uses the radio voice. */
+export async function elevenSpeech(request: SpeechRequest, env: ProviderEnv, voice: 'radio' | 'creature' = 'radio'): Promise<SpeechResult> {
   const started = performance.now();
   const fallback = (reason: string): SpeechResult => ({ audioBase64: null, mimeType: 'audio/mpeg', source: 'fallback', latencyMs: Math.round(performance.now() - started), reason });
   if (!validSpeechRequest(request)) return fallback('Invalid or expired speech');
-  if (!env.ELEVENLABS_API_KEY || !env.ELEVENLABS_VOICE_ID || !env.ELEVENLABS_MODEL_ID) return fallback('ElevenLabs key/authorized voice/model not configured');
-  const cacheKey = JSON.stringify([env.ELEVENLABS_VOICE_ID, env.ELEVENLABS_MODEL_ID, request.caption, 'mp3_44100_128', 0.65, 0.7]);
+  const voiceId = voice === 'creature' ? env.ELEVENLABS_VOICE_ID : env.ELEVENLABS_RADIO_VOICE_ID || RADIO_VOICE_ID;
+  if (!env.ELEVENLABS_API_KEY || !voiceId || !env.ELEVENLABS_MODEL_ID) return fallback('ElevenLabs key/authorized voice/model not configured');
+  const cacheKey = JSON.stringify([voiceId, env.ELEVENLABS_MODEL_ID, request.caption, 'mp3_44100_128', 0.65, 0.7]);
   const cached = speechCache.get(cacheKey);
   if (cached) {
     speechCache.delete(cacheKey); speechCache.set(cacheKey, cached);
     return { audioBase64: cached, mimeType: 'audio/mpeg', source: 'cached', latencyMs: Math.round(performance.now() - started) };
   }
   try {
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(env.ELEVENLABS_VOICE_ID)}/stream?output_format=mp3_44100_128`, { method: 'POST', headers: { 'xi-api-key': env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' }, body: JSON.stringify({ text: request.caption, model_id: env.ELEVENLABS_MODEL_ID, voice_settings: { stability: 0.65, similarity_boost: 0.7 } }), signal: AbortSignal.timeout(Math.max(1, Math.min(7000, request.expiresAtMs - Date.now()))) });
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream?output_format=mp3_44100_128`, { method: 'POST', headers: { 'xi-api-key': env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' }, body: JSON.stringify({ text: request.caption, model_id: env.ELEVENLABS_MODEL_ID, voice_settings: { stability: 0.65, similarity_boost: 0.7 } }), signal: AbortSignal.timeout(Math.max(1, Math.min(7000, request.expiresAtMs - Date.now()))) });
     if (!response.ok) return fallback(`ElevenLabs HTTP ${response.status}`);
     if (!/^audio\/(mpeg|mp3)(?:;|$)/i.test(response.headers.get('content-type') ?? '')) { await response.body?.cancel(); return fallback('Unsupported speech media type'); }
     const reader = response.body?.getReader();

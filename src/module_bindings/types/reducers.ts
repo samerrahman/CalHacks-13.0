@@ -18,6 +18,7 @@ import LeaveCameraReducer from "../leave_camera_reducer";
 import SignalToSpectatorReducer from "../signal_to_spectator_reducer";
 import SignalToPlayerReducer from "../signal_to_player_reducer";
 import ShareVitalsReducer from "../share_vitals_reducer";
+import ShareFearReducer from "../share_fear_reducer";
 import StopVitalsReducer from "../stop_vitals_reducer";
 
 export type AppendTraceParams = __Infer<typeof AppendTraceReducer>;
@@ -32,5 +33,6 @@ export type LeaveCameraParams = __Infer<typeof LeaveCameraReducer>;
 export type SignalToSpectatorParams = __Infer<typeof SignalToSpectatorReducer>;
 export type SignalToPlayerParams = __Infer<typeof SignalToPlayerReducer>;
 export type ShareVitalsParams = __Infer<typeof ShareVitalsReducer>;
+export type ShareFearParams = __Infer<typeof ShareFearReducer>;
 export type StopVitalsParams = __Infer<typeof StopVitalsReducer>;
 

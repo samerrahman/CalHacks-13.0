@@ -234,9 +234,12 @@ test('SIMULATED mode labels and fills every signal and waveform; manual has none
   } finally { await controller.dispose(); }
 });
 
-test('signals never reach the sanitized trace or spectator vitals', () => {
+test('signals never reach the sanitized trace or spectator vitals, apart from one combined fear number', () => {
   const stream = live(); run(stream, 1000, 100_000);
   const sensor = view({ source: 'presage', status: 'ready', quality: 'accepted', pulseBpm: 80, baselineBpm: 72, sampleAtMs: 1, diagnostics: stream.view(100_000, 'live'), signals: stream.signalView(100_000, 'live') });
-  const shared = JSON.stringify([sanitizedTrace(createGame(17), sensor), spectatorVitals(sensor)]);
+  // User decision 2026-10-25: spectators get one 0-100 fear integer derived on this device, never its parts.
+  const { fearPct, ...vitals } = spectatorVitals(sensor)!;
+  assert.ok(fearPct === null || Number.isInteger(fearPct) && fearPct >= 0 && fearPct <= 100, 'one bounded integer');
+  const shared = JSON.stringify([sanitizedTrace(createGame(17), sensor), vitals]);
   for (const word of ['signals', 'fear', 'breath', 'abdomen', 'hrv', 'rmssd', 'blink', 'talking', 'expression', 'eda', 'arterial', 'waveform']) assert.ok(!shared.toLowerCase().includes(word), word);
 });

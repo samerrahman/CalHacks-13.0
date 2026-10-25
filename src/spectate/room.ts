@@ -5,10 +5,13 @@ import type { PropView } from '../integrations/physics';
 import type { TraceSnapshot } from '../integrations/client';
 import { camLighting, newTracker, trackFeed, type DoorCue, type Signal } from './feedState';
 import { SpringLook } from './look';
+import type { PlayerView } from './player';
+import { createResearcher } from './researcher';
 
 type V3 = [number, number, number];
 // Copied from createScene in src/render/scene.ts (model placements, signage, lamp, alarm and
-// lights); keep in step with it. The creature is never added: the room is windowless.
+// lights); keep in step with it. The creature is never added: the room is windowless. The only
+// figure inside is the player's researcher, placed from the public trace (player.ts).
 const PLACEMENT: Record<Exclude<ModelName, 'creature_cctv'>, [V3, number]> = {
   shelter: [[0, 0, 0], 0], sealed_door: [[-1.75, 0, 2.39], Math.PI], workdesk: [[0, 0, -1.8], 0], terminal: [[-.62, .92, -1.8], 0], security_monitor: [[.72, .92, -1.8], 0], proximity_detector: [[1.85, 1.60, -2.35], 0], radio_speaker: [[-1.30, .92, -1.8], 0], machine_rack: [[2.67, 0, .05], -Math.PI / 2], emergency_switch: [[-.70, 1.35, 2.36], Math.PI],
 };
@@ -46,7 +49,7 @@ void main() {
   gl_FragColor = vec4(col, 1.);
 }`;
 
-export type ShelterCamInput = { trace: TraceSnapshot | null; props: () => readonly PropView[]; nowMs: number; reducedMotion: boolean };
+export type ShelterCamInput = { trace: TraceSnapshot | null; props: () => readonly PropView[]; player?: () => PlayerView | null; nowMs: number; reducedMotion: boolean };
 export interface ShelterCam {
   /** Resolves when the models are in; rejects if a required model failed to load. */
   ready: Promise<void>;
@@ -118,6 +121,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
   // The camera's own weak infrared illuminator: geometry stays faintly readable in a blackout.
   const infrared = new THREE.PointLight(0xffffff, 1.4, 9, 1.2); infrared.position.set(...CAMERA.position);
   scene.add(hemisphere, fill, overhead, deskLamp, taskSpot, taskSpot.target, emergency, screenGlow, alarm, infrared);
+  const researcher = createResearcher(); researcher.root.visible = false; scene.add(researcher.root);
   const lampSurface = new THREE.MeshStandardMaterial({ color: 0x82745a, emissive: 0xe29049, emissiveIntensity: .22 });
   const alarmLens = new THREE.MeshStandardMaterial({ color: 0x330604, emissive: 0xc52b0d, emissiveIntensity: .16, roughness: .38 });
   const screens: { material: THREE.MeshBasicMaterial; colour: number }[] = [], orphans: THREE.Material[] = [], mixers: THREE.AnimationMixer[] = [];
@@ -195,7 +199,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
 
   return {
     ready, diagnostics,
-    frame({ trace, props: propsAt, nowMs, reducedMotion }) {
+    frame({ trace, props: propsAt, player, nowMs, reducedMotion }) {
       if (disposed) return tracker.signal;
       if (trace !== lastTrace) {
         lastTrace = trace;
@@ -222,6 +226,8 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
         for (const screen of screens) screen.material.color.setHex(light.screens ? screen.colour : 0x030504);
         if (lever) { lever.action.time = light.screens ? 0 : .34999; lever.mixer.update(0); }
         door?.mixer.update(dt); syncProps(propsAt());
+        const view = player?.() ?? null; researcher.root.visible = !!view;
+        if (view) researcher.update(view, dt, nowMs / 1000, reducedMotion);
         camera.position.set(...CAMERA.position); camera.lookAt(...CAMERA.target);
         camera.rotateY(look.yaw); camera.rotateX(look.pitch);
         const shake = reducedMotion ? 0 : shakeAmp * Math.max(0, 1 - (nowMs - shakeAt) / 600);
