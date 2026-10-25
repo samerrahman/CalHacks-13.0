@@ -6,7 +6,7 @@ import { createDisplay, drawTerminal, drawProximity, drawCameraOverlay, drawSona
 import type { RenderState } from './state';
 import { createWeathering } from './weathering';
 import { alarmIntensity, scareStrength } from './presentation';
-import { hitRemote, hitStation, hitStatus } from './interaction';
+import { hitLever, hitRemote, hitStation, hitStatus } from './interaction';
 import { createRemote, type RemoteTarget } from './remote';
 export type { RenderState } from './state';
 
@@ -19,6 +19,8 @@ export interface SceneView {
   onStatus(callback: () => void): () => void;
   /** Hand-held remote: 'remote' with true when the lowered hand is clicked (raise it) and false for a click anywhere else while raised (lower it), 'quiet' on a click of its QUIET button, 'restore' on press (true) and release (false). */
   onRemote(callback: (target: RemoteTarget, pressed: boolean) => void): () => void;
+  /** Emergency lever: 'quiet' when pulled fully down, 'restore' pressed while held fully up and released on let go. */
+  onLever(callback: (action: 'quiet' | 'restore', pressed: boolean) => void): () => void;
   dispose(): void;
   diagnostics: { loadedAssets: string[]; animationClips: string[]; error: string | null; cameraFeed: CameraFeed; silhouetteVisible: boolean; listenerYaw: number; listenerPosition: WorldPosition; hoveredStation: Station | null; anchors: Record<'terminal' | 'quiet' | 'restore', { x: number; y: number } | null> };
 }
@@ -67,6 +69,7 @@ export function createScene(container: HTMLElement): SceneView {
   box([2.35, .075, .12], [-.35, .60, -2.33], brass);
   // Wall ribs project into the shelter; mount signage in front of their faces.
   const titlePlate = plate('HUSH / 04', ['EMERGENCY OBSERVATION', 'FOREST RESEARCH DIVISION'], [.1, 2.38, -2.32], 1.15);
+  titlePlate.visible = false; // The wall sign is gone; the name only appears on the menus.
   const protocolPlate = plate('CONTAINMENT PROTOCOL', ['SILENCE / CALIBRATE', 'REPAIR / REDIRECT', 'COMPLETE THE BROADCAST'], [-1.85, 1.66, -2.32], .8);
   const cameraPlate = plate('SECURITY FEEDS', ['REMOTE FACILITY CAMERAS', 'LIMITED COVERAGE'], [.75, 1.95, -2.32], .73);
   const sensorPlate = plate('CAMERA INPUT', ['OPTIONAL PERSONAL SENSOR', 'NOT A SECURITY FEED'], [1.9, 2.16, -2.32], .65);
@@ -93,8 +96,10 @@ export function createScene(container: HTMLElement): SceneView {
   let machineMixer: THREE.AnimationMixer | null = null, doorMixer: THREE.AnimationMixer | null = null, switchMixer: THREE.AnimationMixer | null = null, creatureMixer: THREE.AnimationMixer | null = null;
   let doorImpact: THREE.AnimationAction | null = null, doorDent: THREE.AnimationAction | null = null, switchAction: THREE.AnimationAction | null = null;
   let previousFaults = '', previousPower: RenderState['power'] | null = null, lostAt: number | null = null, lastScareId: string | number | null = null, lastStateTime = 0, wasInspecting = false;
+  // Lever drag: 'down' cuts power (powered), 'up' restores (isolated); progress 0–1 follows the pointer.
+  let lever: { mode: 'down' | 'up'; startY: number; progress: number; restoring: boolean } | null = null;
   let remoteOpen = false, holdingRestore = false, yaw = 0, pitch = 0, dragging = false, lastX = 0, lastY = 0, downX = 0, downY = 0, moved = false;
-  const interactions = new Set<(station: Station) => void>(), statusClicks = new Set<() => void>(), remoteCallbacks = new Set<(target: RemoteTarget, pressed: boolean) => void>(), raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+  const interactions = new Set<(station: Station) => void>(), statusClicks = new Set<() => void>(), remoteCallbacks = new Set<(target: RemoteTarget, pressed: boolean) => void>(), leverCallbacks = new Set<(action: 'quiet' | 'restore', pressed: boolean) => void>(), raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
   const seatedPosition = new THREE.Vector3(.05, 1.62, .60), desiredPosition = new THREE.Vector3(), desiredTarget = new THREE.Vector3();
   const aim = camera.clone();
   // This scene never shares its creature with the shelter scene.
@@ -123,6 +128,7 @@ export function createScene(container: HTMLElement): SceneView {
       if (name === 'terminal') asset.scene.userData.lockInStation = 'terminal';
       if (name === 'security_monitor') asset.scene.userData.lockInStation = 'cameras';
       if (name === 'machine_rack' || name === 'emergency_switch' || name === 'proximity_detector') asset.scene.userData.lockInStation = 'equipment';
+      if (name === 'emergency_switch') asset.scene.userData.lockInLever = true;
       asset.animations.forEach(clip => diagnostics.animationClips.push(`${name}.${clip.name}`));
     }
     function replaceMaterial(mesh: THREE.Mesh, next: THREE.Material) { orphanMaterials.push(...(Array.isArray(mesh.material) ? mesh.material : [mesh.material])); mesh.material = next; }
@@ -166,18 +172,36 @@ export function createScene(container: HTMLElement): SceneView {
     const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
     raycaster.setFromCamera(pointer, camera); return hitRemote(raycaster, scene);
   }
+  function leverAt(x: number, y: number): boolean {
+    const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
+    raycaster.setFromCamera(pointer, camera); return hitLever(raycaster, scene);
+  }
   function statusAt(x: number, y: number): boolean {
     const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
     raycaster.setFromCamera(pointer, camera); return hitStatus(raycaster, scene);
   }
-  function down(event: PointerEvent) { if (event.button !== 0) return; if (remoteOpen && remoteAt(event.clientX, event.clientY) === 'restore') { holdingRestore = true; remoteCallbacks.forEach(callback => callback('restore', true)); try { renderer.domElement.setPointerCapture(event.pointerId); } catch { /* release still arrives via pointerup */ } return; } dragging = true; moved = false; downX = lastX = event.clientX; downY = lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); renderer.domElement.style.cursor = 'grabbing'; }
+  function down(event: PointerEvent) { if (event.button !== 0) return; if (station === 'equipment' && !remoteOpen && previousPower && leverAt(event.clientX, event.clientY)) { lever = { mode: previousPower === 'on' ? 'down' : 'up', startY: event.clientY, progress: 0, restoring: false }; downX = event.clientX; downY = event.clientY; try { renderer.domElement.setPointerCapture(event.pointerId); } catch { /* release still arrives via pointerup */ } renderer.domElement.style.cursor = 'grabbing'; return; } if (remoteOpen && remoteAt(event.clientX, event.clientY) === 'restore') { holdingRestore = true; remoteCallbacks.forEach(callback => callback('restore', true)); try { renderer.domElement.setPointerCapture(event.pointerId); } catch { /* release still arrives via pointerup */ } return; } dragging = true; moved = false; downX = lastX = event.clientX; downY = lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); renderer.domElement.style.cursor = 'grabbing'; }
   function move(event: PointerEvent) {
-    if (!dragging) { diagnostics.hoveredStation = stationAt(event.clientX, event.clientY); renderer.domElement.style.cursor = diagnostics.hoveredStation || statusAt(event.clientX, event.clientY) || remoteAt(event.clientX, event.clientY) ? 'pointer' : 'grab'; return; }
+    if (lever) {
+      const travel = (event.clientY - lever.startY) / 140; lever.progress = THREE.MathUtils.clamp(lever.mode === 'down' ? travel : -travel, 0, 1);
+      if (lever.mode === 'up' && lever.progress > .85 && !lever.restoring) { lever.restoring = true; leverCallbacks.forEach(callback => callback('restore', true)); }
+      if (lever.mode === 'up' && lever.progress < .7 && lever.restoring) { lever.restoring = false; leverCallbacks.forEach(callback => callback('restore', false)); }
+      return;
+    }
+    if (!dragging) { diagnostics.hoveredStation = stationAt(event.clientX, event.clientY); renderer.domElement.style.cursor = station === 'equipment' && leverAt(event.clientX, event.clientY) ? 'ns-resize' : diagnostics.hoveredStation || statusAt(event.clientX, event.clientY) || remoteAt(event.clientX, event.clientY) ? 'pointer' : 'grab'; return; }
     if (Math.hypot(event.clientX - downX, event.clientY - downY) > 6) moved = true;
     if (moved) { yaw = THREE.MathUtils.clamp(yaw - (event.clientX - lastX) * .003, -.75, .75); pitch = THREE.MathUtils.clamp(pitch - (event.clientY - lastY) * .0025, -.48, .45); }
     lastX = event.clientX; lastY = event.clientY;
   }
   function up(event: PointerEvent) {
+    if (lever) {
+      const pulled = lever, tapped = Math.hypot(event.clientX - downX, event.clientY - downY) <= 6; lever = null; renderer.domElement.style.cursor = 'grab';
+      if (pulled.mode === 'down' && pulled.progress >= .75) leverCallbacks.forEach(callback => callback('quiet', true));
+      if (pulled.restoring) leverCallbacks.forEach(callback => callback('restore', false));
+      // A tap without pulling opens the isolation panel, as clicking the switch always did.
+      if (tapped && event.type === 'pointerup') interactions.forEach(callback => callback('equipment'));
+      return;
+    }
     if (holdingRestore) { holdingRestore = false; remoteCallbacks.forEach(callback => callback('restore', false)); return; }
     const clicked = dragging && !moved && event.type === 'pointerup' && Math.hypot(event.clientX - downX, event.clientY - downY) <= 6;
     dragging = false; renderer.domElement.style.cursor = 'grab';
@@ -196,6 +220,7 @@ export function createScene(container: HTMLElement): SceneView {
     onInteract(callback) { interactions.add(callback); return () => { interactions.delete(callback); }; },
     onStatus(callback) { statusClicks.add(callback); return () => { statusClicks.delete(callback); }; },
     onRemote(callback) { remoteCallbacks.add(callback); return () => { remoteCallbacks.delete(callback); }; },
+    onLever(callback) { leverCallbacks.add(callback); return () => { leverCallbacks.delete(callback); }; },
     update(state, delta) {
       if (disposed) return; const dt = state.paused ? 0 : Math.max(0, Math.min(delta, .1));
       const inspection = state.inspection && (station === 'terminal' || station === 'cameras');
@@ -220,7 +245,7 @@ export function createScene(container: HTMLElement): SceneView {
       const red = alarmIntensity(state.time, state.alarm, reducedMotion) * (state.softScares ? .7 : 1);
       hemisphere.intensity = powered ? .21 : .055; fill.intensity = powered ? .065 : .018; overhead.intensity = 1.15 * light; deskLamp.intensity = 3.2 * light; taskSpot.intensity = 5.2 * light; frontGlow.intensity = powered ? .48 : 0; lampSurface.emissiveIntensity = powered ? .22 : 0;
       alarm.intensity = .10 + red * 4.2; alarmLens.emissiveIntensity = .16 + red * 1.1;
-      if (switchAction && switchMixer) { switchAction.time = powered ? 0 : .34999; switchMixer.update(0); }
+      if (switchAction && switchMixer) { const resting = powered ? 0 : .34999; switchAction.time = lever ? (lever.mode === 'down' ? lever.progress : 1 - lever.progress) * .34999 : resting; switchMixer.update(0); }
       const active = powered ? state.faults : [], faultKey = `${active.join(',')}|${reducedMotion}`;
       if (faultKey !== previousFaults) { previousFaults = faultKey; for (let i = 0; i < 4; i++) {
         const action = faultActions[i]; if (action) { action.paused = !active.includes(i) || reducedMotion; if (action.paused) action.time = 0; }
@@ -245,7 +270,7 @@ export function createScene(container: HTMLElement): SceneView {
       for (const key of ['quiet', 'restore'] as const) { remote.anchors(projected, key).project(camera); diagnostics.anchors[key] = inspection ? null : toScreen(); }
     },
     dispose() {
-      if (disposed) return; disposed = true; observer.disconnect(); window.removeEventListener('keydown', arrowDown); window.removeEventListener('keyup', arrowUp); window.removeEventListener('blur', arrowsReleased); interactions.clear(); statusClicks.clear(); remoteCallbacks.clear();
+      if (disposed) return; disposed = true; observer.disconnect(); window.removeEventListener('keydown', arrowDown); window.removeEventListener('keyup', arrowUp); window.removeEventListener('blur', arrowsReleased); interactions.clear(); statusClicks.clear(); remoteCallbacks.clear(); leverCallbacks.clear();
       renderer.domElement.removeEventListener('pointerdown', down); renderer.domElement.removeEventListener('pointermove', move); renderer.domElement.removeEventListener('pointerup', up); renderer.domElement.removeEventListener('pointercancel', up); renderer.domElement.removeEventListener('lostpointercapture', up);
       for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()); }
       disposeObject(scene); disposeObject(cctvScene); new Set(orphanMaterials).forEach(material => material.dispose()); extraTextures.forEach(texture => texture.dispose());

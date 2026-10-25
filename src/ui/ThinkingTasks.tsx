@@ -4,7 +4,7 @@ import { config } from '../game/config';
 import { calmBreath, calmInhale, calmMatched, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, heartElevated, listeningTo, pulseFlash, pulseRequirement, tileOpenings } from '../game/tasks';
 import './thinking.css';
 
-// Sonar rings on the security monitor, innermost first; keys 1–4 mark the same rings.
+// Sonar rings on the radar scope, innermost first; keys 1–4 mark the same rings.
 const SECTORS: [Sector, string, string][] = [['NEAR', 'Ring 1', 'Near the wall'], ['A', 'Ring 2', 'Clearing'], ['B', 'Ring 3', 'Service path'], ['C', 'Ring 4', 'Far out']];
 type Send = (action: GameAction) => void;
 
@@ -49,7 +49,7 @@ export function FaultTask({ g, send }: { g: GameState; send: Send }) {
 
 export function LocateTerminal({ g }: { g: GameState }) {
   const l = g.tasks.locate;
-  return <><p>The emitter needs to know where it is. Go to the security monitor and read the sonar. Mark which ring it is in, {l.required} times. It keeps moving, and wrong marks are loud.</p>
+  return <><p>The emitter needs to know where it is. Go to the radar and read it. Mark which ring it is in, {l.required} times. It keeps moving, and wrong marks are loud.</p>
     <div className="task-progress"><span>{l.marks} / {l.required} positions marked</span><span>MONITOR · KEYS 1–4</span></div></>;
 }
 

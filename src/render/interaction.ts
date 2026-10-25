@@ -23,3 +23,9 @@ export function hitRemote(raycaster: Raycaster, scene: Object3D): 'remote' | 'qu
   const target = hit?.object.userData.lockInRemote;
   return target === 'remote' || target === 'quiet' || target === 'restore' ? target : null;
 }
+/** True when the first visible surface under the pointer belongs to the emergency lever. */
+export function hitLever(raycaster: Raycaster, scene: Object3D): boolean {
+  const hit = raycaster.intersectObjects(scene.children, true).find(candidate => visible(candidate.object));
+  for (let node: Object3D | null = hit?.object ?? null; node; node = node.parent) if (node.userData.lockInLever) return true;
+  return false;
+}

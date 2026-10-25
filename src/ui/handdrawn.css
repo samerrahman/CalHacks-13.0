@@ -147,3 +147,14 @@ body .locate-only .locate-buttons button{font-family:var(--typed);background:non
 body .locate-only .locate-buttons button:hover:not(:disabled){border-color:#b8261a;color:#fff3dc;background:none}
 /* With the judge button gone, keep the station bar centred on the screen. */
 body .game-footer nav{position:absolute;left:50%;transform:translateX(-50%)}
+/* Isolation switch panel, in the same language as the tutorial cards. */
+body .task-panel.equipment-panel{background:#050404eb;border:1px solid #3a352b;border-left:2px solid #b8261a;border-radius:0;box-shadow:0 10px 40px #000c;padding:16px 20px 18px;width:min(360px,calc(100vw - 32px));font-family:var(--typed);color:#a49b86}
+body .equipment-panel .inspection-close{display:block;margin:0 0 12px auto;border:0;background:none!important;font-family:var(--typed);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#6a6252}
+body .equipment-panel .inspection-close kbd{font-family:var(--typed);font-size:9px;border:1px solid #3a352b;padding:1px 5px;color:#6a6252}
+body .equipment-panel h2{font-family:var(--typed);font-weight:400;font-size:18px;letter-spacing:5px;text-transform:uppercase;color:#e4dccb;margin:0 0 10px}
+body .equipment-panel p{font-family:var(--typed);font-size:13px;line-height:1.65;color:#8c8371;margin:0 0 16px}
+body .equipment-panel .worn-menu kbd{font-family:var(--typed);font-size:11px;border:1px solid #4a4437;padding:1px 6px;margin-right:10px;color:#d8cdb8}
+body .equipment-panel .worn-menu button:disabled{opacity:.35}
+body .equipment-panel .inspection-close{text-align:right;width:auto}
+body .equipment-panel .worn-menu button{font-size:14px;letter-spacing:4px}
+body .results .screen-left>p.small+.worn-menu{margin-top:5vh}
