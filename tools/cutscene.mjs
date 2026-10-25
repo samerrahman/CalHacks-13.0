@@ -205,6 +205,12 @@ function synthSources(layers, duration, stepRate) {
       case 'hiss': // steam
         src(noise('white', seed++), `highpass=f=2000,lowpass=f=8000,volume='if(between(t,${a},${a + d}),${layer.level}*min(1,${tau}/0.05)*exp(-${tau}*${(2.2 / d).toFixed(3)}),0)':eval=frame`);
         break;
+      case 'ping': // a sonar return: soft attack, a steady ring and a watery echo, no glide
+        src(ev(`if(gte(t,${a}),(1-exp(-${tau}*250))*exp(-${tau}*3.5)*(sin(2*PI*1150*${tau})+0.25*sin(2*PI*2310*${tau})+0.1*sin(2*PI*3470*${tau})),0)`), `aecho=0.8:0.5:160|310:0.35|0.18,lowpass=f=5000,volume=${layer.level}`);
+        break;
+      case 'drip': // a drop of water in a concrete room: a tiny plink and a hollow tail
+        src(ev(`if(gte(t,${a}),exp(-${tau}*45)*sin(2*PI*(1900*${tau}+700*(1-exp(-${tau}*80))/80)),0)`), `highpass=f=500,aecho=0.8:0.6:90|200:0.4|0.25,volume=${layer.level}`);
+        break;
       case 'click': // a mechanical latch or switch: two quick transients, no tone
         src(ev(`if(between(t,${a},${a + 0.03}),(2*random(0)-1)*(exp(-${tau}*400)+0.7*gte(${tau},0.011)*exp(-(${tau}-0.011)*400)),0)`), `highpass=f=300,lowpass=f=7000,volume=${layer.level}`);
         break;

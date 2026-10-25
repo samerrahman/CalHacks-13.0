@@ -7,7 +7,7 @@ import { box, group, mesh, type MaterialKey } from '../style';
 // straight flight down, and a bottom landing that runs on into black. Two caged red lamps, a
 // handrail, and the EMERGENCY CLOSE lever on the right wall beside the doorway.
 
-export const STAIRS = { halfWidth: 0.65, ceiling: 2.45, rise: 0.19, run: 0.26, steps: 14, landingEnd: -1.35 } as const;
+export const STAIRS = { halfWidth: 0.65, ceiling: 2.45, rise: 0.19, run: 0.26, steps: 14, landingEnd: -1.35, bottomLength: 1.3 } as const;
 
 type V3 = [number, number, number];
 const UP = new THREE.Vector3(0, 1, 0);
@@ -28,18 +28,18 @@ function cagedLamp(name: string, at: V3, side: 1 | -1): THREE.Group {
 }
 
 export function buildBasementStairs(): THREE.Group {
-  const { halfWidth: W, ceiling: C, rise: R, run: N, steps, landingEnd: L } = STAIRS;
-  const drop = R * steps, bottomZ = L - N * steps, bottomY = -drop, wallLength = -bottomZ + 1.5;
+  const { halfWidth: W, ceiling: C, rise: R, run: N, steps, landingEnd: L, bottomLength: E } = STAIRS;
+  const drop = R * steps, bottomZ = L - N * steps, bottomY = -drop, wallLength = -bottomZ + E - 0.2;
   const parts: THREE.Object3D[] = [
     box(2 * W, 0.06, -L - 0.2, 'lab_floor', [0, -0.03, (L - 0.2) / 2]),
-    box(2 * W, 0.06, 1.3, 'lab_floor', [0, bottomY - 0.03, bottomZ - 0.65]),
+    box(2 * W, 0.06, E, 'lab_floor', [0, bottomY - 0.03, bottomZ - E / 2]),
     // Side walls and the end wall of the top landing (above the flight).
     box(0.14, C - bottomY + 0.2, wallLength, 'concrete_dark', [-W - 0.07, (C + bottomY) / 2, -0.2 - wallLength / 2]),
     box(0.14, C - bottomY + 0.2, wallLength, 'concrete_dark', [W + 0.07, (C + bottomY) / 2, -0.2 - wallLength / 2]),
     box(2 * W + 0.28, 0.12, -L - 0.2, 'concrete', [0, C + 0.06, (L - 0.2) / 2]),
-    box(2 * W + 0.28, 0.12, 1.4, 'concrete', [0, bottomY + C + 0.06, bottomZ - 0.65]),
+    box(2 * W + 0.28, 0.12, E + 0.1, 'concrete', [0, bottomY + C + 0.06, bottomZ - E / 2]),
     // The bottom runs on into darkness.
-    box(2 * W, C, 0.02, 'void', [0, bottomY + C / 2, bottomZ - 1.3]),
+    box(2 * W, C, 0.02, 'void', [0, bottomY + C / 2, bottomZ - E], 'bottom_void'),
   ];
   // The ceiling over the flight follows it down.
   const slope = Math.atan2(drop, N * steps), span = Math.hypot(drop, N * steps);

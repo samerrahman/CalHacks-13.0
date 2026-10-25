@@ -16,17 +16,18 @@ A 36-second first-person film. You never see the monster. You stand at the obser
 
 ## Ending cutscene
 
-A 38.5-second first-person film that plays after a win (`public/assets/video/ending.mp4`, with the same caption overlay and **Skip cutscene →**; text cards under reduced motion). It is shot in the game's own shelter, built from the game GLBs in `public/assets/models` at their in-game placements, so it opens on the room you just left. All four basement locks are released and you engage the door motor. Its grinding and klaxon give you away: on CAM A (the game's own clearing plate, with the creature drawn as a black silhouette as the game's CCTV does) it turns its head toward the shelter and charges the lens. It hits the shelter door three times while the basement door grinds open, and claws tear through the corner. You squeeze sideways through the gap onto the stairwell landing and turn. Through the slit the shelter door bursts in and it comes straight at you. You pull EMERGENCY CLOSE, the leaf drops shut as its claws reach through, four bolts shoot home, and it pounds on the door while you go down the stairs by torchlight into the dark.
+A 46-second first-person film that plays after a win (`public/assets/video/ending.mp4`, with the same caption overlay and **Skip cutscene →**; text cards under reduced motion). It is shot in the game's own shelter as the game now has it, with no cameras: the game GLBs in `public/assets/models` at their in-game placements, the round sonar scope where the security monitor was and the wall status unit above the terminal, both drawn by the game's own `drawSonar`/`drawStatus` (`src/render/displays.ts`). All four basement locks are released and you engage the door motor; the exposure needle swings into the red. On the scope its contact sits at the tree line, then each sweep (pinging) finds it closer, coming straight at the shelter. It hits the shelter door three times while the basement door grinds open, and claws tear through the corner. You squeeze sideways through the gap onto the stairwell landing and turn. Through the slit the shelter door bursts in and it comes straight at you. You pull EMERGENCY CLOSE, the leaf drops shut as its claws reach through, four bolts shoot home, and it pounds on the door while you go down the stairs by torchlight. Then the pounding stops. The cliffhanger: the basement is a specimen vault (`basement_vault`): one tank burst open from inside, gouges across the floor, a sign reading KEEP ALL FOUR LOCKS ENGAGED. Something breathes in the dark. The torch finds a black shape with two pale glints standing at the back; it flickers, and each time it comes back the shape is closer. It lunges as the torch dies. Black: *You are not alone down here.*
 
 | Path | What it is |
 |---|---|
-| `src/cutscene/ending.ts` | The ending's beats, shots, captions, recorded cues and synth layers (it adds a `motor` layer). The game reads its captions from here. |
+| `src/cutscene/ending.ts` | The ending's beats, shots, captions, recorded cues and synth layers (it adds `motor`, `ping` and `drip` layers). `contactAt`/`lastPing` drive the sonar contact. The game reads its captions from here. |
 | `src/cutscene/endingScene.ts` | The ending's set, lights, camera and animation, as a pure function of time. `travelAt(t)` is how far the basement door is open. |
 | `src/cutscene/props/basementDoor.ts` | The basement door, shared with the game room (which shows its lock lamps per completed stage). |
 | `src/cutscene/props/basementStairs.ts` | The stairwell behind it (film only). |
+| `src/cutscene/props/basementVault.ts` | The specimen vault at the bottom of the stairs (film only): two `containment_tank`s, one burst open, and the warning sign. |
 
 ```bash
-npm run cutscene -- stills 6 20.1 --film=ending   # ending keyframes
+npm run cutscene -- stills 9.2 20.1 38.9 --film=ending   # ending keyframes
 npm run cutscene -- render --film=ending          # → public/assets/video/ending.mp4 (+ manifest entry)
 ```
 

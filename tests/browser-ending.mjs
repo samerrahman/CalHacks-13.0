@@ -16,16 +16,16 @@ try {
   const film = page.getByRole('main', { name: 'Ending cutscene' }), video = film.locator('video');
   await expect.poll(() => video.evaluate(v => v.readyState), { timeout: 20000 }).toBeGreaterThanOrEqual(2);
   const info = await video.evaluate(v => ({ duration: v.duration, width: v.videoWidth, height: v.videoHeight }));
-  assert.ok(Math.abs(info.duration - 38.5) < 0.2 && info.width === 640 && info.height === 360, `unexpected video ${JSON.stringify(info)}`);
+  assert.ok(Math.abs(info.duration - 46) < 0.2 && info.width === 640 && info.height === 360, `unexpected video ${JSON.stringify(info)}`);
   const started = await video.evaluate(v => v.currentTime); await page.waitForTimeout(800);
   assert.ok(await video.evaluate(v => v.currentTime) > started, 'the ending must play');
   evidence.checks.push(`ending.mp4 loads and plays (${info.width}×${info.height}, ${info.duration.toFixed(1)} s)`);
-  for (const [at, text] of [[3, '[the basement door motor grinds — loud]'], [12.4, '[it slams into the shelter door]'], [21.7, '[you drop the basement door on its claws]'], [35, 'You escaped.']]) {
+  for (const [at, text] of [[3, '[the basement door motor grinds — loud]'], [8.6, '[on the sonar, it turns toward the noise]'], [12.4, '[it slams into the shelter door]'], [21.7, '[you drop the basement door on its claws]'], [38, '[something breathes in the dark]'], [42, 'You are not alone down here.']]) {
     await video.evaluate((v, t) => { v.pause(); v.currentTime = t; }, at);
     await expect(film.locator('.opening-caption')).toHaveText(text);
     await page.screenshot({ path: `artifacts/ending-${String(at).replace('.', '_')}s.png` });
   }
-  evidence.checks.push('Captions follow the ending timeline: motor, the shelter door, the slam, You escaped.');
+  evidence.checks.push('Captions follow the ending timeline: motor, the sonar, the shelter door, the slam, the breathing, You are not alone down here.');
   const box = await film.boundingBox();
   assert.ok(box && box.width === 1280 && box.height === 720, 'the ending covers the viewport');
   assert.equal(await film.evaluate(el => getComputedStyle(el).zIndex), '15');

@@ -1,24 +1,32 @@
 import * as THREE from 'three';
 import { BASEMENT_DOOR } from './props/basementDoor';
 import { STAIRS } from './props/basementStairs';
+import { VAULT } from './props/basementVault';
 import { applyLook, createPost, type Look } from './look';
 import { facet, rng } from './style';
 import { CameraRig, hash, pulse, ramp, track, type CameraKey, type Cutscene, type Impact, type PropSource } from './scene';
-import { BEATS as B, STEP_RATE } from './ending';
+import { BEATS as B, SCOPE, STEP_RATE, contactAt, lastPing } from './ending';
+import { createDisplay, drawSonar, drawStatus } from '../render/displays';
+import type { RenderState } from '../render/state';
 
 /** Loads one of the game's shelter GLBs (public/assets/models) with its animation clips. */
 export type ModelSource = (name: string) => Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] }>;
 type V3 = [number, number, number];
 
 // World layout: the game's own shelter (placements copied from src/render/scene.ts), so the film
-// opens on the room the player just left. The basement door sits in the front wall left of the
-// desk; its stairwell runs down behind that wall toward −Z. The sealed shelter door is behind you.
+// opens on the room the player just left. As in the game there are no cameras: the sonar scope
+// stands on the desk where the security monitor was, and the wall status unit hangs above the
+// terminal. The basement door sits in the front wall left of the desk; its stairwell runs down
+// behind that wall toward −Z into the vault. The sealed shelter door is behind you.
 const ROOM: Record<string, [V3, number]> = {
-  shelter: [[0, 0, 0], 0], sealed_door: [[-1.75, 0, 2.39], Math.PI], workdesk: [[0, 0, -1.8], 0], terminal: [[-0.62, 0.92, -1.8], 0], security_monitor: [[0.72, 0.92, -1.8], 0],
-  proximity_detector: [[1.85, 1.6, -2.35], 0], radio_speaker: [[-1.3, 0.92, -1.8], 0], machine_rack: [[2.67, 0, 0.05], -Math.PI / 2], emergency_switch: [[-0.7, 1.35, 2.36], Math.PI],
+  shelter: [[0, 0, 0], 0], sealed_door: [[-1.75, 0, 2.39], Math.PI], workdesk: [[0, 0, -1.8], 0], terminal: [[-0.62, 0.92, -1.8], 0],
+  radio_speaker: [[-1.3, 0.92, -1.8], 0], machine_rack: [[2.67, 0, 0.05], -Math.PI / 2], emergency_switch: [[-0.7, 1.35, 2.36], Math.PI],
 };
 /** Basement door origin (floor centre of the doorway, room-side face of the front wall). */
 export const BASEMENT_AT = new THREE.Vector3(-2.0, 0, -2.5);
+/** Vault origin: the end of the stairwell's bottom landing. */
+export const VAULT_AT = BASEMENT_AT.clone().add(new THREE.Vector3(0, -STAIRS.rise * STAIRS.steps, STAIRS.landingEnd - STAIRS.run * STAIRS.steps - STAIRS.bottomLength));
+const SCOPE_AT = new THREE.Vector3(0.72, 1.34, -1.78);
 const SEALED_AT = new THREE.Vector3(...ROOM.sealed_door[0]);
 const OPEN = BASEMENT_DOOR.maxTravel - 0.02; // the most the side wall lets it open: just wide enough
 
@@ -47,7 +55,7 @@ const key = (t: number, pos: V3, to: V3 | THREE.Vector3, near: number, extra: Pa
  * released drops shut under its counterweight. */
 export function travelAt(t: number): number {
   if (t >= B.release) return OPEN * (1 - Math.pow(clamp01((t - B.release) / (B.shut - B.release)), 2));
-  return track(t, [[B.crack, 0], [B.crack + 0.12, 0.03], [B.crack + 0.5, 0.035], [B.cctv, 0.1], [B.hit1 - 0.1, 0.24], [B.hit1 + 0.3, 0.245], [B.hit2, 0.3], [B.hit2 + 0.3, 0.303], [B.hit3, 0.36], [B.squeeze - 0.1, OPEN]]);
+  return track(t, [[B.crack, 0], [B.crack + 0.12, 0.03], [B.crack + 0.5, 0.035], [B.scope, 0.1], [B.hit1 - 0.1, 0.24], [B.hit1 + 0.3, 0.245], [B.hit2, 0.3], [B.hit2 + 0.3, 0.303], [B.hit3, 0.36], [B.squeeze - 0.1, OPEN]]);
 }
 
 function puffTexture(): THREE.Texture {
@@ -105,8 +113,16 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
     const m = new THREE.Mesh(new THREE.PlaneGeometry(width, width * 460 / 720), new THREE.MeshStandardMaterial({ map: await image(`/assets/decals/${svg}.svg`), color: 0xa29a7c, roughness: 0.9 }));
     m.position.set(...at); m.rotation.y = rotation; scene.add(m); return m;
   };
-  await plate('title', [0.1, 2.38, -2.32], 1.15); await plate('protocol_card', [-0.85, 1.68, -2.32], 0.62); await plate('camera_notice', [0.75, 1.95, -2.32], 0.73);
-  await plate('door_label', [-1.75, 2.2, 2.255], 0.7, Math.PI);
+  await plate('protocol_card', [-0.8, 1.55, -2.32], 0.62); await plate('door_label', [-1.75, 2.2, 2.255], 0.7, Math.PI);
+  // The sonar scope: a steel drum, a bezel ring and a round screen, on a stand.
+  const brass = new THREE.MeshStandardMaterial({ color: 0x5e4a30, roughness: 0.55, metalness: 0.5 });
+  const scope = new THREE.Group(); scope.position.copy(SCOPE_AT); scene.add(scope);
+  const drum = new THREE.Mesh(facet(new THREE.CylinderGeometry(0.37, 0.39, 0.16, 40)), steel); drum.rotation.x = Math.PI / 2; drum.castShadow = drum.receiveShadow = true; scope.add(drum);
+  const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.335, 0.028, 10, 48), brass); bezel.position.z = 0.085; scope.add(bezel);
+  for (const x of [-0.22, 0.22]) { const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 10), brass); bolt.rotation.x = Math.PI / 2; bolt.position.set(x, -0.27, 0.085); scope.add(bolt); }
+  const stand = new THREE.Mesh(facet(new THREE.BoxGeometry(0.16, 0.1, 0.14)), steel); stand.position.set(0, -0.37, 0); scope.add(stand);
+  // The wall status unit: deadline clock, isolation cells and the exposure needle.
+  part([0.52, 0.64, 0.05], [-0.8, 2.05, -2.31], steel);
 
   // ---------- the basement door and the stairs behind it ----------
   const door = await prop('basement_door'); door.position.copy(BASEMENT_AT); own(door); scene.add(door);
@@ -126,8 +142,35 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
   });
   BASEMENT_DOOR.lockHeights.forEach(y => part([0.12, 0.12, 0.08], [bx + W + 0.22, y, -2.74], steel));
 
+  // ---------- the vault at the bottom of the stairs ----------
+  const vault = await prop('basement_vault'); vault.position.copy(VAULT_AT); own(vault); scene.add(vault);
+  const bottomVoid = find(stairs, 'bottom_void'); if (bottomVoid) bottomVoid.visible = false;
+  const breachedTank = find(vault, 'tank_breached'), sealedTank = find(vault, 'tank_sealed');
+  // glTF keeps no visibility: the breached hatch is bulged, the sealed one flat.
+  const breachedBulge = breachedTank && find(breachedTank, 'hatch_bulge'), sealedBulge = sealedTank && find(sealedTank, 'hatch_bulge');
+  if (breachedBulge) breachedBulge.visible = true; if (sealedBulge) sealedBulge.visible = false;
+  const tankLights = (tank: THREE.Object3D | null) => [0, 1].map(i => tank && find(tank, `status_light_${i}`));
+  const breachedLights = tankLights(breachedTank), sealedLights = tankLights(sealedTank), vaultBulb = find(vault, 'vault_lamp_bulb');
+  {
+    const sign = find(vault, 'vault_sign') as THREE.Mesh | null, { canvas, map } = canvasTexture(256, 128, look), g = canvas.getContext('2d')!;
+    g.fillStyle = '#b9b29a'; g.fillRect(0, 0, 256, 128);
+    for (const y of [0, 112]) for (let x = -16; x < 256; x += 22) { g.fillStyle = '#1b1c18'; g.beginPath(); g.moveTo(x, y + 16); g.lineTo(x + 11, y); g.lineTo(x + 22, y); g.lineTo(x + 11, y + 16); g.fill(); }
+    g.fillStyle = '#1b1c18'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = 'bold 13px monospace'; g.fillText('SPECIMEN VAULT', 128, 28);
+    g.font = 'bold 27px monospace'; g.fillText('KEEP ALL FOUR', 128, 58); g.fillText('LOCKS ENGAGED', 128, 88);
+    if (sign) sign.material = new THREE.MeshStandardMaterial({ map, roughness: 0.9 });
+  }
+  const VAULT_SIGN = VAULT.sign.at, [hx, hz, hyaw] = VAULT.breached;
+
   // ---------- the creature ----------
   const creature = await prop('shadow_figure'); own(creature); scene.add(creature); creature.rotation.order = 'YXZ';
+  // The one the four locks were holding: standing in the vault's far corner.
+  const lurker = await prop('shadow_figure'); scene.add(lurker); lurker.rotation.order = 'YXZ'; lurker.scale.setScalar(1.1);
+  // Black and a little glossy, so the torch shows its shape but never its skin; two pale glints on
+  // the head's front face stay visible when the torch is off.
+  const ink = new THREE.MeshStandardMaterial({ color: 0x090b0b, roughness: 0.4, metalness: 0.15 }), eyeGlint = new THREE.MeshBasicMaterial({ color: 0xd6e4dc });
+  lurker.traverse(o => { if (o instanceof THREE.Mesh) o.material = ink; });
+  for (const x of [-0.055, 0.055]) { const eye = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.02, 0.01), eyeGlint); eye.position.set(x, 2.1, 1.13); eye.rotation.x = 0.5; lurker.add(eye); }
   const claws = await prop('claws'); own(claws); scene.add(claws); claws.rotation.order = 'YXZ';
   const talons = [0, 1, 2, 3].map(i => { const n = find(claws, `talon_${i}`); return n ? { node: n, rest: n.rotation.clone() } : null; });
   const forearm = find(claws, 'forearm');
@@ -150,24 +193,15 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
   scene.updateMatrixWorld(true);
 
   // ---------- screens ----------
-  const terminalScreen = find(room.terminal, 'terminal_screen') as THREE.Mesh | null, monitorScreen = find(room.security_monitor, 'security_screen') as THREE.Mesh | null;
-  const TERM = worldOf(terminalScreen, [-0.62, 1.2, -1.78]), MON = worldOf(monitorScreen, [0.72, 1.2, -1.8]);
+  const terminalScreen = find(room.terminal, 'terminal_screen') as THREE.Mesh | null;
+  const TERM = worldOf(terminalScreen, [-0.62, 1.2, -1.78]), MON: V3 = [SCOPE_AT.x, SCOPE_AT.y, SCOPE_AT.z + 0.08];
   const term = canvasTexture(192, 120, look);
   if (terminalScreen) terminalScreen.material = new THREE.MeshBasicMaterial({ map: term.map });
-  // CCTV: the game's own camera plate with the creature drawn over it as a black silhouette.
-  const feedTarget = new THREE.WebGLRenderTarget(256, 144, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
-  const feedScene = new THREE.Scene(), feedCamera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.01, 20);
-  feedCamera.position.set(0, 0, 5); feedScene.background = await image('/assets/cameras/cam_a_clearing.png');
-  const feedFigure = await prop('shadow_figure'), feedInk = new THREE.MeshBasicMaterial({ color: 0x050a08 });
-  feedFigure.traverse(o => { if (o instanceof THREE.Mesh) o.material = feedInk; }); feedFigure.rotation.order = 'YXZ'; feedScene.add(feedFigure);
-  const overlay = canvasTexture(256, 144, look);
-  const overlayPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: overlay.map, transparent: true, depthTest: false }));
-  overlayPlane.position.set(0.5, 0.5, 2); feedScene.add(overlayPlane);
-  {
-    const bounds = monitorScreen ? new THREE.Box3().setFromObject(monitorScreen) : new THREE.Box3(new THREE.Vector3(0.5, 1.05, -1.84), new THREE.Vector3(0.94, 1.33, -1.8)), size = bounds.getSize(new THREE.Vector3());
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(size.x * 0.96, size.y * 0.94), new THREE.MeshBasicMaterial({ map: feedTarget.texture }));
-    screen.position.copy(bounds.getCenter(new THREE.Vector3())).setZ(bounds.max.z + 0.003); scene.add(screen);
-  }
+  // The scope and the status unit are drawn by the game's own display code (src/render/displays.ts).
+  const sonar = createDisplay(768, 768), status = createDisplay(640, 800, false);
+  const sonarScreen = new THREE.Mesh(new THREE.CircleGeometry(0.32, 64), new THREE.MeshBasicMaterial({ map: sonar.texture, toneMapped: false })); sonarScreen.position.z = 0.082; scope.add(sonarScreen);
+  const statusScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.575), new THREE.MeshBasicMaterial({ map: status.texture, toneMapped: false }));
+  statusScreen.position.set(-0.8, 2.05, -2.282); scene.add(statusScreen);
 
   // ---------- lights ----------
   const hemi = new THREE.HemisphereLight(0x59644c, 0x070807, 0.25); scene.add(hemi);
@@ -176,7 +210,7 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
   const task = new THREE.SpotLight(0xffb976, 9, 3.4, 0.62, 0.8, 1.8); task.position.set(-1.3, 1.68, -1.62); task.target.position.set(-0.6, 0.95, -1.65);
   task.castShadow = true; task.shadow.mapSize.set(512, 512); scene.add(task, task.target);
   const emergency = new THREE.PointLight(0xda6e36, 1.4, 2.6, 2); emergency.position.set(-0.7, 1.57, 2.18); scene.add(emergency);
-  const screenGlow = new THREE.PointLight(0x9fc0a8, 0.8, 1.8, 2); screenGlow.position.set(0.05, 1.25, -1.45); scene.add(screenGlow);
+  const screenGlow = new THREE.PointLight(0x86d49a, 0.8, 1.8, 2); screenGlow.position.set(0.6, 1.3, -1.4); scene.add(screenGlow);
   const alarmBulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshStandardMaterial({ color: 0x330604, emissive: 0xff2a10, emissiveIntensity: 0.3 }));
   alarmBulb.position.set(1.05, 2.3, -2.25); scene.add(alarmBulb);
   const alarm = new THREE.PointLight(0xff2a10, 0, 5, 2); alarm.position.set(1.05, 2.3, -2.05); scene.add(alarm);
@@ -194,9 +228,13 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
   const slitRed = new THREE.PointLight(0xff3a1a, 0, 5.5, 1.4); slitRed.position.set(bx + W - OPEN / 2, 1.5, -2.65); scene.add(slitRed);
   const rim = new THREE.PointLight(0xa8bcd0, 0, 4.5, 1.5); scene.add(rim);
   const moon = new THREE.PointLight(0x8fa6bc, 0, 9, 1.4); moon.position.set(SEALED_AT.x, 2.1, 2.95); scene.add(moon);
+  // The vault's one lamp, dim red on the back wall: enough to rim whatever stands in front of it.
+  const vaultRed = new THREE.PointLight(0xff2a14, 0, 6.5, 1.4); vaultRed.position.copy(VAULT_AT).add(new THREE.Vector3(2.3, 2.2, -VAULT.depth + 0.35)); scene.add(vaultRed);
   const flashlight = new THREE.SpotLight(0xfff1d6, 0, 14, 0.42, 0.55, 1.6);
   flashlight.position.set(0.18, -0.22, -0.4); flashlight.target.position.set(0.02, -0.4, -6); flashlight.castShadow = true; flashlight.shadow.mapSize.set(512, 512); flashlight.shadow.bias = -0.0015;
   camera.add(flashlight, flashlight.target);
+  // Torch spill: what the beam's edge and its bounce show of the room around the hot spot.
+  const spill = new THREE.PointLight(0xffe8c8, 0, 6, 2); spill.position.set(0.1, -0.1, -0.3); camera.add(spill);
   const arms = await prop('fp_arms'); camera.add(arms); own(arms);
   arms.traverse(o => { o.castShadow = false; o.receiveShadow = false; });
   const fpArm = (n: string) => { const node = find(arms, n); return node ? { node, rest: node.rotation.clone() } : null; };
@@ -234,6 +272,12 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
   const DOORC: V3 = [bx, 1.05, -2.45], UPPER: V3 = [bx + 0.3, 2.0, -2.4], SEALC: V3 = [SEALED_AT.x, 1.35, 2.3], CORNER: V3 = [SEALED_AT.x - 0.55, 2.3, 2.25];
   const GAPC: V3 = [bx + W - OPEN / 2, 1.2, -2.6], THROUGH: V3 = [bx + W - OPEN / 2, 1.35, -2.4], DOWN: V3 = [bx, -0.6, -5.6];
   const LEVER = worldOf(lever, [bx + 0.6, 1.27, -2.95]);
+  // Vault-local points (origin at the vault entrance) in world space.
+  const V = (x: number, y: number, z: number): V3 => [VAULT_AT.x + x, VAULT_AT.y + y, VAULT_AT.z + z];
+  const HATCH = V(hx + 0.9 * Math.sin(hyaw), 1.2, hz + 0.9 * Math.cos(hyaw)), SIGN = V(VAULT_SIGN[0], VAULT_SIGN[1], VAULT_SIGN[2]), FLOOR = V(-0.35, 0.05, -1.7);
+  // Where it stands, and where each flicker of the torch finds it: closer along the line to you.
+  const EYE = V(-0.1, 1.6, -0.55), LURK = new THREE.Vector3(...V(1.9, 0, -5.4)), toYou = new THREE.Vector3(EYE[0], LURK.y, EYE[2]).sub(LURK).normalize();
+  const lurkAt = (d: number) => LURK.clone().addScaledVector(toYou, d), LURK_HEAD: V3 = [LURK.x + toYou.x * 0.95, LURK.y + 1.75, LURK.z + toYou.z * 0.95];
   const tread = (z: number) => Math.max(-STAIRS.rise * STAIRS.steps, Math.min(0, (z - (BASEMENT_AT.z + STAIRS.landingEnd)) * STAIRS.rise / STAIRS.run));
   const down = (t: number, z: number, ahead: number, extra: Partial<CameraKey> = {}): CameraKey => key(t, [bx + 0.03 * Math.sin(z * 3), tread(z) + 1.6, z], [bx, tread(z - 1.8) + 0.5, z - 1.8 - ahead], 360, { run: 0.32, breath: 0.55, ...extra });
   const rig = new CameraRig([
@@ -244,11 +288,11 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
     key(B.turnDoor + 1.0, [-1.15, 1.58, -0.55], DOORC, 0),
     key(B.crack + 0.4, [-1.4, 1.6, -0.5], DOORC, 15),
     key(B.heard, [-1.45, 1.6, -0.5], UPPER, 15),
-    // The growl outside: to the monitor, and close on the feed.
-    key(B.toMonitor + 0.35, [-0.4, 1.5, -0.9], [0.4, 1.25, -1.9], 0, { breath: 0.3 }),
-    key(B.cctv, [0.62, 1.29, -1.12], MON, 0),
-    key(B.fill, [0.63, 1.28, -1.2], MON, 0),
-    key(B.cut + 0.25, [0.5, 1.42, -1.02], MON, 0, { breath: 0.6 }),
+    // The growl outside: to the sonar scope, and close on it as the contact comes in.
+    key(B.toScope + 0.35, [-0.3, 1.5, -0.9], [0.5, 1.3, -1.8], 0, { breath: 0.3 }),
+    key(B.scope, [0.7, 1.43, -0.98], MON, 0),
+    key(B.near, [0.71, 1.42, -1.06], MON, 0),
+    key(B.near + 0.55, [0.62, 1.46, -0.98], MON, 0, { breath: 0.6 }),
     // Footsteps arriving: spin to the shelter door, hold for the blow, back to the basement door.
     key(B.whip + 0.4, [0.25, 1.55, -0.75], [-2, 1.4, 1.5], 100, { breath: 0.7 }),
     key(B.whip + 1.0, [0.1, 1.58, -0.6], SEALC, 140, { breath: 0.8 }),
@@ -280,15 +324,27 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
     // Away from the door and down into the dark.
     key(B.turnAway + 0.8, [-1.95, 1.6, -3.68], DOWN, 300, { breath: 0.8 }),
     down(B.descend, -3.85, 0, { run: 0.2 }),
-    down(B.descend + 1.7, -4.95, 0.3),
-    down(B.descend + 3.4, -6.05, 0.5),
-    down(B.black - 0.2, -7.15, 0.8, { run: 0.25 }),
-    down(B.end, -7.6, 1, { run: 0 }),
+    down(B.descend + 1.45, -4.95, 0.3),
+    down(B.descend + 2.9, -6.05, 0.5),
+    down(B.bottom - 0.1, -7.25, 0.8, { run: 0.2 }),
+    // The vault: the torch on the wet floor, the burst tank, the sign. Then the breathing, and the
+    // turn toward it. Held still while it stands there; nearer each time the torch comes back.
+    key(B.bottom + 0.5, [bx, VAULT_AT.y + 1.6, VAULT_AT.z + 0.85], V(-0.3, 0.4, -2.0), 360, { run: 0.15, breath: 0.6 }),
+    key(B.enter, V(0, 1.6, 0.15), FLOOR, 380, { breath: 0.6 }),
+    key(B.enter + 0.9, V(-0.05, 1.6, -0.15), HATCH, 380, { breath: 0.5 }),
+    key(B.sign - 1.0, V(-0.08, 1.59, -0.35), HATCH, 380, { breath: 0.5 }),
+    key(B.sign, V(-0.1, 1.6, -0.5), SIGN, 400, { breath: 0.4 }),
+    key(B.turn, V(-0.1, 1.6, -0.52), SIGN, 400, { breath: 0.15 }),
+    key(B.reveal, EYE, LURK_HEAD, 340, { breath: 0.3 }),
+    key(B.flick, V(-0.1, 1.59, -0.58), LURK_HEAD, 340, { breath: 0.4 }),
+    key(B.out, V(-0.1, 1.57, -0.62), LURK_HEAD, 340, { breath: 0.6 }),
+    key(B.end, V(-0.1, 1.57, -0.62), LURK_HEAD, 340),
   ], [
     { t: B.engage, strength: 0.35 }, { t: B.crack, strength: 0.2 }, { t: B.hit1, strength: 1.3, kick: 0.08 }, { t: B.hit2, strength: 1.0, kick: 0.05 }, { t: B.hit3, strength: 1.2, kick: 0.1 },
     { t: B.breach, strength: 0.7 }, { t: B.release, strength: 0.3 }, { t: B.shut, strength: 1.7, kick: 0.18 },
     ...[0, 0.27, 0.54, 0.81].map(dt => ({ t: B.bolts + dt, strength: 0.15 })),
     { t: B.pound1, strength: 0.9, kick: 0.06 }, { t: B.pound2, strength: 0.8, kick: 0.04 }, { t: B.scrape, strength: 0.2 }, { t: B.pound3, strength: 0.3 }, { t: B.pound4, strength: 0.15 },
+    { t: B.flick + 0.12, strength: 0.25 }, { t: B.lunge, strength: 0.9, kick: -0.06 },
   ] satisfies Impact[], STEP_RATE);
 
   // ---------- per-frame drawing ----------
@@ -310,31 +366,15 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
       if (flash) { g.fillStyle = red; g.fillText('!! MOTOR NOISE 112 dB !!', 6, 108); }
     }
   }
-  // The feed: it stands by the fence, turns its head at the noise, then charges into the lens.
-  const ASPECT = feedTarget.height / feedTarget.width;
-  function drawFeed(t: number): void {
-    const charge = clamp01((t - B.charge) / (B.fill - B.charge));
-    const u = track(t, [[B.charge, 0.665], [B.charge + 0.5, 0.69], [B.charge + 1.0, 0.74], [B.charge + 1.35, 0.79], [B.fill, 0.7]]);
-    const v = track(t, [[B.charge, 0.33], [B.charge + 0.5, 0.45], [B.charge + 1.0, 0.62], [B.charge + 1.35, 0.86], [B.fill, 1.3]]);
-    const s = track(t, [[B.charge, 0.06], [B.charge + 0.5, 0.085], [B.charge + 1.0, 0.16], [B.charge + 1.35, 0.4], [B.fill, 1.2]]);
-    const stride = charge > 0 ? Math.sin(t * Math.PI * 2 * 2.6) : 0;
-    feedFigure.position.set(u, 1 - v + Math.abs(stride) * 0.006 * s * 10, 0);
-    feedFigure.scale.set(s * ASPECT * 1.5 * (stride < 0 ? -1 : 1), s, s);
-    feedFigure.rotation.set(0.25 + 0.3 * charge, track(t, [[B.turnHead, Math.PI / 2], [B.turnHead + 0.5, 0.15], [B.charge, 0.15], [B.charge + 0.3, 0.5]]), Math.sin(t * 1.7) * 0.03 * (1 - charge));
-    const g = overlay.canvas.getContext('2d')!, w = overlay.canvas.width, h = overlay.canvas.height, step = Math.floor(t * 12);
-    g.clearRect(0, 0, w, h);
-    if (t >= B.cut) { // the feed dies
-      for (let y = 0; y < h; y += 4) for (let x = 0; x < w; x += 4) { const n = hash(step * 977 + x * 13 + y * 71); g.fillStyle = `rgba(190,190,176,${0.25 + 0.7 * n})`; g.fillRect(x, y, 4, 4); }
-      g.fillStyle = '#05070a'; g.fillRect(52, 58, 152, 28); g.fillStyle = red; g.font = 'bold 20px monospace'; g.fillText('SIGNAL LOST', 62, 79);
-    } else {
-      g.fillStyle = 'rgba(10,24,16,0.28)'; g.fillRect(0, 0, w, h);
-      for (let y = step % 3; y < h; y += 3) { g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0, y, w, 1); }
-      if (t > B.fill - 0.4) for (let i = 0; i < 6; i++) { const y = hash(step * 31 + i) * h; g.fillStyle = 'rgba(200,210,190,0.35)'; g.fillRect(0, y, w, 2); }
-      g.fillStyle = '#d7dcc0'; g.font = 'bold 10px monospace'; g.fillText('CAM A · CLEARING', 6, 13);
-      g.fillText(`02:47:${String(10 + Math.floor(t)).padStart(2, '0')}`, 6, h - 6);
-      if (Math.floor(t * 1.5) % 2 === 0) { g.fillStyle = red; g.beginPath(); g.arc(w - 30, 9, 3, 0, Math.PI * 2); g.fill(); g.fillText('REC', w - 24, 13); }
-    }
-    overlay.map.needsUpdate = true;
+  // The scope shows the range the sweep last sampled, as in the game, but sweeps every SCOPE.period
+  // (the game's display turns once per 4 s of its clock). The status unit's exposure needle swings
+  // into the red once the motor runs.
+  const BEARING = SCOPE.bearing;
+  function drawScreens(t: number): void {
+    const sweepClock = 400 + 4 * (t - SCOPE.start) / SCOPE.period;
+    drawSonar(sonar, { time: sweepClock, power: 'on', creature: { sensorDistance: contactAt(lastPing(t)), sensorBearing: BEARING } } as RenderState);
+    const exposure = track(t, [[0, 38], [B.engage, 40], [B.engage + 1.4, 88], [B.crack + 1, 100]]);
+    drawStatus(status, { time: t, power: 'on', survival: { secondsLeft: Math.max(0, Math.round(71 - t)), cells: 1, maxCells: 3, exposure } } as RenderState);
   }
 
   const flickerOf = (t: number) => {
@@ -345,7 +385,7 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
 
   function renderAt(t: number): void {
     rig.apply(camera, t);
-    const fovCut = track(t, [[B.toMonitor + 0.5, 0], [B.cctv, -15], [B.cut, -15], [B.cut + 0.3, 0], [B.hit3 + 0.1, 0], [B.hit3 + 0.9, -22], [B.go, -22], [B.go + 0.5, 0]]);
+    const fovCut = track(t, [[B.toScope + 0.5, 0], [B.scope, -12], [B.whip - 0.2, -12], [B.whip + 0.1, 0], [B.hit3 + 0.1, 0], [B.hit3 + 0.9, -22], [B.go, -22], [B.go + 0.5, 0]]);
     camera.fov += fovCut; camera.updateProjectionMatrix();
 
     // The basement door: locks released, the leaf grinding open, then dropped shut and pounded.
@@ -401,7 +441,7 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
     overhead.intensity = roomOn ? 2.4 * flicker * sag * (t >= B.hit2 ? 0.4 : 1) : 0;
     deskLamp.intensity = roomOn ? 4.5 * flicker * sag : 0; task.intensity = roomOn ? 9 * flicker * sag : 0; glow(lampFace, roomOn ? 0.5 * flicker * sag : 0);
     doorLamp.intensity = roomOn ? 3.2 * flicker : 0;
-    emergency.intensity = roomOn ? 1.4 : 0; screenGlow.intensity = roomOn ? 0.8 * (t < B.cut ? 1 : 0.6) : 0;
+    emergency.intensity = roomOn ? 1.4 : 0; screenGlow.intensity = roomOn ? 0.8 * flicker : 0;
     const siren = engaged ? 0.15 + 0.85 * pulse(t, 0.9, 4) : 0;
     alarm.intensity = roomOn ? 2.5 * siren : 0; glow(alarmBulb, 0.3 + 2.6 * siren);
     shelterRed.intensity = roomOn && engaged ? 3.5 * siren * flicker : 0;
@@ -421,22 +461,37 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
     slitRed.intensity = t < B.shut ? 5 * ramp(t, B.breach, B.breach + 0.3) : 0;
     rim.intensity = creature.visible ? 7 : 0; rim.position.copy(creature.position).add(new THREE.Vector3(0.3, 2.8, 1.1));
     stairLamps.forEach((l, i) => { l.intensity = (i === 0 ? red : t > B.turnAway ? 5 : 0.4 * red) * (0.92 + 0.08 * hash(Math.floor(t * 9) + i * 13)); });
-    // Once the door is shut the flashlight comes on for the way down.
-    const torch = t >= B.turnAway + 0.5 && t < B.black;
+    // Once the door is shut the flashlight comes on for the way down. In the vault it fails: off,
+    // back on with the shape nearer, off again, on as it lunges, then gone.
+    const dark = (t >= B.flick && t < B.flick + 0.12) || (t >= B.lunge - 0.08 && t < B.lunge);
+    const torch = t >= B.turnAway + 0.5 && t < B.out && !dark;
     flashlight.intensity = torch ? 26 * (0.96 + 0.04 * hash(Math.floor(t * 24))) : 0;
+    flashlight.angle = t >= B.bottom ? 0.56 : 0.42; flashlight.penumbra = t >= B.bottom ? 0.75 : 0.55;
+    spill.intensity = torch ? (t >= B.bottom - 0.5 ? 1.1 : 0.3) : 0;
     glow(lens, torch ? 2.5 : 0.05);
     fog.density = t < B.through ? 0.055 : 0.08;
 
     // Arms: the left hand reaches for the lever; the right holds the torch on the stairs.
-    arms.visible = t >= B.lever - 0.35 && t < B.black;
+    arms.visible = t >= B.lever - 0.35 && t < B.out;
     const reach = ramp(t, B.lever - 0.3, B.lever + 0.05) * (1 - ramp(t, B.release + 0.2, B.release + 0.7)), pull = ramp(t, B.lever + 0.1, B.release);
     const holding = ramp(t, B.turnAway + 0.2, B.turnAway + 0.6), stride = Math.sin(Math.PI * t * STEP_RATE) * ramp(t, B.descend, B.descend + 0.4);
     if (armL) { armL.node.rotation.set(armL.rest.x - 0.9 + reach * 1.45 - pull * 0.45, armL.rest.y - reach * 0.6, armL.rest.z); armL.node.position.z = armRestZ - 0.3 * reach; }
     if (armR) armR.node.rotation.set(armR.rest.x - 0.9 + holding * 0.8 - stride * 0.06, armR.rest.y, armR.rest.z);
 
-    // Screens.
-    drawTerminal(t); term.map.needsUpdate = true;
-    if (t < B.cut + 1) { drawFeed(t); renderer.setRenderTarget(feedTarget); renderer.render(feedScene, feedCamera); renderer.setRenderTarget(null); }
+    // Screens (the room is out of sight once the basement door is shut).
+    if (t < B.shut + 1) { drawTerminal(t); term.map.needsUpdate = true; drawScreens(t); }
+
+    // The vault: the burst tank's lights blink red, the sealed one's glow steady. The shape stands
+    // at the back, rimmed by the red lamp, and comes at you between flickers of the torch.
+    breachedLights.forEach(l => glow(l, 0.3 + 1.6 * pulse(t, 0.7, 6), 0xff2a1a)); sealedLights.forEach(l => glow(l, 0.9));
+    glow(vaultBulb, 0.6 + 0.15 * hash(Math.floor(t * 7)));
+    vaultRed.intensity = t >= B.bottom - 1 && t < B.out ? 3.2 * (0.9 + 0.1 * hash(Math.floor(t * 7) + 5)) : 0;
+    lurker.visible = t >= B.turn && t < B.out;
+    if (lurker.visible) {
+      const near = t >= B.lunge ? 2.4 + 0.7 * ramp(t, B.lunge, B.out) : t >= B.flick + 0.12 ? 1.9 : 0;
+      lurker.position.copy(lurkAt(near));
+      lurker.rotation.set(t >= B.lunge ? 0.45 : 0.08, Math.atan2(toYou.x, toYou.z), t < B.flick ? 0.12 * ramp(t, B.reveal + 0.2, B.flick) : 0.05);
+    }
 
     // Dust.
     for (const d of dust) {
@@ -447,12 +502,12 @@ export async function createEnding(renderer: THREE.WebGLRenderer, prop: PropSour
       m.opacity = d.peak * (1 - k) * ramp(age, 0, 0.12) * ramp(d.sprite.position.distanceTo(camera.position), 0.3, 1.2);
     }
 
-    fadeMaterial.opacity = Math.max(1 - ramp(t, 0, 0.9), ramp(t, B.black - 0.5, B.black));
+    fadeMaterial.opacity = t >= B.out ? 1 : 1 - ramp(t, 0, 0.9);
     post.render(scene, camera, t);
   }
 
   return {
     scene, camera, renderAt,
-    dispose() { scene.traverse(o => { if (o instanceof THREE.Mesh) o.geometry.dispose(); }); feedTarget.dispose(); post.dispose(); renderer.dispose(); },
+    dispose() { scene.traverse(o => { if (o instanceof THREE.Mesh) o.geometry.dispose(); }); sonar.texture.dispose(); status.texture.dispose(); post.dispose(); renderer.dispose(); },
   };
 }

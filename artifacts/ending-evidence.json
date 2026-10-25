@@ -2,8 +2,8 @@
   "passed": true,
   "url": "http://127.0.0.1:5180/tests/fixtures/ending.html",
   "checks": [
-    "ending.mp4 loads and plays (640×360, 38.5 s)",
-    "Captions follow the ending timeline: motor, the shelter door, the slam, You escaped.",
+    "ending.mp4 loads and plays (640×360, 46.0 s)",
+    "Captions follow the ending timeline: motor, the sonar, the shelter door, the slam, the breathing, You are not alone down here.",
     "Skip ends the film and hands over to the run report"
   ],
   "errors": [],
