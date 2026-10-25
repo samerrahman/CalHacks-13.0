@@ -5,19 +5,20 @@ import './signals.css';
 
 /** Start-of-game camera check. Shows the controller-owned stream only (never a second camera). */
 export default function VideoCheck({sensor,stream,desktop,withFriend=false,onEnable,onSimulated,onSkip,onContinue,onBack}:{sensor:SensorView;stream:MediaStream|null;desktop:boolean;withFriend?:boolean;onEnable:()=>void;onSimulated:()=>void;onSkip:()=>void;onContinue:()=>void;onBack?:()=>void}){
+ const canCapture=desktop||typeof navigator!=='undefined'&&!!navigator.mediaDevices?.getUserMedia;
  const video=useRef<HTMLVideoElement>(null),[passed,setPassed]=useState(false);
- const check=signalCheck(sensor,desktop),lost=['failed','needs-camera','needs-desktop'].includes(check.state);
+ const check=signalCheck(sensor,canCapture),lost=['failed','needs-camera','needs-desktop'].includes(check.state);
  useEffect(()=>{if(check.state==='ok')setPassed(true);else if(lost)setPassed(false)},[check.state,lost]);
  useEffect(()=>{const element=video.current;if(element){element.srcObject=stream;if(stream)void element.play().catch(()=>{});}return()=>{if(element)element.srcObject=null}},[stream]);
  const ready=check.state==='ok'||passed&&!lost,live=!!stream&&sensor.source==='presage';
- const browserFriend=withFriend&&!desktop&&check.state==='needs-desktop';
+ const browserFriend=withFriend&&!canCapture&&check.state==='needs-desktop';
  const badge=check.state==='ok'?(check.simulated?'SIMULATED':'SIGNAL OK'):check.state==='warming'?`WARMING${check.secondsLeft?` · ${check.secondsLeft}s`:''}`:check.state.replace('-',' ').toUpperCase();
  return <main className="video-check" aria-label="Camera signal check"><div className="video-check-card">
   <div className="eyebrow">SIGNAL CHECK / PERSONAL CAMERA</div>
   <h2>Quick camera check</h2>
   <div className="video-check-preview">
    <video ref={video} autoPlay muted playsInline aria-label="Your local mirrored webcam preview"/>
-   {!live&&<div className="video-check-empty"><span>◎</span><p>{check.simulated?'SIMULATED · no camera':desktop?'Camera off':'Desktop app required'}</p></div>}
+   {!live&&<div className="video-check-empty"><span>◎</span><p>{check.simulated?'SIMULATED · no camera':canCapture?'Camera off':'Desktop app required'}</p></div>}
    {live&&<svg className="video-check-guide" viewBox="0 0 400 225" aria-hidden="true"><ellipse cx="200" cy="72" rx="36" ry="45"/><path d="M168 117L156 133Q108 139 99 168L88 225M232 117L244 133Q292 139 301 168L312 225"/></svg>}
    <span className="video-check-label">{live?'CAMERA ON · NOT RECORDED':check.simulated?'SIMULATED':'CAMERA OFF'}</span>
   </div>

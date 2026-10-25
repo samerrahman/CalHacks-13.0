@@ -15,17 +15,17 @@ body .setup{--watcher:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 body .setup-backdrop{position:fixed;inset:0;pointer-events:none;overflow:hidden;background:#010202}
 body .setup-dark,body .setup-lit{position:absolute;inset:0}
 /* Outside the beam the forest is barely there. */
-body .setup-dark{opacity:.16;filter:brightness(.6)}
-body .setup-forest{position:absolute;inset:-3%;background-position:center bottom;background-size:cover;background-repeat:no-repeat}
-body .setup-forest.far{background-image:var(--forest-far);filter:blur(6px)}
-body .setup-forest.mid{background-image:var(--forest-mid);filter:blur(3px)}
-body .setup-forest.near{background-image:var(--forest-near);filter:blur(1.2px)}
-body .setup-forest.frame{z-index:3;background-image:var(--forest-frame);filter:blur(5px) brightness(.4)}
-body .setup-lit{background:radial-gradient(ellipse 60% 50% at 50% 45%,#2c3a33,#0d1411 70%);
+body .setup-dark{opacity:.12;contain:paint}
+body .setup-forest{position:absolute;inset:-3%;background-position:center bottom;background-size:cover;background-repeat:no-repeat;transform:translateZ(0)}
+body .setup-forest.far{background-image:var(--forest-far);opacity:.75}
+body .setup-forest.mid{background-image:var(--forest-mid);opacity:.9}
+body .setup-forest.near{background-image:var(--forest-near)}
+body .setup-forest.frame{z-index:3;background-image:var(--forest-frame);opacity:.85}
+body .setup-lit{background:radial-gradient(ellipse 60% 50% at 50% 45%,#2c3a33,#0d1411 70%);contain:paint;will-change:mask-position,-webkit-mask-position;
  -webkit-mask-image:radial-gradient(circle closest-side,#000 0,#000c 30%,#0005 58%,transparent 100%);mask-image:radial-gradient(circle closest-side,#000 0,#000c 30%,#0005 58%,transparent 100%);
  -webkit-mask-size:56vmax 56vmax;mask-size:56vmax 56vmax;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation:torch 18s ease-in-out infinite}
-body .setup-beam{position:absolute;inset:0;z-index:2;background:radial-gradient(circle closest-side,#fff1d424,#ffe6b80d 45%,transparent 100%) no-repeat;background-size:56vmax 56vmax;mix-blend-mode:screen;animation:torch-light 18s ease-in-out infinite}
-body .setup-fog{position:absolute;left:-30%;right:-30%;height:45%;background:radial-gradient(ellipse 30% 40% at 25% 50%,#9fb4a840,transparent 70%),radial-gradient(ellipse 35% 45% at 70% 55%,#9fb4a833,transparent 70%);filter:blur(20px)}
+body .setup-beam{position:absolute;inset:0;z-index:2;background:radial-gradient(circle closest-side,#fff1d424,#ffe6b80d 45%,transparent 100%) no-repeat;background-size:56vmax 56vmax;mix-blend-mode:screen;will-change:background-position;animation:torch-light 18s ease-in-out infinite}
+body .setup-fog{position:absolute;left:-30%;right:-30%;height:45%;background:radial-gradient(ellipse 30% 40% at 25% 50%,#9fb4a836,transparent 70%),radial-gradient(ellipse 35% 45% at 70% 55%,#9fb4a828,transparent 70%);will-change:transform}
 body .setup-fog.f2{bottom:28%;animation:fog-drift 63s linear infinite alternate-reverse}
 body .setup-fog.f1{bottom:10%;animation:fog-drift 46s linear infinite alternate}
 /* The watcher: only there on some passes of the beam, and never moving while you look. */

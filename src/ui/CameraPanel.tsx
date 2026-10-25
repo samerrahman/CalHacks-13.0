@@ -3,6 +3,7 @@ import type {SensorView} from '../sensing/types';
 import PulseMonitor from './PulseMonitor';
 
 export default function CameraPanel({sensor,stream,onStart,onStop,onDevice,desktop,deviceId,onReadyStart,readyLabel='Start calibrated game →'}:{sensor:SensorView;stream:MediaStream|null;onStart:()=>void;onStop:()=>void;onDevice:(id:string)=>void;desktop:boolean;deviceId:string;onReadyStart?:()=>void;readyLabel?:string}){
+ const canCapture=desktop||typeof navigator!=='undefined'&&!!navigator.mediaDevices?.getUserMedia;
  const video=useRef<HTMLVideoElement>(null);
  const[devices,setDevices]=useState<MediaDeviceInfo[]>([]);
  const refresh=()=>{void navigator.mediaDevices?.enumerateDevices().then(list=>setDevices(list.filter(d=>d.kind==='videoinput'))).catch(()=>setDevices([]));};
@@ -13,7 +14,7 @@ export default function CameraPanel({sensor,stream,onStart,onStop,onDevice,deskt
  return <section className="camera-calibration" aria-label="Personal camera and pulse calibration">
   <div className="eyebrow">PERSONAL CAMERA / PRESAGE</div>
   <div className="camera-preview"><video ref={video} autoPlay muted playsInline aria-label="Your local mirrored webcam preview"/>
-   {!active&&<div className="preview-empty"><span>◎</span><p>{desktop?'Camera off':'Desktop camera required'}</p><small>{desktop?'Enable below to frame your face and upper chest.':'Run npm run desktop to enable Presage.'}</small></div>}
+   {!active&&<div className="preview-empty"><span>◎</span><p>{canCapture?'Camera off':'Camera unavailable'}</p><small>{canCapture?'Enable below to frame your face and upper chest.':'Allow webcam access in your browser or run npm run desktop.'}</small></div>}
    {active&&<svg className="body-guide" viewBox="0 0 400 225" aria-hidden="true"><ellipse cx="200" cy="66" rx="34" ry="43"/><path d="M170 109L158 126Q109 132 100 162L87 215M230 109L242 126Q291 132 300 162L313 215M111 164H289"/><text x="200" y="199">FACE + UPPER CHEST IN FRAME</text></svg>}
    <span className="preview-label">{active?'CAMERA ON · NOT RECORDED':'CAMERA OFF'}</span>
   </div>
@@ -24,7 +25,7 @@ export default function CameraPanel({sensor,stream,onStart,onStop,onDevice,deskt
   <progress aria-label="Pulse baseline calibration" max="30" value={sensor.source==='presage'?sensor.acceptedSeconds:0}/>
   {warming&&<p className="warmup-progress">Pulse warm-up · {Math.ceil(d!.warmupRemainingSeconds)} seconds remaining</p>}
   <p className="camera-guidance" role="status">{sensor.source==='presage'?(d?.blocker||sensor.hint):'Pulse needs a 12-second warm-up, followed by 30 usable seconds for your baseline. Framing or signal warnings pause baseline progress.'}</p>
-  <div className="button-row"><button disabled={!desktop||sensor.status==='starting'} onClick={onStart}>{active?'Recalibrate':'Enable camera & calibrate'}</button><button disabled={!active&&sensor.source!=='presage'} onClick={onStop}>Stop camera</button></div>
+  <div className="button-row"><button disabled={!canCapture||sensor.status==='starting'} onClick={onStart}>{active?'Recalibrate':'Enable camera & calibrate'}</button><button disabled={!active&&sensor.source!=='presage'} onClick={onStop}>Stop camera</button></div>
   {sensor.source==='presage'&&sensor.baselineBpm!==null&&<div className="calibration-ready" role="status"><strong>Baseline calibrated</strong><p>30 usable seconds collected. Your camera and pulse display can continue into the game.</p>{onReadyStart&&<button className="primary" onClick={onReadyStart}>{readyLabel}</button>}</div>}
   {active&&sensor.baselineBpm===null&&<p className="small muted">Keep capture running while you adjust your framing. Recalibrate starts the baseline over.</p>}
   <PulseMonitor sensor={sensor}/>

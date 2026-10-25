@@ -31,7 +31,7 @@ export function createScene(container: HTMLElement): SceneView {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x020303); scene.fog = new THREE.FogExp2(0x040504, .065);
   const camera = new THREE.PerspectiveCamera(63, 1, .04, 25); camera.position.set(.05, 1.62, .60); camera.lookAt(STATION_TARGETS.terminal);
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.35)); renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .79;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;cursor:grab';
@@ -119,7 +119,7 @@ export function createScene(container: HTMLElement): SceneView {
   cctvCamera.position.set(0, 0, 5); cctvCamera.lookAt(0, 0, 0);
   const cctvTarget = new THREE.WebGLRenderTarget(1024, 576, { depthBuffer: true }); cctvTarget.texture.colorSpace = THREE.SRGBColorSpace;
   const feedImages: Partial<Record<CameraFeed | 'SEALED' | 'OFFLINE', THREE.Texture>> = {};
-  let cctvCreature: THREE.Object3D | null = null, lastDisplay = -Infinity, lastFeed: CameraFeed | null = null;
+  let cctvCreature: THREE.Object3D | null = null, lastDisplay = -Infinity, lastFeed: CameraFeed | null = null, wasPaused = false;
   const overlayMaterial = new THREE.MeshBasicMaterial({ map: cctvCaption.texture, transparent: true, depthTest: false, toneMapped: false });
   const cctvOverlay = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), overlayMaterial); cctvOverlay.position.set(.5, .5, 2); cctvOverlay.renderOrder = 100; cctvScene.add(cctvOverlay);
   const decals = [['title', titlePlate], ['protocol_card', protocolPlate], ['camera_notice', cameraPlate], ['sensor_notice', sensorPlate], ['door_label', doorPlate], ['emergency_switch', switchPlate]] as const;
@@ -278,7 +278,7 @@ export function createScene(container: HTMLElement): SceneView {
       }
       // A committed loss freezes simulation; its cosmetic dent can still settle.
       doorMixer?.update(state.status === 'lost' ? Math.max(0, Math.min(delta, .1)) : dt); if (!reducedMotion) creatureMixer?.update(dt);
-      if (state.time < lastDisplay || state.time - lastDisplay >= .08 || state.paused || previousPower !== state.power || lastFeed !== state.cameraFeed) { drawTerminal(terminalDisplay, state); drawStatus(statusDisplay, state); remote.draw(state); drawSonar(sonarDisplay, state); lastDisplay = state.time; lastFeed = state.cameraFeed ?? 'A'; }
+      if (state.time < lastDisplay || state.time - lastDisplay >= .08 || !!state.paused !== wasPaused || previousPower !== state.power || lastFeed !== state.cameraFeed) { drawTerminal(terminalDisplay, state); drawStatus(statusDisplay, state); remote.draw(state); drawSonar(sonarDisplay, state); lastDisplay = state.time; lastFeed = state.cameraFeed ?? 'A'; wasPaused = !!state.paused; }
       previousPower = state.power; renderer.render(scene, camera);
       // Screen position of the terminal, so the tutorial arrow can point at it now there is no Use terminal prompt.
       const bounds = renderer.domElement.getBoundingClientRect(); projected.copy(terminalAnchor).project(camera);

@@ -9,8 +9,23 @@ export function createDisplay(width = 1024, height = 512, _gltf = true) {
   return { canvas, context, texture };
 }
 export type Display = ReturnType<typeof createDisplay>;
+const glassCache = new WeakMap<Display, HTMLCanvasElement>();
 function wornGlass(display: Display, width: number, height: number) {
   const ctx = display.context;
+  if (display.canvas && typeof ctx.drawImage === 'function' && typeof document !== 'undefined') {
+    let cached = glassCache.get(display);
+    if (!cached) {
+      cached = document.createElement('canvas'); cached.width = width; cached.height = height;
+      const gctx = cached.getContext('2d')!;
+      gctx.fillStyle = 'rgba(0,0,0,.13)'; for (let y = 0; y < height; y += 4) gctx.fillRect(0, y, width, 1);
+      const edge = gctx.createRadialGradient(width * .5, height * .48, height * .18, width * .5, height * .5, width * .62);
+      edge.addColorStop(0, 'rgba(3,4,2,0)'); edge.addColorStop(.75, 'rgba(3,4,2,.16)'); edge.addColorStop(1, 'rgba(3,4,2,.70)');
+      gctx.fillStyle = edge; gctx.fillRect(0, 0, width, height);
+      glassCache.set(display, cached);
+    }
+    ctx.drawImage(cached, 0, 0);
+    return;
+  }
   ctx.fillStyle = 'rgba(0,0,0,.13)'; for (let y = 0; y < height; y += 4) ctx.fillRect(0, y, width, 1);
   const edge = ctx.createRadialGradient(width * .5, height * .48, height * .18, width * .5, height * .5, width * .62);
   edge.addColorStop(0, 'rgba(3,4,2,0)'); edge.addColorStop(.75, 'rgba(3,4,2,.16)'); edge.addColorStop(1, 'rgba(3,4,2,.70)');
@@ -158,18 +173,16 @@ export function drawStatus(display: Display, state: RenderState): void {
   const left = s?.secondsLeft ?? null, urgent = left !== null && left <= 60;
   const digits = left === null ? null : `${Math.floor(left / 60) % 100}`.padStart(2, '0') + `${left % 60}`.padStart(2, '0');
   const on = urgent ? '#ff3b1c' : '#f0642a', off = '#26100a', size = 88;
-  ctx.shadowColor = on; ctx.shadowBlur = 16;
   [62, 190, 362, 490].forEach((x, i) => sevenSegment(ctx, x, 62, size, digits ? DIGITS[Number(digits[i])]! : 'g', on, off));
   const colon = !digits || state.paused || Math.floor(state.time * (urgent ? 2 : 1)) % 2 === 0;
   ctx.fillStyle = colon ? on : off; for (const y of [118, 182]) { ctx.beginPath(); ctx.arc(320, y, 11, 0, Math.PI * 2); ctx.fill(); }
-  ctx.shadowBlur = 0;
   // Battery cells.
   const cells = s?.maxCells ?? 3;
   for (let i = 0; i < cells; i++) {
     const x = 52 + i * 192, charged = i < (s?.cells ?? 0);
     ctx.fillStyle = '#2b2d23'; ctx.fillRect(x + 50, 312, 46, 20);
     ctx.strokeStyle = charged ? '#a9c06c' : '#3a3d30'; ctx.lineWidth = 7; ctx.strokeRect(x, 332, 146, 186);
-    if (charged) { ctx.shadowColor = '#a9c06c'; ctx.shadowBlur = 16; ctx.fillStyle = '#93ad5a'; for (let bar = 0; bar < 3; bar++) ctx.fillRect(x + 16, 347 + bar * 57, 114, 43); ctx.shadowBlur = 0; }
+    if (charged) { ctx.fillStyle = '#93ad5a'; for (let bar = 0; bar < 3; bar++) ctx.fillRect(x + 16, 347 + bar * 57, 114, 43); }
   }
   // Exposure needle gauge.
   const cx = 320, cy = 770, r = 190;
@@ -182,8 +195,8 @@ export function drawStatus(display: Display, state: RenderState): void {
   for (let tick = 0; tick <= 10; tick++) { const a = Math.PI * (1 + tick / 10), inner = r - (tick % 5 ? 46 : 62); ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * (r - 30), cy + Math.sin(a) * (r - 30)); ctx.lineTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner); ctx.stroke(); }
   if (powered) {
     const share = needle, a = Math.PI * (1 + share);
-    ctx.strokeStyle = share >= .7 ? '#ff6a3a' : '#e7d6a6'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 10;
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (r - 20), cy + Math.sin(a) * (r - 20)); ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.strokeStyle = share >= .7 ? '#ff6a3a' : '#e7d6a6'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (r - 20), cy + Math.sin(a) * (r - 20)); ctx.stroke();
   }
   ctx.fillStyle = '#4a4a3a'; ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI * 2); ctx.fill();
   wornGlass(display, 640, 800); display.texture.needsUpdate = true;
@@ -199,6 +212,7 @@ function sonarGrime(display: Display): HTMLCanvasElement {
   ctx.lineCap = 'round';
   for (let i = 0; i < 26; i++) { const x = rnd() * W, y = rnd() * H, a = rnd() * Math.PI, l = 20 + rnd() * 160; ctx.strokeStyle = `rgba(190,200,170,${.05 + rnd() * .12})`; ctx.lineWidth = .6 + rnd(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke(); }
   ctx.strokeStyle = 'rgba(90,150,90,.07)'; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(W / 2 + 6, H / 2 - 4, H * .3, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = 'rgba(0,0,0,.32)'; for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
   grimes.set(display, canvas); return canvas;
 }
 /** Security monitor as a worn submarine sonar: a phosphor scope, a sweep with afterglow, a contact
@@ -229,7 +243,6 @@ export function drawSonar(display: Display, state: RenderState): void {
     }
   }
   ctx.globalAlpha = on ? .6 : .35; ctx.drawImage(sonarGrime(display), 0, 0); ctx.globalAlpha = 1;
-  ctx.fillStyle = 'rgba(0,0,0,.22)'; for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
   // Unsteady tube: a faint, irregular dimming.
   if (on) { const flicker = Math.sin(state.time * 31) * Math.sin(state.time * 7.3); if (flicker > .6) { ctx.fillStyle = `rgba(0,0,0,${(flicker - .6) * .5})`; ctx.fillRect(0, 0, W, H); } }
   wornGlass(display, W, H); display.texture.needsUpdate = true;
