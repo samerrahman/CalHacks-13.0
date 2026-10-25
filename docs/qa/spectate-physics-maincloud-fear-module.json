@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-25T08:28:09.057Z",
+  "checkedAt": "2026-10-25T10:56:50.172Z",
   "server": "wss://maincloud.spacetimedb.com",
   "database": "scary-5zsk8",
-  "durationMs": 32428,
+  "durationMs": 32380,
   "passed": 15,
   "failed": 0,
   "results": [
@@ -18,7 +18,7 @@
       "ok": true,
       "detail": {
         "moving": 12,
-        "tick": 7
+        "tick": 8
       }
     },
     {
@@ -45,7 +45,7 @@
       "check": "opted-in vitals reach the spectator, labelled simulated, without a server clock",
       "ok": true,
       "detail": {
-        "sessionId": "0ff89cfa848cd857870228a5e0575a6a87e9263d8004596ded5dbbc1bd3d4e12",
+        "sessionId": "294f522650063332741f8a777a266f85949deac7cef04411fa3762daebed8076",
         "sequence": 1,
         "source": "simulated",
         "status": "ready",

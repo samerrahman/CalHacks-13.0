@@ -1,9 +1,9 @@
 {
-  "checkedAt": "2026-10-25T08:27:25.572Z",
+  "checkedAt": "2026-10-25T10:56:17.597Z",
   "server": "wss://maincloud.spacetimedb.com",
   "database": "scary-5zsk8",
-  "durationMs": 30399,
-  "passed": 14,
+  "durationMs": 33392,
+  "passed": 21,
   "failed": 0,
   "results": [
     {
@@ -14,7 +14,7 @@
       "check": "the combined fear reaches the spectator, labelled simulated, without a server clock",
       "ok": true,
       "detail": {
-        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sessionId": "9ad0b32b5426ee8ba8c66b682f9bfd87dc69e072bf7060a570aa469a1f9754c7",
         "sequence": 2,
         "source": "simulated",
         "fearPct": 64
@@ -36,7 +36,7 @@
       "check": "a fear write whose source differs from the vitals row is dropped (simulated stays labelled)",
       "ok": true,
       "detail": {
-        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sessionId": "9ad0b32b5426ee8ba8c66b682f9bfd87dc69e072bf7060a570aa469a1f9754c7",
         "sequence": 2,
         "source": "simulated",
         "fearPct": 64
@@ -46,7 +46,7 @@
       "check": "a later reading replaces the row",
       "ok": true,
       "detail": {
-        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sessionId": "9ad0b32b5426ee8ba8c66b682f9bfd87dc69e072bf7060a570aa469a1f9754c7",
         "sequence": 4,
         "source": "simulated",
         "fearPct": 81
@@ -56,7 +56,7 @@
       "check": "an older sequence never overwrites a newer reading",
       "ok": true,
       "detail": {
-        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sessionId": "9ad0b32b5426ee8ba8c66b682f9bfd87dc69e072bf7060a570aa469a1f9754c7",
         "sequence": 4,
         "source": "simulated",
         "fearPct": 81
@@ -66,13 +66,58 @@
       "check": "a reading with nothing to go on clears the number but keeps the row",
       "ok": true,
       "detail": {
-        "sessionId": "d4788bd596372a71e7c336369a9e9dff77a7ed1cb8cc627f19acd74dda9de7b0",
+        "sessionId": "9ad0b32b5426ee8ba8c66b682f9bfd87dc69e072bf7060a570aa469a1f9754c7",
         "sequence": 5,
         "source": "simulated"
       }
     },
     {
-      "check": "withdrawing consent deletes the fear row for the spectator",
+      "check": "the readings reach the spectator as whole numbers, without a server clock",
+      "ok": true,
+      "detail": {
+        "sessionId": "9ad0b32b5426ee8ba8c66b682f9bfd87dc69e072bf7060a570aa469a1f9754c7",
+        "sequence": 6,
+        "source": "simulated",
+        "breathingRpm": 18,
+        "emotion": "fear",
+        "emotionPct": 41,
+        "blinksPerMinute": 24,
+        "hrvMs": 36
+      }
+    },
+    {
+      "check": "an unknown expression is rejected",
+      "ok": true
+    },
+    {
+      "check": "an expression without its strength is rejected",
+      "ok": true
+    },
+    {
+      "check": "an implausible breathing rate is rejected",
+      "ok": true
+    },
+    {
+      "check": "a wrong owner capability cannot write the readings",
+      "ok": true
+    },
+    {
+      "check": "a later reading replaces the row, and unmeasured fields stay empty",
+      "ok": true,
+      "detail": {
+        "sessionId": "9ad0b32b5426ee8ba8c66b682f9bfd87dc69e072bf7060a570aa469a1f9754c7",
+        "sequence": 7,
+        "source": "simulated",
+        "blinksPerMinute": 20,
+        "hrvMs": 36
+      }
+    },
+    {
+      "check": "withdrawing consent deletes the fear and readings rows for the spectator",
+      "ok": true
+    },
+    {
+      "check": "a readings write landing after the withdrawal is dropped",
       "ok": true
     },
     {
@@ -80,15 +125,15 @@
       "ok": true
     },
     {
-      "check": "an abandoned fear row is swept with its vitals within 21 s",
+      "check": "abandoned fear and readings rows are swept with their vitals within 21 s",
       "ok": true
     },
     {
-      "check": "a spectator with the wrong capability receives no fear rows",
+      "check": "a spectator with the wrong capability receives no fear or readings rows",
       "ok": true
     },
     {
-      "check": "removing the session removes the fear row",
+      "check": "removing the session removes the fear and readings rows",
       "ok": true
     }
   ]
