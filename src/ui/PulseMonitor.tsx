@@ -1,10 +1,13 @@
 import type {SensorView} from '../sensing/types';
-import {readVitals,sharedVitals} from './vitalsHold';
+import {readEmotion,readVitals,sharedEmotion,sharedVitals,type EmotionLabel} from './vitalsHold';
 import './vitals-status.css';
 
-/** Local readout. No synthetic waveform or inferred diagnosis. When the estimate drops out, the last accepted pulse and breathing stay on screen and stop updating (see vitalsHold). */
+const MOOD:Record<EmotionLabel,string>={'FEAR / STARTLE':'FEAR',TENSE:'TENSE',CALM:'CALM',CALIBRATING:'CALIBRATING'};
+
+/** Local readout. Emotion (fear / startle) and breathing lead; pulse sits beside them. No synthetic waveform or diagnosis. When an estimate drops out, the last accepted value stays on screen and stops updating (see vitalsHold). */
 export default function PulseMonitor({sensor,compact=false,onOpen}:{sensor:SensorView;compact?:boolean;onOpen?:()=>void}){
- const d=sensor.diagnostics,v=readVitals(sharedVitals,sensor),pulse=v.pulse,breath=v.breathing,live=v.pulseLive,shown=pulse!==null;
+ const d=sensor.diagnostics,v=readVitals(sharedVitals,sensor),e=readEmotion(sensor),pulse=v.pulse,breath=v.breathing,live=v.pulseLive,shown=pulse!==null;
+ const src=sensor.source==='simulated'?'SIMULATED':'Presage',moodBasis=e.live?`live · ${src}`:e.fearPct===null?'waiting for a reading':sharedEmotion.fearPct!==null?`held · ${src}`:'est. from pulse';
  const breathHint=breath!==null?(v.breathingLive?'Live breathing estimate':'Breathing estimate'):d?.breathingWarmupRemainingSeconds?`Breathing warm-up · ${Math.ceil(d.breathingWarmupRemainingSeconds)}s`:'Waiting for a breathing estimate';
  const simulated=sensor.source==='simulated',baseline=sensor.baselineBpm;
  const state=sensor.source==='manual'?'CAMERA OFF':sensor.status==='paused'?'CAPTURE PAUSED':shown?(simulated?'SIMULATED SIGNAL':'PRESAGE SIGNAL'):d?.warmupRemainingSeconds?'WARMING UP':sensor.status==='unavailable'?'CAPTURE UNAVAILABLE':'ACQUIRING SIGNAL';
@@ -12,7 +15,7 @@ export default function PulseMonitor({sensor,compact=false,onOpen}:{sensor:Senso
  const reason=d?.blocker||sensor.hint;
  return <section className={`pulse-monitor ${compact?'compact':''}`} aria-label="Live pulse monitor">
   <div className="vitals-heading"><span>{simulated?'SIMULATED · NOT A LIVE READING':'PERSONAL VITALS'}</span>{onOpen&&<button onClick={onOpen} aria-label="Open pulse monitor settings">↗</button>}</div>
-  <div className="vitals-grid"><div className="vital-primary"><span>PULSE</span><strong data-testid="current-pulse">{pulse===null?'—':Math.round(pulse)}</strong><small>BPM</small></div><div><span>BREATHING</span><strong data-testid="current-breathing">{breath===null?'—':Math.round(breath)}</strong><small>breaths / min</small></div></div>
+  <div className="vitals-grid"><div className={`vital-primary vital-emotion mood-${MOOD[e.label].toLowerCase()}`}><span>EMOTION · FEAR</span><strong data-testid="current-fear">{e.fearPct===null?<em>CALIBRATING</em>:<>{e.fearPct}%<em> · {MOOD[e.label]}</em></>}</strong><small>{moodBasis}</small></div><div className="vital-primary"><span>BREATHING</span><strong data-testid="current-breathing">{breath===null?'—':Math.round(breath)}</strong><small>breaths / min</small></div><div className="vital-secondary"><span>PULSE</span><strong data-testid="current-pulse">{pulse===null?'—':Math.round(pulse)}</strong><small>BPM</small></div></div>
   <p className="breathing-signal" data-testid="breathing-status">{breathHint}</p>
   <div className={`vitals-signal ${live?'accepted':shown?'steady':''}`}><i/>{state}</div>
   <div className="pulse-level"><div><span>Pulse level</span><b>{baseline===null?'Baseline collecting':`Baseline ${Math.round(baseline)}`}</b></div><div className="pulse-level-track" role="meter" aria-label="Current pulse level" aria-valuemin={40} aria-valuemax={110} aria-valuenow={pulse??undefined} aria-valuetext={pulse===null?'No accepted reading':`${Math.round(pulse)} beats per minute${live?'':', last accepted reading'}`}>

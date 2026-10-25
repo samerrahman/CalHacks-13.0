@@ -170,7 +170,7 @@ export function createScene(container: HTMLElement, onProgress?: (loaded: number
     const feed = state.cameraFeed ?? 'A', powered = state.power === 'on', sealed = state.status === 'won'; diagnostics.cameraFeed = feed;
     cctvScene.background = powered ? (feedImages[feed === 'C' && sealed ? 'SEALED' : feed] ?? new THREE.Color(0x09110c)) : (feedImages.OFFLINE ?? new THREE.Color(0x020705));
     const corruption = scareStrength(state.time, state.scare, reducedMotion, state.softScares);
-    const projection = powered && corruption < .3 ? projectCreature(feed, state.creature.position, sealed) : null; diagnostics.silhouetteVisible = !!projection;
+    const projection = powered && corruption < .3 && !state.blind ? projectCreature(feed, state.creature.position, sealed) : null; diagnostics.silhouetteVisible = !!projection;
     if (cctvCreature) { cctvCreature.visible = !!projection; if (projection) { cctvCreature.position.set(projection.x, 1 - projection.y, 0); cctvCreature.scale.setScalar(projection.scale); } }
     drawCameraOverlay(cctvCaption, state, corruption, reducedMotion);
     renderer.setRenderTarget(cctvTarget); renderer.render(cctvScene, cctvCamera); renderer.setRenderTarget(null);

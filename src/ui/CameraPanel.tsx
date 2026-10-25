@@ -1,14 +1,13 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useRef} from 'react';
 import type {SensorView} from '../sensing/types';
 import PulseMonitor from './PulseMonitor';
+import {useCameraDevices} from './useCameraDevices';
 
 export default function CameraPanel({sensor,stream,onStart,onStop,onDevice,desktop,deviceId,onReadyStart,readyLabel='Start calibrated game →'}:{sensor:SensorView;stream:MediaStream|null;onStart:()=>void;onStop:()=>void;onDevice:(id:string)=>void;desktop:boolean;deviceId:string;onReadyStart?:()=>void;readyLabel?:string}){
  const canCapture=desktop||typeof navigator!=='undefined'&&!!navigator.mediaDevices?.getUserMedia;
  const video=useRef<HTMLVideoElement>(null);
- const[devices,setDevices]=useState<MediaDeviceInfo[]>([]);
- const refresh=()=>{void navigator.mediaDevices?.enumerateDevices().then(list=>setDevices(list.filter(d=>d.kind==='videoinput'))).catch(()=>setDevices([]));};
- useEffect(()=>{refresh();navigator.mediaDevices?.addEventListener('devicechange',refresh);return()=>navigator.mediaDevices?.removeEventListener('devicechange',refresh)},[]);
- useEffect(()=>{const element=video.current;if(element){element.srcObject=stream;if(stream)void element.play().catch(()=>{});}if(stream)refresh();return()=>{if(element)element.srcObject=null}},[stream]);
+ const devices=useCameraDevices(stream);
+ useEffect(()=>{const element=video.current;if(element){element.srcObject=stream;if(stream)void element.play().catch(()=>{});}return()=>{if(element)element.srcObject=null}},[stream]);
  const active=!!stream,d=sensor.diagnostics;
  const warming=active&&!!d&&d.warmupRemainingSeconds>0;
  return <section className="camera-calibration" aria-label="Personal camera and pulse calibration">

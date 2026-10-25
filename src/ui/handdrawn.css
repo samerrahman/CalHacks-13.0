@@ -162,3 +162,5 @@ body .setup-loader{position:relative;z-index:8;display:flex;flex-direction:colum
 body .setup-loader-bar{width:min(380px,68vw);height:2px;background:#1a1412;overflow:hidden;position:relative}
 body .setup-loader-fill{height:100%;background:#b8261a;box-shadow:0 0 10px #ff3a1a88;transition:width .18s ease-out}
 body .results .screen-left>p.small+.worn-menu{margin-top:5vh}
+/* Sharing choices sit in the main setup flow, not only behind Operator settings. */
+.setup-sharing{display:grid;gap:5px;margin:12px auto 0;max-width:440px;text-align:left}.setup-sharing .check:has(input:disabled){opacity:.5}.setup-sharing p{margin:2px 0 0}

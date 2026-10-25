@@ -59,6 +59,24 @@ await wait(300);
 check('a late (lower sequence) write is ignored', page?.kind === 'wires');
 check('a friend with the wrong capability receives no rows', strangerRows === 0);
 
+// v2 pages: memory, locate and calm reach the friend; a malformed one of each is refused.
+let next = first + 30;
+const v2 = [
+  { kind: 'memory', stage: 2, panel: 1, panels: 0, size: 0, start: 0, end: 0, values: [3, 1, 4] },
+  { kind: 'locate', stage: 3, panel: 0, panels: 3, size: 0, start: 0, end: 0, values: [1, 2] },
+  { kind: 'calm', stage: 4, panel: 1, panels: 12, size: 42, start: 17, end: 6, values: [] },
+];
+for (const row of v2) {
+  await wait(300);
+  await player.reducers.publishManual({ id, ownerCapability: owner, sequence: next++, ...row, values: Uint8Array.from(row.values) });
+  await wait(400);
+  check(`a ${row.kind} page reaches the friend`, page?.kind === row.kind && JSON.stringify([...page.values]) === JSON.stringify(row.values), page && { kind: page.kind, values: [...page.values] });
+}
+await wait(300);
+check('a memory page with a digit over 4 is refused', await refused(() => player.reducers.publishManual({ id, ownerCapability: owner, sequence: next++, ...v2[0]!, values: Uint8Array.from([3, 5]) })));
+check('a locate page out of order is refused', await refused(() => player.reducers.publishManual({ id, ownerCapability: owner, sequence: next++, ...v2[1]!, values: Uint8Array.from([2, 1]) })));
+check('a calm page past its half-breath is refused', await refused(() => player.reducers.publishManual({ id, ownerCapability: owner, sequence: next++, ...v2[2]!, start: 43, values: new Uint8Array(0) })));
+
 await player.reducers.removeSession({ id, ownerCapability: owner });
 await wait(500);
 check('removing the session deletes the manual for the friend', page === null && trace === null);

@@ -11,6 +11,9 @@ const pages: CoopManual[] = [
   { kind: 'faults', stage: 3, sounds: [1, 3, 0, 2] },
   { kind: 'wires', stage: 1, panel: 0, panels: 1, sockets: [4, 0, 5, 1, 3, 2] },
   { kind: 'routing', stage: 1, size: 4, start: 2, end: 0, tiles: [0, 10, 12, 0, 3, 9, 5, 0, 10, 10, 6, 0, 0, 0, 0, 0] },
+  { kind: 'memory', stage: 4, sequence: [3, 1, 4, 4, 2], entered: 2, playing: false },
+  { kind: 'locate', stage: 3, rings: [1, 2], marks: 1, required: 3 },
+  { kind: 'calm', stage: 4, inhale: false, halfTenths: 42, elapsedTenths: 17, progress: 6, required: 12 },
 ];
 const channelName = `hush-${'c'.repeat(64)}`;
 const watch = `#watch=${encodeURIComponent(btoa(JSON.stringify({ channel: channelName })))}`;
@@ -25,6 +28,9 @@ test('manual rows round-trip, and malformed rows read as no page', () => {
     { ...manualRow(pages[0]!), values: [0, 0, 1, 2] }, { ...manualRow(pages[0]!), stage: 2 }, { ...manualRow(pages[0]!), panel: 1 },
     { ...manualRow(pages[1]!), panel: 1 }, { ...manualRow(pages[1]!), values: [0, 1, 2, 3, 4, 5, 6] },
     { ...manualRow(pages[2]!), values: [16, ...Array(15).fill(0)] }, { ...manualRow(pages[2]!), stage: 3 }, { ...manualRow(pages[2]!), values: Array(37).fill(0) }, { ...manualRow(pages[2]!), start: 4 },
+    { ...manualRow(pages[3]!), values: [3, 5] }, { ...manualRow(pages[3]!), stage: 3 }, { ...manualRow(pages[3]!), panel: 6 }, { ...manualRow(pages[3]!), size: 1 },
+    { ...manualRow(pages[4]!), values: [2, 1] }, { ...manualRow(pages[4]!), values: [4] }, { ...manualRow(pages[4]!), panel: 3 }, { ...manualRow(pages[4]!), stage: 1 },
+    { ...manualRow(pages[5]!), start: 43 }, { ...manualRow(pages[5]!), end: 13 }, { ...manualRow(pages[5]!), values: [1] }, { ...manualRow(pages[5]!), panel: 2 }, { ...manualRow(pages[5]!), stage: 2 },
   ];
   for (const row of bad) { assert.equal(manualFromRow(row), null, JSON.stringify(row)); if (row && typeof row === 'object') assert.equal(manualRowValid(row as ManualRow), false); }
 });

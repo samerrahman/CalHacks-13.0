@@ -22,6 +22,8 @@ export interface RenderState {
   breathMatched?: boolean;
   creature: { position: WorldPosition; phase: string; distance: number; sensorDistance?: number | null; sensorSampleAt?: number; sensorBearing?: number };
   cameraFeed?: CameraFeed;
+  /** Co-op locate: the friend holds the reading, so no feed, radar or range shows the creature. */
+  blind?: boolean;
   status?: 'playing' | 'won' | 'lost';
   warningRemaining?: number | null;
   doorImpactAt?: number | null;

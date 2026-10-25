@@ -3,6 +3,7 @@ import type { CoopManual as Manual } from '../game/coop';
 import { socketCode } from '../game/coop';
 import { FAULT_SOUNDS } from '../game/tasks';
 import { CoopManualFeed, currentManual, type CoopFeedState } from '../integrations/coop';
+import { SECTORS } from './ThinkingTasks';
 import { WIRE_COLORS, WIRE_SYMBOLS } from './WirePuzzle';
 import './coop.css';
 
@@ -42,13 +43,44 @@ function Routing({ manual }: { manual: Extract<Manual, { kind: 'routing' }> }) {
   </>;
 }
 
-const TITLES: Record<Manual['kind'], string> = { faults: 'Rack sound key', wires: 'Cable patch', routing: 'Conduit route' };
+function Memory({ manual }: { manual: Extract<Manual, { kind: 'memory' }> }) {
+  return <>
+    <p>{manual.playing ? 'The terminal is playing the sequence to them, but they only see static. Get ready to read it out.' : 'Read the sequence out, one digit at a time. A wrong digit wipes what they entered; start again from the first.'}</p>
+    <ol className="coop-sequence" aria-label={`Sequence ${manual.sequence.join(' ')}`}>{manual.sequence.map((digit, i) => <li key={i} className={i < manual.entered ? 'done' : i === manual.entered && !manual.playing ? 'next' : ''}>{digit}</li>)}</ol>
+    <span className="coop-sub">{manual.playing ? 'PLAYBACK RUNNING · WAIT' : `ENTERED ${manual.entered} / ${manual.sequence.length}`}</span>
+  </>;
+}
+
+function Locate({ manual }: { manual: Extract<Manual, { kind: 'locate' }> }) {
+  const keys = manual.rings.map(ring => ring + 1);
+  return <>
+    <p>Their radar is dark. You see where it is: tell them which key to press on the monitor. It keeps moving, so check this page again before every mark.</p>
+    <div className="coop-rings">{manual.rings.map(ring => <strong key={ring}><kbd>{ring + 1}</kbd>{SECTORS[ring]![1]} · {SECTORS[ring]![2]}</strong>)}</div>
+    <span className="coop-sub">{keys.length > 1 ? `ON A BOUNDARY · ${keys.join(' OR ')} BOTH WORK` : `PRESS ${keys[0]}`} · {manual.marks} / {manual.required} MARKED</span>
+  </>;
+}
+
+/** The pacer runs on this device's clock, re-anchored on every page (each says how far into the half-breath it is). */
+function Calm({ manual }: { manual: Extract<Manual, { kind: 'calm' }> }) {
+  const [anchor, setAnchor] = useState(() => performance.now()), [now, setNow] = useState(() => performance.now());
+  useEffect(() => { setAnchor(performance.now()); }, [manual.inhale, manual.halfTenths, manual.elapsedTenths]);
+  useEffect(() => { const timer = setInterval(() => setNow(performance.now()), 100); return () => clearInterval(timer); }, []);
+  const half = manual.halfTenths / 10, t = manual.elapsedTenths / 10 + Math.max(0, now - anchor) / 1000;
+  const inhale = Math.floor(t / half) % 2 === 0 ? manual.inhale : !manual.inhale, left = half - (t % half);
+  return <>
+    <p>The player can't see the pacer. Call it for them: "in" while they should hold B, "out" while they let go. Matching it builds calm; drifting off it doesn't.</p>
+    <div className={`coop-pacer ${inhale ? 'in' : 'out'}`} role="status"><strong>{inhale ? 'BREATHE IN · HOLD B' : 'BREATHE OUT · LET GO'}</strong><span>{left.toFixed(1)} s</span></div>
+    <span className="coop-sub">CALM {manual.progress} / {manual.required} S · {half.toFixed(1)} S PER HALF-BREATH</span>
+  </>;
+}
+
+const TITLES: Record<Manual['kind'], string> = { faults: 'Rack sound key', wires: 'Cable patch', routing: 'Conduit route', memory: 'Signal sequence', locate: 'Radar reading', calm: 'Breathing pacer' };
 /** One page: the key for the player's live task only. */
 export function ManualPage({ manual }: { manual: Manual | null }) {
-  if (!manual) return <div className="coop-empty"><strong>No page right now.</strong><span>The memory, heartbeat, locate and calm tasks have no manual in this version. Help the player listen for footsteps.</span></div>;
+  if (!manual) return <div className="coop-empty"><strong>No page right now.</strong><span>The heartbeat mask has no page. Help the player listen for footsteps.</span></div>;
   return <div className={`coop-page coop-${manual.kind}`}>
     <h2>{TITLES[manual.kind]} <small>STAGE {manual.stage}</small></h2>
-    {manual.kind === 'faults' ? <Faults manual={manual}/> : manual.kind === 'wires' ? <Wires manual={manual}/> : <Routing manual={manual}/>}
+    {manual.kind === 'faults' ? <Faults manual={manual}/> : manual.kind === 'wires' ? <Wires manual={manual}/> : manual.kind === 'memory' ? <Memory manual={manual}/> : manual.kind === 'locate' ? <Locate manual={manual}/> : manual.kind === 'calm' ? <Calm manual={manual}/> : <Routing manual={manual}/>}
   </div>;
 }
 

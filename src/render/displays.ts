@@ -96,7 +96,7 @@ export function drawProximity(display: Display, state: RenderState): void {
   const on = state.power === 'on', ctx = display.context;
   ctx.fillStyle = '#0b0d07'; ctx.fillRect(0, 0, 512, 384); ctx.textAlign = 'center';
   if (!on) { display.texture.needsUpdate = true; return; }
-  const cx = 256, cy = 205, radius = 150, length = 24, sampled = state.creature.sensorDistance, since = Math.max(0, state.time - (state.creature.sensorSampleAt ?? state.time));
+  const cx = 256, cy = 205, radius = 150, length = 24, sampled = state.blind ? null : state.creature.sensorDistance, since = Math.max(0, state.time - (state.creature.sensorSampleAt ?? state.time));
   ctx.fillStyle = '#b0a97c'; ctx.font = '25px monospace'; ctx.fillText('PROXIMITY RADAR', 256, 38);
   ctx.strokeStyle = '#4c5a3c'; ctx.lineWidth = 2;
   for (const edge of [7, 14, 22, 24]) { ctx.strokeStyle = edge === 7 ? '#8a4430' : '#4c5a3c'; ctx.beginPath(); ctx.arc(cx, cy, edge / length * radius, 0, Math.PI * 2); ctx.stroke(); }
@@ -234,7 +234,8 @@ export function drawSonar(display: Display, state: RenderState): void {
     [[0, 7], [7, 14], [14, 22], [22, 24]].forEach(([inner, outer], i) => ctx.fillText(String(i + 1), cx, cy - (inner + outer) / 2 / length * R + 8));
     for (let k = 0; k < 24; k++) { const a = toCanvas(sweep) - k * .035; ctx.fillStyle = `rgba(140,225,140,${.16 * (1 - k / 24) ** 2})`; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a - .035, a); ctx.closePath(); ctx.fill(); }
     ctx.strokeStyle = 'rgba(170,240,170,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(toCanvas(sweep)) * R, cy + Math.sin(toCanvas(sweep)) * R); ctx.stroke();
-    const sampled = state.creature.sensorDistance;
+    const sampled = state.blind ? null : state.creature.sensorDistance;
+    if (state.blind) { ctx.fillStyle = 'rgba(190,220,170,.75)'; ctx.font = '26px monospace'; ctx.fillText('READING SENT', cx, cy - 14); ctx.fillText('ASK YOUR FRIEND', cx, cy + 22); }
     if (typeof sampled === 'number' && Number.isFinite(sampled)) {
       const bearing = state.creature.sensorBearing ?? 0, behind = ((sweep - bearing) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2), glow = Math.exp(-behind / (Math.PI * 2) * 4 / 1.7);
       const r = sampled / length * R, x = cx + Math.sin(bearing) * r, y = cy - Math.cos(bearing) * r, blob = ctx.createRadialGradient(x, y, 0, x, y, 30);

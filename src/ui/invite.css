@@ -6,3 +6,5 @@
 .invite .primary{margin-top:22px}
 .live-badge{color:#d7745a}
 .setup-actions .friend{display:flex;justify-content:space-between;align-items:center;min-height:54px;font-weight:700}
+/* Live sharing toggles beside the link. */
+.invite-sharing{display:grid;gap:6px;margin:12px 0 8px;padding:10px 12px 8px;border:1px solid #63785844;text-align:left}.invite-sharing legend{padding:0 6px;font:8px var(--mono);letter-spacing:1.5px;color:#879879}

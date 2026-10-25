@@ -15,6 +15,9 @@ export function manualRow(manual: CoopManual | null): ManualRow {
   if (!manual) return NONE;
   if (manual.kind === 'faults') return { ...NONE, kind: 'faults', stage: manual.stage, values: manual.sounds };
   if (manual.kind === 'wires') return { ...NONE, kind: 'wires', stage: manual.stage, panel: manual.panel, panels: manual.panels, values: manual.sockets };
+  if (manual.kind === 'memory') return { ...NONE, kind: 'memory', stage: manual.stage, panel: manual.entered, panels: manual.playing ? 1 : 0, values: manual.sequence };
+  if (manual.kind === 'locate') return { ...NONE, kind: 'locate', stage: manual.stage, panel: manual.marks, panels: manual.required, values: manual.rings };
+  if (manual.kind === 'calm') return { ...NONE, kind: 'calm', stage: manual.stage, panel: manual.inhale ? 1 : 0, size: manual.halfTenths, start: manual.elapsedTenths, panels: manual.required, end: manual.progress };
   return { ...NONE, kind: 'routing', stage: manual.stage, size: manual.size, start: manual.start, end: manual.end, values: manual.tiles };
 }
 /** Revalidates a row from the channel or the view. Anything unexpected reads as no manual page. */
@@ -24,6 +27,9 @@ export function manualFromRow(row: unknown): CoopManual | null {
   const values = Array.from(r.values);
   if (r.kind === 'faults') return { kind: 'faults', stage: r.stage, sounds: values };
   if (r.kind === 'wires') return { kind: 'wires', stage: r.stage, panel: r.panel, panels: r.panels, sockets: values };
+  if (r.kind === 'memory') return { kind: 'memory', stage: r.stage, sequence: values, entered: r.panel, playing: r.panels === 1 };
+  if (r.kind === 'locate') return { kind: 'locate', stage: r.stage, rings: values, marks: r.panel, required: r.panels };
+  if (r.kind === 'calm') return { kind: 'calm', stage: r.stage, inhale: r.panel === 1, halfTenths: r.size, elapsedTenths: r.start, progress: r.end, required: r.panels };
   return { kind: 'routing', stage: r.stage, size: r.size, start: r.start, end: r.end, tiles: values };
 }
 

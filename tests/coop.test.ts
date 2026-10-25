@@ -104,16 +104,31 @@ test('coopManual gives exactly the key for the live task and solves stage 1 with
   manual.tiles.forEach((want, tile) => { for (let k = 0; want && k < 4 && tileOpenings(s.tasks.routing.kinds[tile]!, s.tasks.routing.turns[tile]!) !== want; k++) s = dispatch(s, { type: 'rotate', tile }); });
   s = dispatch(s, { type: 'engage' });
   assert.deepEqual(s.tasks.completedStages, [1]); assert.equal(s.tasks.stage, 2);
-  assert.equal(coopManual(s), null, 'memory has no manual page');
-  for (let round = 0; round < memoryRounds(s).rounds; round++) { while (s.tasks.memory.playing) s = step(s, .2); for (const value of [...s.tasks.memory.sequence]) s = dispatch(s, { type: 'input', value }); }
+  const solveMemoryByManual = (g: GameState) => {
+    for (let round = 0; round < memoryRounds(g).rounds; round++) {
+      while (g.tasks.memory.playing) g = step(g, .2);
+      const page = coopManual(g) as Extract<CoopManual, { kind: 'memory' }>;
+      assert.equal(page.kind, 'memory'); assert.equal(page.playing, false); assert.equal(page.entered, 0);
+      for (const value of page.sequence) g = dispatch(g, { type: 'input', value });
+    }
+    return g;
+  };
+  s = solveMemoryByManual(s);
+  assert.equal(s.events.filter(e => e.type === 'WRONG_INPUT').length, 0, 'the memory page alone solves every round');
   assert.equal(s.tasks.step, 'pulse'); assert.equal(coopManual(s), null, 'heartbeat mask has no manual page');
   const three = structuredClone(s); startStage(three, 3);
   assert.deepEqual(coopManual(three), { kind: 'faults', stage: 3, sounds: faultSounds(three) });
   const keys = new Set([1, 2, 3, 4, 5, 6, 7, 8].map(seed => { const g = still('coop', seed); const k = (coopManual(g) as Extract<CoopManual, { kind: 'faults' }>).sounds.join(); startStage(g, 3); return k + '|' + (coopManual(g) as Extract<CoopManual, { kind: 'faults' }>).sounds.join(); }));
   assert.ok(keys.size > 1, 'the key changes with the seed');
   const twelve = patchByManual(clearFaults(three)); assert.equal(twelve.tasks.step, 'locate'); assert.equal(twelve.events.filter(e => e.type === 'WRONG_INPUT').length, 0, 'stage 3 needs both panels from the manual');
-  assert.equal(coopManual(twelve), null, 'locate has no manual page');
-  const four = structuredClone(twelve); startStage(four, 4); assert.equal(coopManual(four), null);
+  const radar = coopManual(twelve) as Extract<CoopManual, { kind: 'locate' }>;
+  assert.equal(radar.kind, 'locate'); assert.ok(radar.rings.length >= 1); assert.deepEqual([radar.marks, radar.required], [0, twelve.tasks.locate.required]);
+  const marked = dispatch(dispatch(twelve, { type: 'station', station: 'cameras' }), { type: 'mark', sector: (['NEAR', 'A', 'B', 'C'] as const)[radar.rings[0]!] });
+  assert.equal(marked.tasks.locate.marks, 1, 'a mark from the radar page lands');
+  const four = structuredClone(twelve); startStage(four, 4); assert.equal((coopManual(four) as CoopManual).kind, 'memory');
+  const calm = solveMemoryByManual(four); assert.equal(calm.tasks.step, 'calm');
+  const pacer = coopManual(calm) as Extract<CoopManual, { kind: 'calm' }>;
+  assert.equal(pacer.kind, 'calm'); assert.equal(pacer.inhale, true); assert.equal(pacer.halfTenths, Math.round(calm.tasks.calm.halfSeconds * 10)); assert.equal(pacer.required, calm.tasks.calm.required);
   const final = structuredClone(twelve); startStage(final, 5); assert.equal(coopManual(final), null);
   assert.equal(coopManual({ ...still('coop'), status: 'lost' }), null, 'nothing once the run ends');
 });

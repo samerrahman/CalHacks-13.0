@@ -2,7 +2,7 @@
 
 In the style of *Keep Talking and Nobody Explodes*: the player in the shelter loses the puzzle keys, and a friend on the spectate link reads them from a manual and talks the player through. Solo play is unchanged.
 
-## Rules (v1)
+## Rules (v2)
 
 `createGame(seed, 'coop')` plays the standard rules and balance (same timers, exposure, creature, isolation, deadline). Only what the player is shown changes:
 
@@ -11,7 +11,10 @@ In the style of *Keep Talking and Nobody Explodes*: the player in the shelter lo
 | Faults by ear (stages 1, 3) | No rack key: `listeningTo` is always null in co-op, so the key never lights, plays or captions. The same 4.4 s gap still holds back the first fault (`rackKey` keeps the timing). L does nothing. Failing machines still sound from their rack slots and YOU HEAR still captions them. | Which sound each machine 1–4 makes, listed by sound: "if they hear high whine, press 3". |
 | Cables (stages 1, 3) | Cables keep their symbols and colours; sockets show neutral codes A–F (top to bottom) in one colour. | For the live six-cable panel: each cable symbol → its socket code. The page turns with the panel. |
 | Conduit (stage 1) | The board with no power glow, no joined outlet and no CONNECTED reading. | The solved orientation of every route tile on a labelled grid (rows from the top, columns from the left, IN/OUT rows); off-route tiles read "·". A tee shows one valid orientation. |
-| Memory, heartbeat mask, locate, calm hold | Unchanged in v1. | "No page right now." |
+| Memory (stages 2, 4) | Playback shows static (`RECEIVING ▒`), the cue digits never light on the HUD or the terminal screen, and every cue plays the same tone. Input works as standard after playback. | The live sequence, how many digits the player has entered, and whether playback is still running. |
+| Locate (stage 3) | The radar, proximity screen and CCTV silhouette go dark (`blind` in the render state) for the locate step only. | The ring key (1–4) where a mark lands now (both on a boundary), and marks made of required. Check before every mark; it keeps moving. |
+| Calm hold (stage 4) | The pacer is hidden: the ring only shows whether B is held, and IN TIME / OUT OF TIME is gone. Progress still shows. | The current half-breath (in or out), its length and how far into it; the page runs its own countdown and re-anchors on every update. |
+| Heartbeat mask (stage 2) | Unchanged. | "No page right now." |
 
 Notices adapt to co-op ("describe the sound to your friend…"). The deliberate result is harder: the player must describe sounds and the friend must answer quickly while the equipment noise keeps drawing the creature in.
 
@@ -37,4 +40,5 @@ Consent: co-op needs trace sharing, since the link is how the friend gets the ma
 
 - Wired into **Play with a friend**, the invitation, LIVE/Stop controls and spectator manual. The combined local module passed 14 co-op checks and the manual was checked across browser origins; see `qa/integrated-coop-local.json` and `qa/integrated-friend-browser.json`.
 - The integrated spectator layout fits 390 px; not published to Maincloud; no human playtest of the difficulty.
-- v1 has no manual for memory, heartbeat mask, locate or calm hold.
+- v2 has no manual for the heartbeat mask.
+- The module with the v2 validator is published to Maincloud (`scary-5zsk8`); [20/20 live checks](qa/coop-maincloud-v2.json), including memory, locate and calm pages reaching the friend and malformed ones refused. No human playtest of the v2 difficulty yet.

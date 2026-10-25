@@ -150,7 +150,7 @@ export function replayMemory(state: GameState, keepInput = false): void {
   memory.playing = true; memory.playbackElapsed = 0; memory.playbackIndex = 0; memory.cue = memory.sequence[0];
   memory.tempo = tempoFor(state); memory.responseElapsed = 0; memory.armed = false; memory.needsReplay = false;
   if (!keepInput) memory.input = [];
-  state.notice = `Watch ${memory.sequence.length} cues. Enter the sequence after playback. R replays for free.`;
+  state.notice = state.mode === 'coop' ? `Your friend sees the ${memory.sequence.length}-digit sequence; you only get static. Enter it as they read it out, after playback.` : `Watch ${memory.sequence.length} cues. Enter the sequence after playback. R replays for free.`;
   emit(state, 'MEMORY_REPLAY');
 }
 export function startStage(state: GameState, stage: Stage): void {
@@ -221,7 +221,7 @@ export function markSector(state: GameState, sector: Sector): void {
   const locate = state.tasks.locate, wait = locate.lastMarkAt + config.tasks.locate.spacingSeconds - state.time;
   if (wait > 1e-8) { state.notice = `Marker recharging · ${Math.ceil(wait)}s`; return; }
   const observed = [...sectorsAt(state.creature.linePosition), ...(state.creature.sensorDistance === null ? [] : sectorsAt(state.creature.sensorDistance))];
-  if (!observed.includes(sector)) { mistake(state, 'LOCATE', 'Wrong sector. The marker pinged empty ground, loudly. Check the feeds and the range reading.'); return; }
+  if (!observed.includes(sector)) { mistake(state, 'LOCATE', state.mode === 'coop' ? 'Wrong ring. The marker pinged empty ground, loudly. Ask your friend again; it keeps moving.' : 'Wrong sector. The marker pinged empty ground, loudly. Check the feeds and the range reading.'); return; }
   locate.marks++; locate.lastMarkAt = state.time; workNoise(state); emit(state, 'SECTOR_MARKED');
   state.notice = `${locate.marks} / ${locate.required} positions marked. It keeps moving; check again.`;
   if (locate.marks >= locate.required) { completeStage(state); startStage(state, 4); }
@@ -291,7 +291,7 @@ export function connectWire(state: GameState, from: number, to: number): void {
   state.notice = complete % config.tasks.wirePanelSize === 0 && complete < wires.connections.length ? `Panel ${complete / config.tasks.wirePanelSize} of ${panel.count} patched. Next panel live.` : `${complete} / ${wires.connections.length} cables connected.`;
   if (complete === wires.connections.length) {
     if (state.tasks.stage === 1) { state.tasks.step = 'routing'; state.tasks.routing = createRouting(state, 0); state.notice = `Cables patched. Rotate the conduit tiles to join the inlet to the relay outlet, then press T.${state.mode === 'coop' ? ' The board shows no power; your friend has the solved route.' : ''}`; }
-    else { state.tasks.step = 'locate'; state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 }; state.notice = `Cables patched. Use the radar to mark its position ${config.tasks.locate.marks} times.`; }
+    else { state.tasks.step = 'locate'; state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 }; state.notice = state.mode === 'coop' ? `Cables patched. Your radar is dark; your friend can see it. Ask which ring, then mark it ${config.tasks.locate.marks} times.` : `Cables patched. Use the radar to mark its position ${config.tasks.locate.marks} times.`; }
     state.version++;
   }
 }
@@ -323,7 +323,7 @@ export function taskInput(state: GameState, value: number): void {
     const rounds = memoryRounds(state);
     if (memory.sequence.length < rounds.last) {
       memory.sequence.push(cue(state)); replayMemory(state);
-      state.notice = `Round ${rounds.round} matched. Watch ${memory.sequence.length} cues: one more than before.`;
+      state.notice = state.mode === 'coop' ? `Round ${rounds.round} matched. Your friend has ${memory.sequence.length} digits now: one more than before.` : `Round ${rounds.round} matched. Watch ${memory.sequence.length} cues: one more than before.`;
       return;
     }
     emit(state, 'MEMORY_ARMED');
@@ -336,7 +336,7 @@ export function taskInput(state: GameState, value: number): void {
     } else {
       const own = personalBreathSeconds(state);
       state.tasks.step = 'calm'; state.tasks.calm = { progress: 0, required: config.tasks.calm.seconds, pacerStartedAt: state.time, holding: false, halfSeconds: own ?? config.tasks.calm.breathSeconds, phaseStartedAt: state.time, inhale: true, personal: own !== null };
-      state.notice = own !== null ? 'Sequence matched. The pacer starts at your own breathing pace and slows with every breath. Hold B to breathe in, release to breathe out.' : 'Sequence matched. Hold B to breathe in, release to breathe out. Let it lose your trail.';
+      state.notice = state.mode === 'coop' ? 'Sequence matched. Only your friend sees the breathing pacer: hold B when they say in, let go when they say out.' : own !== null ? 'Sequence matched. The pacer starts at your own breathing pace and slows with every breath. Hold B to breathe in, release to breathe out.' : 'Sequence matched. Hold B to breathe in, release to breathe out. Let it lose your trail.';
     }
     state.version++;
   }

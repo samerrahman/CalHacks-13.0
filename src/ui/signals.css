@@ -33,3 +33,7 @@
 .sig-unavailable .sig-head em,.sig-unavailable strong{color:#77735f}
 .vitals-panel-note{font:8px/1.5 var(--mono);color:#8e8d7c;padding:8px 12px 10px;margin:0;border-bottom:1px solid #5d514233}.vitals-panel.open .vitals-panel-toggle{border-top:1px solid #5d514233}
 @media(max-width:720px){.vitals-panel{left:98px;top:16px;bottom:auto;flex-direction:column;max-width:calc(100vw - 230px)}.vitals-panel.open{width:min(265px,calc(100vw - 110px));max-width:none}.vitals-panel-toggle{padding:7px 10px;font-size:8px;letter-spacing:.3px}.vitals-panel-toggle b{display:none}.vitals-panel.open .vitals-panel-toggle{border-top:0}.vitals-panel-note{border-bottom:0;border-top:1px solid #5d514233}.vitals-panel-list{max-height:calc(100vh - 230px)}.video-check-card{padding:18px}.video-check-card h2{font-size:22px}}
+/* Camera picker, live readouts and sharing choices on the camera check. */
+.video-check .camera-device{display:flex;gap:10px;align-items:center;margin:12px 0 4px;font:9px var(--mono);letter-spacing:1px;color:#879879}.video-check .camera-device select{flex:1}
+.video-check .pulse-monitor{margin:10px 0}
+.video-check-sharing{display:grid;gap:6px;margin:12px 0;padding:10px 12px 8px;border:1px solid #63785844}.video-check-sharing legend{padding:0 6px;font:8px var(--mono);letter-spacing:1.5px;color:#879879}.video-check-sharing .check:has(input:disabled){opacity:.5}

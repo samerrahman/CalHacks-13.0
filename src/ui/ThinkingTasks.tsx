@@ -5,7 +5,7 @@ import { calmBreath, calmInhale, calmMatched, conduitConnected, energizedTiles, 
 import './thinking.css';
 
 // Sonar rings on the radar scope, innermost first; keys 1–4 mark the same rings.
-const SECTORS: [Sector, string, string][] = [['NEAR', 'Ring 1', 'Near the wall'], ['A', 'Ring 2', 'Clearing'], ['B', 'Ring 3', 'Service path'], ['C', 'Ring 4', 'Far out']];
+export const SECTORS: [Sector, string, string][] = [['NEAR', 'Ring 1', 'Near the wall'], ['A', 'Ring 2', 'Clearing'], ['B', 'Ring 3', 'Service path'], ['C', 'Ring 4', 'Far out']];
 type Send = (action: GameAction) => void;
 
 /** Live-data line shared by the Presage-aware tasks. Coarse accepted trend only; no BPM. */
@@ -54,14 +54,14 @@ export function FaultTask({ g, send, coop = g.mode === 'coop' }: { g: GameState;
 
 export function LocateTerminal({ g }: { g: GameState }) {
   const l = g.tasks.locate;
-  return <><p>The emitter needs to know where it is. Go to the radar and read it. Mark which ring it is in, {l.required} times. It keeps moving, and wrong marks are loud.</p>
+  return <><p>{g.mode === 'coop' ? `The emitter needs to know where it is, but your radar is dark. Your friend sees it: ask which ring, then mark it at the monitor, ${l.required} times. It keeps moving, and wrong marks are loud.` : `The emitter needs to know where it is. Go to the radar and read it. Mark which ring it is in, ${l.required} times. It keeps moving, and wrong marks are loud.`}</p>
     <div className="task-progress"><span>{l.marks} / {l.required} positions marked</span><span>MONITOR · KEYS 1–4</span></div></>;
 }
 
 export function LocatePanel({ g, send }: { g: GameState; send: Send }) {
   const l = g.tasks.locate, wait = Math.max(0, l.lastMarkAt + config.tasks.locate.spacingSeconds - g.time);
   return <div className="locate-panel" data-testid="locate-panel">
-    <div className="locate-heading"><span>MARK ITS POSITION · {l.marks} / {l.required}</span><small>{wait > 0 ? `Marker recharging · ${wait.toFixed(1)}s` : 'Read the sonar, then mark'}</small></div>
+    <div className="locate-heading"><span>MARK ITS POSITION · {l.marks} / {l.required}</span><small>{wait > 0 ? `Marker recharging · ${wait.toFixed(1)}s` : g.mode === 'coop' ? 'Ask your friend which ring, then mark' : 'Read the sonar, then mark'}</small></div>
     <div className="locate-buttons">{SECTORS.map(([sector, label, detail], i) => <button key={sector} disabled={wait > 0} onClick={() => send({ type: 'mark', sector })}><kbd>{i + 1}</kbd><span>{label}</span><small>{detail}</small></button>)}</div>
   </div>;
 }
@@ -78,16 +78,17 @@ export function PulseTask({ g, send }: { g: GameState; send: Send }) {
   </>;
 }
 
-export function CalmTask({ g, send }: { g: GameState; send: Send }) {
-  const c = g.tasks.calm, inhale = calmInhale(g), size = calmBreath(g), matched = calmMatched(g);
+export function CalmTask({ g, send, coop = g.mode === 'coop' }: { g: GameState; send: Send; coop?: boolean }) {
+  // In co-op the pacer is the friend's to call: the ring only shows whether B is held.
+  const c = g.tasks.calm, inhale = calmInhale(g), size = coop ? (c.holding ? .85 : .25) : calmBreath(g), matched = coop || calmMatched(g);
   const hold = (holding: boolean) => send({ type: 'breathe', holding });
   return <>
-    <p>It's listening for you. Hold <kbd>B</kbd> (or press and hold the ring) while it grows to breathe in. Let go while it shrinks. Stay with it until it loses your trail.</p>
+    <p>{coop ? <>Only your friend sees the pacer. Hold <kbd>B</kbd> (or the ring) when they say in, let go when they say out. Stay with them until it loses your trail.</> : <>It's listening for you. Hold <kbd>B</kbd> (or press and hold the ring) while it grows to breathe in. Let go while it shrinks. Stay with it until it loses your trail.</>}</p>
     <button className={`calm-ring ${matched ? 'matched' : 'off'}`} aria-label="Hold to breathe in, release to breathe out" aria-pressed={c.holding}
       onPointerDown={event => { event.preventDefault(); hold(true); }} onPointerUp={() => hold(false)} onPointerLeave={() => { if (c.holding) hold(false); }}
-      style={{ '--breath': size.toFixed(3) } as CSSProperties}><i/><span>{inhale ? 'BREATHE IN · HOLD' : 'BREATHE OUT · RELEASE'}</span></button>
+      style={{ '--breath': size.toFixed(3) } as CSSProperties}><i/><span>{coop ? (c.holding ? 'HOLDING · B' : 'RELEASED') : inhale ? 'BREATHE IN · HOLD' : 'BREATHE OUT · RELEASE'}</span></button>
     <progress aria-label="Calm hold progress" max={c.required} value={c.progress}/>
-    <div className="task-progress"><span>{Math.floor(c.progress)} / {c.required} calm seconds</span><span>{matched ? 'IN TIME' : 'OUT OF TIME'}</span></div>
+    <div className="task-progress"><span>{Math.floor(c.progress)} / {c.required} calm seconds</span><span>{coop ? 'PACER · ASK YOUR FRIEND' : matched ? 'IN TIME' : 'OUT OF TIME'}</span></div>
     {c.personal && <small className="heart-line">{c.halfSeconds < config.tasks.calm.breathSeconds - 1e-9 ? 'Started at your own breathing pace · slowing with every breath.' : 'Slowed from your own pace to a calm, steady breath.'}</small>}
     <small className="heart-line">{heartLine(g, 'Your pulse is elevated: it can still hear you, so progress is slower.', 'Your pulse is steady: progress is faster.')}</small>
   </>;

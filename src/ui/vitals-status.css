@@ -2,3 +2,12 @@
 @media(max-width:720px){body:has(.task-panel) .corner-vitals:not(:has(.corner-camera)){grid-template-columns:1fr;width:150px}}
 /* Between accepted estimates the last values stay up; only the dot stops glowing. */
 .vitals-signal.steady{color:#a6bc87}.vitals-signal.steady i{background:#7f9166}
+/* Emotion and breathing lead the readout; pulse sits beside them, smaller. */
+.pulse-monitor .vitals-grid{grid-template-columns:1.3fr 1fr .8fr;gap:12px}
+.pulse-monitor .vital-emotion strong{font-size:26px;white-space:nowrap}.pulse-monitor .vital-emotion strong em{font-style:normal;font-size:.42em;letter-spacing:1px;color:#b9c79c}
+.pulse-monitor .vital-emotion.mood-fear strong{color:#e4a07a}.pulse-monitor .vital-emotion.mood-fear strong em{color:#e4a07a}.pulse-monitor .vital-emotion.mood-tense strong{color:#d8c48a}
+.pulse-monitor .vital-secondary strong{font-size:22px;color:#a9b791}
+.pulse-monitor .vitals-grid small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact .vitals-grid{grid-template-columns:1.25fr 1fr .85fr}.compact .vitals-grid>div{grid-template-columns:1fr}.compact .vital-emotion strong{font-size:17px}.compact .vital-secondary strong{font-size:15px}
+@media(max-width:720px){.corner-vitals .vitals-grid{gap:3px}.corner-vitals .vital-emotion strong{font-size:13px}.corner-vitals .vitals-grid strong{font-size:15px}.corner-vitals .vital-secondary strong{font-size:12px}
+ body:has(.task-panel) .corner-vitals .vitals-grid strong{font-size:12px}body:has(.task-panel) .corner-vitals .vital-emotion strong{font-size:11px}body:has(.task-panel) .corner-vitals .vitals-grid small{display:none}}

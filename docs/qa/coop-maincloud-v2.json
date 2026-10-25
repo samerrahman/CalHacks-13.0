@@ -1,0 +1,125 @@
+{
+  "checkedAt": "2026-10-25T06:39:18.957Z",
+  "server": "wss://maincloud.spacetimedb.com",
+  "database": "scary-5zsk8",
+  "durationMs": 7835,
+  "passed": 20,
+  "failed": 0,
+  "results": [
+    {
+      "check": "a co-op session can be created",
+      "ok": true
+    },
+    {
+      "check": "no manual row exists before the player publishes",
+      "ok": true
+    },
+    {
+      "check": "the RUN_STARTED coop detail survives the server whitelist",
+      "ok": true,
+      "detail": {
+        "id": "e1",
+        "seq": 1,
+        "time": 0,
+        "type": "RUN_STARTED",
+        "detail": "coop"
+      }
+    },
+    {
+      "check": "the publisher writes the live page and the friend receives it",
+      "ok": true,
+      "detail": {
+        "kind": "faults",
+        "values": [
+          1,
+          2,
+          3,
+          0
+        ]
+      }
+    },
+    {
+      "check": "the feed row carries no server clock or capability",
+      "ok": true
+    },
+    {
+      "check": "a wrong owner capability cannot write the manual",
+      "ok": true
+    },
+    {
+      "check": "a standard session cannot hold a manual",
+      "ok": true
+    },
+    {
+      "check": "a malformed page is refused",
+      "ok": true
+    },
+    {
+      "check": "an oversize page is refused",
+      "ok": true
+    },
+    {
+      "check": "a write within 250 ms of the last is refused, so the client retries",
+      "ok": true
+    },
+    {
+      "check": "a later page replaces the row (latest page only)",
+      "ok": true
+    },
+    {
+      "check": "a late (lower sequence) write is ignored",
+      "ok": true
+    },
+    {
+      "check": "a friend with the wrong capability receives no rows",
+      "ok": true
+    },
+    {
+      "check": "a memory page reaches the friend",
+      "ok": true,
+      "detail": {
+        "kind": "memory",
+        "values": [
+          3,
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "check": "a locate page reaches the friend",
+      "ok": true,
+      "detail": {
+        "kind": "locate",
+        "values": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "check": "a calm page reaches the friend",
+      "ok": true,
+      "detail": {
+        "kind": "calm",
+        "values": []
+      }
+    },
+    {
+      "check": "a memory page with a digit over 4 is refused",
+      "ok": true
+    },
+    {
+      "check": "a locate page out of order is refused",
+      "ok": true
+    },
+    {
+      "check": "a calm page past its half-breath is refused",
+      "ok": true
+    },
+    {
+      "check": "removing the session deletes the manual for the friend",
+      "ok": true
+    }
+  ]
+}

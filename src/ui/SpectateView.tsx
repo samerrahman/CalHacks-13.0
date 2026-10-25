@@ -7,6 +7,7 @@ import { DOOR, OBSTACLES, ROOM } from '../../spacetimedb/src/physicsSim';
 import './spectate.css';
 import CoopManual from './CoopManual';
 import SpectateCamera from './SpectateCamera';
+import { emotionLabel, fearFromPulse, type EmotionLabel } from './vitalsHold';
 
 const HELD_MS = 5000, GONE_MS = 15000;
 const TREND: Record<SpectatorVitals['trend'], string> = { UNKNOWN: 'No sustained change yet', STEADY: 'Holding steady', ELEVATED: 'Up and staying up', RECOVERED: 'Coming back down' };
@@ -16,6 +17,13 @@ const MOMENTS: Record<string, (detail: string) => string> = {
   LURE_TRANSMITTED: d => `Lure sent to ${d.replace('_', ' ').toLowerCase()}`, QUIET_ENTERED: () => 'Equipment isolated', RESTORED: () => 'Power restored',
   BLACKOUT_STARTED: () => 'Blackout', FINAL_BROADCAST: () => 'Final broadcast', WON: () => 'Contained', LOST: () => 'Lost', TIMEOUT: () => 'Out of time', PAUSED: () => 'Paused', RESUMED: () => 'Resumed',
 };
+const MOOD: Record<EmotionLabel, string> = { 'FEAR / STARTLE': 'FEAR / ELEVATED', TENSE: 'TENSE', CALM: 'CALM', CALIBRATING: 'CALIBRATING' };
+/** Only heart rate is shared, never the player's breathing or expressions, so spectators get an
+ * estimate from heart rate, always labelled as one. */
+function breathingFromPulse(bpm: number | null, baseline: number | null, trend: SpectatorVitals['trend']): number | null {
+  if (bpm === null) return null;
+  return Math.max(10, Math.min(32, Math.round(14 + (baseline === null ? 0 : bpm - baseline) * 0.3 + (trend === 'ELEVATED' ? 2 : 0))));
+}
 const PROP_COLOUR: Record<string, string> = { can: '#a9b28a', mug: '#d1b98a', bolt: '#8d9188', bottle: '#7f9f8f', flashlight: '#d49a5e' };
 
 function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[]): void {
@@ -47,9 +55,14 @@ function Vitals({ vitals, age }: { vitals: SpectatorVitals | null; age: number |
   if (!vitals || age === null || age > GONE_MS) return <section className="spectate-card spectate-vitals off"><small>HEART RATE</small><strong>—</strong><span>{vitals ? 'No recent reading from the player.' : 'No heart rate is being shared right now. You can still follow the run.'}</span></section>;
   const held = age > HELD_MS, bpm = vitals.pulseBpm, delta = bpm !== null && vitals.baselineBpm !== null ? bpm - vitals.baselineBpm : null;
   const note = bpm !== null ? TREND[vitals.trend] : vitals.quality === 'rejected' ? 'Reading rejected (movement or lighting)' : vitals.status === 'calibrating' || vitals.status === 'starting' ? 'Calibrating the camera' : vitals.status === 'paused' ? 'Capture paused' : 'No accepted reading right now';
+  const fear = fearFromPulse(bpm, vitals.baselineBpm, vitals.trend), mood = fear === null ? null : MOOD[emotionLabel(fear)], rpm = breathingFromPulse(bpm, vitals.baselineBpm, vitals.trend);
   return <section className={`spectate-card spectate-vitals${held ? ' held' : ''}${vitals.trend === 'ELEVATED' ? ' elevated' : ''}`}>
-    <small>HEART RATE <em className={vitals.source}>{vitals.source === 'simulated' ? 'SIMULATED · not a real heart rate' : 'PRESAGE · camera estimate'}</em></small>
-    <strong><i className="beat" style={bpm ? { animationDuration: `${(60 / bpm).toFixed(2)}s` } : undefined} aria-hidden="true">♥</i>{bpm ?? '—'}<span>BPM</span></strong>
+    <small>THEIR STATE <em className={vitals.source}>{vitals.source === 'simulated' ? 'SIMULATED · not a real heart rate' : 'PRESAGE · camera estimate'}</em></small>
+    <div className="spectate-readouts">
+      <div className={`spectate-readout primary mood-${(mood ?? 'none').split(' ')[0].toLowerCase()}`}><small>EMOTION <em>est. from heart rate</em></small><strong>{fear === null ? '—' : `${fear}%`}</strong><span>{mood ?? 'Calibrating'}</span></div>
+      <div className="spectate-readout primary"><small>BREATHING <em>est. from heart rate · not measured</em></small><strong>{rpm ?? '—'}<span>RPM</span></strong></div>
+      <div className="spectate-readout"><small>HEART RATE</small><strong><i className="beat" style={bpm ? { animationDuration: `${(60 / bpm).toFixed(2)}s` } : undefined} aria-hidden="true">♥</i>{bpm ?? '—'}<span>BPM</span></strong></div>
+    </div>
     <span>{delta !== null && <b>{delta > 0 ? '+' : ''}{delta} vs their baseline · </b>}{note}{held && ` · held, no update for ${Math.floor(age / 1000)} s`}</span>
   </section>;
 }

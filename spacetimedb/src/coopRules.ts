@@ -3,7 +3,7 @@
 
 /** One flat row per session: the key for the player's live task, or kind 'none'. `values` is a u8 array (a Uint8Array over SpacetimeDB). */
 export type ManualRow = { kind: string; stage: number; panel: number; panels: number; size: number; start: number; end: number; values: ArrayLike<number> };
-export const MANUAL_KINDS = ['none', 'faults', 'wires', 'routing'] as const;
+export const MANUAL_KINDS = ['none', 'faults', 'wires', 'routing', 'memory', 'locate', 'calm'] as const;
 export const MANUAL_MAX_VALUES = 36;
 
 const permutation = (values: readonly number[]) => [...values].sort((a, b) => a - b).every((v, i) => v === i);
@@ -21,6 +21,12 @@ export function manualRowValid(row: ManualRow): boolean {
     case 'faults': return (row.stage === 1 || row.stage === 3) && values.length === 4 && permutation(values) && rest('panel', 'panels', 'size', 'start', 'end');
     case 'wires': return (row.stage === 1 || row.stage === 3) && row.panels >= 1 && row.panels <= 4 && row.panel < row.panels && values.length >= 1 && values.length <= 6 && permutation(values) && rest('size', 'start', 'end');
     case 'routing': return row.stage === 1 && row.size >= 2 && row.size <= 6 && row.start < row.size && row.end < row.size && values.length === row.size * row.size && rest('panel', 'panels');
+    // memory: values are the digits 1–4; panel is how many the player has entered, panels 1 while playback runs.
+    case 'memory': return (row.stage === 2 || row.stage === 4) && values.length >= 1 && values.length <= 12 && values.every(v => v >= 1 && v <= 4) && row.panel <= values.length && row.panels <= 1 && rest('size', 'start', 'end');
+    // locate: values are the rings (0–3, ascending) where a mark lands now; panel marks made of panels required.
+    case 'locate': return row.stage === 3 && values.length >= 1 && values.length <= 2 && values.every((v, i) => v <= 3 && (i === 0 || v > values[i - 1]!)) && row.panels >= 1 && row.panels <= 15 && row.panel < row.panels && rest('size', 'start', 'end');
+    // calm: panel 1 while breathing in; size the half-breath and start how far into it (tenths of a second); end progress of panels required.
+    case 'calm': return row.stage === 4 && row.panel <= 1 && row.size >= 5 && row.start <= row.size && row.panels >= 1 && row.end <= row.panels && values.length === 0;
   }
   return false;
 }
