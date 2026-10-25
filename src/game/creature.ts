@@ -123,6 +123,8 @@ export function movementProbabilities(state: GameState): { step: number; probabi
   if (state.time - c.lastAudibleAt > settings.lostTrailSeconds) bias += settings.lostTrailBias;
   // Seeded hunts: now and then it charges regardless of how careful you have been.
   if (huntActive(state)) bias = config.hunt.bias;
+  // Recovery reward: after you calm down it briefly loses your trail (softens, never cancels, a hunt).
+  if (state.time < state.recovery.until) bias += config.recovery.bias;
   if (state.time < c.biasUntil) bias += clamp(c.tacticBias, -settings.providerMaximum, settings.providerMaximum);
   if (state.equipment === 'quiet') bias = config.shutdown.retreatBias - state.danger / 100 * settings.quietDangerScale;
   if (lureProtected(state)) bias = c.lure?.target === 'CONTAINMENT' ? settings.finalLure : config.lineLure.bias - state.danger / 100 * settings.lureDangerScale;
@@ -173,7 +175,7 @@ export function tickCreature(state: GameState, _dt: number): void {
     if (c.lure.target === 'CONTAINMENT') { c.containmentStarted = state.time; setPhase(state, 'containment', 'CONTAINMENT'); }
   }
   if (c.containmentStarted !== null && state.time - c.containmentStarted >= config.tasks.stage5.sealSeconds - 1e-8) {
-    state.status = 'won'; state.tasks.stage = 6; state.restoreHeld = false; state.notice = 'Containment sealed. Research recovered.'; emit(state, 'WON'); state.version++; return;
+    state.status = 'won'; state.tasks.stage = 6; state.restoreHeld = false; state.notice = 'The basement door is opening.'; emit(state, 'WON'); state.version++; return;
   }
   commitIfEligible(state); finishCommittedAttack(state);
 }
@@ -237,13 +239,13 @@ export function bearingLabel(bearing: number): 'AHEAD' | 'RIGHT' | 'BEHIND' | 'L
 /** Captions describe what you would hear: loudness and direction, never the exact range. */
 export function updateCaption(state: GameState): void {
   const c = state.creature, side = bearingLabel(creatureBearing(state.seed, state.time));
-  if (state.status === 'won') state.caption = 'REMOTE SEAL CLOSED — CONTAINMENT COMPLETE';
+  if (state.status === 'won') state.caption = 'BASEMENT DOOR MOTOR RUNNING — IT IS LOUD';
   else if (state.status === 'lost') state.caption = state.lossReason?.includes('protocol window') ? 'PROTOCOL WINDOW CLOSED' : 'SHELTER BREACHED';
   else if (c.warning) state.caption = 'POUNDING ON THE WALL — IT IS BREAKING IN';
   else if (proximityAlarm(state).active) state.caption = c.linePosition <= 2 ? `POUNDING ON THE WALL — ${side}` : c.linePosition <= 4 ? `FOOTSTEPS RIGHT OUTSIDE — ${side}` : c.lastMotion === 'receding' ? `HEAVY FOOTSTEPS CLOSE, MOVING OFF — ${side}` : `HEAVY FOOTSTEPS CLOSE — ${side}`;
   else if (state.quiet?.phase === 'ready') state.caption = 'RESTORE WINDOW OPEN — LISTEN BEFORE YOU RESTORE';
   else if (state.equipment === 'quiet') state.caption = 'EQUIPMENT ISOLATED — LISTEN FOR MOVEMENT';
-  else if (c.phase === 'containment') state.caption = 'REMOTE CONTAINMENT SEAL CLOSING';
+  else if (c.phase === 'containment') state.caption = 'DECOY HOLDING IT AT THE FAR TREE LINE — BASEMENT LOCKS CYCLING';
   else if (huntActive(state)) state.caption = `RUNNING FOOTSTEPS — ${side}`;
   else if (c.lastMotion === 'receding') state.caption = `FOOTSTEPS RECEDING — ${side}`;
   else if (c.lastMotion === 'approaching') state.caption = c.linePosition >= 14 ? `FAINT FOOTSTEPS — ${side}` : `FOOTSTEPS APPROACHING — ${side}`;

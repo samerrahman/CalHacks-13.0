@@ -7,14 +7,13 @@ export const withDebug = url => { const u = new URL(url); u.searchParams.set('de
 const trace = process.env.HUSH_DEBUG ? (...parts) => console.log(new Date().toISOString().slice(11, 19), ...parts) : () => {};
 const observations = new WeakMap();
 export function evidenceFor(page) { if (!observations.has(page)) observations.set(page, { defenses: 0, automaticRestores: 0, blackouts: 0, sequenceLengths: [], wireBoards: 0, wireDrags: 0, wireClicks: 0, stages: [], resourceSamples: [] }); return observations.get(page); }
-export async function begin(page, { tutorial = false, seed = 17, simulated = false, record = false, calibrate = false } = {}) {
+export async function begin(page, { tutorial = false, seed = 17, simulated = false, calibrate = false } = {}) {
   await page.goto(withDebug(TEST_URL));
   await expect(page.getByRole('button', { name: 'Begin with guidance' })).toBeEnabled({ timeout: 20000 });
   await page.getByRole('button', { name: 'Operator settings' }).click();
   await page.getByLabel('Encounter seed').fill(String(seed));
   await page.getByLabel('Reduced motion', { exact: true }).check();
   if (simulated) await page.getByLabel('Pulse input', { exact: true }).selectOption('simulated');
-  if (record) await page.getByLabel('Record accepted pulse locally for this run’s report').check();
   if (simulated && calibrate) {
     // The visible baseline progress disappears only after the simulated
     // calibration completes. Keep this out of the five-minute game clock.
@@ -23,7 +22,13 @@ export async function begin(page, { tutorial = false, seed = 17, simulated = fal
     evidenceFor(page).calibratedBeforeRun = true;
   }
   await page.getByRole('button', { name: tutorial ? 'Begin with guidance' : 'Skip guidance & start' }).click();
-  await page.getByRole('button', { name: simulated ? 'Continue' : 'Play without camera', exact: true }).click({ timeout: 30000 });
+  if (!simulated) {
+    // A fresh session asks for the camera before the first run; these runs play with neutral physiology.
+    const prompt = page.getByRole('dialog', { name: 'Enable your camera' });
+    await expect(prompt.getByRole('button', { name: /Enable camera & set up Presage/ })).toBeVisible();
+    await prompt.getByRole('button', { name: 'I don’t want to turn on my camera' }).click();
+    evidenceFor(page).cameraPrompt = 'declined';
+  }
   await page.getByRole('button', { name: 'Skip cutscene →' }).click();
   await expect(page.getByRole('button', { name: 'Use terminal' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Research terminal' })).toHaveCount(0);
@@ -211,9 +216,13 @@ export async function maskHeartbeat(page) {
     while (performance.now() < end) { const value = Number(getComputedStyle(element).getPropertyValue('--beat')); if (value > .5 && previous <= .5) seen.push(performance.now()); previous = value; await new Promise(resolve => requestAnimationFrame(resolve)); }
     return seen;
   });
+  // A blackout can close the terminal while the pulse is being timed; the solve loop restores power and comes back.
+  if (!(await pad.isVisible())) return;
   if (peaks.length < 3) throw Error('Could not see the false pulse');
   const period = (peaks.at(-1) - peaks[0]) / (peaks.length - 1);
-  const need = Number(/\/ (\d+) beats in rhythm/.exec(await page.getByTestId('pulse-streak').innerText())?.[1] ?? 8);
+  const streak = await page.getByTestId('pulse-streak').innerText({ timeout: 1500 }).catch(() => null);
+  if (streak === null) return;
+  const need = Number(/\/ (\d+) beats in rhythm/.exec(streak)?.[1] ?? 8);
   await page.evaluate(async ({ period, taps }) => {
     for (let i = 0; i < taps; i++) { window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' })); window.dispatchEvent(new KeyboardEvent('keyup', { key: '1' })); await new Promise(resolve => setTimeout(resolve, period)); }
   }, { period, taps: need + 2 });
@@ -303,9 +312,12 @@ export async function watchSequence(page, { tutorial = false, retry = 0 } = {}) 
 export async function solve(page, { delayStageThree = false } = {}) {
   let delayed = false; const end = Date.now() + 760000; const data = evidenceFor(page);
   while (Date.now() < end) {
-    if (await page.getByRole('dialog', { name: 'Run results' }).getByRole('heading', { name: 'Containment confirmed.', exact: true }).isVisible()) return data.stages;
-    // Winning hides inspection shortly before the result modal; wait for that transition.
-    if (/CONTAINMENT COMPLETE/.test(await page.locator('.sound-caption').innerText())) { await page.waitForTimeout(100); continue; }
+    if (await page.getByRole('dialog', { name: 'Run results' }).getByRole('heading', { name: 'You escaped.', exact: true }).isVisible()) return data.stages;
+    // A win plays the ending (text cards under reduced motion) before the run report; skip it once seen.
+    const ending = page.getByRole('main', { name: /^Ending/ });
+    if (await ending.isVisible()) { data.ending = await ending.getAttribute('aria-label'); await ending.getByRole('button', { name: 'Skip cutscene →' }).click(); continue; }
+    // Winning hides inspection shortly before the ending; wait for that transition.
+    if (/BASEMENT DOOR MOTOR RUNNING/.test(await page.locator('.sound-caption').innerText())) { await page.waitForTimeout(100); continue; }
     await guardDanger(page); await openTerminal(page);
     const title = await page.getByRole('dialog', { name: 'Research terminal' }).locator('h2').innerText({ timeout: 1500 }).catch(() => null);
     if (title === null) continue; // power dropped between opening and reading; the next loop restores it
@@ -323,12 +335,12 @@ export async function solve(page, { delayStageThree = false } = {}) {
     if (title === 'Mask your heartbeat.') { await maskHeartbeat(page); continue; }
     if (title === 'Let it lose your trail.') { await holdCalm(page); continue; }
     if (await page.getByTestId('fault-hearing').count()) { await fixFaultByEar(page); continue; }
-    if (title === 'Transmit a false heartbeat.' || title === 'Lead it toward containment.') {
+    if (title === 'Transmit a false heartbeat.' || title === 'Lead it away from the door.') {
       const transmit = page.getByRole('button', { name: 'T Transmit', exact: true });
       if (await transmit.isEnabled()) { await guardDanger(page); await transmit.click(); continue; }
       await watchSequence(page); continue;
     }
-    const final = page.getByRole('button', { name: 'Final containment broadcast' });
+    const final = page.getByRole('button', { name: 'Last decoy · start the door motor' });
     if (await final.isVisible()) { await final.click(); continue; }
     await page.waitForTimeout(100);
   }

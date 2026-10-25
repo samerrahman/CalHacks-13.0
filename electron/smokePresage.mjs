@@ -11,7 +11,7 @@ try {
  const page = await app.firstWindow(); page.setDefaultTimeout(10000);
  await app.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; window.show(); window.focus(); });
  await page.getByRole('button', { name: /Skip guidance & start/ }).waitFor({ state: 'visible', timeout: 30000 });
- const status = await page.evaluate(() => window.hush.status());
+ const status = await page.evaluate(() => window.lockIn.status());
  if (!status.presage) throw new Error('Native runtime/key unavailable; capture not started');
  await page.getByRole('button', { name: /Operator settings/ }).click();
  await page.getByLabel('Pulse input').selectOption('presage');

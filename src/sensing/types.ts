@@ -82,6 +82,12 @@ export type SensorView = {
   /** Local measurement clock only; excluded from remote trace and providers. */
   sampleAtMs: number | null;
   captureSegment: number;
+  /** Accepted, fresh breathing estimate (breaths/min); null when unavailable. Local only. */
+  breathingRpm?: number | null;
+  /** Local measurement clock of `breathingRpm`; excluded from remote trace and providers. */
+  breathingAtMs?: number | null;
+  /** Frozen personal resting breathing rate; null until enough accepted breathing. */
+  restingBreathingRpm?: number | null;
   diagnostics?: SensorDiagnostics;
   /** Local only, like diagnostics. Present for presage and simulated sources. */
   signals?: SensorSignals;

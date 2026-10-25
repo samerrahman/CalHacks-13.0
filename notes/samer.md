@@ -2,6 +2,7 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: merged `origin/main` (personal physiology, ending cutscene, camera prompt, pulse/breathing report) with `samer/spectate-physics` (Play with a friend, co-op manual, P2P camera, spectator CCTV, Presage signals); 236/236 tests and web/Electron builds pass.
 - 2026-10-24: published the combined co-op + camera + physics module to Maincloud `scary-5zsk8` (14/14 live co-op and 26/26 live camera signaling checks on Maincloud) and configured `https://shouldhaveskipped.work` (`vercel.json` + `.env.example`).
 - 2026-10-24: continued Claude's handoff: preserved all four feature branches, uploaded the friend-button checkpoint, integrated Presage signals, co-op manuals, peer-to-peer camera and spectator CCTV, added drag-and-return camera controls and sharing cleanup. 228/228 tests and web/Electron builds pass; combined local SpacetimeDB checks: 14 co-op, 26 camera signaling, 15 spectate/physics.
 

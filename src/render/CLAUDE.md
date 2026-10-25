@@ -13,3 +13,4 @@ Three.js presentation for HUSH: the enclosed shelter, weathered materials, canva
 - `SceneView.ready` reports required-asset failures. Repeated `setStation` calls must not erase mouse look. Listener yaw diagnostics follow the actual camera orientation.
 - Dispose models, textures, render targets, materials, mixers, event listeners, resize observers and WebGL resources. Scene construction must not make provider requests or read credentials.
 - Run render tests and `npm run assets:validate` after asset/animation changes. Parser tests do not replace inspecting actual rendered game screenshots.
+- The basement door left of the desk is the shared cutscene prop `src/cutscene/props/basementDoor.ts`, weathered like the room. `RenderState.locks` lights its four lamps green and slides its bolts; `doorMotor` turns the beacon after the last decoy. Cables, the wall tray and the protocol card sit clear of it.

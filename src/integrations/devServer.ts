@@ -7,7 +7,7 @@ import { publicDirectorRequest, publicMonsterRequest, authoredMonsterFallback, M
 import type { DirectorRequest } from '../game/state';
 import dialogue from '../game/dialogue.json';
 
-const BASE = '/api/hush/';
+const BASE = '/api/lock-in/';
 const MAX_BODY = 32768;
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 class RequestError extends Error { constructor(readonly status: number, message: string) { super(message); } }
@@ -52,7 +52,7 @@ export function createLocalApi(options: LocalApiOptions) {
   void (async () => {
    const host = request.headers.host;
    if (!LOOPBACK.has(request.socket.remoteAddress ?? '') || typeof host !== 'string' || !hosts.has(host)) throw new RequestError(403, 'Loopback host required');
-   if (request.headers['x-hush-client'] !== '1') throw new RequestError(403, 'Local app header required');
+   if (request.headers['x-lock-in-client'] !== '1') throw new RequestError(403, 'Local app header required');
    const origin = request.headers.origin;
    if (origin !== undefined && origin !== `http://${host}`) throw new RequestError(403, 'Same origin required');
    const site = request.headers['sec-fetch-site'];
@@ -104,6 +104,6 @@ export function localProviderApi(): Plugin {
   if (server.config.server.host !== '127.0.0.1') throw new Error('HUSH local providers require server.host=127.0.0.1');
   const loaded = { ...loadEnv(server.config.mode, server.config.root, ''), ...process.env };
   const env: ProviderEnv = { GEMINI_API_KEY: loaded.GEMINI_API_KEY, GEMINI_MODEL: loaded.GEMINI_MODEL, GEMINI_DIALOGUE_MODEL: loaded.GEMINI_DIALOGUE_MODEL, ELEVENLABS_API_KEY: loaded.ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID: loaded.ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL_ID: loaded.ELEVENLABS_MODEL_ID };
-  server.middlewares.use(createLocalApi({ port: server.config.server.port ?? 5173, env, offline: loaded.HUSH_OFFLINE === '1', allowedCaptions: dialogue.lines.map(line => line.text) }));
+  server.middlewares.use(createLocalApi({ port: server.config.server.port ?? 5173, env, offline: loaded.LOCK_IN_OFFLINE === '1' || loaded.HUSH_OFFLINE === '1', allowedCaptions: dialogue.lines.map(line => line.text) }));
  } };
 }

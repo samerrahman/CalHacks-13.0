@@ -4,7 +4,7 @@ import { config } from '../game/config';
 import { calmBreath, calmInhale, calmMatched, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, heartElevated, listeningTo, pulseFlash, pulseRequirement, tileOpenings } from '../game/tasks';
 import './thinking.css';
 
-const SECTORS: [Sector, string, string][] = [['NEAR', 'Near the wall', '0–6 · off camera'], ['A', 'CAM A', 'Clearing · 7–14'], ['B', 'CAM B', 'Service path · 14–22'], ['C', 'CAM C', 'Containment · 22–24']];
+const SECTORS: [Sector, string, string][] = [['NEAR', 'Near the wall', '0–6 · off camera'], ['A', 'CAM A', 'Clearing · 7–14'], ['B', 'CAM B', 'Service path · 14–22'], ['C', 'CAM C', 'Facility · 22–24']];
 type Send = (action: GameAction) => void;
 
 /** Live-data line shared by the Presage-aware tasks. Coarse accepted trend only; no BPM. */
@@ -69,6 +69,7 @@ export function PulseTask({ g, send }: { g: GameState; send: Send }) {
     <button className="pulse-pad" aria-label="Tap the false heartbeat" onPointerDown={event => { event.preventDefault(); send({ type: 'tap' }); }} onKeyDown={event => { if (event.key === 'Enter') send({ type: 'tap' }); }}
       style={{ '--beat': flash.toFixed(3) } as CSSProperties}><span aria-hidden="true">♥</span></button>
     <div className="task-progress"><span data-testid="pulse-streak">{p.streak} / {need.beats} beats in rhythm</span><span>{heartElevated(g) ? 'TIGHTER TIMING' : 'TAP 1 · PAD'}</span></div>
+    {p.personal && <small className="heart-line">Tuned to your own resting heartbeat from calibration.</small>}
     <small className="heart-line">{heartLine(g, 'Your own pulse is elevated and bleeding through: more beats, tighter timing.', 'Your pulse is steady; the mask holds at standard timing.')}</small>
   </>;
 }
@@ -83,6 +84,7 @@ export function CalmTask({ g, send }: { g: GameState; send: Send }) {
       style={{ '--breath': size.toFixed(3) } as CSSProperties}><i/><span>{inhale ? 'BREATHE IN · HOLD' : 'BREATHE OUT · RELEASE'}</span></button>
     <progress aria-label="Calm hold progress" max={c.required} value={c.progress}/>
     <div className="task-progress"><span>{Math.floor(c.progress)} / {c.required} calm seconds</span><span>{matched ? 'IN TIME' : 'OUT OF TIME'}</span></div>
+    {c.personal && <small className="heart-line">{c.halfSeconds < config.tasks.calm.breathSeconds - 1e-9 ? 'Started at your own breathing pace · slowing with every breath.' : 'Slowed from your own pace to a calm, steady breath.'}</small>}
     <small className="heart-line">{heartLine(g, 'Your pulse is elevated: it can still hear you, so progress is slower.', 'Your pulse is steady: progress is faster.')}</small>
   </>;
 }

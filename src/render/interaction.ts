@@ -7,7 +7,7 @@ export function hitStation(raycaster: Raycaster, scene: Object3D): Station | nul
   const hit = raycaster.intersectObjects(scene.children, true).find(candidate => visible(candidate.object));
   if (!hit) return null;
   for (let node: Object3D | null = hit.object; node; node = node.parent) {
-    const station = node.userData.hushStation;
+    const station = node.userData.lockInStation;
     if (station === 'terminal' || station === 'cameras' || station === 'equipment') return station;
   }
   return null;

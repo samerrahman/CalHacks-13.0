@@ -17,7 +17,7 @@ try {
  await app.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; window.show(); window.focus(); });
  page.on('pageerror', error => errors.push(safeError(error)));
  await page.getByRole('button', { name: /Skip guidance & start/ }).waitFor({ state: 'visible', timeout: 30000 });
- result.configured = await page.evaluate(() => window.hush.status());
+ result.configured = await page.evaluate(() => window.lockIn.status());
  if (!result.configured.gemini) { result.status = 'blocked'; result.reason = 'Gemini configuration unavailable; no game started'; }
  else {
   await page.getByRole('button', { name: /Operator settings/ }).click();

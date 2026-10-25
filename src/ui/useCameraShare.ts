@@ -20,7 +20,7 @@ export function useCameraShare(access: () => CameraSignalAccess | null, stream: 
     if (share.current) return;
     const target = accessRef.current();
     if (!target) { setState({ ...CAMERA_SHARE_OFF, status: 'error', message: 'Live camera needs trace sharing connected to SpacetimeDB' }); return; }
-    const browser = typeof window !== 'undefined' && !window.hush && !!navigator.mediaDevices?.getUserMedia;
+    const browser = typeof window !== 'undefined' && !window.lockIn && !!navigator.mediaDevices?.getUserMedia;
     const next = new PlayerCameraShare(target, { stream: () => streamRef.current, ...(browser ? { capture: () => navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24, max: 30 }, facingMode: 'user' }, audio: false }) } : {}) });
     share.current = next; latest.current = next;
     next.subscribe(s => { if (latest.current === next) setState(s); });

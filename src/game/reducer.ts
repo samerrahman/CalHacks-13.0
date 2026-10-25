@@ -21,7 +21,7 @@ export function createGame(seed = 17, mode: GameState['mode'] = 'standard'): Gam
     quiet: null, scare: null, scareCount: 0, restoreHeld: false, restoreHold: 0,
     blackout: { count: 0, lastAt: -1000, nextAt: config.blackout.firstEligibleAtSeconds, startedAt: null },
     clues: { machinery: 0, transient: 0, physiology: 0 }, transients: [],
-    sensor: { source: 'manual', quality: 'unknown', trend: 'UNKNOWN' }, trend: 'UNKNOWN', fixedMemoryTempo: false,
+    sensor: { source: 'manual', quality: 'unknown', trend: 'UNKNOWN' }, personal: { restingBpm: null, restingBreathsPerMinute: null }, recovery: { until: 0, rewardedStages: [] }, trend: 'UNKNOWN', fixedMemoryTempo: false,
     events: [], eventSequence: 0,
     director: { nextAt: 12, request: null, requestStarted: 0, requestSequence: 0, usedRequestIds: [], lastTactic: 'WAIT', lastTarget: 'NONE', source: 'FALLBACK', lastOutcome: 'LOCAL · ready', lastEvidenceIds: [], fallbackCount: 0, tauntId: 'NONE', lastTauntAt: -1000, tauntCount: 0 },
     notice: '', caption: 'NO NEARBY MOVEMENT', rng: safeSeed, accumulator: 0,
@@ -54,7 +54,7 @@ function tick(state: GameState): void {
   tickCreature(state, FIXED_DT);
   if (state.status === 'playing') { tickBlackout(state); tickDirector(state); }
   if (state.mode !== 'tutorial' && state.status === 'playing' && state.time >= config.line.deadlineSeconds - 1e-8) {
-    state.status = 'lost'; state.restoreHeld = false; state.lossReason = `The ${Math.round(config.line.deadlineSeconds / 60)}-minute protocol window expired.`; state.notice = 'Complete the research and final containment before the deadline.'; emit(state, 'TIMEOUT'); emit(state, 'LOST', 'TIMEOUT'); state.version++;
+    state.status = 'lost'; state.restoreHeld = false; state.lossReason = `The ${Math.round(config.line.deadlineSeconds / 60)}-minute protocol window expired.`; state.notice = 'Release all four basement locks and open the door before the deadline.'; emit(state, 'TIMEOUT'); emit(state, 'LOST', 'TIMEOUT'); state.version++;
   }
   updateDistanceSensor(state);
   updateCaption(state);
@@ -71,13 +71,34 @@ export function step(previous: GameState, dtSeconds: number): GameState {
   }
   return state;
 }
+/** Calming down is rewarded, once per research stage: it loses your trail for a few seconds.
+ * Only an accepted ELEVATED → RECOVERED transition counts; manual play has no equivalent by design. */
+function rewardRecovery(state: GameState): void {
+  if (state.mode === 'tutorial' || state.status !== 'playing' || state.paused || state.tasks.finalTransmitted) return;
+  const stage = state.tasks.stage;
+  if (state.recovery.rewardedStages.includes(stage)) return;
+  state.recovery.rewardedStages.push(stage);
+  state.recovery.until = state.time + config.recovery.durationSeconds;
+  state.notice = 'Your pulse settled. It lost your trail for a moment.';
+  emit(state, 'RECOVERY_REWARD', String(stage));
+}
+/** Accepts only rounded values inside the sensing ranges; anything else is neutral. */
+function personalChange(state: GameState, restingBpm: unknown, restingBreathsPerMinute: unknown): void {
+  const bpm = typeof restingBpm === 'number' && Number.isFinite(restingBpm) && restingBpm >= 40 && restingBpm <= 110 ? Math.round(restingBpm) : null;
+  const rpm = typeof restingBreathsPerMinute === 'number' && Number.isFinite(restingBreathsPerMinute) && restingBreathsPerMinute >= 5 && restingBreathsPerMinute <= 40 ? Math.round(restingBreathsPerMinute) : null;
+  state.personal = { restingBpm: bpm, restingBreathsPerMinute: rpm };
+}
 function sensorChange(state: GameState, sensor: SensorState): void {
   const source = ['presage', 'simulated', 'manual'].includes(sensor.source) ? sensor.source : 'manual';
   const quality = ['accepted', 'rejected', 'unknown'].includes(sensor.quality) ? sensor.quality : 'unknown';
   const trend = source !== 'manual' && quality === 'accepted' && ['UNKNOWN', 'STEADY', 'ELEVATED', 'RECOVERED'].includes(sensor.trend) ? sensor.trend : 'UNKNOWN';
   if (state.sensor.source === source && state.sensor.quality === quality && state.sensor.trend === trend) return;
+  // Brief capture gaps read as UNKNOWN; compare with the last known trend so a glitch can't hide a recovery.
+  const lastKnown = [...state.events].reverse().find(event => event.type === 'SENSOR_TREND' && !event.detail.endsWith('trend=UNKNOWN'));
+  const calmedDown = trend === 'RECOVERED' && (state.sensor.trend === 'ELEVATED' || state.sensor.trend === 'UNKNOWN' && !!lastKnown?.detail.endsWith('trend=ELEVATED'));
   state.sensor = { source, quality, trend }; state.trend = trend;
   emit(state, 'SENSOR_TREND', `source=${source} quality=${quality} trend=${trend}`);
+  if (calmedDown) rewardRecovery(state);
   // It changes model eligibility (near physiology reason), but never a live puzzle's tempo.
   state.version++;
   updateClues(state, 0); updateDanger(state, 0);
@@ -86,6 +107,7 @@ export function dispatch(previous: GameState, action: GameAction): GameState {
   const state = structuredClone(previous);
   if (action.type === 'sensor') { sensorChange(state, action); return state; }
   if (action.type === 'trend') { sensorChange(state, { ...state.sensor, trend: action.trend }); return state; }
+  if (action.type === 'personal') { personalChange(state, action.restingBpm, action.restingBreathsPerMinute); return state; }
   if (action.type === 'accessibility') { state.fixedMemoryTempo = action.fixedMemoryTempo; return state; }
   if (action.type === 'pause') {
     if (state.status !== 'playing') return previous;

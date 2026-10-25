@@ -33,7 +33,7 @@ type RemoteProp = { slot: number; kind: string; radius: number; x: number; y: nu
 
 export function parseWatchAccess(hash: string): Access {
   const access = JSON.parse(atob(new URLSearchParams(hash.slice(1)).get('watch') ?? '')) as Access;
-  if (!access || !/^hush-[a-f0-9]{64}$/.test(access.channel)) throw new Error('Invalid spectate link');
+  if (!access || !/^(hush|lock-in)-[a-f0-9]{64}$/.test(access.channel)) throw new Error('Invalid spectate link');
   return access;
 }
 

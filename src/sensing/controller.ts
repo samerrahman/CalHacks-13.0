@@ -1,16 +1,20 @@
 import { Baseline } from './baseline';
+import { BreathingBaseline } from './breathingBaseline';
 import { TrendTracker } from './trend';
 import { NativeMetricStream } from './nativeMetrics';
 import { sanitizeSensorError } from './sensorError';
 import { REQUESTED_METRICS, validationBlocksMetric } from './metricPolicy';
 import { simulatedSample, simulatedSignals, simulatedWaveforms } from './simulated';
 import type { SensorWaveforms } from './signals';
-import { acceptedPulse, type SensorMode, type SensorSample, type SensorView } from './types';
+import { acceptedPulse, FRESHNESS_MS, type SensorMode, type SensorSample, type SensorView } from './types';
 import type { SmartSpectraSDK } from '@smartspectra/node-sdk/renderer';
 import '../integrations/contracts';
 
 export class SensorController {
   private baseline = new Baseline();
+  private breathingBaseline = new BreathingBaseline();
+  /** Latest accepted breathing estimate on the local monotonic clock. */
+  private breathing: { rpm: number; atMs: number } | null = null;
   private trends = new TrendTracker();
   private sample: SensorSample | null = null;
   private sdk: SmartSpectraSDK | null = null;
@@ -47,12 +51,23 @@ export class SensorController {
     const signals = diagnostics ? this.native.signalView(now, captureState, diagnostics) : this.mode === 'simulated' ? simulatedSignals(now, this.elevated, usable) : undefined;
     // The display status for pulse follows the game's own accepted pulse.
     if (signals && signals.status.pulse.status === 'ok' && !(usable && pulse !== null)) signals.status.pulse = { status: 'rejected', reason: this.sample?.qualityReasons[0] ?? this.hint };
-    return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...(diagnostics ? { diagnostics } : {}), ...(signals ? { signals } : {}) };
+    return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...this.breathingView(now, usable), ...(diagnostics ? { diagnostics } : {}), ...(signals ? { signals } : {}) };
   }
   /** Bounded local waveform buffers (last 20 s) for display; never part of SensorView. */
   waveforms(): SensorWaveforms | null {
     const now = performance.now();
     return this.mode === 'presage' ? this.native.waveforms(now) : this.mode === 'simulated' ? simulatedWaveforms(now, this.elevated) : null;
+  }
+  private breathingView(now: number, usable: boolean): Pick<SensorView, 'breathingRpm' | 'breathingAtMs' | 'restingBreathingRpm'> {
+    const fresh = usable && this.breathing !== null && now - this.breathing.atMs <= FRESHNESS_MS && this.breathing.atMs <= now + 1000;
+    return { breathingRpm: fresh ? this.breathing!.rpm : null, breathingAtMs: fresh ? this.breathing!.atMs : null, restingBreathingRpm: this.breathingBaseline.value };
+  }
+  /** Breathing has its own SDK stream and 30-second window; only accepted estimates count. */
+  private observeBreathing(rpm: number | null, atMs: number | null): void {
+    if (rpm === null || atMs === null) { this.breathingBaseline.discardContinuity(); return; }
+    if (this.breathing && atMs <= this.breathing.atMs) return;
+    this.breathing = { rpm, atMs };
+    this.breathingBaseline.add(rpm, atMs);
   }
   private publish(): void { const view = this.view(); this.listeners.forEach(l => l(view)); }
   private publishDiagnostics(force = false): void {
@@ -60,12 +75,16 @@ export class SensorController {
     if (!force && now - this.diagnosticPublishedAt < 250) return;
     this.diagnosticPublishedAt = now;
     const diagnostics = this.native.view(now, this.stream ? 'live' : 'acquiring');
+    const breathing = diagnostics.breathing;
+    if (breathing.state === 'accepted' && breathing.bpm !== null && breathing.ageMs !== null) this.observeBreathing(breathing.bpm, now - breathing.ageMs);
+    else if (breathing.state === 'rejected' || breathing.state === 'stale') this.breathingBaseline.discardContinuity();
     this.hint = diagnostics.blocker ?? (this.baseline.value === null ? 'Stable capture · collecting 30 usable seconds' : 'LIVE · accepted sustained pulse trend');
     this.publish();
   }
   private accept(sample: SensorSample): void {
     if (this.disposed) return;
     this.sample = sample;
+    if (sample.source === 'simulated') this.observeBreathing(sample.quality === 'accepted' ? this.elevated ? 18 : 14 : null, sample.measuredMonotonicMs);
     this.baseline.add(sample, performance.now(), this.mode === 'simulated');
     this.trends.add(sample);
     if (this.mode !== 'presage' || this.native.processingStatus === 'running') this.status = this.baseline.value === null ? 'calibrating' : 'ready';
@@ -95,7 +114,8 @@ export class SensorController {
     if (generation !== this.generation || this.disposed) return;
     this.captureSegment++;
     this.mode = mode;
-    if (!preserveBaseline) this.baseline.reset();
+    if (!preserveBaseline) { this.baseline.reset(); this.breathingBaseline.reset(); }
+    this.breathing = null; this.breathingBaseline.discardContinuity();
     this.trends.reset(); this.sample = null; this.startedAt = performance.now(); this.native = new NativeMetricStream();
     if (mode === 'manual') { this.status = 'manual'; this.hint = 'MANUAL · no camera or pulse data'; this.publish(); return; }
     this.status = 'starting'; this.hint = mode === 'presage' ? 'Checking native camera integration' : 'SIMULATED · development fixture'; this.publish();
@@ -105,7 +125,7 @@ export class SensorController {
       return;
     }
     try {
-      const available = await window.hush?.status();
+      const available = await window.lockIn?.status();
       if (!available?.presage) throw new Error(available?.reasons[0] ?? 'Live Presage requires the Electron app and a configured key');
       const [{ SmartSpectraSDK: SDK, MetricType }, { decodeMetrics }] = await Promise.all([import('@smartspectra/node-sdk/renderer'), import('@smartspectra/node-sdk/messages')]);
       if (generation !== this.generation) return;
@@ -173,7 +193,7 @@ export class SensorController {
     if (this.timer) clearInterval(this.timer); this.timer = null;
     const stream = this.stream; this.stream = null; this.publishPreview();
     const sdk = this.sdk; this.sdk = null;
-    this.sample = null; this.trends.discard(); this.baseline.discardContinuity();
+    this.sample = null; this.trends.discard(); this.baseline.discardContinuity(); this.breathing = null; this.breathingBaseline.discardContinuity();
     stream?.getTracks().forEach(track => { try { track.stop(); } catch { /* Already stopped track must not block SDK retirement. */ } });
     const previous = this.retiring;
     this.retiring = (async () => {

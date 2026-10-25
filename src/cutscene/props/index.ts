@@ -9,6 +9,8 @@ import { buildPineTree, buildRock, buildFern, buildFallenLog, buildForestGround 
 import { buildShelterExterior } from './shelterExterior';
 import { buildFpArms } from './fpArms';
 import { buildResearcher } from './researcher';
+import { buildBasementDoor } from './basementDoor';
+import { buildBasementStairs } from './basementStairs';
 
 /** Contract for every cutscene prop. Units are metres, +Y up. A replacement GLB in
  * cutscene/models/<name>.glb must keep the same origin, facing, scale and node names,
@@ -38,6 +40,10 @@ export const PROPS = {
   forest_ground: { build: buildForestGround, size: '24 wide × 50 long', origin: 'start centre (z = 0)', facing: 'runs to z = +50; a 1.4 wide dirt path winds along x ≈ 0 (within ±1.5)', nodes: ['path'] },
   shelter_exterior: { build: buildShelterExterior, size: 'bunker about 7 wide × 3.8 tall × 6 deep (fits the game interior 6.4 × 3.4 × 5.4), half-buried in an earth berm', origin: 'floor centre of the door threshold', facing: 'door faces −Z (approach side); the body extends toward +Z; doorway 1.5 × 2.7 opens into a dark vestibule',
     nodes: ['hatch_door (group whose origin is on the hinge line at x = +0.75; rotation.y = 0 is closed, rotation.y = −1.6 swings it open toward −Z)', 'hatch_dent (child of hatch_door: an inward bulge on the inside face; hidden at rest, the scene grows scale.z from 0 to 1)', 'lamp_bulb (emissive lamp_warm above the door)', 'sign'] },
+  basement_door: { build: buildBasementDoor, size: 'doorway 0.95 × 2.0 with a 1.06 sliding leaf, track, motor and beacon above (fits the game shelter\'s front wall left of the desk)', origin: 'floor centre of the doorway, in the room-side face of the wall', facing: 'room toward +Z, stairs toward −Z; the leaf slides toward −X',
+    nodes: ['door_leaf (group; position.x = −travel opens it, up to 0.47)', 'leaf_dent (child of door_leaf on its stairwell face; hidden at rest, the scene grows scale.z from 0 to 1)', 'lock_bolt_0..3 (groups; position.x += 0.09 slides a released bolt into its housing)', 'lock_lamp_0..3 (emissive alarm_red, in a row above door_label; the scene turns a released lock green)', 'beacon (group on the motor housing)', 'beacon_lens (emissive lamp_warm)', 'door_label (cream plate above the track)', 'door_frame', 'door_track', 'door_motor'] },
+  basement_stairs: { build: buildBasementStairs, size: '1.3 wide stairwell: a 1.15 landing, 14 steps down 2.66 m, a bottom landing into black', origin: 'same as basement_door (floor centre of the doorway, room-side wall face)', facing: 'everything lies toward −Z behind the 0.2 m wall',
+    nodes: ['close_lever (group pivoting at its base on the right wall; rotation.x < 0 pulls it)', 'close_lever_grip (alarm_red)', 'close_sign (cream)', 'lamp_0, lamp_1 (caged lamps)', 'lamp_0_bulb, lamp_1_bulb (emissive alarm_red)'] },
   fp_arms: { build: buildFpArms, size: 'first-person forearms and hands', origin: 'camera position', facing: 'camera space: forward is −Z, up is +Y',
     nodes: ['arm_l', 'arm_r (pivots near the elbows, out of frame)', 'hand_l', 'hand_r', 'flashlight (held in hand_r)', 'flashlight_lens (emissive)'] },
 } satisfies Record<string, PropSpec>;

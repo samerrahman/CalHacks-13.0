@@ -1,11 +1,12 @@
 {
-  "name": "LOCK IN playable runtime assets",
+  "name": "HUSH playable runtime assets",
   "counts": {
     "models": 10,
     "audio": 44,
     "cctvBackgrounds": 4,
     "decals": 7,
-    "openingVideo": 1
+    "openingVideo": 1,
+    "endingVideo": 1
   },
   "assets": [
     {
@@ -323,11 +324,11 @@
     {
       "path": "public/assets/decals/protocol_card.svg",
       "url": "/assets/decals/protocol_card.svg",
-      "bytes": 1465,
-      "sha256": "5fa1122f3e1e7dff7561c7f0908dbb308fdc881adfb2b7ea32b98e076239bb00",
+      "bytes": 1471,
+      "sha256": "725d6d3710511d4cba138834ec0807240e5c9cdd8143251916b1873dd6891fc1",
       "source": "Runtime-authored variation of lock-in-kit/assets/decals/protocol_card.svg",
       "license": "public/assets/LICENSE.txt",
-      "modification": "Harder runtime protocol: eight faults, five-pulse A, twelve faults, six-pulse B; original kit asset preserved."
+      "modification": "Basement protocol: each of the four research stages releases one basement lock; decoy before the door motor; original kit asset preserved."
     },
     {
       "path": "public/assets/decals/sensor_notice.svg",
@@ -590,6 +591,15 @@
       "url": "/assets/video/opening.mp4",
       "bytes": 9039249,
       "sha256": "e802b02e96f12c8330d912465368e5060089b41d433ad4f1a67aa277366ffb14",
+      "mediaType": "video/mp4",
+      "source": "cutscene/ + src/cutscene/ (rendered by tools/cutscene.mjs render)",
+      "license": "Generated for this project; see docs/ASSETS.md"
+    },
+    {
+      "path": "public/assets/video/ending.mp4",
+      "url": "/assets/video/ending.mp4",
+      "bytes": 8175661,
+      "sha256": "1633ca4b937549145a768ea476f1e9c48e5d947c813721ce23b39eb895d06f74",
       "mediaType": "video/mp4",
       "source": "cutscene/ + src/cutscene/ (rendered by tools/cutscene.mjs render)",
       "license": "Generated for this project; see docs/ASSETS.md"

@@ -14,10 +14,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 for (const name of ['.env.local', '.env']) { const p = path.join(root, name); if (existsSync(p)) process.loadEnvFile(p); }
 // Explicit QA gate: a configured account must not turn an offline smoke into
 // a live network/camera test. This mutates only the child process environment.
-const offline = process.env.HUSH_OFFLINE === '1';
+const offline = process.env.LOCK_IN_OFFLINE === '1' || process.env.HUSH_OFFLINE === '1';
 if (offline) for (const name of ['PRESAGE_API_KEY', 'GEMINI_API_KEY', 'ELEVENLABS_API_KEY', 'VITE_SPACETIMEDB_DB_NAME']) delete process.env[name];
 app.setName('HUSH');
-protocol.registerSchemesAsPrivileged([{ scheme: 'hush', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'lockin', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }]);
 let mainWindow: BrowserWindow | null = null;
 let nativeAvailable = false;
 let nativeReason = 'Presage key not configured';
@@ -39,17 +39,17 @@ function restrictNavigation(window: BrowserWindow): void {
   window.webContents.on('will-navigate', e => e.preventDefault());
 }
 function contentPolicy(): string {
-  const dev = !!process.env.HUSH_DEV_URL;
+  const dev = !!(process.env.LOCK_IN_DEV_URL || process.env.HUSH_DEV_URL);
   // The SpacetimeDB client compiles its row codecs with Function(), so eval is allowed only
   // when a database is configured; the renderer otherwise keeps the strict script policy.
   const spacetime = !!process.env.VITE_SPACETIMEDB_DB_NAME;
   return `default-src 'self'; script-src 'self'${dev ? " 'unsafe-inline'" : ''}${spacetime ? " 'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 ws://localhost:3000 ws://127.0.0.1:3000 http://localhost:3000 http://127.0.0.1:3000 https://maincloud.spacetimedb.com wss://maincloud.spacetimedb.com; object-src 'none'; base-uri 'self'; frame-src 'none'`;
 }
-ipcMain.handle('hush:status', event => {
+ipcMain.handle('lock-in:status', event => {
   trusted(event);
   return { desktop: true, offline, presage: nativeAvailable, gemini: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL), elevenlabs: !!(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_VOICE_ID && process.env.ELEVENLABS_MODEL_ID), spacetime: !!process.env.VITE_SPACETIMEDB_DB_NAME, reasons: nativeReason ? [nativeReason] : [] };
 });
-ipcMain.handle('hush:director', async (event, raw) => {
+ipcMain.handle('lock-in:director', async (event, raw) => {
   trusted(event);
   const request = publicDirectorRequest(raw);
   if (directorIds.has(request.requestId) || performance.now() - lastDirectorAt < 12_000) return { proposal: null, source: 'fallback', latencyMs: 0, reason: 'Duplicate or rate-limited director request' };
@@ -57,7 +57,7 @@ ipcMain.handle('hush:director', async (event, raw) => {
   if (directorIds.size > 500) directorIds.delete(directorIds.values().next().value!);
   return geminiProposal(request, process.env);
 });
-ipcMain.handle('hush:speech', async (event, request) => {
+ipcMain.handle('lock-in:speech', async (event, request) => {
   trusted(event);
   if (!validSpeechRequest(request) || !isAuthoredCaption(request.caption)) throw new Error('Speech must match a valid authored caption');
   if (speechIds.has(request?.requestId) || performance.now() - lastSpeechAt < 1500) return { audioBase64: null, mimeType: 'audio/mpeg', source: 'fallback', latencyMs: 0, reason: 'Duplicate or rate-limited speech' };
@@ -65,7 +65,7 @@ ipcMain.handle('hush:speech', async (event, request) => {
   if (speechIds.size > 500) speechIds.delete(speechIds.values().next().value!);
   return elevenSpeech(request, process.env);
 });
-ipcMain.handle('hush:monster', async (event, raw) => {
+ipcMain.handle('lock-in:monster', async (event, raw) => {
   trusted(event);
   const request = publicMonsterRequest(raw);
   if (offline) return authoredMonsterFallback(request, 'Offline mode · authored monster dialogue');
@@ -92,15 +92,15 @@ async function createWindow(): Promise<void> {
     }
     return { action: 'deny' };
   });
-  const developmentUrl = process.env.HUSH_DEV_URL;
+  const developmentUrl = process.env.LOCK_IN_DEV_URL || process.env.HUSH_DEV_URL;
   if (developmentUrl) {
     const parsed = new URL(developmentUrl);
     if (!['127.0.0.1', 'localhost'].includes(parsed.hostname) || parsed.protocol !== 'http:') throw new Error('Only local development servers are permitted');
     await win.loadURL(developmentUrl);
-  } else await win.loadURL('hush://app/index.html');
+  } else await win.loadURL('lockin://app/index.html');
 }
 void app.whenReady().then(async () => {
-  protocol.handle('hush', async request => {
+  protocol.handle('lockin', async request => {
     const url = new URL(request.url);
     if (url.host !== 'app' || request.method !== 'GET') return new Response('Not found', { status: 404 });
     const directory = path.join(root, 'dist');

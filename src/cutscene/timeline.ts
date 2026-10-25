@@ -33,7 +33,7 @@ export const CAPTIONS: Caption[] = [
   { start: B.forest + 0.4, end: B.forest + 4.8, text: "[running through wet branches — heavy footsteps behind you]" },
   { start: B.slam, end: B.crash - 0.1, text: '[the door slams shut — a heartbeat in the dark]' },
   { start: B.crash, end: B.crash + 2.3, text: '[something slams into the door]' },
-  { start: B.black + 0.5, end: B.end, text: 'Silence the faults. Test the emitters. Lead it back into containment.' },
+  { start: B.black + 0.5, end: B.end, text: 'Silence the faults. Release the four basement locks. Get out.' },
 ];
 
 /** Recorded cues from cutscene/audio (render inputs only; credits in cutscene/audio/SOURCES.md).
@@ -70,7 +70,7 @@ export type SynthLayer =
   | { kind: 'gallop'; gain: Env }
   | { kind: 'breath'; rate: Env; gain: Env }
   | { kind: 'heartbeat'; rate: Env; gain: Env }
-  | { kind: 'drone' | 'rain' | 'rain_muffled' | 'wind' | 'riser' | 'hum' | 'alarm' | 'buzz'; gain: Env }
+  | { kind: 'drone' | 'rain' | 'rain_muffled' | 'wind' | 'riser' | 'hum' | 'alarm' | 'buzz' | 'motor'; gain: Env }
   | { kind: 'hit'; at: number; level: number; ring: number[]; decay: number; crack: number }
   | { kind: 'wham'; at: number; level: number; tail: number }
   | { kind: 'creak'; at: number; dur: number; rate: [number, number]; modes: number[]; level: number }

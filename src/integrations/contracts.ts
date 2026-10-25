@@ -11,7 +11,7 @@ export type MonsterFallbackId = typeof MONSTER_FALLBACK_IDS[number];
 export const MONSTER_TEXT_TIMEOUT_MS = 5000;
 export const MONSTER_TOTAL_TIMEOUT_MS = 12000;
 export const MONSTER_MIN_INTERVAL_MS = 18000;
-export const TRACE_SCHEMA_VERSION = 'hush-v2';
+export const TRACE_SCHEMA_VERSION = 'lock-in-v2';
 export type MonsterRequest = { requestId: string; context: DirectorRequest; fallbackId: MonsterFallbackId; expiresAtMs: number };
 export type MonsterResult = { requestId: string; caption: string; textSource: 'gemini' | 'authored-fallback'; textLatencyMs: number; textReason?: string; textProviderRequestId?: string; evidenceEventIds: string[]; speech: SpeechResult; totalLatencyMs: number };
 export type IntegrationStatus = { desktop: boolean; offline?: boolean; presage: boolean; gemini: boolean; elevenlabs: boolean; spacetime: boolean; reasons: string[] };
@@ -21,7 +21,7 @@ export interface DesktopBridge {
   speech(request: SpeechRequest): Promise<SpeechResult>;
   monster(request: MonsterRequest): Promise<MonsterResult>;
 }
-declare global { interface Window { hush?: DesktopBridge } }
+declare global { interface Window { lockIn?: DesktopBridge } }
 
 /** The public speech route accepts authored captions only. Generated speech
  * can be reached only by the server's contextual monster pipeline. */
@@ -47,7 +47,7 @@ export const TAUNTS = ['NONE', 'AFTER_MISTAKE', 'MACHINES_QUIET', 'HEARD_RHYTHM'
 export const REASONS = ['RECENT_SOUND', 'PATTERN_OF_MISTAKES', 'QUIET_AFTER_NOISE', 'SUSTAINED_NEARBY_TREND', 'EARNED_LURE', 'RECOVERY', 'VARY_PRESSURE', 'NO_VALID_SIGNAL'] as const;
 const NODES = ['SHELTER_WALL', 'WEST_WALL', 'EAST_WALL', 'NEAR_PATH', 'JUNCTION', 'EMITTER_A', 'EMITTER_B', 'CONTAINMENT'] as const;
 const TRENDS = ['UNKNOWN', 'STEADY', 'ELEVATED', 'RECOVERED'] as const;
-const EVENT_TYPES = new Set(['NEAR_LISTEN', 'TAUNT', 'DIRECTOR_APPLIED', 'DIRECTOR_REJECTED', 'DIRECTOR_REQUESTED', 'MEMORY_REPLAY', 'TASK_COMPLETE', 'WRONG_INPUT', 'FAULT_CLEARED', 'MEMORY_ARMED', 'FINAL_BROADCAST', 'FAULT_STARTED', 'MEMORY_READY', 'MEMORY_EXPIRED', 'LURE_TRANSMITTED', 'QUIET_ENTERED', 'RESTORED', 'APPROACH', 'LURE_ARRIVED', 'WON', 'LURE_RELEASED', 'QUIET_RETREAT', 'RESTORE_WINDOW', 'BREACH_WARNING', 'LOST', 'RUN_STARTED', 'BLACKOUT_STARTED', 'SENSOR_TREND', 'PAUSED', 'RESUMED', 'PROXIMITY_ALARM', 'ATTACK_COMMITTED', 'SCARE', 'MONSTER_STEP', 'QUIET_EXHAUSTED', 'QUIET_COOLDOWN', 'TIMEOUT', 'WIRE_CONNECTED']);
+const EVENT_TYPES = new Set(['NEAR_LISTEN', 'TAUNT', 'DIRECTOR_APPLIED', 'DIRECTOR_REJECTED', 'DIRECTOR_REQUESTED', 'MEMORY_REPLAY', 'TASK_COMPLETE', 'WRONG_INPUT', 'FAULT_CLEARED', 'MEMORY_ARMED', 'FINAL_BROADCAST', 'FAULT_STARTED', 'MEMORY_READY', 'MEMORY_EXPIRED', 'LURE_TRANSMITTED', 'QUIET_ENTERED', 'RESTORED', 'APPROACH', 'LURE_ARRIVED', 'WON', 'LURE_RELEASED', 'QUIET_RETREAT', 'RESTORE_WINDOW', 'BREACH_WARNING', 'LOST', 'RUN_STARTED', 'BLACKOUT_STARTED', 'SENSOR_TREND', 'PAUSED', 'RESUMED', 'PROXIMITY_ALARM', 'ATTACK_COMMITTED', 'SCARE', 'MONSTER_STEP', 'QUIET_EXHAUSTED', 'QUIET_COOLDOWN', 'TIMEOUT', 'WIRE_CONNECTED', 'RECOVERY_REWARD']);
 export const DIRECTOR_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['requestId', 'stateVersion', 'tactic', 'target', 'evidenceEventIds', 'reasonCode', 'tauntId'],

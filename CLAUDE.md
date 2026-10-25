@@ -1,6 +1,6 @@
 # HUSH — CalHacks 13.0
 
-The root application is HUSH: a sealed research shelter, four fault/memory stages, remote heartbeat lures and physical containment. NIGHT RELAY is archived reference material only. The explicit user request authorized the root replacement and required cross-area contract updates.
+The root application is HUSH: a sealed research shelter, four fault/memory stages, remote heartbeat lures and physical containment. The older build kits remain archived under their original names. The visible title changed without changing internal integration identifiers.
 
 Read `README.md`, `src/game/config.ts` and `docs/HANDOFF.md` for current behavior and verification. The subsequent user request authorizes harder rules, darker art, equipment interactions, camera setup and live monster speech across ownership areas. The preserved kit GAME_SPEC describes the earlier version; current tuning supersedes its unconditional late-quiet rescue and visible breach warning. The user decided on 2026-10-24 that HUSH does infer fear and emotion from Presage (expression scores plus physiology) as game input, superseding the kit's "does not infer emotions"; present these as camera estimates, never medical readings.
 
@@ -23,7 +23,7 @@ npm run integrations:check   # native check by default; explicit --live provider
 - `src/integrations/contracts.ts`: director and speech requests/results, and the public projection sent to providers
 - `src/sensing/types.ts`: sensor samples and trend states
 - `spacetimedb/src/index.ts`: private session table, reducers, and judge view
-- `electron/preload.ts`: the `window.hush` bridge
+- `electron/preload.ts`: the `window.lockIn` bridge (stable internal name)
 - `public/assets/manifest.json`: every model, sound and decal
 
 ## Ownership
@@ -44,7 +44,7 @@ Some folders have their own `CLAUDE.md` with that owner's notes. If you don't kn
 - **Never change a contract unless the user explicitly asks.** Contract changes go through the team chat first.
 - **Never run `npm install <pkg>` or edit `package.json`** unless you are working for Samer.
 - **Never run `npx convex dev`, `npx convex env` or `npx convex deploy` yourself.** Without a real terminal, the CLI silently sets up an anonymous local backend. Ask the user.
-- Keys live in ignored local environment files and are read only by Node-side loopback Vite middleware or Electron main. Never use a `VITE_*` name for a secret. Local browser providers use the protected `/api/hush` bridge; desktop uses `window.hush`. Static browser hosting uses local provider fallbacks until a trusted provider service is configured. SpacetimeDB connection settings are public.
+- Keys live in ignored local environment files and are read only by Node-side loopback Vite middleware or Electron main. Never use a `VITE_*` name for a secret. Local browser providers retain the protected `/api/lock-in` bridge; desktop retains `window.lockIn` and the `lockin://` scheme for compatibility. Static browser hosting uses local provider fallbacks until a trusted provider service is configured. SpacetimeDB connection settings are public.
 - Keep the game deterministic: the reducer owns game time, and rendering and input never wait on a provider call. Every AI proposal is revalidated locally.
 - Don't invent integration results. A claim like "live" needs evidence in `docs/qa/`. Simulated sensing must stay labeled as simulated.
 - No drive-by refactors, renames or reformatting outside the task.

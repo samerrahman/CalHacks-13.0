@@ -14,6 +14,24 @@ A 36-second first-person film. You never see the monster. You stand at the obser
 | `cutscene/models/*.glb` | The props the renderer actually loads. **Replace these to change the art.** |
 | `tools/cutscene.mjs` | Offline tool: previews, GLB export, stills, final render. |
 
+## Ending cutscene
+
+A 38.5-second first-person film that plays after a win (`public/assets/video/ending.mp4`, with the same caption overlay and **Skip cutscene →**; text cards under reduced motion). It is shot in the game's own shelter, built from the game GLBs in `public/assets/models` at their in-game placements, so it opens on the room you just left. All four basement locks are released and you engage the door motor. Its grinding and klaxon give you away: on CAM A (the game's own clearing plate, with the creature drawn as a black silhouette as the game's CCTV does) it turns its head toward the shelter and charges the lens. It hits the shelter door three times while the basement door grinds open, and claws tear through the corner. You squeeze sideways through the gap onto the stairwell landing and turn. Through the slit the shelter door bursts in and it comes straight at you. You pull EMERGENCY CLOSE, the leaf drops shut as its claws reach through, four bolts shoot home, and it pounds on the door while you go down the stairs by torchlight into the dark.
+
+| Path | What it is |
+|---|---|
+| `src/cutscene/ending.ts` | The ending's beats, shots, captions, recorded cues and synth layers (it adds a `motor` layer). The game reads its captions from here. |
+| `src/cutscene/endingScene.ts` | The ending's set, lights, camera and animation, as a pure function of time. `travelAt(t)` is how far the basement door is open. |
+| `src/cutscene/props/basementDoor.ts` | The basement door, shared with the game room (which shows its lock lamps per completed stage). |
+| `src/cutscene/props/basementStairs.ts` | The stairwell behind it (film only). |
+
+```bash
+npm run cutscene -- stills 6 20.1 --film=ending   # ending keyframes
+npm run cutscene -- render --film=ending          # → public/assets/video/ending.mp4 (+ manifest entry)
+```
+
+Preview it in real time at `/cutscene/index.html?preview&film=ending`. It uses no new recordings: the same files in `cutscene/audio/`, re-sequenced.
+
 ## Replacing a model
 
 1. Make the new model in Blender (or any tool) and export a GLB with the **same file name** as in `cutscene/models/`.

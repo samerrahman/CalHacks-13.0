@@ -7,12 +7,12 @@ const browser=await chromium.launch({channel:'chrome',headless:true});
 await mkdir('docs/qa',{recursive:true});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}});page.on('pageerror',error=>result.errors.push(error.message.slice(0,200)));
- page.on('response',async response=>{if(!response.url().endsWith('/api/hush/monster'))return;try{const value=await response.json();if(!value.speech)return;result.monsterResponses.push({requestId:value.requestId,caption:value.caption,textSource:value.textSource,textLatencyMs:value.textLatencyMs,textReason:value.textReason??null,textProviderRequestId:value.textProviderRequestId??null,evidenceEventIds:value.evidenceEventIds,totalLatencyMs:value.totalLatencyMs,speech:{source:value.speech.source,latencyMs:value.speech.latencyMs,providerRequestId:value.speech.providerRequestId??null,reason:value.speech.reason??null,bytes:value.speech.audioBase64?Buffer.from(value.speech.audioBase64,'base64').length:0}});}catch{result.errors.push('Invalid contextual dialogue response');}});
+ page.on('response',async response=>{if(!response.url().endsWith('/api/lock-in/monster'))return;try{const value=await response.json();if(!value.speech)return;result.monsterResponses.push({requestId:value.requestId,caption:value.caption,textSource:value.textSource,textLatencyMs:value.textLatencyMs,textReason:value.textReason??null,textProviderRequestId:value.textProviderRequestId??null,evidenceEventIds:value.evidenceEventIds,totalLatencyMs:value.totalLatencyMs,speech:{source:value.speech.source,latencyMs:value.speech.latencyMs,providerRequestId:value.speech.providerRequestId??null,reason:value.speech.reason??null,bytes:value.speech.audioBase64?Buffer.from(value.speech.audioBase64,'base64').length:0}});}catch{result.errors.push('Invalid contextual dialogue response');}});
  const target=new URL(process.env.HUSH_TEST_URL||'http://127.0.0.1:5174');target.searchParams.set('debug','1');await page.goto(target.href);
  await expect(page.getByRole('button',{name:'Skip guidance & start',exact:true})).toBeEnabled({timeout:20000});
  await expect(page.getByText('Monster speech enabled · ElevenLabs',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Skip guidance & start',exact:true}).click();
- await page.getByRole('button',{name:'Play without camera',exact:true}).click();
+ await page.getByRole('dialog',{name:'Enable your camera'}).getByRole('button',{name:/I don’t want to/}).click({timeout:1500}).catch(()=>{});
  await page.getByRole('button',{name:'Skip cutscene →',exact:true}).click();
  await page.keyboard.press('e');
  await expect(page.getByRole('dialog',{name:'Research terminal'})).toBeVisible();

@@ -12,3 +12,11 @@
 .opening-film video{width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated} /* the film is 640×360 pixel art: scale it up crisp */
 .opening-caption{position:absolute;left:50%;bottom:10vh;transform:translateX(-50%);width:min(900px,86vw);margin:0;min-height:1.4em;text-align:center;font-size:clamp(17px,2.1vw,25px);font-weight:300;color:var(--cream);text-shadow:0 1px 4px #000,0 0 18px #000}
 .opening-skip{position:absolute;right:42px;bottom:30px;z-index:6;color:var(--cream)}
+/* First-start camera request over the setup screen. */
+.camera-prompt h2{font-size:32px;margin:12px 0 16px}.camera-prompt .camera-prompt-why{color:#b9c7ac;line-height:1.6;font-size:14px;margin:0}
+.camera-prompt .camera-prompt-actions{max-width:none;margin:22px 0 14px}.camera-prompt .camera-prompt-actions .primary{margin-top:0}
+.camera-prompt .camera-decline{width:100%;text-align:left}.camera-prompt-note{color:#d2b98b;margin-bottom:10px}
+.camera-prompt .camera-prompt-actions.split{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0 0}.camera-prompt .split button{text-align:center;font-size:12px}
+/* The ending plays over the HUD after a win; the run report (z 20) follows it. */
+.ending-film,.ending-cards{z-index:15}
+.pulse-numbers{flex-wrap:wrap;row-gap:16px}.report-legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:2px 0 10px;font:9px var(--mono);letter-spacing:1px;text-transform:uppercase;color:#adbc9c}.report-legend i{display:inline-block;width:16px;height:3px;margin-right:7px;vertical-align:middle}.report-legend i.marker{width:8px;height:8px;border-radius:50%;background:#d99450}

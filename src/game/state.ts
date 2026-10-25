@@ -71,12 +71,16 @@ export type TaskStep = 'faults' | 'wires' | 'routing' | 'locate' | 'memory' | 'p
 /** Conduit puzzle: rotate tiles on a size×size grid to connect the left inlet row to the right outlet row.
  * `kinds` 0 blank, 1 straight, 2 corner, 3 tee; `turns` quarter turns clockwise. `answer` is private. */
 export interface RoutingState { round: number; rounds: number; size: number; kinds: number[]; turns: number[]; answer: number[]; start: number; end: number }
-/** Heartbeat mask: tap intervals must match `periodSeconds`. Private. */
-export interface PulseMaskState { periodSeconds: number; startedAt: number; streak: number; lastTap: number | null }
+/** Heartbeat mask: tap intervals must match `periodSeconds`. Private. `personal`: the period is the player's own resting pulse. */
+export interface PulseMaskState { periodSeconds: number; startedAt: number; streak: number; lastTap: number | null; personal?: boolean }
 /** Locate: mark the creature's sector from the monitor. */
 export interface LocateState { marks: number; required: number; lastMarkAt: number }
-/** Calm hold: follow the breathing pacer (and, with live data, an unelevated pulse). */
-export interface CalmState { progress: number; required: number; pacerStartedAt: number; holding: boolean }
+/** Calm hold: follow the breathing pacer (and, with live data, an unelevated pulse).
+ * The pacer alternates inhale/exhale phases of `halfSeconds`. With a personal resting
+ * breathing rate it starts at that pace and slows each full breath toward `breathSeconds`. */
+export interface CalmState { progress: number; required: number; pacerStartedAt: number; holding: boolean; halfSeconds: number; phaseStartedAt: number; inhale: boolean; personal: boolean }
+/** Rounded, frozen personal resting values from accepted sensing. Private: never in provider requests, events or traces. */
+export interface PersonalBaseline { restingBpm: number | null; restingBreathsPerMinute: number | null }
 export type Sector = 'NEAR' | 'A' | 'B' | 'C';
 export interface GameState {
   seed: number;
@@ -150,6 +154,9 @@ export interface GameState {
   clues: { machinery: number; transient: number; physiology: number };
   transients: { at: number; strength: number; duration: number }[];
   sensor: SensorState;
+  personal: PersonalBaseline;
+  /** Recovery reward: calming from ELEVATED to RECOVERED makes it lose your trail until `until`, once per stage. */
+  recovery: { until: number; rewardedStages: number[] };
   /** Alias for concise HUDs; always identical to sensor.trend. */
   trend: Trend;
   fixedMemoryTempo: boolean;
@@ -196,6 +203,7 @@ export type GameAction =
   | { type: 'pause'; paused?: boolean }
   | { type: 'sensor'; source: SensorSource; quality: SensorQuality; trend: Trend }
   | { type: 'trend'; trend: Trend }
+  | { type: 'personal'; restingBpm: number | null; restingBreathsPerMinute: number | null }
   | { type: 'accessibility'; fixedMemoryTempo: boolean }
   | { type: 'proposal'; proposal: unknown; source: ProposalSource };
 export type Action = GameAction;

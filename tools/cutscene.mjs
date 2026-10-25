@@ -8,8 +8,9 @@
 //   node tools/cutscene.mjs render [--procedural] [--scale=0.5] [--seconds=n] [--out=path]
 //   (stills and render take --look=flat for the original flat colours; the default is ironlung)
 //   node tools/cutscene.mjs audio [--out=path]           soundtrack only → cutscene/.previews/soundtrack.wav
+//   (stills, render and audio take --film=ending for the ending; the default is the opening)
 //
-// `render` writes public/assets/video/opening.mp4 and refreshes its manifest entry.
+// `render` writes public/assets/video/opening.mp4 (or ending.mp4) and refreshes its manifest entry.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -24,6 +25,8 @@ const previews = path.join(root, 'cutscene/.previews');
 const [command, ...rest] = process.argv.slice(2);
 const flags = Object.fromEntries(rest.filter(a => a.startsWith('--')).map(a => { const [k, v] = a.slice(2).split('='); return [k, v ?? true]; }));
 const args = rest.filter(a => !a.startsWith('--'));
+const film = flags.film ?? 'opening';
+if (!['opening', 'ending'].includes(film)) throw new Error(`unknown film ${film} (opening, ending)`);
 
 async function withPage(fn) {
   const server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 5199, strictPort: false } });
@@ -76,7 +79,7 @@ async function stillsCommand() {
   const out = flags.out ?? previews;
   await mkdir(out, { recursive: true });
   await withPage(async page => {
-    const info = await page.evaluate(o => window.__cutscene.init(o), { procedural: !!flags.procedural, scale: Number(flags.scale ?? 0.5), look: flags.look });
+    const info = await page.evaluate(o => window.__cutscene.init(o), { procedural: !!flags.procedural, scale: Number(flags.scale ?? 0.5), look: flags.look, film });
     console.log(`gpu: ${info.gpu}`);
     for (const t of times) {
       const file = path.join(out, `still-${t.toFixed(2).padStart(5, '0')}s.png`);
@@ -154,6 +157,11 @@ function synthSources(layers, duration, stepRate) {
       case 'alarm': // a low, distorted industrial horn: two detuned saws an octave over a sub, pulsing
         src(ev(`st(0,mod(t,1.7));clip(ld(0)/0.12,0,1)*clip((1.25-ld(0))/0.2,0,1)*0.3*tanh(2*((2*mod(98*t,1)-1)+0.8*(2*mod(103.8*t,1)-1)+0.6*(2*mod(49*t,1)-1)))`),
           `lowpass=f=1000,aecho=0.6:0.45:90|170:0.35|0.2,${vol}`);
+        break;
+      case 'motor': // a heavy geared door motor: saturated low whine, rumble, gear-tooth chatter through steel
+        src(ev('0.35*tanh(2.5*(sin(2*PI*46*t)+0.7*sin(2*PI*92.6*t+0.4*sin(2*PI*3.1*t))+0.4*sin(2*PI*139*t)))*(0.82+0.18*sin(2*PI*5.3*t))'), `lowpass=f=1100,${vol}`);
+        src(noise('brown', 23, 0.8), `bandpass=f=170:width_type=h:w=220,volume='0.9*(${gain})':eval=frame`);
+        src(ev(ticks(41, 380)), `highpass=f=400,${modes([760, 1290, 2100], 4, 9)},lowpass=f=4500,volume='0.45*(${gain})':eval=frame`);
         break;
       case 'buzz': // a failing light: flickering 120 Hz buzz
         src(ev('0.3*sgn(sin(2*PI*120*t))*gt(sin(2*PI*17*t)*sin(2*PI*7.3*t),0)'), `lowpass=f=3000,${vol}`);
@@ -254,7 +262,7 @@ async function renderCommand() {
   // Encode to a temporary file and only replace the real one once ffmpeg succeeds.
   try {
     await withPage(async page => {
-      const info = await page.evaluate(o => window.__cutscene.init(o), { procedural: !!flags.procedural, scale, look });
+      const info = await page.evaluate(o => window.__cutscene.init(o), { procedural: !!flags.procedural, scale, look, film });
       console.log(`gpu: ${info.gpu} · ${frames} frames @ ${renderFps} fps → ${fps} fps`);
       for (let i = 0; i < frames; i++) {
         const jpeg = decode(await page.evaluate(n => window.__cutscene.frame(n), i));
@@ -283,10 +291,14 @@ async function audioCommand() {
   console.log(path.relative(root, out));
 }
 
-// Node can't import .ts; read the timeline through Vite's SSR loader instead.
+// Node can't import .ts; read the timeline through Vite's SSR loader instead. The ending's module
+// names its metadata FILM; both are returned as CUTSCENE.
 async function loadTimeline() {
   const server = await createServer({ root, configFile: false, logLevel: 'error', server: { middlewareMode: true }, appType: 'custom' });
-  try { return await server.ssrLoadModule('/src/cutscene/timeline.ts'); } finally { await server.close(); }
+  try {
+    const mod = await server.ssrLoadModule(film === 'ending' ? '/src/cutscene/ending.ts' : '/src/cutscene/timeline.ts');
+    return { ...mod, CUTSCENE: mod.FILM ?? mod.CUTSCENE };
+  } finally { await server.close(); }
 }
 
 async function updateManifest(file) {
@@ -296,7 +308,7 @@ async function updateManifest(file) {
   const entry = { path: rel, url: `/${path.relative(path.join(root, 'public'), file)}`, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex'), mediaType: 'video/mp4', source: 'cutscene/ + src/cutscene/ (rendered by tools/cutscene.mjs render)', license: 'Generated for this project; see docs/ASSETS.md' };
   const at = manifest.assets.findIndex(a => a.path === rel);
   if (at >= 0) manifest.assets[at] = entry; else manifest.assets.push(entry);
-  manifest.counts = { ...manifest.counts, openingVideo: 1 };
+  manifest.counts = { ...manifest.counts, [`${film}Video`]: 1 };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`updated public/assets/manifest.json (${entry.sha256.slice(0, 12)}…)`);
 }

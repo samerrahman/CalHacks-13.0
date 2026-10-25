@@ -51,8 +51,8 @@ try {
   await expect(page.getByTestId('radar-dot')).toBeVisible({ timeout: 6000 });
   evidence.radarContact = await page.getByTestId('radar').getAttribute('aria-label');
   await page.screenshot({ path: 'artifacts/harder-camera-b.png' });
-  await page.getByRole('button', { name: 'CAM C CONTAINMENT' }).click();
-  await expect(page.getByRole('heading', { name: 'CONTAINMENT', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'CAM C FACILITY' }).click();
+  await expect(page.getByRole('heading', { name: 'FACILITY', exact: true })).toBeVisible();
   await page.screenshot({ path: 'artifacts/harder-camera-c.png' });
   // Navigating to equipment does not need another scarce isolation charge.
   await page.getByRole('button', { name: '03 Turn around' }).click();

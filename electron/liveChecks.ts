@@ -14,7 +14,7 @@ type Outcome = { status: 'passed' | 'blocked' | 'failed' | 'not_tested'; detail:
 const results: Record<string, Outcome> = Object.fromEntries(['presage', 'gemini', 'elevenlabs', 'spacetime'].map(name => [name, { status: 'not_tested', detail: 'Not yet tested in HUSH; previous-game evidence does not qualify' }]));
 if (existsSync('docs/integration-checks.json')) {
   const prior = JSON.parse(readFileSync('docs/integration-checks.json', 'utf8'));
-  if (prior.application === 'HUSH') Object.assign(results, prior.results);
+  if (prior.application === 'HUSH' || prior.application === 'LOCK IN') Object.assign(results, prior.results);
 }
 delete results.convex;
 const checkedAt = new Date().toISOString();
