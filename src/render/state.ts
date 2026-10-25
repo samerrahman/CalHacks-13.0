@@ -33,4 +33,8 @@ export interface RenderState {
   locks?: number;
   /** The last decoy is out and the basement door motor is spinning up. */
   doorMotor?: boolean;
+  /** Wall status unit: deadline seconds (null in practice), isolation cells and 0–100 exposure. */
+  survival?: { secondsLeft: number | null; cells: number; maxCells: number; exposure: number };
+  /** Hand-held isolation remote: raised (open), cells, whether Q works now, seconds of cooldown / auto restore, restore readiness and hold 0–1. */
+  remote?: { open: boolean; cells: number; maxCells: number; quietReady: boolean; cooldown: number; autoRestore: number; restoreReady: boolean; restoreHold: number };
 }

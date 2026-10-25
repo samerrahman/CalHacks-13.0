@@ -34,7 +34,7 @@ export const config = {
   quiet: { ...authoredConfig.quiet, restoreProtectionSeconds: 6 },
   alarm: { enterDistanceM: 9.5, clearDistanceM: 11.5 },
   scares: { minimumGapSeconds: 18, maximumNonfatalPerRun: 8 },
-  line: { length: 24, start: 18, stepSeconds: 2.5, maximumStep: 3, graceSeconds: 25, deadlineSeconds: 480, nearPosition: 7, clearPosition: 10, commitPosition: 1, minimumWarningSeconds: 2.5, committedSeconds: 2.4, sensorSeconds: 4, soundEvidenceSeconds: 30 },
+  line: { length: 24, start: 18, stepSeconds: 2.5, maximumStep: 3, graceSeconds: 25, deadlineSeconds: 300, nearPosition: 7, clearPosition: 10, commitPosition: 1, minimumWarningSeconds: 2.5, committedSeconds: 2.4, sensorSeconds: 4, soundEvidenceSeconds: 30 },
   lineWeights: [.07, .14, .23, .22, .19, .10, .05],
   /** Low exposure drifts it away; high exposure (loud work) rushes it toward the wall. */
   lineBias: { base: .28, dangerScale: 1.36, lostTrailSeconds: 8, lostTrailBias: .6, momentum: .06, providerMaximum: .15, providerDurationSeconds: 8, quietDangerScale: .2, lureDangerScale: .1, minimum: -.85, maximum: 1, finalLure: 1 },

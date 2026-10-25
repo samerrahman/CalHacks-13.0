@@ -4,7 +4,8 @@ import { config } from '../game/config';
 import { calmBreath, calmInhale, calmMatched, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, heartElevated, listeningTo, pulseFlash, pulseRequirement, tileOpenings } from '../game/tasks';
 import './thinking.css';
 
-const SECTORS: [Sector, string, string][] = [['NEAR', 'Near the wall', '0–6 · off camera'], ['A', 'CAM A', 'Clearing · 7–14'], ['B', 'CAM B', 'Service path · 14–22'], ['C', 'CAM C', 'Facility · 22–24']];
+// Sonar rings on the radar scope, innermost first; keys 1–4 mark the same rings.
+const SECTORS: [Sector, string, string][] = [['NEAR', 'Ring 1', 'Near the wall'], ['A', 'Ring 2', 'Clearing'], ['B', 'Ring 3', 'Service path'], ['C', 'Ring 4', 'Far out']];
 type Send = (action: GameAction) => void;
 
 /** Live-data line shared by the Presage-aware tasks. Coarse accepted trend only; no BPM. */
@@ -50,14 +51,14 @@ export function FaultTask({ g, send, coop = g.mode === 'coop' }: { g: GameState;
 
 export function LocateTerminal({ g }: { g: GameState }) {
   const l = g.tasks.locate;
-  return <><p>The emitter needs to know where it is. Go to the security monitor and mark its sector {l.required} times. Use the camera feeds and the range reading. It keeps moving, and wrong marks are loud.</p>
+  return <><p>The emitter needs to know where it is. Go to the radar and read it. Mark which ring it is in, {l.required} times. It keeps moving, and wrong marks are loud.</p>
     <div className="task-progress"><span>{l.marks} / {l.required} positions marked</span><span>MONITOR · KEYS 1–4</span></div></>;
 }
 
 export function LocatePanel({ g, send }: { g: GameState; send: Send }) {
   const l = g.tasks.locate, wait = Math.max(0, l.lastMarkAt + config.tasks.locate.spacingSeconds - g.time);
   return <div className="locate-panel" data-testid="locate-panel">
-    <div className="locate-heading"><span>MARK ITS POSITION · {l.marks} / {l.required}</span><small>{wait > 0 ? `Marker recharging · ${wait.toFixed(1)}s` : 'Check the feeds, then mark'}</small></div>
+    <div className="locate-heading"><span>MARK ITS POSITION · {l.marks} / {l.required}</span><small>{wait > 0 ? `Marker recharging · ${wait.toFixed(1)}s` : 'Read the sonar, then mark'}</small></div>
     <div className="locate-buttons">{SECTORS.map(([sector, label, detail], i) => <button key={sector} disabled={wait > 0} onClick={() => send({ type: 'mark', sector })}><kbd>{i + 1}</kbd><span>{label}</span><small>{detail}</small></button>)}</div>
   </div>;
 }

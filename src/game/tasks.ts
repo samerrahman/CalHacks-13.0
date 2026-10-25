@@ -291,7 +291,7 @@ export function connectWire(state: GameState, from: number, to: number): void {
   state.notice = complete % config.tasks.wirePanelSize === 0 && complete < wires.connections.length ? `Panel ${complete / config.tasks.wirePanelSize} of ${panel.count} patched. Next panel live.` : `${complete} / ${wires.connections.length} cables connected.`;
   if (complete === wires.connections.length) {
     if (state.tasks.stage === 1) { state.tasks.step = 'routing'; state.tasks.routing = createRouting(state, 0); state.notice = `Cables patched. Rotate the conduit tiles to join the inlet to the relay outlet, then press T.${state.mode === 'coop' ? ' The board shows no power; your friend has the solved route.' : ''}`; }
-    else { state.tasks.step = 'locate'; state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 }; state.notice = `Cables patched. Use the security monitor to mark its position ${config.tasks.locate.marks} times.`; }
+    else { state.tasks.step = 'locate'; state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 }; state.notice = `Cables patched. Use the radar to mark its position ${config.tasks.locate.marks} times.`; }
     state.version++;
   }
 }

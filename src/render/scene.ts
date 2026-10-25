@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import { disposeObject, loadModels, type ModelName } from './assets';
 import { STATION_TARGETS, type Station } from './stations';
 import { projectCreature, type CameraFeed, type WorldPosition } from './cctv';
-import { createDisplay, drawTerminal, drawProximity, drawCameraOverlay, plateTexture } from './displays';
+import { createDisplay, drawTerminal, drawProximity, drawCameraOverlay, drawSonar, drawStatus, plateTexture } from './displays';
 import type { RenderState } from './state';
 import { createWeathering } from './weathering';
 import { alarmIntensity, scareStrength } from './presentation';
-import { hitStation } from './interaction';
+import { hitLever, hitRemote, hitStation, hitStatus } from './interaction';
+import { createRemote, type RemoteTarget } from './remote';
 import { BASEMENT_DOOR, buildBasementDoor } from '../cutscene/props/basementDoor';
 export type { RenderState } from './state';
 
@@ -15,11 +16,17 @@ export interface SceneView {
   update(state: RenderState, dt: number): void;
   setStation(station: Station, reducedMotion?: boolean): void;
   onInteract(callback: (station: Station) => void): () => void;
+  /** Clicks on the wall status unit (clock, cells, exposure gauge). */
+  onStatus(callback: () => void): () => void;
+  /** Hand-held remote: 'remote' with true when the lowered hand is clicked (raise it) and false for a click anywhere else while raised (lower it), 'quiet' on a click of its QUIET button, 'restore' on press (true) and release (false). */
+  onRemote(callback: (target: RemoteTarget, pressed: boolean) => void): () => void;
+  /** Emergency lever: 'quiet' when pulled fully down, 'restore' pressed while held fully up and released on let go. */
+  onLever(callback: (action: 'quiet' | 'restore', pressed: boolean) => void): () => void;
   dispose(): void;
-  diagnostics: { loadedAssets: string[]; animationClips: string[]; error: string | null; cameraFeed: CameraFeed; silhouetteVisible: boolean; listenerYaw: number; listenerPosition: WorldPosition; hoveredStation: Station | null };
+  diagnostics: { loadedAssets: string[]; animationClips: string[]; error: string | null; cameraFeed: CameraFeed; silhouetteVisible: boolean; listenerYaw: number; listenerPosition: WorldPosition; hoveredStation: Station | null; anchors: Record<'terminal' | 'quiet' | 'restore', { x: number; y: number } | null> };
 }
 export function createScene(container: HTMLElement): SceneView {
-  const diagnostics: SceneView['diagnostics'] = { loadedAssets: [], animationClips: [], error: null, cameraFeed: 'A', silhouetteVisible: false, listenerYaw: 0, listenerPosition: [.05, 1.62, .60], hoveredStation: null };
+  const diagnostics: SceneView['diagnostics'] = { loadedAssets: [], animationClips: [], error: null, cameraFeed: 'A', silhouetteVisible: false, listenerYaw: 0, listenerPosition: [.05, 1.62, .60], hoveredStation: null, anchors: { terminal: null, quiet: null, restore: null } };
   let disposed = false, reducedMotion = false, station: Station = 'terminal';
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x020303); scene.fog = new THREE.FogExp2(0x040504, .065);
   const camera = new THREE.PerspectiveCamera(63, 1, .04, 25); camera.position.set(.05, 1.62, .60); camera.lookAt(STATION_TARGETS.terminal);
@@ -28,7 +35,7 @@ export function createScene(container: HTMLElement): SceneView {
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .79;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;cursor:grab';
-  renderer.domElement.setAttribute('aria-label', 'Sealed HUSH shelter. Click equipment to inspect it. Drag to look; keyboard controls also select each station.');
+  renderer.domElement.setAttribute('aria-label', 'Sealed HUSH shelter. Click equipment to inspect it. Drag or use the arrow keys to look; keyboard controls also select each station.');
   container.appendChild(renderer.domElement);
   const hemisphere = new THREE.HemisphereLight(0x59644c, 0x070807, .21); scene.add(hemisphere);
   const fill = new THREE.AmbientLight(0x6b6952, .065); scene.add(fill);
@@ -63,7 +70,8 @@ export function createScene(container: HTMLElement): SceneView {
   box([2.1, .075, .12], [-.22, .60, -2.33], brass);
   // Wall ribs project into the shelter; mount signage in front of their faces.
   const titlePlate = plate('HUSH / 04', ['EMERGENCY OBSERVATION', 'FOREST RESEARCH DIVISION'], [.1, 2.38, -2.32], 1.15);
-  const protocolPlate = plate('BASEMENT ACCESS', ['FOUR STAGES / FOUR LOCKS', 'REPAIR / REDIRECT', 'DECOY, THEN THE MOTOR'], [-.8, 1.66, -2.32], .62);
+  titlePlate.visible = false; // The wall sign is gone; the name only appears on the menus.
+  const protocolPlate = plate('BASEMENT ACCESS', ['FOUR STAGES / FOUR LOCKS', 'REPAIR / REDIRECT', 'DECOY, THEN THE MOTOR'], [-.8, 1.55, -2.32], .62);
   // The basement door left of the desk: each research stage releases one of its four locks, and
   // after the last decoy its beacon turns while the motor spins up. The ending film opens it.
   const basement = buildBasementDoor(); basement.position.set(-2.0, 0, -2.5); weathering.apply(basement); scene.add(basement);
@@ -79,14 +87,31 @@ export function createScene(container: HTMLElement): SceneView {
   const sensorPlate = plate('CAMERA INPUT', ['OPTIONAL PERSONAL SENSOR', 'NOT A SECURITY FEED'], [1.9, 2.16, -2.32], .65);
   const doorPlate = plate('SEALED SHELTER', ['DO NOT ATTEMPT TO OPEN', 'USE EMERGENCY QUIET'], [-1.75, 2.2, 2.255], .70, Math.PI);
   const switchPlate = plate('EMERGENCY', ['Q / QUIET', 'HOLD F / RESTORE'], [-.7, 1.93, 2.47], .56, Math.PI);
-  const terminalDisplay = createDisplay(), proximityDisplay = createDisplay(512, 384), cctvCaption = createDisplay(1024, 576, false);
+  // The player's right hand holds the isolation remote; it rides on the camera.
+  const remote = createRemote(); camera.add(remote.group); scene.add(camera);
+  const terminalAnchor = new THREE.Vector3(-.62, 1.18, -1.72), projected = new THREE.Vector3();
+  const terminalDisplay = createDisplay(), proximityDisplay = createDisplay(512, 384), cctvCaption = createDisplay(1024, 576, false), statusDisplay = createDisplay(640, 800, false), sonarDisplay = createDisplay(768, 768);
+  // Round sonar scope on the desk where the security monitor stood: a steel drum, a bezel ring and a
+  // circular screen. It is the 'cameras' station, so picking and inspection work as before.
+  const scope = new THREE.Group(); scope.position.set(.72, 1.34, -1.78); scope.userData.lockInStation = 'cameras'; scene.add(scope);
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(.37, .39, .16, 40), steel); drum.rotation.x = Math.PI / 2; drum.castShadow = true; drum.receiveShadow = true; scope.add(drum);
+  const bezel = new THREE.Mesh(new THREE.TorusGeometry(.335, .028, 10, 48), brass); bezel.position.z = .085; scope.add(bezel);
+  const sonarScreen = new THREE.Mesh(new THREE.CircleGeometry(.32, 64), new THREE.MeshBasicMaterial({ map: sonarDisplay.texture, toneMapped: false })); sonarScreen.position.z = .082; scope.add(sonarScreen);
+  for (const x of [-.22, .22]) { const bolt = new THREE.Mesh(new THREE.CylinderGeometry(.014, .014, .02, 10), brass); bolt.rotation.x = Math.PI / 2; bolt.position.set(x, -.27, .085); scope.add(bolt); }
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(.16, .1, .14), steel); stand.position.set(0, -.37, 0); scope.add(stand);
+  // Wall status unit left of the title sign, above the terminal: deadline clock, isolation cells, exposure gauge.
+  const statusHousing = box([.52, .64, .05], [-.80, 2.05, -2.31], steel); statusHousing.userData.lockInStatus = true;
+  const statusScreen = new THREE.Mesh(new THREE.PlaneGeometry(.46, .575), new THREE.MeshBasicMaterial({ map: statusDisplay.texture, toneMapped: false }));
+  statusScreen.position.set(-.80, 2.05, -2.282); statusScreen.userData.lockInStatus = true; scene.add(statusScreen);
   const models = new Map<ModelName, THREE.Object3D>(), mixers: THREE.AnimationMixer[] = [], orphanMaterials: THREE.Material[] = [];
   const faultActions: THREE.AnimationAction[] = [], faultLamps: THREE.MeshStandardMaterial[] = [];
   let machineMixer: THREE.AnimationMixer | null = null, doorMixer: THREE.AnimationMixer | null = null, switchMixer: THREE.AnimationMixer | null = null, creatureMixer: THREE.AnimationMixer | null = null;
   let doorImpact: THREE.AnimationAction | null = null, doorDent: THREE.AnimationAction | null = null, switchAction: THREE.AnimationAction | null = null;
   let previousFaults = '', previousPower: RenderState['power'] | null = null, lostAt: number | null = null, lastScareId: string | number | null = null, lastStateTime = 0, wasInspecting = false;
-  let yaw = 0, pitch = 0, dragging = false, lastX = 0, lastY = 0, downX = 0, downY = 0, moved = false;
-  const interactions = new Set<(station: Station) => void>(), raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+  // Lever drag: 'down' cuts power (powered), 'up' restores (isolated); progress 0–1 follows the pointer.
+  let lever: { mode: 'down' | 'up'; startY: number; progress: number; restoring: boolean } | null = null;
+  let remoteOpen = false, holdingRestore = false, yaw = 0, pitch = 0, dragging = false, lastX = 0, lastY = 0, downX = 0, downY = 0, moved = false;
+  const interactions = new Set<(station: Station) => void>(), statusClicks = new Set<() => void>(), remoteCallbacks = new Set<(target: RemoteTarget, pressed: boolean) => void>(), leverCallbacks = new Set<(action: 'quiet' | 'restore', pressed: boolean) => void>(), raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
   const seatedPosition = new THREE.Vector3(.05, 1.62, .60), desiredPosition = new THREE.Vector3(), desiredTarget = new THREE.Vector3();
   const aim = camera.clone();
   // This scene never shares its creature with the shelter scene.
@@ -115,12 +140,14 @@ export function createScene(container: HTMLElement): SceneView {
       if (name === 'terminal') asset.scene.userData.lockInStation = 'terminal';
       if (name === 'security_monitor') asset.scene.userData.lockInStation = 'cameras';
       if (name === 'machine_rack' || name === 'emergency_switch' || name === 'proximity_detector') asset.scene.userData.lockInStation = 'equipment';
+      if (name === 'emergency_switch') asset.scene.userData.lockInLever = true;
       asset.animations.forEach(clip => diagnostics.animationClips.push(`${name}.${clip.name}`));
     }
     function replaceMaterial(mesh: THREE.Mesh, next: THREE.Material) { orphanMaterials.push(...(Array.isArray(mesh.material) ? mesh.material : [mesh.material])); mesh.material = next; }
     function assign(model: ModelName, node: string, texture: THREE.Texture) { const mesh = models.get(model)!.getObjectByName(node) as THREE.Mesh; if (!mesh?.isMesh) throw new Error(`Missing display ${model}/${node}`); replaceMaterial(mesh, new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })); }
     assign('terminal', 'terminal_screen', terminalDisplay.texture); assign('proximity_detector', 'proximity_screen', proximityDisplay.texture);
-    cctvTarget.texture.flipY = false; assign('security_monitor', 'security_screen', cctvTarget.texture);
+    // The sonar scope replaces the security monitor and the small wall radar; their models stay loaded but hidden.
+    assets.security_monitor.scene.visible = false; assets.proximity_detector.scene.visible = false;
     machineMixer = new THREE.AnimationMixer(assets.machine_rack.scene); mixers.push(machineMixer);
     for (let i = 0; i < 4; i++) {
       const action = machineMixer.clipAction(assets.machine_rack.animations.find(value => value.name === `fault_0${i + 1}`)!); action.play(); action.paused = true; faultActions.push(action);
@@ -153,27 +180,67 @@ export function createScene(container: HTMLElement): SceneView {
     const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
     raycaster.setFromCamera(pointer, camera); return hitStation(raycaster, scene);
   }
-  function down(event: PointerEvent) { if (event.button !== 0) return; dragging = true; moved = false; downX = lastX = event.clientX; downY = lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); renderer.domElement.style.cursor = 'grabbing'; }
+  function remoteAt(x: number, y: number): RemoteTarget | null {
+    const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
+    raycaster.setFromCamera(pointer, camera); return hitRemote(raycaster, scene);
+  }
+  function leverAt(x: number, y: number): boolean {
+    const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
+    raycaster.setFromCamera(pointer, camera); return hitLever(raycaster, scene);
+  }
+  function statusAt(x: number, y: number): boolean {
+    const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
+    raycaster.setFromCamera(pointer, camera); return hitStatus(raycaster, scene);
+  }
+  function down(event: PointerEvent) { if (event.button !== 0) return; if (station === 'equipment' && !remoteOpen && previousPower && leverAt(event.clientX, event.clientY)) { lever = { mode: previousPower === 'on' ? 'down' : 'up', startY: event.clientY, progress: 0, restoring: false }; downX = event.clientX; downY = event.clientY; try { renderer.domElement.setPointerCapture(event.pointerId); } catch { /* release still arrives via pointerup */ } renderer.domElement.style.cursor = 'grabbing'; return; } if (remoteOpen && remoteAt(event.clientX, event.clientY) === 'restore') { holdingRestore = true; remoteCallbacks.forEach(callback => callback('restore', true)); try { renderer.domElement.setPointerCapture(event.pointerId); } catch { /* release still arrives via pointerup */ } return; } dragging = true; moved = false; downX = lastX = event.clientX; downY = lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); renderer.domElement.style.cursor = 'grabbing'; }
   function move(event: PointerEvent) {
-    if (!dragging) { diagnostics.hoveredStation = stationAt(event.clientX, event.clientY); renderer.domElement.style.cursor = diagnostics.hoveredStation ? 'pointer' : 'grab'; return; }
+    if (lever) {
+      const travel = (event.clientY - lever.startY) / 140; lever.progress = THREE.MathUtils.clamp(lever.mode === 'down' ? travel : -travel, 0, 1);
+      if (lever.mode === 'up' && lever.progress > .85 && !lever.restoring) { lever.restoring = true; leverCallbacks.forEach(callback => callback('restore', true)); }
+      if (lever.mode === 'up' && lever.progress < .7 && lever.restoring) { lever.restoring = false; leverCallbacks.forEach(callback => callback('restore', false)); }
+      return;
+    }
+    if (!dragging) { diagnostics.hoveredStation = stationAt(event.clientX, event.clientY); renderer.domElement.style.cursor = station === 'equipment' && leverAt(event.clientX, event.clientY) ? 'ns-resize' : diagnostics.hoveredStation || statusAt(event.clientX, event.clientY) || remoteAt(event.clientX, event.clientY) ? 'pointer' : 'grab'; return; }
     if (Math.hypot(event.clientX - downX, event.clientY - downY) > 6) moved = true;
     if (moved) { yaw = THREE.MathUtils.clamp(yaw - (event.clientX - lastX) * .003, -.75, .75); pitch = THREE.MathUtils.clamp(pitch - (event.clientY - lastY) * .0025, -.48, .45); }
     lastX = event.clientX; lastY = event.clientY;
   }
   function up(event: PointerEvent) {
+    if (lever) {
+      const pulled = lever, tapped = Math.hypot(event.clientX - downX, event.clientY - downY) <= 6; lever = null; renderer.domElement.style.cursor = 'grab';
+      if (pulled.mode === 'down' && pulled.progress >= .75) leverCallbacks.forEach(callback => callback('quiet', true));
+      if (pulled.restoring) leverCallbacks.forEach(callback => callback('restore', false));
+      // A tap without pulling opens the isolation panel, as clicking the switch always did.
+      if (tapped && event.type === 'pointerup') interactions.forEach(callback => callback('equipment'));
+      return;
+    }
+    if (holdingRestore) { holdingRestore = false; remoteCallbacks.forEach(callback => callback('restore', false)); return; }
     const clicked = dragging && !moved && event.type === 'pointerup' && Math.hypot(event.clientX - downX, event.clientY - downY) <= 6;
     dragging = false; renderer.domElement.style.cursor = 'grab';
-    if (clicked) { const selected = stationAt(event.clientX, event.clientY); if (selected) interactions.forEach(callback => callback(selected)); }
+    if (clicked) { const part = remoteAt(event.clientX, event.clientY); if (part) { if (!remoteOpen) remoteCallbacks.forEach(callback => callback('remote', true)); else if (part === 'quiet') remoteCallbacks.forEach(callback => callback('quiet', true)); return; } if (remoteOpen) { remoteCallbacks.forEach(callback => callback('remote', false)); return; } if (statusAt(event.clientX, event.clientY)) { statusClicks.forEach(callback => callback()); return; } const selected = stationAt(event.clientX, event.clientY); if (selected) interactions.forEach(callback => callback(selected)); }
   }
+  // Arrow keys look around like dragging, at a steady rate while held.
+  const arrows = new Set<string>(), ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+  function arrowDown(event: KeyboardEvent) { const tag = (event.target as HTMLElement | null)?.tagName; if (!ARROWS.includes(event.key) || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return; event.preventDefault(); arrows.add(event.key); }
+  function arrowUp(event: KeyboardEvent) { arrows.delete(event.key); }
+  function arrowsReleased() { arrows.clear(); }
+  window.addEventListener('keydown', arrowDown); window.addEventListener('keyup', arrowUp); window.addEventListener('blur', arrowsReleased);
   renderer.domElement.addEventListener('pointerdown', down); renderer.domElement.addEventListener('pointermove', move); renderer.domElement.addEventListener('pointerup', up); renderer.domElement.addEventListener('pointercancel', up); renderer.domElement.addEventListener('lostpointercapture', up);
   return {
     ready, diagnostics,
     setStation(next, reduced = false) { reducedMotion = reduced; if (next !== station) { station = next; yaw = 0; pitch = 0; } },
     onInteract(callback) { interactions.add(callback); return () => { interactions.delete(callback); }; },
+    onStatus(callback) { statusClicks.add(callback); return () => { statusClicks.delete(callback); }; },
+    onRemote(callback) { remoteCallbacks.add(callback); return () => { remoteCallbacks.delete(callback); }; },
+    onLever(callback) { leverCallbacks.add(callback); return () => { leverCallbacks.delete(callback); }; },
     update(state, delta) {
       if (disposed) return; const dt = state.paused ? 0 : Math.max(0, Math.min(delta, .1));
       const inspection = state.inspection && (station === 'terminal' || station === 'cameras');
       if (!!inspection !== wasInspecting) { yaw = 0; pitch = 0; wasInspecting = !!inspection; }
+      if (arrows.size && !state.paused) {
+        const step = Math.min(delta, .1), across = (arrows.has('ArrowLeft') ? 1 : 0) - (arrows.has('ArrowRight') ? 1 : 0), upward = (arrows.has('ArrowUp') ? 1 : 0) - (arrows.has('ArrowDown') ? 1 : 0);
+        yaw = THREE.MathUtils.clamp(yaw + across * 1.4 * step, -.75, .75); pitch = THREE.MathUtils.clamp(pitch + upward * 1.1 * step, -.48, .45);
+      }
       desiredPosition.copy(seatedPosition); desiredTarget.copy(STATION_TARGETS[station]);
       // On squarer landscape screens the monitor view slides right so the CCTV feed clears the docked panel.
       if (inspection) { const x = station === 'terminal' ? -.62 : .72 + (camera.aspect >= 1.2 && camera.aspect < 1.5 ? .1 : 0); desiredPosition.set(x, 1.47, -.32); desiredTarget.set(x, 1.33, -1.66); }
@@ -185,11 +252,12 @@ export function createScene(container: HTMLElement): SceneView {
       diagnostics.listenerYaw = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').y;
       diagnostics.listenerPosition = camera.position.toArray() as WorldPosition;
       const targetFov = inspection ? 43 : station === 'cameras' ? 48 : station === 'equipment' ? 67 : 63; camera.fov += (targetFov - camera.fov) * (reducedMotion ? 1 : 1 - Math.exp(-delta * 8)); camera.updateProjectionMatrix();
+      remoteOpen = !!state.remote?.open; remote.update(state, delta, reducedMotion, !!inspection);
       const powered = state.power === 'on', light = powered ? 1 : state.power === 'quiet' ? .045 : .012;
       const red = alarmIntensity(state.time, state.alarm, reducedMotion) * (state.softScares ? .7 : 1);
       hemisphere.intensity = powered ? .21 : .055; fill.intensity = powered ? .065 : .018; overhead.intensity = 1.15 * light; deskLamp.intensity = 3.2 * light; taskSpot.intensity = 5.2 * light; frontGlow.intensity = powered ? .48 : 0; lampSurface.emissiveIntensity = powered ? .22 : 0;
       alarm.intensity = .10 + red * 4.2; alarmLens.emissiveIntensity = .16 + red * 1.1;
-      if (switchAction && switchMixer) { switchAction.time = powered ? 0 : .34999; switchMixer.update(0); }
+      if (switchAction && switchMixer) { const resting = powered ? 0 : .34999; switchAction.time = lever ? (lever.mode === 'down' ? lever.progress : 1 - lever.progress) * .34999 : resting; switchMixer.update(0); }
       const active = powered ? state.faults : [], faultKey = `${active.join(',')}|${reducedMotion}`;
       if (faultKey !== previousFaults) { previousFaults = faultKey; for (let i = 0; i < 4; i++) {
         const action = faultActions[i]; if (action) { action.paused = !active.includes(i) || reducedMotion; if (action.paused) action.time = 0; }
@@ -210,15 +278,20 @@ export function createScene(container: HTMLElement): SceneView {
       }
       // A committed loss freezes simulation; its cosmetic dent can still settle.
       doorMixer?.update(state.status === 'lost' ? Math.max(0, Math.min(delta, .1)) : dt); if (!reducedMotion) creatureMixer?.update(dt);
-      if (state.time < lastDisplay || state.time - lastDisplay >= .08 || state.paused || previousPower !== state.power || lastFeed !== state.cameraFeed) { drawTerminal(terminalDisplay, state); drawProximity(proximityDisplay, state); drawCctv(state); lastDisplay = state.time; lastFeed = state.cameraFeed ?? 'A'; }
+      if (state.time < lastDisplay || state.time - lastDisplay >= .08 || state.paused || previousPower !== state.power || lastFeed !== state.cameraFeed) { drawTerminal(terminalDisplay, state); drawStatus(statusDisplay, state); remote.draw(state); drawSonar(sonarDisplay, state); lastDisplay = state.time; lastFeed = state.cameraFeed ?? 'A'; }
       previousPower = state.power; renderer.render(scene, camera);
+      // Screen position of the terminal, so the tutorial arrow can point at it now there is no Use terminal prompt.
+      const bounds = renderer.domElement.getBoundingClientRect(); projected.copy(terminalAnchor).project(camera);
+      const toScreen = () => projected.z < 1 ? { x: bounds.left + (projected.x + 1) / 2 * bounds.width, y: bounds.top + (1 - projected.y) / 2 * bounds.height } : null;
+      diagnostics.anchors.terminal = toScreen();
+      for (const key of ['quiet', 'restore'] as const) { remote.anchors(projected, key).project(camera); diagnostics.anchors[key] = inspection ? null : toScreen(); }
     },
     dispose() {
-      if (disposed) return; disposed = true; observer.disconnect(); interactions.clear();
+      if (disposed) return; disposed = true; observer.disconnect(); window.removeEventListener('keydown', arrowDown); window.removeEventListener('keyup', arrowUp); window.removeEventListener('blur', arrowsReleased); interactions.clear(); statusClicks.clear(); remoteCallbacks.clear(); leverCallbacks.clear();
       renderer.domElement.removeEventListener('pointerdown', down); renderer.domElement.removeEventListener('pointermove', move); renderer.domElement.removeEventListener('pointerup', up); renderer.domElement.removeEventListener('pointercancel', up); renderer.domElement.removeEventListener('lostpointercapture', up);
       for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()); }
       disposeObject(scene); disposeObject(cctvScene); new Set(orphanMaterials).forEach(material => material.dispose()); extraTextures.forEach(texture => texture.dispose());
-      terminalDisplay.texture.dispose(); proximityDisplay.texture.dispose(); cctvCaption.texture.dispose(); cctvTarget.dispose(); weathering.dispose(); taskSpot.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
+      terminalDisplay.texture.dispose(); proximityDisplay.texture.dispose(); cctvCaption.texture.dispose(); statusDisplay.texture.dispose(); sonarDisplay.texture.dispose(); remote.dispose(); cctvTarget.dispose(); weathering.dispose(); taskSpot.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     },
   };
 }
