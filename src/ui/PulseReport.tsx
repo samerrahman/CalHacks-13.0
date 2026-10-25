@@ -6,9 +6,12 @@ const PULSE='#c9d9ac',BREATH='#86a8a2',SCARE='#c9553a',CALM='#8fbf8f',EVENT='#d9
 function trace<T extends {gameMs:number;breakBefore?:boolean}>(rows:T[],x:(t:number)=>number,y:(row:T)=>number){
  return rows.map((row,i)=>`${i===0||row.breakBefore?'M':'L'}${x(row.gameMs).toFixed(1)},${y(row).toFixed(1)}`).join(' ');
 }
-export default function PulseReport({report}:{report:Report}){
+/** Why a run has no chart: the camera was off, or no accepted readings arrived. */
+export type EmptyReason='no-camera'|'no-readings';
+const EMPTY:Record<EmptyReason,string>={'no-camera':'The camera was off for this run, so there was nothing to chart. Enable it before you start to chart your pulse and breathing against the scares.','no-readings':'The camera was on, but no accepted readings arrived during play. Keep your face and upper chest in frame with steady light; readings pause while the camera cannot see you.'};
+export default function PulseReport({report,empty='no-camera'}:{report:Report;empty?:EmptyReason}){
  const[focus,setFocus]=useState<string|null>(null);
- if(report.status==='unrecorded')return <section className="pulse-report"><div className="eyebrow">PULSE RECORDING</div><h3>Physiological statistics unrecorded.</h3><p className="small muted">Pulse recording was off, or no accepted readings were available. Your research results still count.</p></section>;
+ if(report.status==='unrecorded')return <section className="pulse-report"><div className="eyebrow">PULSE RECORDING</div><h3>Physiological statistics unrecorded.</h3><p className="small muted">{EMPTY[empty]} Your research results still count.</p></section>;
  const breathing=report.breathing;
  const min=Math.floor(Math.min(report.baselineBpm??70,...report.timeline.map(p=>p.bpm))-4),max=Math.ceil(Math.max(report.baselineBpm??70,...report.timeline.map(p=>p.bpm))+4);
  const bMin=breathing?Math.max(0,Math.floor(Math.min(breathing.restingRpm??breathing.lowestRpm,breathing.lowestRpm)-2)):0,bMax=breathing?Math.ceil(Math.max(breathing.restingRpm??breathing.highestRpm,breathing.highestRpm)+2):1;

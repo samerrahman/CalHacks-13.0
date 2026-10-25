@@ -15,7 +15,7 @@ export default function CameraPrompt({sensor,stream,desktop,deviceId,onDevice,en
    <button className="camera-decline" autoFocus={!desktop} onClick={onDecline}>I don’t want to turn on my camera</button>
   </div>
   {!desktop&&<p className="small camera-prompt-note">Camera pulse sensing needs the desktop app (npm run desktop). In this browser build the game plays with neutral physiology.</p>}
-  <p className="small muted">Frames stay on this computer and are never recorded. You can stop the camera any time from the ◎ button in game.</p></>}
+  <p className="small muted">Your run report charts your pulse and breathing against the scares. Everything stays on this computer, frames are never recorded, and you can stop the camera any time from the ◎ button in game.</p></>}
   {enabled&&<><div className="setup-actions camera-prompt-actions split">
     {!calibrated&&<button onClick={onStart}>Start now · keep calibrating in game</button>}
     <button className="camera-decline" onClick={onDecline}>I don’t want to set up Presage</button>

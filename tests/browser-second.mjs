@@ -6,7 +6,7 @@ const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const evidence = { passed: false, url: TEST_URL, seed: 18, checks: [], errors: [], failedResources: [] }; let page;
 try {
   page = await browser.newPage({ viewport: { width: 1280, height: 720 } }); collectBrowserEvidence(page, evidence);
-  await begin(page, { seed: 18, simulated: true, record: true, calibrate: true });
+  await begin(page, { seed: 18, simulated: true, calibrate: true });
   await expect(page.locator('.sensor-label')).toContainText('SIMULATED');
   await page.keyboard.press('j');
   await expect(page.locator('.judge-panel')).toContainText('30/30 usable seconds');

@@ -5,14 +5,13 @@ export const TEST_URL = process.env.HUSH_TEST_URL ?? 'http://127.0.0.1:5180';
 const trace = process.env.HUSH_DEBUG ? (...parts) => console.log(new Date().toISOString().slice(11, 19), ...parts) : () => {};
 const observations = new WeakMap();
 export function evidenceFor(page) { if (!observations.has(page)) observations.set(page, { defenses: 0, automaticRestores: 0, blackouts: 0, sequenceLengths: [], wireBoards: 0, wireDrags: 0, wireClicks: 0, stages: [], resourceSamples: [] }); return observations.get(page); }
-export async function begin(page, { tutorial = false, seed = 17, simulated = false, record = false, calibrate = false } = {}) {
+export async function begin(page, { tutorial = false, seed = 17, simulated = false, calibrate = false } = {}) {
   await page.goto(TEST_URL);
   await expect(page.getByRole('button', { name: 'Begin with guidance' })).toBeEnabled({ timeout: 20000 });
   await page.getByRole('button', { name: 'Operator settings' }).click();
   await page.getByLabel('Encounter seed').fill(String(seed));
   await page.getByLabel('Reduced motion', { exact: true }).check();
   if (simulated) await page.getByLabel('Pulse input', { exact: true }).selectOption('simulated');
-  if (record) await page.getByLabel('Record accepted pulse locally for this run’s report').check();
   if (simulated && calibrate) {
     // The visible baseline progress disappears only after the simulated
     // calibration completes. Keep this out of the five-minute game clock.
