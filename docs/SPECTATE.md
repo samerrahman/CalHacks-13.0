@@ -59,7 +59,7 @@ In the game: Operator settings → Pulse input SIMULATED (browser) → Share san
 - `npm run check`: unit tests for the vitals projection, remote revalidation, link parsing, consent on/off over the local link, the offline spectator feed and the local physics replay (`src/integrations/spectate.test.ts`).
 - `src/integrations/traceBridge.test.ts`: the revoke and restart races with a mocked connection.
 - [Local SpacetimeDB evidence](qa/spectate-physics-local-spacetime.json): 15/15 server checks (`npm run spacetime:e2e`, including the 15 s sweep), owner SQL showing both schedules stopped, and a browser run with the spectator on a separate origin.
-- [Maincloud evidence](qa/spectate-physics-maincloud.json): the same 15/15 checks against `scary-5zsk8` after the owner published this branch, with owner SQL showing every physics/vitals table and schedule empty afterwards. A browser spectator on Maincloud and a friend on another network were not checked. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
+- [Maincloud evidence](qa/spectate-physics-maincloud.json): the same 15/15 checks against `scary-5zsk8` after the owner published this branch, with owner SQL showing every physics/vitals table and schedule empty afterwards; plus a browser run on Maincloud (spectator on a separate origin, live vitals, revoke within 3 s, delete leaves no rows). A friend on another machine or network was not checked. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
 
 ## Not verified / not done
 

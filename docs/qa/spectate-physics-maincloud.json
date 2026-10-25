@@ -105,5 +105,12 @@
     "spectator_vitals": 0,
     "command": "spacetime sql -s maincloud scary-5zsk8 \"SELECT COUNT(*) AS n FROM <table>\" (read-only, as the database owner)"
   },
-  "notChecked": "A browser spectator against Maincloud and a friend on another network; Electron with live Presage."
+  "notChecked": "A friend on another machine or network (needs a hosted web build via VITE_SPECTATE_ORIGIN); Electron with live Presage.",
+  "browser": {
+    "checkedAt": "2026-10-24",
+    "player": "http://127.0.0.1:5182 (npm run dev with VITE_SPACETIMEDB_HOST=wss://maincloud.spacetimedb.com, VITE_SPACETIMEDB_DB_NAME=scary-5zsk8), SIMULATED sensing, trace sharing on; J panel read 'SpacetimeDB live trace' and the button read 'Copy spectate link' (remote session ready).",
+    "spectator": "http://localhost:5182/#watch=\u2026 (separate origin, Maincloud only): 'Live \u00b7 SpacetimeDB', SIMULATED 72 BPM, 0 vs baseline, Holding steady, Stage 1 of 4, creature 17-18 of 24, exposure 11-12%, 'PROPS \u00b7 SPACETIMEDB PHYSICS'.",
+    "revoke": "Unticking heart-rate sharing: within 3 s the spectator showed 'No heart rate is being shared right now' while the run kept updating.",
+    "delete": "'Delete session & report': the spectator showed 'The player stopped sharing or the session expired'; owner SQL then found 0 rows in session, physics_world, physics_body, physics_tick, spectator_vitals and vitals_sweep."
+  }
 }
