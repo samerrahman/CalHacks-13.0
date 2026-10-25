@@ -123,6 +123,8 @@ export function movementProbabilities(state: GameState): { step: number; probabi
   if (state.time - c.lastAudibleAt > settings.lostTrailSeconds) bias += settings.lostTrailBias;
   // Seeded hunts: now and then it charges regardless of how careful you have been.
   if (huntActive(state)) bias = config.hunt.bias;
+  // Recovery reward: after you calm down it briefly loses your trail (softens, never cancels, a hunt).
+  if (state.time < state.recovery.until) bias += config.recovery.bias;
   if (state.time < c.biasUntil) bias += clamp(c.tacticBias, -settings.providerMaximum, settings.providerMaximum);
   if (state.equipment === 'quiet') bias = config.shutdown.retreatBias - state.danger / 100 * settings.quietDangerScale;
   if (lureProtected(state)) bias = c.lure?.target === 'CONTAINMENT' ? settings.finalLure : config.lineLure.bias - state.danger / 100 * settings.lureDangerScale;

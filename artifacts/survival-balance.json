@@ -165,7 +165,9 @@
         "graceSeconds": 0.45,
         "steadyMultiplier": 1.5,
         "elevatedMultiplier": 0.6,
-        "drainPerSecond": 0.5
+        "drainPerSecond": 0.5,
+        "personalMinimumBreathSeconds": 2,
+        "slowStepSeconds": 0.25
       }
     }
   },

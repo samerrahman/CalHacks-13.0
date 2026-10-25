@@ -8,7 +8,7 @@ import { createAudioEngine, type AudioEngine, type EffectName } from '../audio/e
 import { SensorController } from '../sensing/controller';
 import type { SensorView, SensorMode } from '../sensing/types';
 import { requestDirector, requestSpeech, requestMonster, TraceBridge, beginIntegrationRun, integrationStatus } from '../integrations/client';
-import { buildPulseReport, type PulseSample, type PulseEvent, type PulseReport as Report } from '../report/analysis';
+import { buildPulseReport, type BreathSample, type PulseSample, type PulseEvent, type PulseReport as Report } from '../report/analysis';
 import dialogue from '../game/dialogue.json';
 import Setup, { DEFAULT_PREFS, type Preferences } from './Setup';
 import HUD from './HUD';
@@ -33,7 +33,7 @@ type Screen='setup'|'intro'|'tutorial'|'play';
 const INITIAL_SENSOR:SensorView={source:'manual',status:'manual',trend:'UNKNOWN',quality:'unknown',hint:'Pulse input off · neutral gameplay',baselineBpm:null,pulseBpm:null,ageMs:null,sampleAtMs:null,captureSegment:0,acceptedSeconds:0,canContinueManual:true};
 const EMPTY_REPORT=buildPulseReport({recordingConsent:false,source:'manual',baselineBpm:null});
 const STATIONS:Station[]=['terminal','cameras','equipment'];
-const reportTypes:Record<string,string>={SCARE:'SCARE',BLACKOUT_STARTED:'BLACKOUT',WRONG_INPUT:'MISTAKE',NEAR_LISTEN:'CLOSE_ENCOUNTER',BREACH_WARNING:'BREACH_WARNING',LURE_TRANSMITTED:'LURE_SUCCESS',QUIET_ENTERED:'QUIET',RESTORED:'POWER_RESTORED'};
+const reportTypes:Record<string,string>={SCARE:'SCARE',BLACKOUT_STARTED:'BLACKOUT',WRONG_INPUT:'MISTAKE',NEAR_LISTEN:'CLOSE_ENCOUNTER',BREACH_WARNING:'BREACH_WARNING',LURE_TRANSMITTED:'LURE_SUCCESS',QUIET_ENTERED:'QUIET',RESTORED:'POWER_RESTORED',RECOVERY_REWARD:'RECOVERY'};
 const stageLines:Record<number,string>={1:'FAULTS_START',2:'LURE_A_START',3:'LURE_A_SUCCESS',4:'LURE_B_START',5:'FINAL_READY'};
 const INTRO=['Containment failure. Proceed to the emergency observation shelter.','[running through wet branches — something follows]','[the reinforced door slams shut]','Silence the faults. Release the four basement locks. Get out.'];
 /** Text cards for the ending when motion is reduced or the film cannot play. */
@@ -52,6 +52,7 @@ function GameApp(){
  const[radio,setRadio]=useState<string|null>(null),radioRef=useRef<{id:string;expires:number;stage:number;role:string}|null>(null),lineSequence=useRef(0);
  const[tutorialStep,setTutorialStep]=useState(0),tutorialStepRef=useRef(0),tutorialWatching=useRef(false),[introStep,setIntroStep]=useState(0),[introMode,setIntroMode]=useState<'film'|'text'>('film'),guided=useRef(true);
  const recording=useRef(false),recordSource=useRef<SensorMode>('manual'),recordEventSeq=useRef(0);
+ const breaths=useRef<BreathSample[]>([]),lastBreath=useRef<string|null>(null),reportBreathing=useRef<number|null>(null);
  const samples=useRef<PulseSample[]>([]),markers=useRef<PulseEvent[]>([]),recordSegment=useRef(0),lastSample=useRef<string|null>(null),reportBaseline=useRef<number|null>(null),[report,setReport]=useState<Report>(EMPTY_REPORT),[deleted,setDeleted]=useState(false);
  function setScreenNow(s:Screen){screenRef.current=s;setScreen(s)}
  function changePrefs(p:Preferences){prefsRef.current=p;setPrefs(p)}
@@ -67,6 +68,11 @@ function GameApp(){
   if(screenRef.current!=='play'||!recording.current)return;
   for(const e of state.events){if(e.seq<=recordEventSeq.current)continue;recordEventSeq.current=e.seq;if(reportTypes[e.type])markers.current.push({id:e.id,type:reportTypes[e.type],capturedAtMs:Math.max(0,performance.now()-(state.time-e.time)*1000),gameMs:e.time*1000,segment:recordSegment.current*100000+sensorRef.current.captureSegment});}
  }
+ /** Rounded, frozen resting pulse and breathing personalize the mask and pacer. Neutral without opted-in sensing. */
+ function syncPersonal(value:SensorView){
+  const own=value.source!=='manual',bpm=own&&value.baselineBpm!==null?Math.round(value.baselineBpm):null,rpm=own&&value.restingBreathingRpm!=null?Math.round(value.restingBreathingRpm):null,p=authority.current.personal;
+  if(p.restingBpm!==bpm||p.restingBreathsPerMinute!==rpm)authority.current=dispatch(authority.current,{type:'personal',restingBpm:bpm,restingBreathsPerMinute:rpm});
+ }
  function send(action:GameAction){
   if(['input','replay','transmit'].includes(action.type)&&!inspectionRef.current)return;
   if(action.type==='station')inspect(false);
@@ -75,7 +81,7 @@ function GameApp(){
   const before=authority.current;authority.current=dispatch(before,action);recordEvents(authority.current);setGame({...authority.current});
   if(screenRef.current==='tutorial'&&action.type==='transmit'&&tutorialStepRef.current===6&&authority.current.tasks.stage!==before.tasks.stage)startRun(false);
  }
- function pause(value:boolean,keepCapture=false){if(!['play','tutorial'].includes(screenRef.current)||authority.current.status!=='playing'||authority.current.paused===value)return;send({type:'restore',held:false});send({type:'pause',paused:value});recordSegment.current++;lastSample.current=null;if(value)clearRadio();audio.current?.setPaused(value);if(value&&!keepCapture)void sensing.current?.pause();else if(!value&&sensing.current)resumeSensorCapture(sensing.current,sensorRef.current,prefsRef.current.sensing,true);}
+ function pause(value:boolean,keepCapture=false){if(!['play','tutorial'].includes(screenRef.current)||authority.current.status!=='playing'||authority.current.paused===value)return;send({type:'restore',held:false});send({type:'pause',paused:value});recordSegment.current++;lastSample.current=null;lastBreath.current=null;if(value)clearRadio();audio.current?.setPaused(value);if(value&&!keepCapture)void sensing.current?.pause();else if(!value&&sensing.current)resumeSensorCapture(sensing.current,sensorRef.current,prefsRef.current.sensing,true);}
  function effect(name:EffectName,level=.4,position?:[number,number,number]){audio.current?.playEffect(name,position,prefsRef.current.softScares?level*.55:level)}
  async function line(id:string){
   if(screenRef.current!=='play'||authority.current.status!=='playing')return;
@@ -95,8 +101,8 @@ function GameApp(){
   setCameraOpen(false);
   run.current.invalidate();beginIntegrationRun();pending.current.clear();lastEvent.current=0;lastStage.current=0;cueRef.current=null;lineSequence.current=0;firstVoice.current=false;lastCreatureVoice.current=-1000;lastScare.current=0;inspect(false);setResultReady(false);setEnding(null);clearRadio();voices.current.reset();
   const fresh=createGame(prefsRef.current.seed,practice?'tutorial':'standard');authority.current=dispatch(fresh,{type:'accessibility',fixedMemoryTempo:practice||prefsRef.current.fixedTempo});if(document.hidden)authority.current=dispatch(authority.current,{type:'pause',paused:true});
-  const currentSensor=sensorRef.current;authority.current=dispatch(authority.current,{type:'sensor',source:currentSensor.source,quality:currentSensor.quality,trend:currentSensor.trend});
-  recording.current=!practice&&prefsRef.current.recordPulse;recordSource.current=prefsRef.current.sensing;recordEventSeq.current=0;samples.current=[];markers.current=[];recordSegment.current++;lastSample.current=null;reportBaseline.current=currentSensor.baselineBpm;setReport(EMPTY_REPORT);setDeleted(false);
+  const currentSensor=sensorRef.current;authority.current=dispatch(authority.current,{type:'sensor',source:currentSensor.source,quality:currentSensor.quality,trend:currentSensor.trend});syncPersonal(currentSensor);
+  recording.current=!practice&&prefsRef.current.recordPulse;recordSource.current=prefsRef.current.sensing;recordEventSeq.current=0;samples.current=[];markers.current=[];breaths.current=[];lastBreath.current=null;reportBreathing.current=currentSensor.restingBreathingRpm??null;recordSegment.current++;lastSample.current=null;reportBaseline.current=currentSensor.baselineBpm;setReport(EMPTY_REPORT);setDeleted(false);
   setGame(authority.current);setScreenNow(practice?'tutorial':'play');setPracticeStep(0);tutorialWatching.current=false;setJudge(false);
   setProvider({gemini:'FALLBACK · deterministic director',dialogue:'SCRIPTED FALLBACK · no generated line yet',elevenlabs:'FALLBACK · captions + original effects'});
   audio.current?.reset();audio.current?.setPaused(document.hidden);void audio.current?.start();
@@ -107,11 +113,11 @@ function GameApp(){
  function endEnding(){setEnding(null);setResultReady(true)}
  function begin(tutorial:boolean){guided.current=tutorial;setIntroStep(0);setIntroMode(prefsRef.current.reducedMotion?'text':'film');setScreenNow('intro');audio.current?.setPaused(false);void audio.current?.start();}
  async function deleteRun(){
-  const target=trace.current;recording.current=false;samples.current=[];markers.current=[];reportBaseline.current=null;lastSample.current=null;setReport(EMPTY_REPORT);setDeleted(true);setTraceConsent(false);
+  const target=trace.current;recording.current=false;samples.current=[];markers.current=[];breaths.current=[];lastBreath.current=null;reportBreathing.current=null;reportBaseline.current=null;lastSample.current=null;setReport(EMPTY_REPORT);setDeleted(true);setTraceConsent(false);
   try{await target?.deleteSession();if(trace.current===target)setTraceStatus('Session deleted')}catch{if(trace.current===target)setTraceStatus('Local data deleted · remote delete unavailable; retry when connected')}
  }
  async function menu(){setCameraOpen(false);run.current.invalidate();beginIntegrationRun();clearRadio();setJudge(false);audio.current?.reset();audio.current?.setPaused(true);const deletion=deleteRun();const stopping=sensing.current?.stop();setScreenNow('setup');await Promise.all([deletion,stopping]);}
- function sensorMode(mode:SensorMode){lastSample.current=null;recordSegment.current++;void sensing.current?.start(mode)}
+ function sensorMode(mode:SensorMode){lastSample.current=null;lastBreath.current=null;recordSegment.current++;void sensing.current?.start(mode)}
  function toggleTrace(value:boolean){setTraceConsent(value);changePrefs({...prefsRef.current,shareTrace:value});if(value)void trace.current?.connect(true,game.seed,game.mode);else{void trace.current?.deleteSession().then(()=>setTraceStatus('Session deleted')).catch(()=>setTraceStatus('Sharing stopped · remote deletion pending'));}}
  useEffect(()=>{
   let stopped=false,raf=0,previous=performance.now(),lastUI=0;
@@ -120,9 +126,14 @@ function GameApp(){
   const previewOff=controller.subscribePreview(setCameraStream);void integrationStatus().then(status=>{if(!stopped){setDesktop(status.desktop);setVoiceAvailable(status.elevenlabs)}});
   const off=controller.subscribe(value=>{if(stopped)return;sensorRef.current=value;setSensor(value);const current=authority.current;
    if(current.sensor.source!==value.source||current.sensor.quality!==value.quality||current.trend!==value.trend)authority.current=dispatch(current,{type:'sensor',source:value.source,quality:value.quality,trend:value.trend});
+   syncPersonal(value);
    if(screenRef.current==='play'&&!authority.current.paused&&authority.current.status==='playing'&&recording.current&&value.source===recordSource.current&&value.quality==='accepted'&&value.pulseBpm!==null&&value.sampleAtMs!==null&&value.source!=='manual'){
     const key=`${value.captureSegment}:${value.sampleAtMs}`;if(key!==lastSample.current){lastSample.current=key;samples.current.push({capturedAtMs:value.sampleAtMs,gameMs:authority.current.time*1000,segment:recordSegment.current*100000+value.captureSegment,bpm:value.pulseBpm,source:value.source,accepted:true});if(samples.current.length>7200)samples.current.shift();}
     if(value.baselineBpm!==null)reportBaseline.current=value.baselineBpm;
+   }
+   if(screenRef.current==='play'&&!authority.current.paused&&authority.current.status==='playing'&&recording.current&&value.source===recordSource.current&&value.source!=='manual'&&value.breathingRpm!=null&&value.breathingAtMs!=null){
+    const key=`${value.captureSegment}:${value.breathingAtMs}`;if(key!==lastBreath.current){lastBreath.current=key;breaths.current.push({capturedAtMs:value.breathingAtMs,gameMs:authority.current.time*1000,segment:recordSegment.current*100000+value.captureSegment,rpm:value.breathingRpm,source:value.source,accepted:true});if(breaths.current.length>7200)breaths.current.shift();}
+    if(value.restingBreathingRpm!=null)reportBreathing.current=value.restingBreathingRpm;
    }
   });
   const engine=createAudioEngine();audio.current=engine;engine.setVolume(.45);trace.current=new TraceBridge();let renderer:SceneView|null=null;
@@ -188,8 +199,8 @@ function GameApp(){
    if(lastStage.current!==game.tasks.stage){lastStage.current=game.tasks.stage;clearRadio();const id=stageLines[game.tasks.stage];if(id)void line(id)}
   }
   const events=game.events.filter(e=>e.seq>lastEvent.current);for(const e of events){
-   const effects:Record<string,EffectName>={FAULT_CLEARED:'fault_silenced',WRONG_INPUT:'machine_mistake',TASK_COMPLETE:'relay_confirm',BLACKOUT_STARTED:'blackout',RESTORED:'power_restart',LURE_TRANSMITTED:'lure_transmit',HUNT_STARTED:'breach_warning'};
-   if(effects[e.type]&&(!['FAULT_CLEARED','WRONG_INPUT','TASK_COMPLETE'].includes(e.type)||game.equipment==='on'))effect(effects[e.type],e.type==='HUNT_STARTED'?.5:.32,e.type==='HUNT_STARTED'?game.creature.position:undefined);
+   const effects:Record<string,EffectName>={FAULT_CLEARED:'fault_silenced',WRONG_INPUT:'machine_mistake',TASK_COMPLETE:'relay_confirm',BLACKOUT_STARTED:'blackout',RESTORED:'power_restart',LURE_TRANSMITTED:'lure_transmit',HUNT_STARTED:'breach_warning',RECOVERY_REWARD:'steps_receding'};
+   if(effects[e.type]&&(!['FAULT_CLEARED','WRONG_INPUT','TASK_COMPLETE'].includes(e.type)||game.equipment==='on'))effect(effects[e.type],e.type==='HUNT_STARTED'?.5:.32,e.type==='HUNT_STARTED'||e.type==='RECOVERY_REWARD'?game.creature.position:undefined);
    if(e.type==='BREACH_WARNING')clearRadio();if(e.type==='BLACKOUT_STARTED')clearRadio(line=>line.role!=='creature'&&!line.id.endsWith('-FAULTS_START'));
    if(e.type==='SCARE'&&game.scare&&game.scare.id!==lastScare.current){lastScare.current=game.scare.id;audio.current?.playScare(game.scare.kind,game.creature.position,prefsRef.current.softScares);}
    if(e.type==='PROXIMITY_ALARM'&&!firstVoice.current&&screen==='play'){firstVoice.current=true;void line('FIRST_APPROACH')}
@@ -204,7 +215,7 @@ function GameApp(){
   // A win plays the ending (text cards with reduced motion); the run report follows it.
   run.current.invalidate();clearRadio();inspect(false);audio.current?.reset();if(game.status==='won')setEnding(prefsRef.current.reducedMotion?'text':'film');else audio.current?.playScare('breach',game.creature.position,prefsRef.current.softScares);
   const resultTimer=game.status==='lost'?setTimeout(()=>setResultReady(true),SCARE_MS.breach-200):undefined;
-  setReport(buildPulseReport({recordingConsent:recording.current,source:recordSource.current,baselineBpm:reportBaseline.current,samples:samples.current,events:markers.current}));void sensing.current?.stop();return()=>clearTimeout(resultTimer);
+  setReport(buildPulseReport({recordingConsent:recording.current,source:recordSource.current,baselineBpm:reportBaseline.current,samples:samples.current,events:markers.current,breathingSamples:breaths.current,restingBreathingRpm:reportBreathing.current}));void sensing.current?.stop();return()=>clearTimeout(resultTimer);
  },[screen,game.status]);
  const judgeSensorLabel=sensor.source==='simulated'?`SIMULATED · ${sensor.trend}`:sensor.source==='presage'?`${sensor.status==='ready'&&sensor.quality==='accepted'?'LIVE':sensor.ageMs!==null&&sensor.ageMs>5000?'STALE':sensor.status.toUpperCase()} · PULSE ${sensor.trend}`:'PULSE INPUT OFF · NEUTRAL';
  // The HUD keeps the last known trend between accepted estimates, like the vitals readout; the judge trace stays exact.

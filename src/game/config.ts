@@ -19,7 +19,9 @@ export const config = {
     listen: { secondsPerMachine: 1.1 },
     pulse: { minimumBpm: 54, maximumBpm: 90, beats: 8, tolerance: .15, elevatedBeats: 10, elevatedTolerance: .12 },
     locate: { marks: 3, spacingSeconds: 6 },
-    calm: { seconds: 12, breathSeconds: 4, graceSeconds: .45, steadyMultiplier: 1.5, elevatedMultiplier: .6, drainPerSecond: .5 },
+    /** `breathSeconds` is each inhale/exhale phase. A personal pacer starts at the player's resting pace
+     * (never faster than `personalMinimumBreathSeconds`) and lengthens by `slowStepSeconds` per full breath. */
+    calm: { seconds: 12, breathSeconds: 4, graceSeconds: .45, steadyMultiplier: 1.5, elevatedMultiplier: .6, drainPerSecond: .5, personalMinimumBreathSeconds: 2, slowStepSeconds: .25 },
     maxFaultNoise: .9,
     memory: { ...authoredConfig.tasks.memory, cueOnSeconds: .36, cueGapSeconds: .14, responseWindowSeconds: 16 },
   },
@@ -42,6 +44,8 @@ export const config = {
   shutdown: { charges: 3, stageRefill: 1, durationSeconds: 25, cooldownSeconds: 10, retreatBias: .55, listeningSeconds: 4, manualRestoreAfterSeconds: 4 },
   /** Seeded charges: one per period, at a seeded offset. Isolation and lures still override. */
   hunt: { firstSeconds: 45, periodSeconds: 60, durationSeconds: 10, bias: -.85 },
+  /** Calming down (accepted ELEVATED → RECOVERED) makes it lose your trail: an outward bias, once per stage. */
+  recovery: { bias: .6, durationSeconds: 8 },
   lineLure: { EMITTER_A: 20, EMITTER_B: 22, CONTAINMENT: 24, bias: .85, durationSeconds: 12 },
 };
 export const FIXED_DT = 1 / config.simulation.fixedStepHz;

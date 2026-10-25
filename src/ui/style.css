@@ -19,3 +19,4 @@
 .camera-prompt .camera-prompt-actions.split{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:18px 0 0}.camera-prompt .split button{text-align:center;font-size:12px}
 /* The ending plays over the HUD after a win; the run report (z 20) follows it. */
 .ending-film,.ending-cards{z-index:15}
+.pulse-numbers{flex-wrap:wrap;row-gap:16px}.report-legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:2px 0 10px;font:9px var(--mono);letter-spacing:1px;text-transform:uppercase;color:#adbc9c}.report-legend i{display:inline-block;width:16px;height:3px;margin-right:7px;vertical-align:middle}.report-legend i.marker{width:8px;height:8px;border-radius:50%;background:#d99450}

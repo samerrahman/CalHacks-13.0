@@ -4,15 +4,21 @@ export type PulseEvent = { id: string; type: string; capturedAtMs: number; gameM
 export type PulseBin = { segment: number; capturedAtMs: number; gameMs: number; bpm: number; breakBefore?: boolean };
 export type PulseIncrease = { eventId: string; deltaBpm: number; associatedEventIds: string[]; clustered: boolean };
 export type PulseRecovery = { eventId: string; elapsedSeconds: number | null; observed: boolean };
-export type PulseReport = { status: 'unrecorded' | 'recorded-live' | 'simulated'; baselineBpm: number | null; highestBpm: number | null; timeline: PulseBin[]; markers: PulseEvent[]; largestIncrease: PulseIncrease | null; recovery: PulseRecovery[]; note?: string };
-export type ReportInput = { recordingConsent: boolean; source: SensorMode; baselineBpm: number | null; samples?: PulseSample[]; events?: PulseEvent[] };
+export type BreathSample = { capturedAtMs: number; gameMs: number; segment: number; rpm: number; source: SensorMode; accepted: boolean };
+export type BreathBin = { segment: number; capturedAtMs: number; gameMs: number; rpm: number; breakBefore?: boolean };
+/** Breathing is optional within a recorded report: absent when no accepted breathing was captured. */
+export type BreathingSummary = { timeline: BreathBin[]; restingRpm: number | null; lowestRpm: number; highestRpm: number };
+export type PulseReport = { status: 'unrecorded' | 'recorded-live' | 'simulated'; baselineBpm: number | null; highestBpm: number | null; timeline: PulseBin[]; markers: PulseEvent[]; largestIncrease: PulseIncrease | null; recovery: PulseRecovery[]; note?: string; breathing?: BreathingSummary };
+export type ReportInput = { recordingConsent: boolean; source: SensorMode; baselineBpm: number | null; samples?: PulseSample[]; events?: PulseEvent[]; breathingSamples?: BreathSample[]; restingBreathingRpm?: number | null };
 /** Local-only explanatory statistics. No provider calls, persistence or diagnosis. */
 const median = (values: number[]): number => {
   const a = [...values].sort((x, y) => x - y);
   return a.length ? (a[Math.floor((a.length - 1) / 2)] + a[Math.ceil((a.length - 1) / 2)]) / 2 : 0;
 };
 const round = (n: number) => Math.round(n * 10) / 10;
-const marked = new Set(['SCARE','BLACKOUT','MISTAKE','CLOSE_ENCOUNTER','BREACH_WARNING','LURE_SUCCESS','QUIET','POWER_RESTORED']);
+const marked = new Set(['SCARE','BLACKOUT','MISTAKE','CLOSE_ENCOUNTER','BREACH_WARNING','LURE_SUCCESS','QUIET','POWER_RESTORED','RECOVERY']);
+/** Breathing uses its own 30-second SDK window and updates less often, so lines break on a wider gap. */
+const BREATH_GAP_MS = 8000;
 const maxGap = (rows: PulseBin[]) => rows.slice(1).reduce((gap, row, i) => Math.max(gap, row.capturedAtMs - rows[i].capturedAtMs), 0);
 /** Coverage includes interval edges; internal density cannot conceal an unobserved tail. */
 const windowCovered = (rows: PulseBin[], startMs: number, endMs: number, maximumGapMs: number): boolean =>
@@ -38,7 +44,31 @@ export function acceptedBins(samples: PulseSample[], source: SensorMode) {
   })).sort((a, b) => a.segment - b.segment || a.capturedAtMs - b.capturedAtMs);
 }
 
-export function buildPulseReport({ recordingConsent, source, baselineBpm, samples = [], events = [] }: ReportInput): PulseReport {
+export function acceptedBreathBins(samples: BreathSample[], source: SensorMode): BreathBin[] {
+  if (source !== 'presage' && source !== 'simulated') return [];
+  const groups = new Map<string, BreathSample[]>();
+  for (const sample of samples) {
+    if (!sample.accepted || sample.source !== source || !Number.isFinite(sample.rpm) || sample.rpm < 5 || sample.rpm > 40
+      || !Number.isFinite(sample.capturedAtMs) || sample.capturedAtMs < 0 || !Number.isFinite(sample.gameMs) || sample.gameMs < 0
+      || !Number.isInteger(sample.segment) || sample.segment < 0) continue;
+    const key = `${sample.segment}:${Math.floor(sample.capturedAtMs / 1000)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(sample);
+  }
+  const bins = [...groups.values()].map(group => ({
+    segment: group[0].segment, capturedAtMs: Math.floor(group[0].capturedAtMs / 1000) * 1000,
+    gameMs: median(group.map(x => x.gameMs)), rpm: median(group.map(x => x.rpm)),
+  })).sort((a, b) => a.segment - b.segment || a.capturedAtMs - b.capturedAtMs);
+  return bins.map((b, i) => ({ ...b, breakBefore: i === 0 || bins[i - 1].segment !== b.segment || b.capturedAtMs - bins[i - 1].capturedAtMs > BREATH_GAP_MS }));
+}
+function breathingSummary(samples: BreathSample[], source: SensorMode, resting: number | null | undefined): BreathingSummary | null {
+  const timeline = acceptedBreathBins(samples, source);
+  if (!timeline.length) return null;
+  const restingRpm = typeof resting === 'number' && Number.isFinite(resting) && resting >= 5 && resting <= 40 ? resting : null;
+  return { timeline, restingRpm, lowestRpm: Math.min(...timeline.map(b => b.rpm)), highestRpm: Math.max(...timeline.map(b => b.rpm)) };
+}
+
+export function buildPulseReport({ recordingConsent, source, baselineBpm, samples = [], events = [], breathingSamples = [], restingBreathingRpm = null }: ReportInput): PulseReport {
   if (!recordingConsent || !['presage', 'simulated'].includes(source)) return { status: 'unrecorded', timeline: [], markers: [], baselineBpm: null, highestBpm: null, largestIncrease: null, recovery: [] };
   const bins = acceptedBins(samples, source);
   if (!bins.length) return { status: 'unrecorded', timeline: [], markers: [], baselineBpm: null, highestBpm: null, largestIncrease: null, recovery: [] };
@@ -85,6 +115,7 @@ export function buildPulseReport({ recordingConsent, source, baselineBpm, sample
     recovery.push({ eventId: event.id, elapsedSeconds, observed: elapsedSeconds !== null });
   }
   comparisons.sort((a, b) => b.deltaBpm - a.deltaBpm);
+  const breathing = breathingSummary(breathingSamples, source, restingBreathingRpm);
   return { status: source === 'presage' ? 'recorded-live' : 'simulated', baselineBpm: baseline, highestBpm: Math.max(...bins.map(b => b.bpm)), timeline, markers: safeEvents,
-    largestIncrease: comparisons[0] ?? null, recovery, note: 'Timing association only. Measurement delay, movement, lighting and other events may contribute.' };
+    largestIncrease: comparisons[0] ?? null, recovery, note: 'Timing association only. Measurement delay, movement, lighting and other events may contribute.', ...(breathing ? { breathing } : {}) };
 }

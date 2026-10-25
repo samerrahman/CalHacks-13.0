@@ -6,7 +6,7 @@ export function emptyWires(): WireState { return { targetOrder: [], connections:
 export function emptyRouting(): RoutingState { return { round: 0, rounds: 0, size: 0, kinds: [], turns: [], answer: [], start: 0, end: 0 }; }
 export function emptyPulse(): PulseMaskState { return { periodSeconds: 1, startedAt: 0, streak: 0, lastTap: null }; }
 export function emptyLocate(): LocateState { return { marks: 0, required: 0, lastMarkAt: -1000 }; }
-export function emptyCalm(): CalmState { return { progress: 0, required: 0, pacerStartedAt: 0, holding: false }; }
+export function emptyCalm(): CalmState { return { progress: 0, required: 0, pacerStartedAt: 0, holding: false, halfSeconds: config.tasks.calm.breathSeconds, phaseStartedAt: 0, inhale: true, personal: false }; }
 /** Conduit tiles. Openings are bits N=1, E=2, S=4, W=8 at zero turns; each turn rotates clockwise. */
 const KIND_OPENINGS = [0, 5, 3, 7];
 const STEPS: [number, number, number, number][] = [[-1, 0, 1, 4], [0, 1, 2, 8], [1, 0, 4, 1], [0, -1, 8, 2]]; // row, col, own bit, neighbour bit
@@ -82,6 +82,16 @@ const SECTORS: Sector[] = ['NEAR', 'A', 'B', 'C'];
 /** Coarse accepted trend only: raw pulse never enters game state. Manual or missing data is neutral. */
 export function heartElevated(state: GameState): boolean { return state.sensor.source !== 'manual' && state.sensor.quality === 'accepted' && state.sensor.trend === 'ELEVATED'; }
 function heartSteady(state: GameState): boolean { return state.sensor.source !== 'manual' && state.sensor.quality === 'accepted' && (state.sensor.trend === 'STEADY' || state.sensor.trend === 'RECOVERED'); }
+/** The player's own frozen resting pulse, clamped to a tappable range; null without opted-in sensing. */
+export function personalPulseBpm(state: GameState): number | null {
+  const bpm = state.personal.restingBpm, { minimumBpm, maximumBpm } = config.tasks.pulse;
+  return state.sensor.source !== 'manual' && bpm !== null && Number.isFinite(bpm) ? Math.min(maximumBpm, Math.max(minimumBpm, Math.round(bpm))) : null;
+}
+/** Starting pacer phase from the player's resting breathing rate (one inhale or exhale is half a breath). */
+export function personalBreathSeconds(state: GameState): number | null {
+  const rpm = state.personal.restingBreathsPerMinute, settings = config.tasks.calm;
+  return state.sensor.source !== 'manual' && rpm !== null && Number.isFinite(rpm) && rpm > 0 ? Math.min(settings.breathSeconds, Math.max(settings.personalMinimumBreathSeconds, 30 / rpm)) : null;
+}
 export function pulseRequirement(state: GameState): { beats: number; tolerance: number } {
   const settings = config.tasks.pulse;
   return heartElevated(state) ? { beats: settings.elevatedBeats, tolerance: settings.elevatedTolerance } : { beats: settings.beats, tolerance: settings.tolerance };
@@ -231,11 +241,19 @@ export function pulseFlash(state: GameState): number {
   return Math.max(0, 1 - cycle(state.time - pulse.startedAt, pulse.periodSeconds) / .35);
 }
 export function calmBreath(state: GameState): number {
-  const seconds = config.tasks.calm.breathSeconds, phase = cycle(state.time - state.tasks.calm.pacerStartedAt, seconds) / seconds;
+  const calm = state.tasks.calm, phase = cycle(state.time - calm.phaseStartedAt, calm.halfSeconds) / calm.halfSeconds;
   return calmInhale(state) ? phase : 1 - phase;
 }
 export function calmMatched(state: GameState): boolean {
-  return cycle(state.time - state.tasks.calm.pacerStartedAt, config.tasks.calm.breathSeconds) < config.tasks.calm.graceSeconds || state.tasks.calm.holding === calmInhale(state);
+  return cycle(state.time - state.tasks.calm.phaseStartedAt, state.tasks.calm.halfSeconds) < config.tasks.calm.graceSeconds || state.tasks.calm.holding === calmInhale(state);
+}
+/** Advance whole pacer phases. A personal pacer lengthens each full breath until the standard pace. */
+function advanceCalmPacer(state: GameState): void {
+  const calm = state.tasks.calm, settings = config.tasks.calm;
+  for (let guard = 0; guard < 1000 && state.time - calm.phaseStartedAt >= calm.halfSeconds - 1e-9; guard++) {
+    calm.phaseStartedAt += calm.halfSeconds; calm.inhale = !calm.inhale;
+    if (calm.inhale && calm.personal) calm.halfSeconds = Math.min(settings.breathSeconds, calm.halfSeconds + settings.slowStepSeconds);
+  }
 }
 export function taskProgress(state: GameState): [number, number] | null {
   const t = state.tasks;
@@ -248,10 +266,11 @@ export function taskProgress(state: GameState): [number, number] | null {
 export function breathe(state: GameState, holding: boolean): void {
   if (state.tasks.step === 'calm') state.tasks.calm.holding = !!holding;
 }
-/** Calm pacer: inhale (hold) then exhale (release), each `breathSeconds`. */
+/** Calm pacer: inhale (hold) then exhale (release), each phase `halfSeconds`. Times outside the
+ * current phase (a reaction delay, or a phase not yet advanced) belong to the neighbouring phase. */
 export function calmInhale(state: GameState): boolean {
-  const seconds = config.tasks.calm.breathSeconds;
-  return ((state.time - state.tasks.calm.pacerStartedAt) % (seconds * 2) + seconds * 2) % (seconds * 2) < seconds;
+  const calm = state.tasks.calm, elapsed = state.time - calm.phaseStartedAt;
+  return elapsed >= 0 && elapsed < calm.halfSeconds ? calm.inhale : !calm.inhale;
 }
 /** Matching is validated here, including keyboard clicks and pointer drops. */
 export function connectWire(state: GameState, from: number, to: number): void {
@@ -304,8 +323,16 @@ export function taskInput(state: GameState, value: number): void {
     }
     emit(state, 'MEMORY_ARMED');
     if (state.mode === 'tutorial') { readyToTransmit(state, 'MEMORY_COMPLETE', 'Sequence matched. Press T to transmit the calibrated signal.'); return; }
-    if (stage === 2) { state.tasks.step = 'pulse'; state.tasks.pulse = { periodSeconds: 60 / (config.tasks.pulse.minimumBpm + Math.floor(random(state) * (config.tasks.pulse.maximumBpm - config.tasks.pulse.minimumBpm + 1))), startedAt: state.time, streak: 0, lastTap: null }; state.notice = 'Sequence matched. Now tap 1 in rhythm with the false heartbeat to mask your own.'; }
-    else { state.tasks.step = 'calm'; state.tasks.calm = { progress: 0, required: config.tasks.calm.seconds, pacerStartedAt: state.time, holding: false }; state.notice = 'Sequence matched. Hold B to breathe in, release to breathe out. Let it lose your trail.'; }
+    if (stage === 2) {
+      // The seeded draw always happens so personal sensing never shifts the run's random stream.
+      const seeded = config.tasks.pulse.minimumBpm + Math.floor(random(state) * (config.tasks.pulse.maximumBpm - config.tasks.pulse.minimumBpm + 1)), own = personalPulseBpm(state);
+      state.tasks.step = 'pulse'; state.tasks.pulse = { periodSeconds: 60 / (own ?? seeded), startedAt: state.time, streak: 0, lastTap: null, personal: own !== null };
+      state.notice = own !== null ? 'Sequence matched. The false heartbeat is tuned to your own resting rhythm. Tap 1 with it to mask yourself.' : 'Sequence matched. Now tap 1 in rhythm with the false heartbeat to mask your own.';
+    } else {
+      const own = personalBreathSeconds(state);
+      state.tasks.step = 'calm'; state.tasks.calm = { progress: 0, required: config.tasks.calm.seconds, pacerStartedAt: state.time, holding: false, halfSeconds: own ?? config.tasks.calm.breathSeconds, phaseStartedAt: state.time, inhale: true, personal: own !== null };
+      state.notice = own !== null ? 'Sequence matched. The pacer starts at your own breathing pace and slows with every breath. Hold B to breathe in, release to breathe out.' : 'Sequence matched. Hold B to breathe in, release to breathe out. Let it lose your trail.';
+    }
     state.version++;
   }
 }
@@ -325,6 +352,7 @@ export function tickTasks(state: GameState, dt: number): void {
   if (state.equipment !== 'on') return;
   const stage = state.tasks.stage, step = state.tasks.step;
   if (step === 'calm') {
+    advanceCalmPacer(state);
     const settings = config.tasks.calm, calm = state.tasks.calm, matched = calmMatched(state);
     const rate = !matched ? -settings.drainPerSecond : heartElevated(state) ? settings.elevatedMultiplier : heartSteady(state) ? settings.steadyMultiplier : 1;
     calm.progress = Math.max(0, Math.min(calm.required, calm.progress + rate * dt));
