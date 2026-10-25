@@ -21,11 +21,10 @@ export default function SpectateCamera({ hash }: { hash: string }) {
     if (state.stream) void el.play().catch(() => { /* muted autoplay normally succeeds */ });
   }, [state.stream]);
   return <section className={`spectate-card spectate-camera ${state.status}`} aria-label="Player camera">
-    <small>PLAYER CAMERA <em>{TITLE[state.status]}</em></small>
+    <small>THEIR CAMERA <em>{TITLE[state.status]}</em></small>
     <div className="camera-frame">
       <video ref={video} muted playsInline autoPlay hidden={!live} aria-label="Live video from the player's camera"/>
-      {live ? <span className="camera-label"><i aria-hidden="true"/>LIVE · PLAYER CAMERA</span> : <p role="status">{state.message}</p>}
+      {live ? <span className="camera-label"><i aria-hidden="true"/>LIVE</span> : <p role="status">{state.message}</p>}
     </div>
-    <span>Peer to peer from the player's device, only while they keep it on. Nothing is recorded or stored.</span>
   </section>;
 }

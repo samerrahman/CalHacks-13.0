@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import type {SensorView} from '../sensing/types';
 import {signalCheck} from '../sensing/signalCheck';
 import './signals.css';
+import { Heartbeat, WornTitle } from './Worn';
 
 /** Start-of-game camera check. Shows the controller-owned stream only (never a second camera). */
 export default function VideoCheck({sensor,stream,desktop,withFriend=false,onEnable,onSimulated,onSkip,onContinue,onBack}:{sensor:SensorView;stream:MediaStream|null;desktop:boolean;withFriend?:boolean;onEnable:()=>void;onSimulated:()=>void;onSkip:()=>void;onContinue:()=>void;onBack?:()=>void}){
@@ -16,11 +17,10 @@ export default function VideoCheck({sensor,stream,desktop,withFriend=false,onEna
  const browserFriend=withFriend&&!canCapture&&check.state==='needs-desktop';
  const badge=check.state==='ok'?(check.simulated?'SIMULATED':check.calibrated?'SIGNAL OK':`CALIBRATING · ${check.baselineSeconds}/30s`):check.state==='warming'?`WARMING${check.secondsLeft?` · ${check.secondsLeft}s`:''}`:check.state.replace('-',' ').toUpperCase();
  return <main className="video-check" aria-label="Camera signal check"><div className="video-check-card">
-  <div className="eyebrow">SIGNAL CHECK / PERSONAL CAMERA</div>
-  <h2>Quick camera check</h2>
+  <WornTitle text="CAMERA" level={2}/><Heartbeat/>
   <div className="video-check-preview">
    <video ref={video} autoPlay muted playsInline aria-label="Your local mirrored webcam preview"/>
-   {!live&&<div className="video-check-empty"><span>◎</span><p>{check.simulated?'SIMULATED · no camera':canCapture?'Camera off':'Desktop app required'}</p></div>}
+   {!live&&<div className="video-check-empty"><p>{check.simulated?'SIMULATED · no camera':canCapture?'Camera off':'Desktop app required'}</p></div>}
    {live&&<svg className="video-check-guide" viewBox="0 0 400 225" aria-hidden="true"><ellipse cx="200" cy="72" rx="36" ry="45"/><path d="M168 117L156 133Q108 139 99 168L88 225M232 117L244 133Q292 139 301 168L312 225"/></svg>}
    <span className="video-check-label">{live?'CAMERA ON · NOT RECORDED':check.simulated?'SIMULATED':'CAMERA OFF'}</span>
   </div>
@@ -29,15 +29,15 @@ export default function VideoCheck({sensor,stream,desktop,withFriend=false,onEna
    {calibrating&&<progress aria-label="Pulse baseline calibration" max={30} value={check.baselineSeconds}/>}
    {check.state==='adjust'&&sensor.diagnostics?.validationHint&&<small>Camera says: {sensor.diagnostics.validationHint}</small>}
   </div>
-  <div className="video-check-actions">
-   {ready&&<button className="primary" autoFocus onClick={onContinue}>Continue <span>→</span></button>}
+  <div className="video-check-actions worn-menu">
+   {ready&&<button className="primary" autoFocus onClick={onContinue}>Continue →</button>}
    {!ready&&live&&check.state!=='failed'&&<button className="primary" disabled>{calibrating?`Calibrating Presage (${check.baselineSeconds} / 30s)…`:'Waiting for Presage calibration…'}</button>}
-   {!ready&&check.state==='needs-camera'&&<button className="primary" autoFocus onClick={onEnable}>Turn on camera <span>◎</span></button>}
-   {!ready&&check.state==='failed'&&<button className="primary" autoFocus onClick={onEnable}>Retry camera <span>↻</span></button>}
-   {!ready&&check.state==='needs-desktop'&&<><p className="small muted">Camera signal sensing is available in the desktop app.{withFriend?' You can still share live video with your friend in this browser.':''}</p>{withFriend&&<button className="primary" onClick={onContinue}>Continue with live camera <span>→</span></button>}{new URLSearchParams(location.search).has('debug')&&<button onClick={onSimulated}>Use SIMULATED signals</button>}</>}
+   {!ready&&check.state==='needs-camera'&&<button className="primary" autoFocus onClick={onEnable}>Turn on camera</button>}
+   {!ready&&check.state==='failed'&&<button className="primary" autoFocus onClick={onEnable}>Retry camera</button>}
+   {!ready&&check.state==='needs-desktop'&&<><p className="small muted">Camera signal sensing is available in the desktop app.{withFriend?' You can still share live video with your friend in this browser.':''}</p>{withFriend&&<button className="primary" onClick={onContinue}>Continue with live camera →</button>}{new URLSearchParams(location.search).has('debug')&&<button onClick={onSimulated}>Use SIMULATED signals</button>}</>}
    <button className="text-button" onClick={onSkip}>Play without camera</button>
    {onBack&&<button className="text-button video-check-back" onClick={onBack}>← Back</button>}
   </div>
-  <p className="small muted video-check-note">Camera estimates for a game, not medical readings. {withFriend?'Your friend can see your live camera while sharing is on. No camera recording is saved.':'Frames stay on this device and are never saved or shared.'}</p>
+  <p className="small muted video-check-note">{withFriend?'Your friend sees your camera while sharing. Nothing is saved.':'Frames stay on this device. Nothing is saved.'} Not a medical reading.</p>
  </div></main>
 }

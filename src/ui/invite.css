@@ -1,8 +1,18 @@
-.invite h2{margin:12px 0 20px}
-.invite-link{display:flex;gap:8px;margin-bottom:10px}
-.invite-link input{flex:1;font:11px var(--mono);min-width:0}
-.invite-link button{padding:10px 16px;font-size:12px}
-.invite>.small{margin:10px 0}
-.invite .primary{margin-top:22px}
+/* Invite dialog in the start screen's language: no box, the blurred game behind, a worn title,
+ * a typewritten link line and the quiet menu (shared styles in handdrawn.css). */
+body .modal-shade.invite-shade{background:linear-gradient(90deg,#000000f2 0%,#000000cc 36%,#00000080 68%,#00000052 100%),radial-gradient(ellipse 85% 75% at 60% 45%,transparent 35%,#000c 90%);backdrop-filter:blur(12px) saturate(.5) brightness(.7);padding:0;place-items:stretch}
+body .modal.invite{width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:11vh 9vw;background:none;border:0;border-radius:0;box-shadow:none;overflow:auto;display:flex;flex-direction:column;justify-content:safe center;font-family:var(--typed);color:#a49b86}
+body .invite .screen-left{display:flex;flex-direction:column;align-items:flex-start;width:min(620px,100%)}
+body .invite :is(h1,h2).worn-title{font-size:clamp(64px,8vw,124px)}
+body .invite .worn-pulse{margin:10px 0 4vh}
+body .invite-lead{font-size:16px;letter-spacing:4px;text-transform:uppercase;color:#d8cdb8;margin:0 0 14px}
+body .invite-link{display:flex;gap:18px;align-items:flex-end;width:100%;margin-bottom:12px}
+body .invite-link input{flex:1;min-width:0;font:12px var(--typed);letter-spacing:1px;color:#d8cdb8;background:none;border:0;border-bottom:1px solid #4a4437;border-radius:0;padding:8px 0}
+body .invite-link input:focus{outline:none;border-bottom-color:#b8261a}
+body .invite-link button{font-family:var(--typed);font-size:12px;letter-spacing:4px;text-transform:uppercase;color:#d8cdb8;background:none;border:0;padding:8px 0}
+body .invite-link button:hover:not(:disabled){color:#fff3dc;text-shadow:0 0 10px #ffffff40;background:none}
+body .invite-link button:disabled{opacity:.35}
+body .invite-note{font-size:12px;line-height:1.7;color:#6a6252;margin:0 0 6px;max-width:520px}
+body .invite .worn-menu{margin-top:5vh}
+@media(max-width:720px){body .modal.invite{padding:8vh 24px}}
 .live-badge{color:#d7745a}
-.setup-actions .friend{display:flex;justify-content:space-between;align-items:center;min-height:54px;font-weight:700}

@@ -162,3 +162,6 @@ body .setup-loader{position:relative;z-index:8;display:flex;flex-direction:colum
 body .setup-loader-bar{width:min(380px,68vw);height:2px;background:#1a1412;overflow:hidden;position:relative}
 body .setup-loader-fill{height:100%;background:#b8261a;box-shadow:0 0 10px #ff3a1a88;transition:width .18s ease-out}
 body .results .screen-left>p.small+.worn-menu{margin-top:5vh}
+/* Start menu: all three choices share one colour and height (the base primary button is taller). */
+body .setup .setup-actions button.primary{color:#a49b86;min-height:0}
+body .worn-menu button.primary{min-height:0}
