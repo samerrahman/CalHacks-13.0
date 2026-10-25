@@ -1,0 +1,26 @@
+{
+  "passed": false,
+  "url": "http://127.0.0.1:5180",
+  "checks": [
+    "Mobile inspection, captions and emergency controls fit; Q exits equipment inspection",
+    "Camera settings blocks gameplay input; Escape closes it and resumes",
+    "Escape remains global while a judge checkbox has focus",
+    "Monitor B/C and isolation equipment require explicit use; Space leaves inspection"
+  ],
+  "errors": [
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)"
+  ],
+  "failedResources": [
+    {
+      "url": "http://127.0.0.1:5180/api/lock-in/speech",
+      "status": 429
+    },
+    {
+      "url": "http://127.0.0.1:5180/api/lock-in/director",
+      "status": 429
+    }
+  ],
+  "failure": "Error: Browser errors or missing resources",
+  "visibleTextAtFailure": "▏\nLOCK IN\nSHELTER 04\nCONTAINMENT PROTOCOL\n0 / 4\nSOUND ON\nⅡ ESC\nNO NEARBY MOVEMENT\nPower restored. Six seconds of protected restart. Listen for the proximity alarm.\nQ\nQuiet equipment\nF\nHold to restore\nE Use isolation switch\nCLICK EQUIPMENT TO INTERACT · DRAG TO LOOK\n◎ PULSE INPUT OFF · NEUTRAL\n01\nLook at terminal\n02\nLook at monitor\n03\nTurn around\nJudge view J"
+}

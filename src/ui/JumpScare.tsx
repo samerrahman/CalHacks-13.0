@@ -1,0 +1,19 @@
+import {useEffect,useState} from 'react';
+import './jumpscare.css';
+/** Overlay lifetimes. The breach never fades out: it holds on the creature until the run resets,
+ * and the run report appears over it at `SCARE_MS.breach - 200`. */
+export const SCARE_MS={impact:520,monitor:640,breach:4600} as const;
+const FACE='/assets/scares/breach-creature.png';
+export default function JumpScare({scare,soft,reduced}:{scare:{id:number;kind:'impact'|'monitor'|'breach'}|null;soft:boolean;reduced:boolean}){
+ const[active,setActive]=useState(false);
+ useEffect(()=>{if(!scare){setActive(false);return}setActive(true);if(scare.kind==='breach')return;const timer=setTimeout(()=>setActive(false),SCARE_MS[scare.kind]);return()=>clearTimeout(timer)},[scare?.id]);
+ if(!active||!scare)return null;const lunge=scare.kind==='breach'&&!soft;
+ return <div key={scare.id} className={`jump-scare ${scare.kind} ${soft?'soft':''} ${reduced?'still':''}`} data-testid="jump-scare" aria-hidden="true">
+  {lunge&&<div className="scare-stage"><div className="scare-shake"><div className="scare-face">
+   <img className="scare-base" src={FACE} alt=""/><img className="scare-upper" src={FACE} alt=""/><img className="scare-jaw" src={FACE} alt=""/>
+   <i className="scare-eye left"/><i className="scare-eye right"/>
+   {!reduced&&<><img className="scare-ghost red" src={FACE} alt=""/><img className="scare-ghost cyan" src={FACE} alt=""/>{[0,1,2].map(n=><img key={n} className={`scare-slice s${n}`} src={FACE} alt=""/>)}</>}
+  </div></div></div>}
+  <div className="scare-vignette"/><div className="scare-grain"/>
+ </div>
+}

@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-10-24T07:38:18.310Z",
+  "testKind": "live provider probe with synthetic sanitized LOCK IN context",
+  "promptRevision": "stationary-player-outside-creature",
+  "model": "gemini-3.5-flash-lite",
+  "requestId": "live-monster-1792827496980",
+  "trigger": "FIRST_APPROACH",
+  "caption": "Your little alarm cannot mask the grinding metal against your steel walls.",
+  "textSource": "gemini",
+  "textLatencyMs": 891,
+  "textReason": null,
+  "textProviderRequestId": "aWDcapnjDeLI-sAPk-3xoAw",
+  "evidenceEventIds": [
+    "e2",
+    "e4"
+  ],
+  "contextEventIds": [
+    "e1",
+    "e2",
+    "e3",
+    "e4",
+    "e5"
+  ],
+  "distinctFromAuthoredFallback": true,
+  "exactCaptionSentToSpeech": true,
+  "speech": {
+    "source": "elevenlabs",
+    "latencyMs": 359,
+    "reason": null,
+    "providerRequestId": "Wgtu3Wd6nCSZm7KEBUYZ",
+    "mimeType": "audio/mpeg",
+    "bytes": 68171,
+    "audioDecoded": true,
+    "audioDurationSeconds": 4.257937
+  },
+  "totalLatencyMs": 1250,
+  "passed": true
+}

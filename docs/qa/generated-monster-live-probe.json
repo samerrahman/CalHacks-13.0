@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-10-24T07:30:11.571Z",
+  "testKind": "live provider probe with synthetic sanitized LOCK IN context",
+  "model": "gemini-3.5-flash-lite",
+  "requestId": "live-monster-1792827010140",
+  "trigger": "AFTER_MISTAKE",
+  "caption": "Your clumsy fingers strike iron against iron, yet the circuit refuses your flawed logic.",
+  "textSource": "gemini",
+  "textLatencyMs": 880,
+  "textReason": null,
+  "textProviderRequestId": "gl7cao7OFpyB_PUPzNa36QM",
+  "evidenceEventIds": [
+    "e3",
+    "e4",
+    "e5"
+  ],
+  "contextEventIds": [
+    "e1",
+    "e2",
+    "e3",
+    "e4",
+    "e5"
+  ],
+  "distinctFromAuthoredFallback": true,
+  "exactCaptionSentToSpeech": true,
+  "speech": {
+    "source": "elevenlabs",
+    "latencyMs": 432,
+    "reason": null,
+    "providerRequestId": "b7O0PzfFK5j0roNpFWeS",
+    "mimeType": "audio/mpeg",
+    "bytes": 89905,
+    "audioDecoded": true,
+    "audioDurationSeconds": 5.616312
+  },
+  "totalLatencyMs": 1313,
+  "passed": true
+}

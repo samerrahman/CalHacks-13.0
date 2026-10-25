@@ -2,6 +2,9 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: prepared a SpacetimeDB module for private, consenting game traces, capability checked judge subscriptions, idempotent event writes and scheduled 24-hour deletion; switched the active client and live check to generated SpacetimeDB bindings. Remote publication remains pending.
+- 2026-10-24: kept the game single player. A promising future mechanic is a private echo of the same player's prior run: selected sanitized actions return as distorted radio logs, with only a coarse Presage trend if trace sharing is enabled. The current branch does not add that mechanic.
+
 - Scaffolded repo: Electron + Vite + Phaser 4 in JavaScript, JSDoc contracts in /shared/types, mock signal source + overlay, canned director and in-memory storage behind window.scary, per-folder CLAUDE.md files.
 - Switched stack to Three.js + Gemini + Cartesia + Convex: lazy main-process clients (null without keys), `npm run providers` key check, Convex client in src/storage with status on the overlay, convex/schema.js draft, CSP for *.convex.cloud. Storage left the IPC bridge (renderer talks to Convex directly).
 - Merged James's Night Relay build (james-work) into main; his code wins every conflict (TypeScript, ElevenLabs). Dropped our scaffold code that duplicated his; kept the team layer: CLAUDE.md files mapped to his layout, docs/TEAM.md, notes/, convex.json (AI files off), `npm run check`.

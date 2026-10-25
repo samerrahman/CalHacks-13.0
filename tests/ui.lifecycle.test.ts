@@ -1,23 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AsyncRun } from '../src/ui/asyncRun';
-import { createGame, dispatch, step } from '../src/game/reducer';
+import { createGame, dispatch } from '../src/game/reducer';
+import { buildDirectorRequest } from '../src/game/directorValidation';
 
-test('a provider result received during pause applies exactly once after resume', () => {
+test('a provider result received during pause is consumed once and rejected after resume', () => {
   const run = new AsyncRun();
-  let game = step(createGame(17, 'demo'), 12);
-  const request = game.director.request!;
+  let game = createGame(17);
+  const request = buildDirectorRequest(game);
+  game.director.request = request;
+  game.director.requestSequence++;
   game = dispatch(game, { type: 'pause', paused: true });
-  const apply = () => { game = dispatch(game, { type: 'proposal', source: 'GEMINI', proposal: { requestId: request.requestId, stateVersion: request.stateVersion, tactic: 'WAIT', evidenceEventIds: [], reasonCode: 'NO_VALID_SIGNAL' } }); };
+  let attempts = 0;
+  const apply = () => {
+    attempts++;
+    game = dispatch(game, { type: 'proposal', source: 'GEMINI', proposal: {
+      requestId: request.requestId, stateVersion: request.stateVersion,
+      tactic: 'WAIT', target: 'NONE', evidenceEventIds: [], reasonCode: 'NO_VALID_SIGNAL', tauntId: 'NONE',
+    } });
+  };
   assert.equal(run.enqueue(run.token, `director:${request.requestId}`, apply), true);
-  assert.ok(game.director.request, 'Paused UI does not flush provider replies');
+  assert.equal(game.director.request, null, 'Pausing invalidates semantic eligibility immediately');
+  assert.equal(attempts, 0, 'Paused UI does not flush provider replies');
   game = dispatch(game, { type: 'pause', paused: false });
   run.flush();
-  assert.equal(game.director.request, null);
-  assert.equal(game.director.source, 'GEMINI');
+  assert.equal(attempts, 1);
+  assert.equal(game.director.source, 'FALLBACK');
+  assert.equal(game.events.filter(e => e.type === 'DIRECTOR_APPLIED').length, 0);
+  assert.equal(game.events.at(-1)?.detail, 'WRONG_REQUEST');
   assert.equal(run.enqueue(run.token, `director:${request.requestId}`, apply), false);
   run.flush();
-  assert.equal(game.events.filter(e => e.type === 'DIRECTOR_APPLIED').length, 1);
+  assert.equal(attempts, 1);
 });
 
 test('menu, restart and StrictMode cleanup invalidate queued and in-flight replies', async () => {

@@ -1,0 +1,488 @@
+{
+  "scope": "Binary asset structure, file format and optional hashes only; not full game, visual, audio-listening or provider QA",
+  "passed": true,
+  "models": [
+    {
+      "file": "assets/models/creature_cctv.glb",
+      "nodes": 21,
+      "meshes": 16,
+      "primitives": 16,
+      "accessors": 54,
+      "clips": [
+        "idle",
+        "listen",
+        "recoil"
+      ]
+    },
+    {
+      "file": "assets/models/emergency_switch.glb",
+      "nodes": 10,
+      "meshes": 8,
+      "primitives": 8,
+      "accessors": 28,
+      "clips": [
+        "flip_off",
+        "flip_on"
+      ]
+    },
+    {
+      "file": "assets/models/machine_rack.glb",
+      "nodes": 61,
+      "meshes": 52,
+      "primitives": 52,
+      "accessors": 172,
+      "clips": [
+        "fault_01",
+        "fault_02",
+        "fault_03",
+        "fault_04"
+      ]
+    },
+    {
+      "file": "assets/models/proximity_detector.glb",
+      "nodes": 10,
+      "meshes": 10,
+      "primitives": 10,
+      "accessors": 30,
+      "clips": []
+    },
+    {
+      "file": "assets/models/radio_speaker.glb",
+      "nodes": 11,
+      "meshes": 11,
+      "primitives": 11,
+      "accessors": 33,
+      "clips": []
+    },
+    {
+      "file": "assets/models/sealed_door.glb",
+      "nodes": 26,
+      "meshes": 22,
+      "primitives": 22,
+      "accessors": 84,
+      "clips": [
+        "impact",
+        "dent"
+      ]
+    },
+    {
+      "file": "assets/models/security_monitor.glb",
+      "nodes": 9,
+      "meshes": 9,
+      "primitives": 9,
+      "accessors": 27,
+      "clips": []
+    },
+    {
+      "file": "assets/models/shelter.glb",
+      "nodes": 48,
+      "meshes": 48,
+      "primitives": 48,
+      "accessors": 144,
+      "clips": []
+    },
+    {
+      "file": "assets/models/terminal.glb",
+      "nodes": 23,
+      "meshes": 23,
+      "primitives": 23,
+      "accessors": 69,
+      "clips": []
+    },
+    {
+      "file": "assets/models/workdesk.glb",
+      "nodes": 10,
+      "meshes": 10,
+      "primitives": 10,
+      "accessors": 30,
+      "clips": []
+    }
+  ],
+  "audio": [
+    {
+      "file": "assets/audio/blackout.wav",
+      "durationSeconds": 1.4,
+      "peakLinear": 0.338287,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/breach_impact.wav",
+      "durationSeconds": 1.8,
+      "peakLinear": 0.679993,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/breach_warning.wav",
+      "durationSeconds": 3.2,
+      "peakLinear": 0.252808,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/containment_success.wav",
+      "durationSeconds": 2.5,
+      "peakLinear": 0.202759,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/door_slam.wav",
+      "durationSeconds": 1.8,
+      "peakLinear": 0.679993,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/fault_rattle.wav",
+      "durationSeconds": 2.0,
+      "peakLinear": 0.082977,
+      "loop": true,
+      "edgeDifferenceLinear": 0.000214
+    },
+    {
+      "file": "assets/audio/fault_silenced.wav",
+      "durationSeconds": 0.42,
+      "peakLinear": 0.233368,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/forest_run.wav",
+      "durationSeconds": 3.8,
+      "peakLinear": 0.618774,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/intro_alarm.wav",
+      "durationSeconds": 4.0,
+      "peakLinear": 0.202789,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/lure_heartbeat.wav",
+      "durationSeconds": 4.0,
+      "peakLinear": 0.437347,
+      "loop": true,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/lure_transmit.wav",
+      "durationSeconds": 1.3,
+      "peakLinear": 0.211761,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/machine_mistake.wav",
+      "durationSeconds": 1.2499773242630385,
+      "peakLinear": 0.679993,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/monitor_interrupt.wav",
+      "durationSeconds": 0.8,
+      "peakLinear": 0.151611,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/power_restart.wav",
+      "durationSeconds": 2.2,
+      "peakLinear": 0.250854,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/radio_chime.wav",
+      "durationSeconds": 0.6499773242630386,
+      "peakLinear": 0.149658,
+      "loop": false,
+      "edgeDifferenceLinear": 6.1e-05
+    },
+    {
+      "file": "assets/audio/radio_static.wav",
+      "durationSeconds": 2.0,
+      "peakLinear": 0.052307,
+      "loop": true,
+      "edgeDifferenceLinear": 0.005737
+    },
+    {
+      "file": "assets/audio/relay_confirm.wav",
+      "durationSeconds": 0.6,
+      "peakLinear": 0.317749,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/room_hum.wav",
+      "durationSeconds": 6.0,
+      "peakLinear": 0.094818,
+      "loop": true,
+      "edgeDifferenceLinear": 0.001709
+    },
+    {
+      "file": "assets/audio/sequence_tone_1.wav",
+      "durationSeconds": 0.42,
+      "peakLinear": 0.179962,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/sequence_tone_2.wav",
+      "durationSeconds": 0.42,
+      "peakLinear": 0.179993,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/sequence_tone_3.wav",
+      "durationSeconds": 0.42,
+      "peakLinear": 0.179993,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/sequence_tone_4.wav",
+      "durationSeconds": 0.42,
+      "peakLinear": 0.179962,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/steps_approaching.wav",
+      "durationSeconds": 5.0,
+      "peakLinear": 0.651672,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/steps_receding.wav",
+      "durationSeconds": 5.0,
+      "peakLinear": 0.654968,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/terminal_press.wav",
+      "durationSeconds": 0.14,
+      "peakLinear": 0.184814,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/wall_breath.wav",
+      "durationSeconds": 4.0,
+      "peakLinear": 0.184326,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    },
+    {
+      "file": "assets/audio/wall_scrape.wav",
+      "durationSeconds": 2.8,
+      "peakLinear": 0.150818,
+      "loop": false,
+      "edgeDifferenceLinear": 0.0
+    }
+  ],
+  "png": [
+    {
+      "width": 1672,
+      "height": 941,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/cameras/cam_a_clearing.png"
+    },
+    {
+      "width": 1672,
+      "height": 941,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/cameras/cam_b_path.png"
+    },
+    {
+      "width": 1672,
+      "height": 941,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/cameras/cam_c_containment.png"
+    },
+    {
+      "width": 1672,
+      "height": 941,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/cameras/cam_c_sealed.png"
+    },
+    {
+      "width": 1440,
+      "height": 720,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/previews/blackout-preview.png"
+    },
+    {
+      "width": 1440,
+      "height": 720,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/previews/door-preview.png"
+    },
+    {
+      "width": 1440,
+      "height": 720,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/previews/shelter-preview.png"
+    },
+    {
+      "width": 1440,
+      "height": 720,
+      "bitDepth": 8,
+      "colorType": 2,
+      "crcVerified": true,
+      "file": "assets/previews/tutorial-preview.png"
+    }
+  ],
+  "svg": [
+    {
+      "viewBox": [
+        "0",
+        "0",
+        "720",
+        "460"
+      ],
+      "elements": 10,
+      "xmlVerified": true,
+      "file": "assets/decals/camera_notice.svg"
+    },
+    {
+      "viewBox": [
+        "0",
+        "0",
+        "720",
+        "460"
+      ],
+      "elements": 10,
+      "xmlVerified": true,
+      "file": "assets/decals/door_label.svg"
+    },
+    {
+      "viewBox": [
+        "0",
+        "0",
+        "720",
+        "460"
+      ],
+      "elements": 10,
+      "xmlVerified": true,
+      "file": "assets/decals/emergency_switch.svg"
+    },
+    {
+      "viewBox": [
+        "0",
+        "0",
+        "1280",
+        "720"
+      ],
+      "elements": 41,
+      "xmlVerified": true,
+      "file": "assets/decals/feed_offline.svg"
+    },
+    {
+      "viewBox": [
+        "0",
+        "0",
+        "720",
+        "460"
+      ],
+      "elements": 11,
+      "xmlVerified": true,
+      "file": "assets/decals/protocol_card.svg"
+    },
+    {
+      "viewBox": [
+        "0",
+        "0",
+        "720",
+        "460"
+      ],
+      "elements": 10,
+      "xmlVerified": true,
+      "file": "assets/decals/sensor_notice.svg"
+    },
+    {
+      "viewBox": [
+        "0",
+        "0",
+        "960",
+        "240"
+      ],
+      "elements": 5,
+      "xmlVerified": true,
+      "file": "assets/decals/title.svg"
+    }
+  ],
+  "geometryPreviews": [
+    {
+      "faces": 96,
+      "file": "assets/previews/creature_cctv.geometry.json"
+    },
+    {
+      "faces": 48,
+      "file": "assets/previews/emergency_switch.geometry.json"
+    },
+    {
+      "faces": 344,
+      "file": "assets/previews/machine_rack.geometry.json"
+    },
+    {
+      "faces": 64,
+      "file": "assets/previews/proximity_detector.geometry.json"
+    },
+    {
+      "faces": 78,
+      "file": "assets/previews/radio_speaker.geometry.json"
+    },
+    {
+      "faces": 164,
+      "file": "assets/previews/sealed_door.geometry.json"
+    },
+    {
+      "faces": 54,
+      "file": "assets/previews/security_monitor.geometry.json"
+    },
+    {
+      "faces": 296,
+      "file": "assets/previews/shelter.geometry.json"
+    },
+    {
+      "faces": 138,
+      "file": "assets/previews/terminal.geometry.json"
+    },
+    {
+      "faces": 60,
+      "file": "assets/previews/workdesk.geometry.json"
+    }
+  ],
+  "errors": [],
+  "counts": {
+    "models": 10,
+    "audio": 27,
+    "png": 8,
+    "svg": 7,
+    "geometryPreviews": 10,
+    "animationClips": 11
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "passed": false,
+  "url": "http://127.0.0.1:5182",
+  "seed": 17,
+  "checks": [
+    "Physical-equipment E interaction and all seven nonlethal tutorial steps completed through visible controls"
+  ],
+  "errors": [],
+  "failedResources": [],
+  "failure": "Error: Observed 4 visible pulses; terminal asked for 5",
+  "visibleTextAtFailure": "▏\nLOCK IN\nSHELTER 04\nCONTAINMENT PROTOCOL\n1 / 4\nSOUND ON\nⅡ ESC\nLeave terminal Space\nRESEARCH 02 / 04\nTransmit a false heartbeat.\n\nWatch 5 pulses. Repeat them, then transmit.\n\nA\nCLEARING\nB\nSERVICE PATH\nC\nCONTAINMENT\nREPEAT\n0 / 5\n1\n2\n3\n4\nR Replay sequence\nT Transmit\nYou have 20 seconds to enter the sequence. Replay resets the attempt.\nFOOTSTEPS APPROACHING — FRONT\nEnter all 5 cues in order. R replays for free.\nQ\nQuiet equipment\nF\nHold to restore\n◎ PULSE INPUT OFF · NEUTRAL\n01\nLook at terminal\n02\nLook at monitor\n03\nTurn around\nJudge view J"
+}

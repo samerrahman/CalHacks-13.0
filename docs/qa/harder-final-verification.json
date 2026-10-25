@@ -1,0 +1,55 @@
+{
+  "application": "LOCK IN",
+  "revision": "Harder industrial equipment-interaction version",
+  "verifiedAt": "2026-10-24T07:08:26.193483+00:00",
+  "platform": "macOS14.2.1 arm64 / Node22.23.3",
+  "checks": {
+    "npm run check": {
+      "passed": true,
+      "tests": 97,
+      "typecheck": true,
+      "webBuild": true,
+      "electronBuild": true
+    },
+    "npm run test:reference": {
+      "passed": true,
+      "tests": 31
+    },
+    "npm run assets:validate": {
+      "passed": true,
+      "filesHashed": 54,
+      "models": 10,
+      "clips": 11,
+      "monoWavs": 27,
+      "cctvImages": 4,
+      "decals": 7,
+      "breachImages": 1
+    },
+    "git diff --check": {
+      "passed": true
+    }
+  },
+  "browserEvidence": [
+    "artifacts/harder-seed17-evidence.json",
+    "artifacts/harder-seed18-evidence.json",
+    "artifacts/harder-loss-evidence.json",
+    "artifacts/harder-layout-evidence.json",
+    "artifacts/harder-visual-evidence.json"
+  ],
+  "desktopEvidence": "docs/qa/lock-in-electron-smoke.json",
+  "liveElevenLabsEvidence": "docs/qa/local-api-monster-browser.json",
+  "cameraAudit": "docs/qa/harder-camera-lifecycle-audit.json",
+  "externalLimits": [
+    "No camera detected; no live Presage sample or baseline verified",
+    "Saved Gemini3.8 exceeds deadline; prior LOCK IN3.5 live success remains historical evidence, not newly retested",
+    "Convex sessions:version missing; no provisioning/deployment performed"
+  ],
+  "notes": [
+    "Actual terminal/monitor mesh clicks tested; tasks require equipment inspection",
+    "Two full harder-game wins; late-Q commitment loss and active jump scare inspected",
+    "Earlier parallel offline429s fixed with validated no-provider fallback; affected browser runs repeated cleanly",
+    "No environment file overwritten",
+    "No physical speaker loudness assessment or live webcam claim",
+    "Only our temporary test servers/windows were stopped; existing user5173 server retained"
+  ]
+}

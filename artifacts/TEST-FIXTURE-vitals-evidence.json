@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "kind": "TEST FIXTURE — synthetic video and pulse; NOT live Presage",
+  "url": "http://127.0.0.1:5180/tests/fixtures/vitals.html",
+  "checks": [
+    "30-second ready state exposes the real Start button; resumeSensorCapture preserves the original stream with zero extra starts",
+    "Synthetic pulse and breathing packets at confidence50 pass real NativeMetricStream gates and display16breaths/min independently",
+    "Actual CornerVitals displays accepted synthetic 72→84 BPM and increases its pulse bar",
+    "The real corner camera, BPM and bar fit a 390×844 viewport",
+    "Mobile camera, pulse, breathing and pulse bar stay above the actual wire component during terminal inspection",
+    "A rejected reading during a motion warning keeps showing the last accepted 84 BPM and 16 breaths/min with no HELD, dash or warning text",
+    "A stale sensor view still shows the last accepted values; they simply stop updating",
+    "A fresh accepted estimate resumes live updates",
+    "Stop releases the original stream tracks and removes the camera/vitals overlay"
+  ],
+  "errors": [],
+  "failedResources": [],
+  "externalRequests": [],
+  "streamWasReused": true,
+  "additionalCaptureStarts": 0,
+  "barWidths": {
+    "bpm72": 45.7143,
+    "bpm84": 62.8571
+  }
+}

@@ -1,0 +1,37 @@
+/* Thinking tasks share the terminal's green phosphor treatment. */
+/* The six-cable panel: prefixed so these sizes beat survival.css (loaded later). Buttons never exceed
+ * their grid row, and wires are drawn in board pixels from the measured boxes. */
+.wire-puzzle .wire-board{height:260px}.wire-puzzle .wire-column button{height:40px;max-height:calc(100% - 4px)}
+.wire-puzzle .wire-board path{stroke-width:4}.wire-puzzle .wire-board path.dragging{stroke-dasharray:10 5}
+.routing-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:4px 0 14px}
+.routing-grid button{display:grid;grid-template-columns:24px 1fr auto;gap:4px 8px;align-items:center;text-align:left;padding:10px 12px;background:#10190e;border:1px solid #50633b66;color:#afba89;font:11px var(--mono)}
+.routing-grid button small{grid-column:2/4;font-size:9px;color:#8f9c76}.routing-grid button small b{color:#cdd6a6;font-weight:400}
+.routing-grid button em{font-style:normal;font-size:9px;color:#6f7c58}.routing-grid button.on{background:#25331a;border-color:#a3ac70}.routing-grid button.on em{color:#d2da9e}
+.locate-panel{margin-top:12px;border-top:1px solid #5d624755;padding-top:11px;font:10px var(--mono)}
+.locate-heading{display:flex;justify-content:space-between;gap:8px;color:#c9c194}.locate-heading small{color:#8e987d;font-size:8px}
+.locate-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}
+.locate-buttons button{display:grid;gap:3px;padding:8px 6px;background:#0d150e;border:1px solid #5d624788;color:#c9c194;font:10px var(--mono);text-align:left}
+.locate-buttons button small{font-size:7px;color:#8e987d}.locate-buttons button:disabled{opacity:.45}
+.pulse-pad{display:block;margin:6px auto 14px;width:120px;height:120px;border-radius:50%;border:1px solid #7b3f2d;background:radial-gradient(circle,rgb(150 52 36/calc(var(--beat)*.85)) 0,#0d120c 70%);box-shadow:0 0 calc(var(--beat)*40px) rgb(170 60 40/calc(var(--beat)*.6));color:#d49a84;font-size:46px;transform:scale(calc(1 + var(--beat)*.08));touch-action:none}
+.pulse-pad span{display:block;opacity:calc(.35 + var(--beat)*.65)}
+.calm-ring{position:relative;display:grid;place-items:center;margin:6px auto 12px;width:150px;height:150px;border-radius:50%;border:1px dashed #6b7a52;background:#0b120b;color:#b9c295;font:9px var(--mono);letter-spacing:.6px;touch-action:none}
+.calm-ring i{position:absolute;inset:calc(50% - 8px - var(--breath)*58px);border-radius:50%;background:radial-gradient(circle,#5d7a4a55,#2c3b2233);border:1px solid #93a873;transition:inset .1s linear}
+.calm-ring span{position:relative}.calm-ring.off{border-color:#9e6c36}.calm-ring.off i{border-color:#c78b4f;background:radial-gradient(circle,#6f371855,#3d281633)}
+.terminal-inspection progress{width:100%;height:5px;accent-color:#a3ac70;display:block;margin:2px 0 8px}
+.heart-line{display:block;margin-top:8px;font:9px/1.5 var(--mono);color:#9aa480}
+@media(max-height:760px){.pulse-pad{width:92px;height:92px;font-size:36px;margin-bottom:9px}.calm-ring{width:118px;height:118px}.calm-ring i{inset:calc(50% - 6px - var(--breath)*46px)}.wire-puzzle .wire-board{height:220px}.wire-puzzle .wire-column button{height:34px}}
+@media(max-width:720px){.routing-grid{gap:6px}.routing-grid button{padding:8px;font-size:10px}.locate-buttons{grid-template-columns:repeat(2,1fr)}.wire-puzzle .wire-board{height:216px}.wire-puzzle .wire-column button{height:34px}}
+.camera-panel:has(.locate-panel) .detector-help{display:none}.task-panel.camera-panel:has(.locate-panel){max-height:min(450px,calc(100vh - 225px))}.camera-panel:has(.locate-panel) .detector-reading{margin:12px 0 4px}
+.calm-ring span{font-size:8px;max-width:118px;text-align:center;line-height:1.5}
+@media(max-width:720px){.task-panel.camera-panel:has(.locate-panel){bottom:250px;max-height:calc(100vh - 330px)}}
+/* Conduit board: rotate tiles; powered pipe glows amber from the inlet. */
+.conduit{display:grid;gap:5px;margin:4px auto 12px;max-width:330px}.conduit-row{display:contents}
+.conduit-tile{aspect-ratio:1;padding:0;background:#0e160d;border:1px solid #50633b66;display:grid;place-items:center}
+.conduit-tile svg{width:100%;height:100%}.conduit-tile path{stroke:#55673f;stroke-width:7;stroke-linecap:square;fill:none}.conduit-tile circle{fill:#55673f}
+.conduit-tile.lit path{stroke:#e0a463}.conduit-tile.lit circle{fill:#e0a463}.conduit-tile:hover{border-color:#a3ac70}
+.conduit-port{align-self:center;height:14px;border-radius:2px;background:transparent}.conduit-port.in{background:#e0a463;box-shadow:0 0 8px #e0a46388}.conduit-port.out{background:#5d6247}.conduit-port.out.joined{background:#e0a463}
+/* Listening faults: plain numbers; the playing machine lights with its sound name during the rack key. */
+.listen-grid .machine{height:78px;display:grid;place-items:center;gap:4px;grid-template-columns:1fr}.listen-grid .machine kbd{font-size:22px;padding:6px 12px}
+.listen-grid .machine b{font:9px var(--mono);color:#e3c58c;min-height:12px;letter-spacing:.6px}.listen-grid .machine.playing{background:#3d2816;border-color:#e0a463;box-shadow:inset 0 0 18px #6f371833}
+.you-hear{display:flex;justify-content:space-between;gap:10px;margin:2px 0 10px;padding:8px 10px;border:1px solid #50633b55;font:10px var(--mono);color:#9aa480}.you-hear b{color:#d7c99a;font-weight:400;text-align:right}
+@media(max-height:760px){.conduit{max-width:270px;gap:4px}.listen-grid .machine{height:62px}}

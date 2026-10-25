@@ -1,0 +1,55 @@
+{
+  "application": "LOCK IN",
+  "checkedAt": "2026-10-24T08:39:06.060402+00:00",
+  "revision": "number-line survival, tick-only isolation, four charges, wires, Presage reliability fixes",
+  "automated": {
+    "command": "npm run check",
+    "testsPassed": 137,
+    "testsFailed": 0,
+    "typecheck": "passed",
+    "webBuild": "passed; rebuilt after final mobile CSS specificity fix",
+    "electronBuild": "passed",
+    "assetHashesValidated": 54,
+    "balanceRuns": 500
+  },
+  "browser": {
+    "harder-seed17-evidence": true,
+    "harder-seed18-evidence": true,
+    "harder-loss-evidence": true,
+    "harder-layout-evidence": true,
+    "TEST-FIXTURE-vitals-evidence": true
+  },
+  "offlineDesktop": {
+    "checkedAt": "2026-10-24T08:36:21.430Z",
+    "outcome": "passed",
+    "cameraRequested": false,
+    "providerCallsEnabled": false,
+    "errors": []
+  },
+  "protectedFilesChanged": false,
+  "protectedPathsChecked": [
+    "src/ui/App.tsx",
+    "src/main.tsx",
+    "src/game/dialogue.json",
+    "src/ui/style.css",
+    "public/assets"
+  ],
+  "liveVerificationThisRevision": {
+    "presage": "Not performed. User reports successful30-second calibration; automated packet/lifecycle and synthetic UI checks pass.",
+    "gemini": "No new live call; earlier generated-dialogue/director evidence is preserved.",
+    "elevenlabs": "No new live call; earlier exact-caption audio generation/playback evidence is preserved.",
+    "convex": "v2functions/schema prepared locally; not deployed or verified remotely."
+  },
+  "inspectedScreenshots": [
+    "artifacts/survival-wires-desktop.png",
+    "artifacts/survival-wires-mobile.png",
+    "artifacts/TEST-FIXTURE-vitals-mobile-terminal.png",
+    "artifacts/harder-breach-scare-active.png",
+    "artifacts/harder-seed18-report.png"
+  ],
+  "limits": [
+    "Balance sweep uses perfect puzzle knowledge and immediate defense, not human playtesting.",
+    "Synthetic camera/metric fixture is not a live Presage measurement.",
+    "Nonfatal Three.js bundle-size warning remains."
+  ]
+}

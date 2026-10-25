@@ -1,0 +1,91 @@
+{
+  "kind": "fictional-security-camera-backgrounds",
+  "source": "OpenAI built-in image generation; four original outputs copied into this kit",
+  "runtimeRemoteFetchRequired": false,
+  "provenance": "prompts/CCTV_ART_PROMPTS.txt",
+  "license": "LICENSE.txt",
+  "containsActualWebcamFrames": false,
+  "positionAuthority": "Use graph position only; camera imagery cannot independently change or invent creature location.",
+  "images": [
+    {
+      "file": "cam_a_clearing.png",
+      "cameraId": "A",
+      "label": "CLEARING",
+      "coverageEdge": [
+        "JUNCTION",
+        "EMITTER_A"
+      ],
+      "silhouetteScreenPath": [
+        [
+          0.79,
+          0.71
+        ],
+        [
+          0.53,
+          0.58
+        ],
+        [
+          0.37,
+          0.52
+        ]
+      ],
+      "state": "routing"
+    },
+    {
+      "file": "cam_b_path.png",
+      "cameraId": "B",
+      "label": "SERVICE PATH",
+      "coverageEdge": [
+        "JUNCTION",
+        "EMITTER_B"
+      ],
+      "silhouetteScreenPath": [
+        [
+          0.54,
+          0.78
+        ],
+        [
+          0.56,
+          0.59
+        ],
+        [
+          0.64,
+          0.42
+        ]
+      ],
+      "state": "routing"
+    },
+    {
+      "file": "cam_c_containment.png",
+      "cameraId": "C",
+      "label": "CONTAINMENT",
+      "coverageEdge": [
+        "EMITTER_B",
+        "CONTAINMENT"
+      ],
+      "silhouetteScreenPath": [
+        [
+          0.49,
+          0.82
+        ],
+        [
+          0.58,
+          0.57
+        ],
+        [
+          0.59,
+          0.34
+        ]
+      ],
+      "state": "gate-open"
+    },
+    {
+      "file": "cam_c_sealed.png",
+      "cameraId": "C",
+      "label": "CONTAINMENT SEALED",
+      "state": "authoritative-seal-complete",
+      "silhouetteVisible": false
+    }
+  ],
+  "projectionNotes": "Screen paths are normalized art anchors for a small overlay, not world coordinates. Reverse interpolation for reverse travel. Scale/fade according to depth; never display silhouette outside coverage. Draw labels and signal loss as accessible runtime UI. Crossfade/cut to sealed plate only after the physical arrival and seal interval."
+}

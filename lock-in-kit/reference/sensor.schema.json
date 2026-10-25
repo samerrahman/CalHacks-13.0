@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LOCK IN local normalized sensor sample",
+  "description": "Adapter output, not a claim about native SDK payload names. Raw samples stay local after consent. Native quality semantics must be verified against the installed SDK; a schema-valid object is not automatically usable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source", "quality", "qualityReasons", "receivedMonotonicMs", "measuredMonotonicMs", "pulseBpm", "nativeConfidence", "validationCode"],
+  "properties": {
+    "source": { "type": "string", "enum": ["presage", "simulated", "manual"] },
+    "quality": { "type": "string", "enum": ["accepted", "rejected", "unknown"] },
+    "qualityReasons": { "type": "array", "maxItems": 12, "items": { "type": "string", "maxLength": 180 } },
+    "receivedMonotonicMs": { "type": "number", "minimum": 0, "description": "Application monotonic receive-time; never replace with a provider wall-clock timestamp." },
+    "measuredMonotonicMs": { "type": ["number", "null"], "minimum": 0, "description": "Measurement time mapped to the same monotonic clock only when its original clock semantics are established; otherwise null." },
+    "pulseBpm": { "type": ["number", "null"], "description": "May retain an out-of-supported-range value locally for rejection diagnostics; the acceptance function rejects it. No fabrication, clamping, diagnosis, or public-event upload." },
+    "nativeConfidence": { "type": ["number", "string", "null"], "description": "Preserved native scalar, without invented cross-provider confidence normalization." },
+    "validationCode": { "type": ["integer", "string", "null"], "description": "Native validation/status scalar. The installed adapter determines which documented codes qualify as accepted." }
+  }
+}

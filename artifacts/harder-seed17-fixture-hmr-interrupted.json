@@ -1,0 +1,10 @@
+{
+  "passed": false,
+  "url": "http://127.0.0.1:5182",
+  "seed": 17,
+  "checks": [],
+  "errors": [],
+  "failedResources": [],
+  "failure": "Error: expect(locator).toContainText(expected) failed\n\nLocator: locator('.tutorial-card')\nExpected substring: \"Hold F\"\nTimeout: 20000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" locator('.tutorial-card') with timeout 20000ms\n  - waiting for locator('.tutorial-card')\n    16 × locator resolved to <aside aria-live=\"polite\" class=\"tutorial-card\">…</aside>\n       - unexpected value \"GUIDED PRACTICE · 3 / 7Listen for receding footsteps. Captions carry the same clue.Threat is paused during practice.I heard it →Skip guidance\"\n",
+  "visibleTextAtFailure": "▏ FIELD RESEARCH / EMERGENCY PROTOCOL\nLOCK IN.\n\nSomething outside is listening.\n\nSilence the shelter. Send a false heartbeat into the forest. Lead it back into containment.\n\nBegin with guidance\n↗\nSkip guidance & start\n\nListen for the alarm. If it reaches the wall, cutting power is too late.\n\n◎ Camera & pulse setup\n+\n\nMonster speech unavailable · captions remain on\n\nOperator settings\n+\nSHELTER 04 / FOREST RESEARCH FACILITY\nHeadphones optional · Captions always available"
+}

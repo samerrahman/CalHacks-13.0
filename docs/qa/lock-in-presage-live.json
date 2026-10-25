@@ -1,0 +1,15 @@
+{
+  "application": "LOCK IN",
+  "checkedAt": "2026-10-24T06:06:17.011Z",
+  "cameraRequested": true,
+  "rawPulseRecorded": false,
+  "traceSharingEnabled": false,
+  "status": "blocked",
+  "checks": [],
+  "failureCategory": "CAMERA_NOT_FOUND",
+  "reason": "Capture unavailable: CAMERA_NOT_FOUND",
+  "acceptedBaselineSeconds": 0,
+  "captureStoppedThroughUI": true,
+  "macOSCameraDeviceCount": 0,
+  "inventoryMethod": "Read-only system_profiler SPCameraDataType device count; no device identifiers recorded"
+}

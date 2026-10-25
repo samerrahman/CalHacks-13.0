@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460">
+<rect width="720" height="460" fill="#aea589"/>
+<path d="M0 0H720V17L650 12 589 21 530 10 478 19 421 11 350 19 290 8 239 17 172 9 98 18 32 11 0 22Z M0 460H720V443L660 450 585 437 510 449 430 441 350 451 280 438 208 449 130 441 68 451 0 438Z" fill="#623c25" opacity=".58"/>
+<g fill="#695137" opacity=".14"><path d="M18 0H40L32 258 23 310Z M655 0H670L666 180 657 215Z M470 0H482L478 113 472 148Z"/><ellipse cx="86" cy="374" rx="61" ry="19"/><ellipse cx="647" cy="74" rx="41" ry="55"/></g>
+<path d="M28 28H692V432H28Z" fill="none" stroke="#342f24" stroke-width="3"/>
+<g fill="#211f18" font-family="monospace">
+<text x="52" y="88" font-size="32" font-weight="bold">CONTAINMENT / FIELD PROTOCOL</text>
+<text x="52" y="155" font-size="23">01  SILENCE EIGHT FAULTS</text>
+<text x="52" y="203" font-size="23">02  EMITTER A: FIVE PULSES</text>
+<text x="52" y="251" font-size="23">03  REPAIR TWELVE FAULTS</text>
+<text x="52" y="299" font-size="23">04  EMITTER B: SIX PULSES</text>
+<text x="52" y="347" font-size="23">THEN TRANSMIT TO CONTAINMENT</text>
+</g>
+<path d="M52 393H140" stroke="#795035" stroke-width="12"/>
+<path d="M283 382L437 380 M184 122L322 121 M570 418L650 416" stroke="#362c20" stroke-width="1" opacity=".23"/>
+<g fill="#3e3527"><circle cx="39" cy="39" r="4"/><circle cx="681" cy="39" r="4"/><circle cx="39" cy="421" r="4"/><circle cx="681" cy="421" r="4"/></g>
+</svg>

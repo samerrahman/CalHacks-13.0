@@ -1,0 +1,115 @@
+{
+  "units": "metres",
+  "up": "+Y",
+  "front": "+Z",
+  "assets": [
+    {
+      "file": "models/shelter.glb",
+      "nodes": 48,
+      "meshes": 48,
+      "animations": []
+    },
+    {
+      "file": "models/sealed_door.glb",
+      "nodes": 26,
+      "meshes": 22,
+      "animations": [
+        {
+          "name": "impact",
+          "description": "Nonlethal or warning-time cosmetic vibration; returns to base. No door opens."
+        },
+        {
+          "name": "dent",
+          "description": "Final cosmetic crease. LoopOnce + clampWhenFinished after authoritative breach, then fade to black."
+        }
+      ]
+    },
+    {
+      "file": "models/workdesk.glb",
+      "nodes": 10,
+      "meshes": 10,
+      "animations": []
+    },
+    {
+      "file": "models/terminal.glb",
+      "nodes": 23,
+      "meshes": 23,
+      "animations": []
+    },
+    {
+      "file": "models/security_monitor.glb",
+      "nodes": 9,
+      "meshes": 9,
+      "animations": []
+    },
+    {
+      "file": "models/proximity_detector.glb",
+      "nodes": 10,
+      "meshes": 10,
+      "animations": []
+    },
+    {
+      "file": "models/radio_speaker.glb",
+      "nodes": 11,
+      "meshes": 11,
+      "animations": []
+    },
+    {
+      "file": "models/machine_rack.glb",
+      "nodes": 61,
+      "meshes": 52,
+      "animations": [
+        {
+          "name": "fault_01",
+          "description": "Loop only while unit 1 has an active fault; stop/reset when silenced. Light/noise remain game-controlled."
+        },
+        {
+          "name": "fault_02",
+          "description": "Loop only while unit 2 has an active fault; stop/reset when silenced. Light/noise remain game-controlled."
+        },
+        {
+          "name": "fault_03",
+          "description": "Loop only while unit 3 has an active fault; stop/reset when silenced. Light/noise remain game-controlled."
+        },
+        {
+          "name": "fault_04",
+          "description": "Loop only while unit 4 has an active fault; stop/reset when silenced. Light/noise remain game-controlled."
+        }
+      ]
+    },
+    {
+      "file": "models/emergency_switch.glb",
+      "nodes": 10,
+      "meshes": 8,
+      "animations": [
+        {
+          "name": "flip_off",
+          "description": "Cosmetic on\u2192off lever motion; power state is code-authoritative."
+        },
+        {
+          "name": "flip_on",
+          "description": "Cosmetic off\u2192on lever motion; fixed key action remains usable in blackout."
+        }
+      ]
+    },
+    {
+      "file": "models/creature_cctv.glb",
+      "nodes": 21,
+      "meshes": 16,
+      "animations": [
+        {
+          "name": "idle",
+          "description": "Subtle CCTV-only silhouette motion; no world movement."
+        },
+        {
+          "name": "listen",
+          "description": "Feed-only listening tilt, synchronized to an eligible observed event."
+        },
+        {
+          "name": "recoil",
+          "description": "Brief camera interruption silhouette movement; never an interior death reveal."
+        }
+      ]
+    }
+  ]
+}

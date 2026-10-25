@@ -1,7 +1,11 @@
-Original Night Relay kit material
+LOCK IN original build-kit material
 
 Permission is granted, free of charge, to any person obtaining a copy of the original code, procedural models, animations, SVG graphics, synthesized WAV sounds, dialogue and documentation in this kit, to use, copy, modify, merge, publish, distribute, sublicense and/or sell copies, subject to retaining this notice with redistributed source or asset packs.
 
-THE MATERIAL IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND. No claim is made that it constitutes a completed game, a medical device, verified sponsor integration or guaranteed prize eligibility.
+Procedural asset generation adapts the permitted original Night Relay generator; its notice is retained in source/NIGHT_RELAY_LICENSE.txt. No third-party model is bundled. Seventeen WAV files in audio/ are derived from CC0 1.0 (public domain) recordings published on OpenGameArt; their sources are listed in THIRD_PARTY_SOUNDS.txt and they are not covered by the grant above. The original procedural assets are available for commercial and noncommercial use under this grant.
 
-No third-party model pack is bundled. Referenced services, SDKs, libraries, trademarks, downloadable external art and any audio later generated through a provider have their respective licenses and terms. This permission does not grant rights to third-party voices or authorize cloning a real person's voice.
+The four CCTV PNGs were generated for this project using OpenAI's built-in image-generation tool. To the extent applicable rights are held, the same permission is granted for these outputs, subject to applicable service terms. Generated outputs may not be unique; no exclusivity or third-party clearance guarantee is made. Prompt provenance is recorded in prompts/CCTV_ART_PROMPTS.txt.
+
+source/USER_BRIEF.txt is user-provided design and prize-list source material, excluded from this license grant. Service names, sponsor prize descriptions, external documentation, SDKs, voices and later provider-generated audio retain their respective rights and terms. This permission does not authorize cloning a real person's voice. Installed libraries are not bundled in this archive.
+
+THE MATERIAL IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND. This is a build kit with reference utilities and an asset preview, not a completed LOCK IN application, medical device, live sponsor integration, or guarantee of prize eligibility.

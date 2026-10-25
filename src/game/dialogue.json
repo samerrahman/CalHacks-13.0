@@ -1,0 +1,283 @@
+{
+  "version": 1,
+  "description": "Authored exact-caption fallback lines. No voice audio is bundled or claimed generated. NONE means silence. HEARD_RHYTHM requires accepted sustained elevation AND near creature; it is fiction, not a fear/health diagnosis.",
+  "limits": {
+    "minimumCreatureLineGapSeconds": 25,
+    "maxCreatureLinesPerRun": 7,
+    "maxCharacters": 180
+  },
+  "lines": [
+    {
+      "id": "INTRO_ALERT",
+      "role": "system",
+      "event": "intro",
+      "priority": 5,
+      "maxAgeSeconds": 8,
+      "text": "Containment failure. Field team, proceed to the emergency observation shelter."
+    },
+    {
+      "id": "INTRO_SEAL",
+      "role": "supervisor",
+      "event": "intro",
+      "priority": 5,
+      "maxAgeSeconds": 9,
+      "text": "The shelter is sealed. You have a terminal, three remote emitters, and one emergency isolation switch."
+    },
+    {
+      "id": "INTRO_PROTOCOL",
+      "role": "supervisor",
+      "event": "intro",
+      "priority": 5,
+      "maxAgeSeconds": 10,
+      "text": "Silence the faults. Test the emitters. Route the signal back into containment."
+    },
+    {
+      "id": "INTRO_SEDATIVE",
+      "role": "supervisor",
+      "event": "intro",
+      "priority": 4,
+      "maxAgeSeconds": 8,
+      "text": "The sedative is wearing off. Working makes noise. Staying here does not finish the protocol."
+    },
+    {
+      "id": "TUTORIAL_FAULT",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 7,
+      "text": "Select the box marked FAULT, or press its number. Leave the quiet boxes alone."
+    },
+    {
+      "id": "TUTORIAL_QUIET",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 8,
+      "text": "Press Q to isolate the equipment. The illuminated switch works even in a blackout."
+    },
+    {
+      "id": "TUTORIAL_LISTEN",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 8,
+      "text": "Wait for receding footsteps. The sound captions give the same information."
+    },
+    {
+      "id": "TUTORIAL_RESTORE",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 7,
+      "text": "Hold F for one second to restore power. Your progress is saved."
+    },
+    {
+      "id": "TUTORIAL_MEMORY",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 8,
+      "text": "Watch four pulses, then repeat their numbers. R replays the same sequence."
+    },
+    {
+      "id": "TUTORIAL_TRANSMIT",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 7,
+      "text": "The selected emitter is already set. Press T when the sequence is calibrated."
+    },
+    {
+      "id": "FAULTS_START",
+      "role": "supervisor",
+      "event": "stage-1",
+      "priority": 3,
+      "maxAgeSeconds": 9,
+      "text": "Twenty-four faults, then the cables. Running equipment is loud. Isolate the machines when its footsteps get close, even mid-task. Do not wait for it to reach the wall."
+    },
+    {
+      "id": "FAULTS_FINISHED",
+      "role": "supervisor",
+      "event": "stage-complete",
+      "priority": 3,
+      "maxAgeSeconds": 8,
+      "text": "Machines quiet. It may still investigate the last sound. Prepare emitter A."
+    },
+    {
+      "id": "LURE_A_START",
+      "role": "supervisor",
+      "event": "stage-2",
+      "priority": 3,
+      "maxAgeSeconds": 7,
+      "text": "The sequence grows each round. Repeat every pulse, then mask your heartbeat and send it to emitter A."
+    },
+    {
+      "id": "LURE_A_SUCCESS",
+      "role": "supervisor",
+      "event": "lure-success",
+      "priority": 4,
+      "maxAgeSeconds": 8,
+      "text": "The remote signal has it. Clear thirty-six overload faults before it comes back."
+    },
+    {
+      "id": "OVERLOAD_START",
+      "role": "supervisor",
+      "event": "stage-3",
+      "priority": 3,
+      "maxAgeSeconds": 8,
+      "text": "Thirty-six faults across the rack. Up to three fail together. Work one at a time."
+    },
+    {
+      "id": "OVERLOAD_FINISHED",
+      "role": "supervisor",
+      "event": "stage-complete",
+      "priority": 3,
+      "maxAgeSeconds": 8,
+      "text": "Overload cleared. Emitter B will lead it toward the containment approach."
+    },
+    {
+      "id": "LURE_B_START",
+      "role": "supervisor",
+      "event": "stage-4",
+      "priority": 3,
+      "maxAgeSeconds": 8,
+      "text": "Longer sequences this time. Calibrate emitter B, then stay calm until it loses your trail."
+    },
+    {
+      "id": "LURE_B_SUCCESS",
+      "role": "supervisor",
+      "event": "lure-success",
+      "priority": 4,
+      "maxAgeSeconds": 8,
+      "text": "Route confirmed. Final containment broadcast is available."
+    },
+    {
+      "id": "FINAL_READY",
+      "role": "supervisor",
+      "event": "final-ready",
+      "priority": 4,
+      "maxAgeSeconds": 8,
+      "text": "Press T to activate the final lure. The containment system will seal after it enters."
+    },
+    {
+      "id": "CONTAINMENT_ROUTE",
+      "role": "system",
+      "event": "final-transmit",
+      "priority": 4,
+      "maxAgeSeconds": 8,
+      "text": "Containment broadcast active. Remote capture sequence running."
+    },
+    {
+      "id": "CONTAINMENT_COMPLETE",
+      "role": "system",
+      "event": "win",
+      "priority": 5,
+      "maxAgeSeconds": 8,
+      "text": "Containment confirmed. The emergency protocol is complete."
+    },
+    {
+      "id": "BLACKOUT",
+      "role": "system",
+      "event": "blackout",
+      "priority": 5,
+      "maxAgeSeconds": 6,
+      "text": "Main power lost. Emergency isolation remains available."
+    },
+    {
+      "id": "BREACH_WARNING",
+      "role": "system",
+      "event": "breach-warning",
+      "priority": 6,
+      "maxAgeSeconds": 6,
+      "text": "Breach attempt. Press Q to isolate equipment now."
+    },
+    {
+      "id": "POWER_READY",
+      "role": "system",
+      "event": "receding",
+      "priority": 4,
+      "maxAgeSeconds": 6,
+      "text": "Footsteps receding. Hold F to restore equipment."
+    },
+    {
+      "id": "SIGNAL_LOST",
+      "role": "system",
+      "event": "sensor-unavailable",
+      "priority": 2,
+      "maxAgeSeconds": 6,
+      "text": "Pulse signal unavailable. Gameplay is using neutral settings."
+    },
+    {
+      "id": "CALIBRATION_READY",
+      "role": "system",
+      "event": "calibration-ready",
+      "priority": 2,
+      "maxAgeSeconds": 6,
+      "text": "Baseline recorded. Pulse input is active."
+    },
+    {
+      "id": "AFTER_MISTAKE",
+      "role": "creature",
+      "event": "mistake",
+      "priority": 2,
+      "maxAgeSeconds": 6,
+      "text": "I heard that. Do it again."
+    },
+    {
+      "id": "MACHINES_QUIET",
+      "role": "creature",
+      "event": "quiet",
+      "priority": 2,
+      "maxAgeSeconds": 6,
+      "text": "You made it quiet. I know you are still in there."
+    },
+    {
+      "id": "HEARD_RHYTHM",
+      "role": "creature",
+      "event": "near-elevated",
+      "priority": 2,
+      "maxAgeSeconds": 6,
+      "text": "A rhythm behind the wall."
+    },
+    {
+      "id": "LURE_FOLLOWED",
+      "role": "creature",
+      "event": "lure-followed",
+      "priority": 2,
+      "maxAgeSeconds": 6,
+      "text": "Over there."
+    },
+    {
+      "id": "REPAIR_HELP",
+      "role": "supervisor",
+      "event": "idle-help",
+      "priority": 2,
+      "maxAgeSeconds": 8,
+      "text": "The marked boxes are faults. Q buys quiet time; it will not finish the work."
+    },
+    {
+      "id": "MEMORY_HELP",
+      "role": "supervisor",
+      "event": "idle-help",
+      "priority": 2,
+      "maxAgeSeconds": 8,
+      "text": "There is no penalty for replay. Press R, repeat four inputs, then T."
+    },
+    {
+      "id": "DEATH",
+      "role": "system",
+      "event": "loss",
+      "priority": 5,
+      "maxAgeSeconds": 5,
+      "text": "Shelter integrity lost."
+    },
+    {
+      "id": "FIRST_APPROACH",
+      "role": "creature",
+      "event": "approach",
+      "priority": 4,
+      "maxAgeSeconds": 12,
+      "text": "I can hear you working."
+    }
+  ]
+}

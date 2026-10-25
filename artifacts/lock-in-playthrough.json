@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "results": [
+    "All seven guided-practice steps completed through real controls",
+    "Seed17: four research stages, final broadcast, physical containment win; no pulse record when consent off",
+    "1280x720 and390x844 layouts have no horizontal overflow"
+  ],
+  "stages": [
+    "Silence the machines.",
+    "Transmit a false heartbeat.",
+    "Clear the overload.",
+    "Lead it toward containment.",
+    "Bring it back inside."
+  ],
+  "ending": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n92s\nELAPSED\n0\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup",
+  "errors": [],
+  "failedResources": []
+}

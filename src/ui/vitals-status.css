@@ -1,0 +1,4 @@
+.breathing-signal{font:9px/1.5 var(--mono);color:#aaa786;margin:-3px 0 12px}.compact .breathing-signal{font-size:7px;margin:0 0 9px;max-height:31px;overflow:hidden}@media(max-width:720px){.compact .breathing-signal{font-size:6px;margin-bottom:6px}}
+@media(max-width:720px){body:has(.task-panel) .corner-vitals:not(:has(.corner-camera)){grid-template-columns:1fr;width:150px}}
+/* Between accepted estimates the last values stay up; only the dot stops glowing. */
+.vitals-signal.steady{color:#a6bc87}.vitals-signal.steady i{background:#7f9166}

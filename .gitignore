@@ -5,11 +5,14 @@ release/
 *.log
 .DS_Store
 .convex/
+spacetime.local.json
+spacetimedb/.spacetime/
 
 # secrets — copy .env.example to .env.local
 .env
 .env.*
 !.env.example
+voice-auditions/
 
 # local databases
 *.db
@@ -18,3 +21,6 @@ release/
 # personal Claude Code settings
 .claude/settings.local.json
 CLAUDE.local.md
+
+# cutscene preview renders (regenerate with tools/cutscene.mjs)
+cutscene/.previews/

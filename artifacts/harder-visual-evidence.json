@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "checks": [
+    "Browser camera panel explains native requirement without requesting camera or pretending live data",
+    "Actual terminal mesh click opens the exercise; no persistent sidebar",
+    "Actual security monitor click opens its interface and respects powered-off state",
+    "Equipment inspection and1280x720pause remain readable"
+  ],
+  "errors": []
+}

@@ -1,0 +1,77 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:5180",
+  "seed": 17,
+  "checks": [
+    "Physical-equipment E interaction and all seven nonlethal tutorial steps completed through visible controls",
+    "One visible isolation cell is consumed; the player restores power with F once the footsteps fade, and cooldown prevents immediate reuse",
+    "Seed17 won 6 + 8 faults found by ear from the rack key, 6 + 12 cables, a conduit board, growing 3→5 memory + heartbeat mask, three monitor marks, growing 4→6 memory + calm hold, and containment through observed controls"
+  ],
+  "errors": [],
+  "failedResources": [],
+  "observations": {
+    "defenses": 1,
+    "automaticRestores": 1,
+    "blackouts": 1,
+    "sequenceLengths": [
+      4,
+      3,
+      4,
+      5,
+      4,
+      5,
+      6
+    ],
+    "wireBoards": 2,
+    "wireDrags": 1,
+    "wireClicks": 17,
+    "stages": [
+      "Find the faults by ear.",
+      "Reconnect the relay.",
+      "Reconnect the conduit.",
+      "Transmit a false heartbeat.",
+      "Mask your heartbeat.",
+      "Clear the overload.",
+      "Mark its position.",
+      "Lead it toward containment.",
+      "Let it lose your trail.",
+      "Bring it back inside."
+    ],
+    "resourceSamples": [
+      {
+        "cells": 3,
+        "danger": 10,
+        "deadline": "8:00"
+      },
+      {
+        "cells": 3,
+        "danger": 10,
+        "deadline": "8:00"
+      },
+      {
+        "cells": 2,
+        "danger": null,
+        "deadline": "8:00"
+      }
+    ],
+    "cameraPrompt": "declined",
+    "manualRestores": 1,
+    "faultKey": {
+      "ELECTRIC BUZZING": 1,
+      "LOW THUMPING": 2,
+      "HIGH WHINE": 3,
+      "FAST TICKING": 4
+    },
+    "faultsByEar": 14,
+    "routes": 1,
+    "pulsePeriods": [
+      673
+    ],
+    "pulseBeatsNeeded": [
+      8
+    ],
+    "marks": 3,
+    "calmHolds": 1
+  },
+  "result": "FIELD RESEARCH / RUN REPORT\n↗\nContainment confirmed.\n\nThe calibrated signal led it back. The holding bay is sealed.\n\n4/4\nRESEARCH STAGES\n135s\nELAPSED\n1\nQUIET RESPONSES\n\nSeed 17 · FALLBACK director · Neutral physiology\n\nPULSE RECORDING\nPhysiological statistics unrecorded.\n\nPulse recording was off, or no accepted readings were available. Your research results still count.\n\nBegin another protocol →\nReplay this seed\nDelete report & shared session\nReturn to setup"
+}

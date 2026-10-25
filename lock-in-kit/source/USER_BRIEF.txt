@@ -1,0 +1,1352 @@
+this one seems a bit too much like fnaf. below I describe another game. can you prepare all the assets and the prompt to give codex to create the full game from scratch again and also keep in mind apply the things that use your heart rate and stuff to do stuff. you can generate any needed assets/put the free to use ones here as well and also give me the exact prompt to give codex. be very in depth. make sure to look at the tracks and give it everything it needs as well. use the same art style. make the ui simple and bare bones and on theme. also have a short tutorial that guides user on buttons with like arrows or something.
+
+Description of another game:
+# LOCK IN
+
+## 1. Premise and objective
+
+You are a researcher at an isolated facility in the forest. Your team studies how an intelligent, dangerous creature responds to sound and rhythmic biological signals.
+
+During a containment failure, the creature escapes. You flee into a small, reinforced emergency observation shelter connected to the facility’s research equipment.
+
+The shelter has solid metal walls and no windows. You cannot see the creature directly. You experience its presence through footsteps, scraping against the walls, distant cries, interference on the security monitor, and its voice.
+
+The creature is initially weakened by the sedative used during containment. As the sedative wears off, it becomes faster, more persistent, and increasingly capable of breaching the shelter.
+
+**Your objective is to restore the necessary equipment, test remote lures, and complete an emergency protocol that draws the creature back into containment.**
+
+The research now has an immediate purpose: every successful test brings you closer to surviving.
+
+**You win** when you activate the final calibrated lure and the remote containment system successfully seals the creature inside.
+
+**You lose** if the creature reaches the shelter and completes a breach before you can redirect it.
+
+---
+
+## 2. Opening and the single-room setting
+
+The opening establishes the containment breach without requiring an outdoor playable section.
+
+The player hears an alarm, a containment failure announcement, running through the forest, and something pursuing them. The screen remains dark until the researcher enters the shelter and slams the door.
+
+Once inside, a damaged security recording and a short emergency message explain what happened and introduce the containment protocol.
+
+**The only fully rendered environment is the shelter’s interior.**
+
+The room contains:
+
+- A terminal for tasks and research progress.
+- A security monitor connected to cameras around the facility.
+- A proximity detector showing the creature’s approximate distance.
+- A radio or speaker for emergency messages.
+- A clearly identifiable emergency equipment switch.
+
+The external camera feeds can use prerecorded clips, changing still images, static, and occasional silhouettes. They do not require a fully rendered exterior world.
+
+There are also **two different kinds of camera** in the experience:
+
+- **The player’s webcam:** supplies heart-rate readings when enabled and available.
+- **The fictional security cameras:** show limited information about the facility outside.
+
+There is no glass enclosure or window through which the player watches the monster.
+
+---
+
+## 3. Core gameplay
+
+The player alternates between working at the terminal and responding to the creature outside.
+
+Tasks serve two purposes:
+
+1. **Keep the shelter and research equipment operational.**
+2. **Create misleading signals that draw the creature away.**
+
+For the first version, the containment protocol has four stages:
+
+1. Silence malfunctioning equipment.
+2. Calibrate and test a remote heartbeat lure.
+3. Repair an overloaded set of machines.
+4. Calibrate a second lure that leads toward containment.
+
+After completing these stages, the player can activate the final containment broadcast.
+
+Research results are recorded automatically when a test succeeds. The player does not need to read long reports or manually interpret scientific data.
+
+Each completed task produces a brief physical sound, such as a relay snapping into place or a transmitter activating. That sound gives the creature a new clue about the shelter.
+
+However, the completed task also provides a concrete benefit: less ongoing noise, a successful distraction, or progress toward containment.
+
+**The central decision is when to keep working, when to quiet the shelter, and when to send the creature somewhere else.**
+
+Waiting can help during an approach, but waiting indefinitely is dangerous because the creature continues recovering from its sedation.
+
+---
+
+## 4. Heart rate and player physiology
+
+Before the dangerous portion begins, the player can enable their webcam and complete a quiet calibration period.
+
+The game establishes a personal heart-rate baseline from usable readings. Subsequent readings are compared with that baseline.
+
+The first version uses **heart rate as its physiological input**.
+
+Tasks can include an instruction such as:
+
+> Silence five faults. Keep your pulse near baseline to reduce the creature’s ability to track you.
+
+Completing the puzzle always counts. Staying near the target band makes the task safer by reducing the strength of the physiological clue the creature receives.
+
+### How heart rate affects danger
+
+Within the game’s fiction, the creature can sense biological rhythms at close range.
+
+- When it is far away, machinery and remote signals dominate its search.
+- When it is nearby, an elevated pulse gives it a stronger clue that someone is inside.
+- A sustained elevation has more influence than one sudden reading.
+- The effect has a maximum strength.
+- An elevated heart rate alone never causes an automatic death.
+
+The creature still needs to approach, investigate, and begin a breach. The player retains opportunities to respond.
+
+If the camera is disabled or a usable reading is unavailable, the game uses neutral settings. Missing readings do not count as either extreme fear or perfect stealth.
+
+The interface clearly shows whether heart-rate input is active.
+
+---
+
+## 5. Puzzle one: silence the machines
+
+### Situation
+
+Several malfunctioning machines inside the shelter are making noise. Their noise helps the creature locate and investigate the room.
+
+### How it works
+
+1. Four machine boxes appear on the terminal.
+2. One or two begin shaking and glowing orange.
+3. The player clicks an active box to silence that fault.
+4. Another fault appears after a short interval.
+5. Silencing five faults completes the task.
+
+Clicking a quiet box causes a loud mechanical clang.
+
+While faults remain active, they continuously generate noise. A mistaken click creates an additional, brief noise spike.
+
+The proximity detector and its danger indication both reflect the creature’s actual approach. They should not behave like unrelated meters.
+
+### Success
+
+The repair ends with a brief relay sound, then the machines become quiet.
+
+**The creature stops receiving new machinery-noise clues. It does not instantly forget where it last heard you.**
+
+It may continue investigating the shelter before losing confidence or following another signal.
+
+### Mistake
+
+The clang strengthens the creature’s interest in the shelter and can cause it to approach more directly.
+
+This is a quick visual reaction task with a clear purpose: remove an ongoing source of exposure.
+
+---
+
+## 6. Puzzle two: transmit a false heartbeat
+
+### Situation
+
+The facility has remote emitters positioned around the forest compound. They can broadcast artificial heartbeat signals.
+
+The player uses these emitters to draw the creature away from the shelter and test which signals it follows.
+
+### How it works
+
+1. Three waveform cards represent three remote emitters.
+2. One card flashes, identifying the emitter used for the current test.
+3. Four numbered buttons display a short sequence, such as **1 → 3 → 2 → 4**.
+4. The player repeats the sequence.
+5. Pressing **Transmit** broadcasts the calibrated heartbeat from the selected remote emitter.
+
+The three cards identify the transmission destination. They do not introduce a separate guessing puzzle.
+
+### Heart-rate effect
+
+- **Near baseline:** the sequence plays at its normal tempo.
+- **Elevated pulse:** playback becomes modestly faster, with more unsettling audio and visual presentation.
+- **No usable reading:** playback uses the normal tempo.
+
+The sequence always contains four inputs. Playback speed has a fixed upper limit, and the player has a generous response window.
+
+The tempo is set when the sequence begins, so it does not unpredictably change halfway through.
+
+### Success
+
+The local console makes a brief activation sound, but the remote emitter produces a stronger, sustained signal elsewhere.
+
+**A successful transmission reliably draws the creature toward the remote emitter for a short period.**
+
+This creates an opportunity to work and records another result for the containment protocol.
+
+### Mistake
+
+The console emits an error sound, and the sequence restarts. The sound can draw the creature closer, but previously completed research stages remain complete.
+
+This is a four-button memory task with a clear purpose: create a convincing false lead.
+
+---
+
+## 7. Monster behavior and AI
+
+The creature reacts to a consistent set of information:
+
+- Active machinery noise.
+- Mistake and completion sounds.
+- Remote heartbeat transmissions.
+- The player’s recent pulse relative to baseline, when available.
+- Its own position and what it has recently investigated.
+- Its current stage of recovery from sedation.
+
+It does not automatically know everything happening inside the shelter.
+
+Silencing equipment removes new evidence. A decoy gives it a competing lead. Its memory of previous sounds influences where it searches next.
+
+### What AI controls
+
+AI chooses among valid tactics, such as:
+
+- Investigating a recent sound.
+- Circling the shelter.
+- Stopping nearby to listen.
+- Following a remote signal.
+- Waiting before approaching again.
+- Delivering a short, context-dependent taunt.
+
+The AI must affect the creature’s behavior as well as its dialogue.
+
+For example, after the player silences the machines while their pulse remains elevated, the creature might choose to stop and listen near the wall, then whisper:
+
+> “You made it quiet. I can still hear you.”
+
+### What the game rules control
+
+Movement speed, sensing range, successful lure effects, attack warnings, and breach conditions follow consistent rules.
+
+An AI response cannot teleport the creature, cancel an earned puzzle reward, or kill the player without the required approach and warning.
+
+The proximity detector, footsteps, camera events, and voice effects all use the same underlying creature position.
+
+As sedation wears off, the creature searches faster and gives the player less time to respond. That escalation creates urgency without requiring the player to watch a separate countdown.
+
+---
+
+## 8. Blackouts
+
+Occasional electrical failures shut down the shelter’s main lights and displays.
+
+During a blackout:
+
+- The distance display disappears.
+- The danger meter disappears.
+- The security feed goes offline.
+- Visual puzzles pause, preserving their progress.
+- The creature continues moving outside.
+
+The player must use sound to decide when it is safe to restart the equipment.
+
+### How the player survives
+
+A familiar emergency switch remains usable by a fixed keyboard control or a faintly illuminated physical button.
+
+The player can shut down the remaining noisy equipment, then listen.
+
+Approaching footsteps, breathing near the wall, and scraping indicate that restarting would be dangerous. Clearly receding footsteps indicate an opportunity to restore power.
+
+Restarting the equipment produces a noticeable startup sound. Doing it while the creature is still close can bring it back toward the shelter.
+
+Keeping everything shut down prevents task progress while the creature continues recovering. The player therefore has a reason to listen carefully and resume work when an opening appears.
+
+Blackouts occur at eligible moments with a cooldown between them. They do not interrupt an already unavoidable lethal attack.
+
+**The blackout is a survival decision based on sound.**
+
+---
+
+## 9. Atmosphere, voice, and jumpscares
+
+Most of the horror comes from the creature’s unseen presence and the player’s uncertainty about how close it is.
+
+As it approaches:
+
+- Distant movement becomes distinct footsteps.
+- Footsteps become breathing, scraping, and contact with the walls.
+- Its voice becomes clearer and more immediate.
+- The room’s metal surfaces begin to vibrate or dent.
+
+Jumpscares can include a sudden impact against the wall, a security-feed interruption, a silhouette on a monitor, or a burst of movement immediately outside.
+
+Some scares can be nonlethal atmospheric events. A real breach attempt has a consistent warning cue that the player can learn.
+
+The creature speaks occasionally, responding to meaningful events such as a mistake, a successful repair, or a sustained pulse elevation. It does not continuously narrate the game.
+
+If a generated line is unavailable, prepared dialogue keeps the experience running.
+
+On death, a final impact, deformation of the door, and a cut to black can communicate the breach without requiring a full monster reveal.
+
+---
+
+## 10. End-of-game heart-rate report
+
+After victory or death, the game presents a short report connecting the player’s recorded pulse with events during the run.
+
+It includes:
+
+- The calibration baseline.
+- The highest usable recorded heart rate.
+- A heart-rate timeline with markers for scares, blackouts, mistakes, and close encounters.
+- The event followed by the largest recorded increase.
+- Recovery after major events, when enough readings are available.
+
+Use wording such as:
+
+> “Your largest recorded pulse increase followed the second blackout.”
+
+or:
+
+> “Your pulse rose most during the encounter at the door.”
+
+The report describes measured responses associated with events. It does not assign a definitive fear score.
+
+If heart-rate input was unavailable, the end screen shows ordinary gameplay results and marks physiological statistics as unrecorded.
+
+
+prizes
+Explore different prizes
+Updated Oct 23, 9:23 PM
+
+Prize
+
+Awarded byCal Hacks
+First Overall
+Your destination
+
+MacBook Air 13" M5
+
+EXECUTIVE-ROW-2
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Second Overall
+Your destination
+
+Nintendo Switch 2
+
+EXECUTIVE-ROW-3
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Third Overall
+Your destination
+
+Google Intelligent Eyewear
+
+EXECUTIVE-ROW-4
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Most Creative Hack
+Your destination
+
+Instax camera plus film
+
+EXECUTIVE-ROW-5
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Most Technically Complex Hack
+Your destination
+
+NuPhy Air60 HE
+
+EXECUTIVE-ROW-6
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Best People-First Hack
+Your destination
+
+Apple Watch SE 3
+
+EXECUTIVE-ROW-7
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Best Planet-First Hack
+Your destination
+
+America the Beautiful Parks Pass
+
+EXECUTIVE-ROW-8
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Best Hardware Hack
+Your destination
+
+Bambu Lab A1 Mini
+
+EXECUTIVE-ROW-9
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Best Beginner Hack
+Your destination
+
+AirPods 4
+
+EXECUTIVE-ROW-10
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Best Solo Hack
+Your destination
+
+AirPods Pro 3
+
+EXECUTIVE-ROW-11
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCal Hacks
+Hacker's Choice
+Your destination
+
+Logitech MX Master 4
+
+EXECUTIVE-ROW-12
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byNotability
+Best Use of Notability (Notability)
+Process: Do your notes show how the idea evolved, from first sketch to final build?
+Detail: Are your notes clear and thorough enough that someone else could follow your thinking?
+Feature Usage: Does it take full advantage of Notability's features, like handwriting, audio, diagrams, PDFs, and Smart Notes?
+Relevance: Did Notability play a real role in your build, or was it added after the fact?
+
+Your destination
+
+1 year of Notability Pro + exclusive company merch
+
+SPONSOR-ROW-2
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMeta
+Meta/Facebook: Bringing People Closer Together with AI (Meta Inc)
+Projects will be judged on how meaningfully they strengthen human connection, how essential and well-integrated AI is, originality, and the strength of the working demo.
+
+Your destination
+
+Invitation to advance to the Round 2 Hackathon hosted at Meta's Menlo Park campus (travel and accommodations provided; advancement subject to eligibility verification and compliance with Meta's Round 2 Official Rules); Meta swag bag
+
+SPONSOR-ROW-3
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCapital One
+Best Use of Nessie (Capital One)
+Completeness, Creativity, Complexity
+
+Your destination
+
+$300 Giftogram per person on winning team
+
+SPONSOR-ROW-4
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byFactory
+Best Use of the Factory Droid SDK (Factory)
+Eligibility: The project must use the Droid SDK (TypeScript or Python) in a meaningful way. Droid should do real work in the running product, not just help you write code. The repo README should explain where and how Droid is used.
+
+What scores well
+- Droid runs on a trigger you designed, like an event, a schedule, a user action, or another agent.
+- Thoughtful control over what Droid can touch, with safety built in.
+- Making Droid's work visible: plans, steps, diffs, and results.
+
+What scores poorly
+- A chatbot wrapper with Droid added on.
+- Demos that only work in slides.
+- Projects where we can't tell what the agent did."
+
+Your destination
+
+$2000 cash, Factory credits, and swag
+
+SPONSOR-ROW-5
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byFetch.AI
+Best Use of Fetch.ai (Fetch.ai)
+https://www.fetch.ai/events/calhacks-13-0
+
+Your destination
+
+1st Prize - $1500; 2nd Prize - $1000; 3rd Prize - $500
+
+SPONSOR-ROW-6
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byAmardin
+Best Security Hack, sponsored by Armadin (Armadin)
+Coming soon!
+
+Your destination
+
+Apple Headphones (possibly hacking tools)
+
+SPONSOR-ROW-7
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCoinbase
+Best Use of x402 by Coinbase (Coinbase)
+https://drive.google.com/file/d/12TnPLguduV3gh1zY_TJ176XmVDz2RGW9/view?usp=sharing
+
+Your destination
+
+$500 USDC + recruiter call per team member per track, for each of the two tracks (up to $4000 total)
+
+SPONSOR-ROW-8
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCreao AI
+Best AI-First Disruptor (Creao AI)
+https://docs.google.com/document/d/1N1imAn1aBrA1JPoz5X_sjyOsQggUfPvJW2UIIFmdHf4/edit?usp=sharing
+
+Your destination
+
+2500; each winning team is invited into CREAO Launchpad: 1 year of CREAO Pro Max ($1,440 value), product/technical/founder mentorship, CREAO meet-and-greet, demo opportunities, launch support and amplification, and career/interview opportunities with CREAO
+
+SPONSOR-ROW-9
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCreao AI
+Best One-Person Company (Creao AI)
+https://docs.google.com/document/d/1N1imAn1aBrA1JPoz5X_sjyOsQggUfPvJW2UIIFmdHf4/edit?usp=sharing
+
+Your destination
+
+1500; each winning team is invited into CREAO Launchpad: 1 year of CREAO Pro Max ($1,440 value), product/technical/founder mentorship, CREAO meet-and-greet, demo opportunities, launch support and amplification, and career/interview opportunities with CREAO
+
+SPONSOR-ROW-10
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCreao AI
+Best Team Empowerment (Creao AI)
+https://docs.google.com/document/d/1N1imAn1aBrA1JPoz5X_sjyOsQggUfPvJW2UIIFmdHf4/edit?usp=sharing
+
+Your destination
+
+$1000 total cash prize across the tracks; each winning team is invited into CREAO Launchpad: 1 year of CREAO Pro Max ($1,440 value), product/technical/founder mentorship, CREAO meet-and-greet, demo opportunities, launch support and amplification, and career/interview opportunities with CREAO
+
+SPONSOR-ROW-11
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCRS Credit API
+CRS Financial Intelligence Challenge (Best Use of CRS Credit API) (CRS Credit API)
+The only rule: make meaningful use of the CRS sandbox and show it working live in your demo.
+
+Judging criteria:
+1. Use of CRS: how central CRS data is to the product, not a bolt-on.
+2. Working demo: it runs live against the sandbox.
+3. Usefulness: it solves a real problem for a person or a business.
+4. Creativity: it shows us something we didn't expect.
+
+Prizes:
+- Best Overall CRS Hack ($1,000): the most impressive product built on CRS.
+- Best Financial AI Agent ($500): an AI agent that does real work with CRS data, using our API or MCP server.
+- Best Identity / Fraud Innovation (interview with CRS): the best project protecting consumers or businesses from fraud and identity theft.
+- Most Unexpected Use of CRS (interview with CRS): the ""we didn't think of this"" prize.
+
+Getting started: sandbox keys, docs and test identities are at https://calhacks.crscreditapi.com. Use the provided test identities only. Questions: find us at the CRS booth. We'll connect with the winning teams through Cal Hacks.
+
+Your destination
+
+Best Overall CRS Hack: $1,000 (per team); Best Financial AI Agent: $500 (per team); Best Identity / Fraud Innovation: interview with the CRS team for open forward-deployed engineer role, for each team member; Most Unexpected Use of CRS: interview with the CRS team for open forward-deployed engineer role, for each team member
+
+SPONSOR-ROW-12
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byHypenate
+The Hyphenated Enterprise: Autonomous Systems for Finance (Hyphenate)
+Every submission is judged on the same four questions:
+
+1. Is it real enough? Realistic data, a messy problem, and proof that it works.
+2. Would you hire it? For which seats, and would it earn them: limited access, a clean record of its work, and knowing when to ask?
+3. Did we see something new? A company, problem or approach we haven't seen made autonomous before.
+4. The moment. When it catches what others missed, recovers from something going wrong, or defends a decision when questioned.
+
+Teams should bring a demo video that opens with their moment, a live demo at judging (we may ask them to try a scenario of our own), one line on the seats their system fills, and proof it works: what's real, what's simulated, and how they know.
+
+More details here: CalHacks_Hyphenate_Track
+
+Your destination
+
+Cash prizes of $8000, $5000, $3000 for the top 3 teams; expedited interview process for top 5 teams
+
+SPONSOR-ROW-13
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byCartesia
+Best Use of Cartesia (Cartesia)
+Build a useful voice experience with Cartesia. Voice should be core to the product–not just a feature added for the demo. Other tools are fine; make clear what Cartesia contributes.
+
+What to submit
+• A working demo
+• A 2-minute, demo-first presentation: one complete user flow, then a brief problem + how you built it
+• A short README: setup, Cartesia features used, known limitations
+• Source access for judges (per event rules). No API keys or secrets in the repo
+
+Judging criteria (25% each)
+
+Problem and originality — Useful, clearly scoped, thoughtfully designed?
+Use of Cartesia — Meaningfully integrated into the core experience? Voice clear, responsive, and natural?
+Execution — Main flow works? Likely edge cases handled?
+Impact and responsibility — Accessibility, privacy, and responsible use considered?
+
+We’ll favor a strong working prototype over a large unfinished idea.
+
+Ideas
+• Commute standup — voice-only morning brief you can interrupt while driving (hands-busy)
+• Ambient / wearable assistant — help without pulling out a phone
+• Keep-your-voice accessibility — clone for reading aloud or speaking another language
+• Live coach or translator — low-latency back-and-forth where voice quality matters
+• Multi-speaker agent — tutor, debate partner, or support sim with distinct voices
+
+Docs: https://docs.cartesia.ai
+Playground: https://play.cartesia.ai
+
+Your destination
+
+Meta glasses (still TBD)
+
+SPONSOR-ROW-14
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byBitdeerAI
+Best Use of Bitdeer AI Model Studio (Bitdeer AI)
+Challenge: Best Use of Bitdeer AI Model Studio
+
+Build an AI-powered application using Bitdeer AI Model Studio. Projects may include AI agents, developer tools, productivity applications, creative experiences, or other innovative applications.
+
+Eligibility requirements
+
+Build a working project using Bitdeer AI Model Studio.
+Clearly demonstrate how Model Studio is used in the application.
+Submit a brief description of the project and how Model Studio was used.
+Provide a demo or presentation of the project.
+
+Judging criteria
+
+Innovation and Creativity — 30%
+Technical Implementation — 30%
+Use of Bitdeer AI Model Studio — 20%
+Impact and Presentation — 20%
+
+Judges will evaluate originality, technical execution, meaningful use of Model Studio, and the project's potential value or user impact.
+
+Your destination
+
+1st Place: $500 in Bitdeer AI Model Studio credits for the winning team + four gaming mice, one per teammate; 2nd Place: $200 in Bitdeer AI Model Studio credits + one LEGO Technic set for the team to share
+
+SPONSOR-ROW-15
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byFigma
+TBD (Figma)
+https://docs.google.com/document/d/1HjzThDGveSLiilIdEPEHq12ZVLZ5eS0T8CQC5_m_-rg/edit?usp=sharing
+
+Your destination
+
+Amazon Gift Cards (distributed by CalHacks orgs); session with Figma Early Career Recruiting Team [to be scheduled]
+
+SPONSOR-ROW-16
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMoss
+Best Use of Moss (Moss)
+We have 3 main examples we are looking for:
+1 - Voice AI: Voice agents that listen, respond, and act in real time
+2 - Personal Agent: Agent that remembers you, works across your apps, and autonomously handles everyday tasks.
+3 - Social Post: Best engagement
+
+Your destination
+
+Airpod Max/pros
+
+SPONSOR-ROW-17
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded bySpaceXAI
+Make it Legendary with SpaceXAI (SpaceXAI)
+Space gives you more to work with than almost any other field. You have access to enormous public datasets, decades of missions, and a literature no human can read all of. Real space data goes in and a legendary project comes out.
+
+To be eligible, your project must be built with Cursor. The more you use Cursor, the more you're likely to win. You must also use the Grok Imagine or Voice API in your project.
+Bonus points, if you use Grok Bot for project planning and team collaboration.
+
+Your destination
+
+Custom Cursor Mechanical Keyboard
+
+SPONSOR-ROW-18
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byConvex
+Best use of Convex (Convex)
+The reactive backend platform that keeps up with you and your agents. Database, functions, workflow, sync, search, file storage, and more. All TypeScript, zero glue.
+
+Your destination
+
+$5,000 cash to the winning team.
+
+SPONSOR-ROW-19
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMicrosoft
+Grand Prize: Built for the Real World (Microsoft)
+Track Challenge: Build a production-minded AI agent that solves a meaningful problem in finance, productivity, healthcare, or another high-impact domain
+
+Judging Criteria:
+Customer understanding
+
+Measurable usefulness
+
+Path from prototype to production
+
+responsible design
+
+end to end functionality
+
+Your destination
+
+A Microsoft Surface laptop for each member of the winning team; present your project remotely at a Microsoft Delta/Frontier Co. FDE team tech talk; 1:1 mentorship with senior FDEs from the Delta/Frontier Co team
+
+SPONSOR-ROW-20
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMicrosoft
+Microsoft Customer Impact Award (Microsoft)
+Same as above!
+
+Your destination
+
+Present your project remotely at a Microsoft Delta/Frontier Co. FDE team tech talk; 1:1 mentorship with senior FDEs from the Microsoft Delta team
+
+SPONSOR-ROW-21
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byApify
+Best use of Apify (Apify)
+Top 5 projects using Apify, we also have a best actor award for building an actor for this event. Project must be using Apify in a meaningful way. We will judge the quality of the project as well as other criteria.
+
+Your destination
+
+$5,000 total: 1st) $2,000; 2nd) $1,000; 3rd) $800; 4th) $400; 5th) $400
+
+SPONSOR-ROW-22
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byApify
+Best Actor sponsored by Apify (Apify)
+Same as above
+
+Your destination
+
+$400
+
+SPONSOR-ROW-23
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byElastic
+Elastic
+Coming soon!
+
+Your destination
+
+1st Place: Meta Quest 3S headsets; 2nd Place: Bose QuietComfort headphones
+
+SPONSOR-ROW-24
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byVisa
+Best use of Reimagining Shopping sponsored by Visa (Visa)
+Innovation (25%) – How creative does the solution reimagine the shopping experience?
+User Experience (25%) – Does the experience feel intuitive, useful, and seamless?
+Technical Execution (20%) - How effectively has the team implemented AI and supporting technologies?
+Commerce Impact (15%) - Can the solution improve customer engagement, conversion, loyalty, or merchant outcomes?
+Trust & Responsibility (15%) - Does the solution address privacy, transparency, security, and responsible use of AI?
+
+Your destination
+
+$5,000
+
+SPONSOR-ROW-25
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byAfterquery
+AfterQuery
+Coming soon!
+
+Your destination
+
+Coming soon!
+
+SPONSOR-ROW-26
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byAnnapurna Labs
+Annapurna Labs
+Coming soon!
+
+Your destination
+
+Coming soon!
+
+SPONSOR-ROW-27
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byAnthropic
+Anthropic
+1. A named community. ""Students"" is too broad. ""Transfer students at Berkeley trying to find housing"" is the right register.
+
+2. A real problem. You have lived it, or you talked to someone who has.
+
+3. It works. One thing done well and usable on Monday beats a broad demo.
+
+4. Thoughtful use of Claude. Claude does something that matters to the solution, and you know where it could go wrong for the people using it.
+
+Your destination
+
+Coming soon!
+
+SPONSOR-ROW-28
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byAtlassian
+Best Agent / Best Security Solution for Agents
+To find out more, click here: https://docs.google.com/document/d/12Y2Vamxbm9W_l2Eo4AM530R7HfNAYCXI-UI6F6Xnggw/edit?pli=1&tab=t.0#heading=h.c700g1a8lnrh
+
+Your destination
+
+Airpod Max
+
+SPONSOR-ROW-29
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byBright Data
+Best Agent/App Using Public Web Data sponsored by Bright Data
+Judges will look for products where Bright Data is essential to the core experience; if live public web data were removed, the product would no longer work.
+
+Strong submissions solve a clear, real-world problem for a specific user, run live in the demo, handle real web conditions like blocks, slow responses, and empty results, and turn raw data into clean, useful output.
+
+Extra credit goes to teams that choose the right Bright Data tools thoughtfully, combine them where it improves the solution, and tell a clear two-minute story using real results from real websites rather than mocked data.
+
+Submissions will be disqualified if they scrape behind a login or paywall, collect non-public personal data, use mocked or hardcoded data in the demo, or mention Bright Data only in the README without making it part of the working product.
+
+Your destination
+
+1st - $1500 Bright Data credits, $500 amazon card 2nd - $1000 Bright Data credits, $350 amazon card 3rd - $500 Bright Data credits, $250 amazon card
+
+SPONSOR-ROW-30
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMana
+Mana.space
+https://mana.space/a/calhacks
+
+Use Mana meaningfully while building your project.
+
+In your submission, say where Mana helped and link one or two Mana pages or chats you used: the app or prototypes you built in Mana, and the chats where Mana planned, wrote or debugged your code. Make each link public so judges can open it (every Mana page and chat can be shared).
+
+In your demo, show one moment where Mana changed what you built or how fast you built it.
+
+What we'll be looking for:
+- Meaningful use of Mana (30%): Did Mana let you build something better, or faster, than you could have without it?
+- Usefulness (25%): Would a real person want this?
+- Originality (25%): Is it something we have not seen before?
+- Execution (20%): Does it work live, and could someone else use it?
+- Bonus (up to +10): Your project lives inside Mana as an app or agent a judge can open and use.
+
+A small thing that works beats an ambitious idea that only exists in slides.
+
+Your destination
+
+$5000 Cash Prize
+
+SPONSOR-ROW-31
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded bySpacetime
+Spacetime
+We’d love to see projects where Spacetime is the core real-time backend, especially anything with live shared state, multiplayer interaction, or instant sync between users/agents/systems. That makes it a great fit not just for games, but also for things like chat/community apps, collaborative tools, social experiences, AI agent coordination, live dashboards, trading / financial-style apps, auctions / marketplaces, shared simulations, multiplayer productivity tools, and stream/creator tools. Spacetime’s docs position it around real-time subscriptions, transactional updates, and server-side logic running close to the data, which is why these kinds of apps fit well.
+
+We’d be excited by something like a real-time portfolio sim, prediction market, collaborative trading game, shared ops dashboard, multi-user planning tool, or AI systems coordinating in a persistent world state. The main thing we’d want is for Spacetime to be meaningfully used, not just added on the side.
+
+A few cool examples already built with / around Spacetime:
+
+BitCraft Online / BitCraftPublic
+Elegon
+Pogly - a real-time collaborative stream overlay powered by Spacetime
+official chat app tutorials/templates
+Video chat app
+
+Your destination
+
+1st place - $2048, 2nd place - $1,024, 3rd - $512 Scrabblebot Tournament - 1st place - 1024, 2nd place - 512, 3rd place - $256
+
+SPONSOR-ROW-32
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Build Your Hackathon A-Team with SpaceXSI
+This weekend, assemble your ultimate hackathon A-Team using Cursor and Grok Bot to streamline your development, accelerate your builds, and lock in your shot at the SpaceXSI raffle.  Every member on the winning team walks away with a custom-branded Cursor mechanical keyboard.
+
+Here’s how you qualify:
+- Use Cursor as your core AI coding agent and integrate Grok Bot automation into your workflow.
+- In your project description, describe how you use both Cursor and Grok Bot.
+- Submit your project and be sure to opt-in to the Make it Legendary with SpaceXSI raffle.
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Mechanical Keyboard
+
+SPONSOR-ROW-33
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of ElevenLabs
+Deploy natural, human-sounding audio with ElevenLabs. Create realistic, dynamic, and emotionally expressive voices for any project, from interactive AI companions to narrated stories and voice-enabled apps. ElevenLabs will empower you to build rich, immersive experiences without the need for actors or complex audio production, using simply the power of AI.
+
+Integrate fully autonomous audio experiences into your hack with ElevenLabs and give your project a voice, along with giving your team the chance to win some wireless earbuds!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Wireless Earbuds
+
+SPONSOR-ROW-34
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Gemini API
+It’s time to push the boundaries of what’s possible with AI using Google Gemini. Check out the Gemini API to build AI-powered apps that make your friends say WHOA. So, what can Gemini do for your hackathon project?
+
+- Understand language like a human and build a chatbot that gives personalized advice
+- Analyze info like a supercomputer and create an app that summarizes complex research papers
+- Generate creative content like code, scripts, music, and more
+
+Think of the possibilities… what will you build with the Google Gemini API this weekend?
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+MLH Swag Kits
+
+SPONSOR-ROW-35
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Solana
+The world of development is evolving fast and Solana is leading the charge with a network built to handle all of your infrastructure needs. Forget high fees and slow confirmations, it’s time to build applications that are fast, efficient, and scalable.
+
+Harness Solana’s core advantages like blazing fast execution and near-zero transaction costs to make your hackathon ideas become real world projects. With Solana, the possibilities are endless.
+
+- Create a game, social app, or consumer product that relies on instant, high-frequency transactions.
+- Design a sophisticated trading, lending, or decentralized exchange (DEX).
+- Build a prototype for supply chain, identity, or payments that can handle massive, real-world volume.
+
+Show us how you can innovate with Solana for a chance to win Unruggable Hardware Wallets for you and each member of your team!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Unruggable Hardware Wallets
+
+SPONSOR-ROW-36
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Tiger Data
+Building high-performance apps under hackathon deadlines shouldn't mean spending half your weekend configuring complex databases or learning obscure query languages. Tiger Data extends PostgreSQL to give student developers an ultra-fast foundation for real-time data, time-series metrics, and complex analytics.
+
+Why build with Tiger Data this weekend?
+- Standard SQL Power: Query massive datasets instantly using the SQL you already know, with no complex NoSQL aggregation pipelines required.
+- Unified Data Stack: Store relational user profiles and high-frequency metric streams side-by-side in a single database.
+- Instant Dashboards: Serve lag-free, real-time frontend charts using pre-computed Continuous Aggregates.
+- 90%+ Data Compression: Store millions of events on free-tier cloud instances without running out of disk space.
+
+Whether you’re building real-time IoT monitoring, AI-driven analytics dashboards, or financial prediction engines, show us how Tiger Data powers your project. The team that demonstrates the most innovative, impactful, and performance-driven use of Tiger Data will take home some great prizes!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Stream Deck Mini
+
+SPONSOR-ROW-37
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Presage
+Presage is pioneering the Human Sensing Layer, enabling any application to understand a person’s real-time physical and emotional state. With Presage, you can leverage clinically-proven vital signs, movement, emotion, and/or focus tracking to build a project that gives the standard camera super powers.
+
+Use any of the Presage SDKs to integrate capabilities like real-time heart rate, breathing rate, engagement levels, and facial expressions into your hack with just a few lines of code.
+
+- Immersive Gaming & Entertainment: Dynamically change game difficulty or story elements based on a player's excitement or focus levels.
+- Contactless Wellness & Fitness: Build a non-invasive app that monitors stress, recovery, or fitness performance.
+- Accessibility & Security: Utilize vital signs for effortless authentication, or to enhance accessibility.
+- Productivity: Design a tool that tracks focus or stress.
+
+Build your next hack with Presage and show us the future of human-computer interaction! Win awesome prizes along for with the following perks from the Presage team:
+
+- Free refills for Presage Development credits to accelerate you through your next three months of building
+- 30% off all Presage usage charges for your first year after going live
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Fitbit Inspire & Presage Perks
+
+SPONSOR-ROW-38
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Gen AI
+Generative AI is rapidly changing the landscape of software development. This category challenges you to build novel applications that leverage the power of Generative AI APIs.  Think outside the box and integrate cutting-edge AI models to create innovative solutions with real-world impact.
+
+To participate, utilize publicly available Generative AI APIs (like those from OpenAI, Anthropic, Hugging Face, Llama, IBM Watson, or Google Gemini) to develop a unique and functional application. This could include:
+
+- AI-powered creative tools: Design an app that allows users to generate unique marketing copy, translate languages in real-time, or create personalized learning experiences.
+- Intelligent assistants and automation: Build a chatbot that can provide insightful customer support, or a system that automates complex tasks using natural language processing.
+- Next-generation content creation platforms: Develop a platform that empowers users to generate high-quality images, write different kinds of creative text formats, or compose original music with AI assistance.
+
+This is your chance to get hands on with cutting edge tech, put your skills on display, and of course, win some awesome prizes! 
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Assorted Prizes
+
+SPONSOR-ROW-39
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Backboard
+Every AI model API is stateless by default. That means your app forgets everything the second a session ends. State management should be the first step of any AI build, regardless of what LLM you are using, and Backboard gives you that for free. But Backboard is not just state management. It is a single, unified API built on the world’s #1 AI memory that gives you everything you need in one place: long-term memory, RAG, embeddings, tool calls, model routing across 17,000+ LLMs, and persistent context that stays alive across every page refresh, session, and user. No stitching together five different services. One API. One integration. Built on the best memory in AI.
+
+Here’s just a small list of things Backboard can make possible for your AI app!
+
+- AI-powered Travel Guide: Remembers allergies and preferences from past trips.
+- Personalized Fitness Coach: Adjusts workouts based on progress and injury history.
+- Smart Home Controller: Learns routines over time to anticipate lighting and climate preferences!
+
+
+Use Backboard to build a seamless, persistent user experience without the usual infrastructure headache! Each winning team member will receive a Tiles Essentials Pack because, just like AI,  we all need an occasional reminder of where things are!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Tile Essentials Pack
+
+SPONSOR-ROW-40
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Vultr
+Vultr empowers hackers to bring their high-performance projects to life instantly; providing everything from the speed of one-click deployment and scalable cloud compute, to specialized Vultr Cloud GPUs that can power AI-driven applications. We want you to push the limits of what can be built when infrastructure is no longer the bottleneck!
+
+Sign up for a Vultr account today and claim your free cloud credits! Take your next hack to the cloud with Vultr for a chance to win some awesome prizes for you and your team!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+M5Stack Official Tab5
+
+SPONSOR-ROW-41
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Commit Fellowship Prize Category
+Done sitting on your big idea? Enter the Commit Fellowship Prize Category to take your hack beyond the hackathon. Selected winning teams will have the chance to secure a spot in an exclusive, 3-week zero-to-founder sprint hosted by Major League Hacking and Transcend Network. If you’re ready to do the real work of bringing a startup to market, this is for you.
+
+- Exclusive Admission: A chance to interview for the highly selective Commit Fellowship 3-week sprint.
+- Founder Mentorship: Live coaching, peer code reviews, and structured customer discovery sessions.
+- Launch Perks & Microgrants: Completion opens access to thousands of dollars in cash microgrants and in-kind tooling credits (like AI credits) to keep your post-hackathon momentum going.
+
+Qualify by building a working prototype with a team, demonstrate a real problem worth solving, opt into the Commit Fellowship Prize Category when you submit your project, and complete our supplemental form to be considered for the prize category. A winning team from your hackathon will be selected post-event and notified via email.
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+An Interview with the Commit Fellowship Team & a copy of The Lean Startup
+
+SPONSOR-ROW-42
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of DigitalOcean
+DigitalOcean offers a reliable and easy-to-use cloud platform for every stage of your project. Leverage core services like Droplets, Managed Databases, and App Platform to build, deploy, and scale your application effortlessly. Building with AI? DigitalOcean Gradient™ AI enables you to build, train, and deploy machine learning models, including access to GPU infrastructure and serverless inference!
+
+Sign up for DigitalOcean today and reach out to your MLH Coach for credits that you can use towards building your next great hack. Build with DigitalOcean’s robust cloud infrastructure for a chance to win some great prizes for you and each of your teammates!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Retro Wireless Mouse
+
+SPONSOR-ROW-43
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Snowflake API
+Play with industry-leading LLMs on a single account using the Snowflake APIs. Adding AI capabilities into your application can be as simple as a single CURL command to Snowflake’s REST API.
+
+Build customized applications, RAG powered chat bots, or embed AI-powered features into your app in half the time with half the hassle. Get started for free with a special, student 120-day Snowflake trial and check out this repository for an example of the Snowflake REST API in action.
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Arduino Student Kit
+
+SPONSOR-ROW-44
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of Auth0
+Auth0 wants your applications to be secure! Why spend hours building features like social sign-in, Multi-Factor Authentication, and passwordless log-in when you can enable them through Auth0 straight out of the box? You can also secure your AI applications with Auth0 for AI Agents. 
+
+Auth0 is free to try, doesn’t require a credit card, and allows for up to 7,000 free active users and unlimited log-ins. Make your new account today and use any of the Auth0 APIs for a chance to win a pair of wireless headphones for you and each member of your team!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Wireless Headphones
+
+SPONSOR-ROW-45
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Use of MongoDB Atlas
+MongoDB Atlas takes the leading modern database and makes it accessible in the cloud! Get started with a $50 credit for students or sign up for the Atlas free forever tier (no credit card required). Along with a suite of services and functionalities, you’ll have everything you need to manage all of your data, and you can get a headstart with free resources from MongoDB University! Build a hack using MongoDB Atlas for a chance to win a M5Stack IoT Kit for you and each member of your group.
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+M5Stack IoT Kit
+
+SPONSOR-ROW-46
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best .Tech Domain Name
+Make your Team’s Achievements timeless: Win a .Tech Domain Name for up to 10 years to Showcase and Expand Your Project, Plus Desktop Mics for Effortless Collaboration on Zoom, empowering you to build even more cool things together!
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Desktop Microphone & a Free .Tech Domain Name for up to 10 years!
+
+SPONSOR-ROW-47
+
+build  ·  Explore  ·  create
+
+Prize
+
+Awarded byMLH
+Best Domain Name from GoDaddy Registry
+GoDaddy Registry is giving you everything you need to be the best hacker no matter where you are. Register your domain name with GoDaddy Registry for a chance to win some amazing prizes! 
+
+More info can be found at https://www.mlh.com/events/prizes
+
+Your destination
+
+Digital Gift Card
+
+SPONSOR-ROW-48

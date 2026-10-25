@@ -1,314 +1,207 @@
 import * as THREE from 'three';
-import { cloneModel, disposeObject, loadModels } from './assets';
+import { disposeObject, loadModels, type ModelName } from './assets';
 import { STATION_TARGETS, type Station } from './stations';
-
-export interface RenderState {
-  time: number;
-  paused?: boolean;
-  doors: { left: boolean; right: boolean }; // true means open, matching game authority.
-  creature?: { side: 'left' | 'right' | null; phase: string; phaseStarted?: number; progress?: number };
-  safeUntil?: { left: number; right: number };
-  task?: number;
-  power?: number;
-  challenge?: { prompt: string; response: string };
-  orderId?: string;
-}
+import { projectCreature, type CameraFeed, type WorldPosition } from './cctv';
+import { createDisplay, drawTerminal, drawProximity, drawCameraOverlay, plateTexture } from './displays';
+import type { RenderState } from './state';
+import { createWeathering } from './weathering';
+import { alarmIntensity, scareStrength } from './presentation';
+import { hitStation } from './interaction';
+export type { RenderState } from './state';
 
 export interface SceneView {
   ready: Promise<void>;
   update(state: RenderState, dt: number): void;
   setStation(station: Station, reducedMotion?: boolean): void;
+  onInteract(callback: (station: Station) => void): () => void;
   dispose(): void;
-  diagnostics: { loadedAssets: string[]; animationClips: string[]; error: string | null };
+  diagnostics: { loadedAssets: string[]; animationClips: string[]; error: string | null; cameraFeed: CameraFeed; silhouetteVisible: boolean; listenerYaw: number; listenerPosition: WorldPosition; hoveredStation: Station | null };
 }
-
-function textTexture(title: string, lines: string[], paper = false, template?: CanvasImageSource): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024; canvas.height = 512;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = paper ? '#c2bba0' : '#0c2523';
-  if (template) {
-    ctx.drawImage(template, 0, 0, 1024, 512);
-    // Supplied cards are reference art: mask every example ID and secret before display.
-    ctx.fillRect(39, 39, 946, 420);
-  } else {
-    ctx.fillRect(0, 0, 1024, 512);
-    ctx.strokeStyle = paper ? '#6c6a53' : '#316c59'; ctx.lineWidth = 3; ctx.strokeRect(25, 25, 974, 462);
-  }
-  ctx.fillStyle = paper ? '#183a37' : '#88c6a1';
-  ctx.font = 'bold 52px monospace'; ctx.fillText(title, 56, 103);
-  ctx.fillStyle = paper ? '#344d44' : '#6caa89'; ctx.font = '31px monospace';
-  lines.forEach((line, i) => ctx.fillText(line, 57, 180 + i * 59));
-  if (!paper) {
-    ctx.fillStyle = 'rgba(0, 0, 0, .14)';
-    for (let y = 0; y < 512; y += 5) ctx.fillRect(0, y, 1024, 2);
-  }
-  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
 export function createScene(container: HTMLElement): SceneView {
-  const diagnostics: SceneView['diagnostics'] = { loadedAssets: [], animationClips: [], error: null };
-  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x081414);
-  scene.fog = new THREE.FogExp2(0x081414, .047);
-  const camera = new THREE.PerspectiveCamera(59, 1, .04, 35);
-  camera.position.set(0, 1.65, 1.4); camera.lookAt(STATION_TARGETS.console);
+  const diagnostics: SceneView['diagnostics'] = { loadedAssets: [], animationClips: [], error: null, cameraFeed: 'A', silhouetteVisible: false, listenerYaw: 0, listenerPosition: [.05, 1.62, .60], hoveredStation: null };
+  let disposed = false, reducedMotion = false, station: Station = 'terminal';
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x020303); scene.fog = new THREE.FogExp2(0x040504, .065);
+  const camera = new THREE.PerspectiveCamera(63, 1, .04, 25); camera.position.set(.05, 1.62, .60); camera.lookAt(STATION_TARGETS.terminal);
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.65));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .79;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
-  renderer.domElement.setAttribute('aria-label', '3D relay booth. Drag to look around; use station buttons or A and D to turn.');
-  renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;cursor:grab';
+  renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;cursor:grab';
+  renderer.domElement.setAttribute('aria-label', 'Sealed HUSH shelter. Click equipment to inspect it. Drag to look; keyboard controls also select each station.');
   container.appendChild(renderer.domElement);
-  let disposed = false, reducedMotion = false, desiredStation: Station = 'console';
-  let yawOffset = 0, pitchOffset = 0, dragging = false, previousX = 0, previousY = 0;
-  const targetQuaternion = camera.quaternion.clone();
-  const targetCamera = camera.clone();
-  const mixers: THREE.AnimationMixer[] = [];
-  const shutters: Partial<Record<'left' | 'right', { mixer: THREE.AnimationMixer; action: THREE.AnimationAction; progress: number }>> = {};
-  const floodlights: Partial<Record<'left' | 'right', THREE.SpotLight>> = {};
-  const corridorLamps: Record<'left' | 'right', THREE.PointLight> = {
-    left: new THREE.PointLight(0xffbc76, 12, 8, 2),
-    right: new THREE.PointLight(0x77d4c0, 12, 8, 2),
-  };
-  let mimic: THREE.Object3D | null = null, mimicMixer: THREE.AnimationMixer | null = null;
-  const mimicActions: Record<string, THREE.AnimationAction> = {};
-  let mimicClip = 'idle';
-  let lastCard = '', lastScreen = '';
-  const cardTemplates: Partial<Record<'work_order' | 'challenge_card', CanvasImageSource>> = {};
-  const material = (color: number, emissive = 0, intensity = 0) => new THREE.MeshStandardMaterial({ color, roughness: .82, metalness: .26, emissive, emissiveIntensity: intensity });
-  const darkSteel = material(0x112b2b), steel = material(0x284844), brass = material(0x786e49);
-  const cream = material(0xc4c2a2), orangeGlow = material(0xe2a86c, 0xe59a4b, .7), greenGlow = material(0x83d7b2, 0x67cba0, .8);
-  function box(size: [number, number, number], position: [number, number, number], mat: THREE.Material, parent: THREE.Object3D = scene): THREE.Mesh {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat); mesh.position.set(...position);
-    mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+  const hemisphere = new THREE.HemisphereLight(0x59644c, 0x070807, .21); scene.add(hemisphere);
+  const fill = new THREE.AmbientLight(0x6b6952, .065); scene.add(fill);
+  const overhead = new THREE.PointLight(0x836342, 1.15, 4.2, 2); overhead.position.set(.2, 2.65, -.65); scene.add(overhead);
+  const deskLamp = new THREE.PointLight(0xf09b56, 3.2, 2.5, 2); deskLamp.position.set(-1.28, 1.72, -1.54); scene.add(deskLamp);
+  const taskSpot = new THREE.SpotLight(0xffb976, 5.2, 3.2, .58, .8, 1.8); taskSpot.position.set(-1.3, 1.70, -1.62); taskSpot.target.position.set(-.6, .95, -1.65);
+  taskSpot.castShadow = true; taskSpot.shadow.mapSize.set(512, 512); scene.add(taskSpot, taskSpot.target);
+  const emergency = new THREE.PointLight(0xda6e36, .72, 2.3, 2); emergency.position.set(-.7, 1.57, 2.18); scene.add(emergency);
+  const frontGlow = new THREE.PointLight(0xadb178, .48, 1.6, 2); frontGlow.position.set(.05, 1.43, -1.14); scene.add(frontGlow);
+  const alarm = new THREE.PointLight(0xb7190b, .12, 5, 2); alarm.position.set(1.05, 2.3, -1.95); scene.add(alarm);
+  const weathering = createWeathering(), steel = weathering.material('steel'), brass = weathering.material('rust');
+  function box(size: [number, number, number], pos: WorldPosition, material: THREE.Material) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material); mesh.position.set(...pos); mesh.castShadow = true; mesh.receiveShadow = true; scene.add(mesh); return mesh;
   }
-  function label(title: string, lines: string[], position: [number, number, number], width: number, rotationY = 0, paper = false): THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial> {
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 2), new THREE.MeshStandardMaterial({
-      map: textTexture(title, lines, paper), roughness: .96, metalness: 0,
-      emissive: paper ? 0x000000 : 0x406851, emissiveIntensity: paper ? 0 : .45,
-    })); mesh.position.set(...position); mesh.rotation.y = rotationY; scene.add(mesh); return mesh;
+  function plate(title: string, lines: string[], pos: WorldPosition, width: number, rotation = 0) {
+    const material = weathering.material('cream'); material.map = plateTexture(title, lines); material.color.setHex(0xa29a7c);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 2), material);
+    mesh.position.set(...pos); mesh.rotation.y = rotation; scene.add(mesh); return mesh;
   }
-  // Readable soft fill, warm desk pool, cooler upper room and a narrow corridor rim.
-  scene.add(new THREE.HemisphereLight(0x93c8b8, 0x172a26, 1.0));
-  scene.add(new THREE.AmbientLight(0x75968a, .35));
-  const ceilingLight = new THREE.PointLight(0xa8d4ba, 18, 8, 2); ceilingLight.position.set(0, 2.65, -1.3); scene.add(ceilingLight);
-  const deskLight = new THREE.PointLight(0xffb75c, 17, 4.7, 2); deskLight.position.set(-1.22, 1.87, -1.4); scene.add(deskLight);
-  const lampCone = new THREE.SpotLight(0xffc781, 16, 6, .7, .8, 1.5); lampCone.position.set(-1.2, 1.95, -1.4); lampCone.target.position.set(-.8, .9, -1.6); lampCone.castShadow = true; lampCone.shadow.mapSize.set(512, 512); scene.add(lampCone, lampCone.target);
-  const wallLight = new THREE.PointLight(0x538577, 10, 6, 2); wallLight.position.set(1.5, 2.25, -.9); scene.add(wallLight);
-  // Structural details remain geometry, with no external texture dependency.
-  box([8, .15, 6], [0, 3.12, 0], darkSteel);
-  for (const x of [-3.5, -2.25, 0, 2.25, 3.5]) {
-    box([.07, 3, .12], [x, 1.5, -2.87], darkSteel);
-    box([.09, .1, 6], [x, 3, 0], steel);
+  box([.25, .035, .22], [-1.35, .945, -1.96], steel); box([.027, .77, .027], [-1.35, 1.32, -1.96], brass); box([.36, .08, .23], [-1.26, 1.72, -1.83], steel);
+  const lampSurface = new THREE.MeshStandardMaterial({ color: 0x82745a, emissive: 0xe29049, emissiveIntensity: .22 }); box([.29, .015, .18], [-1.26, 1.672, -1.83], lampSurface);
+  box([.22, .22, .12], [1.05, 2.3, -2.36], steel);
+  const alarmLens = new THREE.MeshStandardMaterial({ color: 0x330604, emissive: 0xc52b0d, emissiveIntensity: .16, roughness: .38 });
+  const alarmBulb = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 8), alarmLens); alarmBulb.position.set(1.05, 2.3, -2.25); scene.add(alarmBulb);
+  for (const x of [1.01, 1.09]) box([.008, .19, .015], [x, 2.3, -2.17], steel);
+  // Exposed cable runs and a corroded cable tray break up the clean kit surfaces.
+  const rubber = weathering.material('dark');
+  for (let i = 0; i < 4; i++) {
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-2.58 + i * .045, 2.95, -2.31), new THREE.Vector3(-2.55 + i * .045, 2.20, -2.32), new THREE.Vector3(-2.45 + i * .05, .74, -2.21), new THREE.Vector3(-1.83 + i * .05, .35, -2.18)]);
+    const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, .014, 6, false), rubber); cable.castShadow = true; scene.add(cable);
   }
-  box([8, .08, .1], [0, .45, -2.87], steel);
-  box([8, .09, .12], [0, 2.68, -2.85], steel);
-  for (let i = -4; i <= 4; i++) box([.018, .01, 6], [i, .004, 0], steel);
-  for (let i = -2; i <= 2; i++) box([8, .01, .018], [0, .005, i], steel);
-  // Deep, shuttered observation window behind the desk.
-  box([3.25, 1.13, .12], [.35, 1.94, -2.85], darkSteel);
-  box([3.04, .94, .03], [.35, 1.94, -2.77], material(0x081c1d, 0x1e4039, .15));
-  for (let i = 0; i < 8; i++) box([3.04, .026, .025], [.35, 1.53 + i * .115, -2.73], steel);
-  box([.055, .94, .035], [.35, 1.94, -2.7], steel);
-  label('RELAY / 04', ['REMOTE FIELD OPERATIONS', 'WEST RIDGE   ·   EST. 1986'], [.32, 2.65, -2.76], 1.4);
-  const rulesDecal = label('NOTICE', ['VOICE ALONE IS NOT IDENTITY', 'VERIFY ALL SERVICE ORDERS'], [-2.65, 1.96, -2.77], 1.1, 0, true);
-  const warningDecal = label('ISOLATION', ['CLOSED SHUTTERS DRAIN POWER', 'ONE OPEN KEEPS THE LINK'], [2.87, 1.98, -2.77], 1.02, 0, true);
-  // A chunky monitor, warm desk lamp, receiver and tactile status keys.
-  box([.99, .64, .39], [.18, 1.4, -1.89], darkSteel);
-  box([.85, .49, .035], [.18, 1.43, -1.675], material(0x060f0d));
-  const screen = label('CARRIER 04', ['AWAITING OPERATOR', 'LINK / STANDBY', 'KEEP ONE SHUTTER OPEN'], [.18, 1.43, -1.648], .79);
-  box([.19, .17, .18], [.18, 1.04, -1.85], steel);
-  box([.49, .035, .3], [.18, .947, -1.83], steel);
-  box([.31, .03, .28], [-1.19, .936, -1.73], darkSteel);
-  box([.035, .86, .035], [-1.25, 1.36, -1.88], brass);
-  box([.4, .07, .27], [-1.17, 1.83, -1.76], darkSteel);
-  box([.34, .018, .23], [-1.17, 1.788, -1.76], orangeGlow);
-  const paper = label('SERVICE ORDER', ['CURRENT ORDER ON CONSOLE', 'VERIFY BEFORE COMPLYING', 'PRIVATE CHANNEL KEY'], [.96, .93, -1.39], .5, 0, true);
-  paper.rotation.x = -Math.PI / 2;
-  const challengePaper = label('PRIVATE KEY', ['AWAITING RADIO CALL', 'VERIFY BEFORE COMPLYING'], [-.45, .932, -1.28], .42, 0, true);
-  challengePaper.rotation.x = -Math.PI / 2; challengePaper.rotation.z = -.12;
-  box([.21, .22, .21], [1.22, 1.025, -1.93], cream);
-  box([.23, .015, .23], [1.22, 1.143, -1.93], darkSteel);
-  for (let i = 0; i < 4; i++) box([.035, .022, .035], [.65 + i * .065, .96, -1.77], i === 1 ? orangeGlow : greenGlow);
-  // Corridors, warning chevrons, service hatches and fixtures.
-  for (const side of ['left', 'right'] as const) {
-    const sign = side === 'left' ? -1 : 1;
-    corridorLamps[side].position.set(sign * 7.4, 2.3, 0); scene.add(corridorLamps[side]);
-    box([4, .08, 2.4], [sign * 6, 3.04, 0], darkSteel);
-    box([.15, 3, 2.3], [sign * 8, 1.5, 0], darkSteel);
-    for (let x = 4.7; x < 8; x += 1.25) {
-      for (const z of [-1.01, 1.01]) {
-        box([.08, 2.8, .08], [sign * x, 1.4, z], brass);
-        box([.6, .045, .04], [sign * x, .14, z * .95], side === 'left' ? orangeGlow : greenGlow);
-      }
+  box([2.35, .075, .12], [-.35, .60, -2.33], brass);
+  // Wall ribs project into the shelter; mount signage in front of their faces.
+  const titlePlate = plate('HUSH / 04', ['EMERGENCY OBSERVATION', 'FOREST RESEARCH DIVISION'], [.1, 2.38, -2.32], 1.15);
+  const protocolPlate = plate('CONTAINMENT PROTOCOL', ['SILENCE / CALIBRATE', 'REPAIR / REDIRECT', 'COMPLETE THE BROADCAST'], [-1.85, 1.66, -2.32], .8);
+  const cameraPlate = plate('SECURITY FEEDS', ['REMOTE FACILITY CAMERAS', 'LIMITED COVERAGE'], [.75, 1.95, -2.32], .73);
+  const sensorPlate = plate('CAMERA INPUT', ['OPTIONAL PERSONAL SENSOR', 'NOT A SECURITY FEED'], [1.9, 2.16, -2.32], .65);
+  const doorPlate = plate('SEALED SHELTER', ['DO NOT ATTEMPT TO OPEN', 'USE EMERGENCY QUIET'], [-1.75, 2.2, 2.255], .70, Math.PI);
+  const switchPlate = plate('EMERGENCY', ['Q / QUIET', 'HOLD F / RESTORE'], [-.7, 1.93, 2.47], .56, Math.PI);
+  const terminalDisplay = createDisplay(), proximityDisplay = createDisplay(512, 384), cctvCaption = createDisplay(1024, 576, false);
+  const models = new Map<ModelName, THREE.Object3D>(), mixers: THREE.AnimationMixer[] = [], orphanMaterials: THREE.Material[] = [];
+  const faultActions: THREE.AnimationAction[] = [], faultLamps: THREE.MeshStandardMaterial[] = [];
+  let machineMixer: THREE.AnimationMixer | null = null, doorMixer: THREE.AnimationMixer | null = null, switchMixer: THREE.AnimationMixer | null = null, creatureMixer: THREE.AnimationMixer | null = null;
+  let doorImpact: THREE.AnimationAction | null = null, doorDent: THREE.AnimationAction | null = null, switchAction: THREE.AnimationAction | null = null;
+  let previousFaults = '', previousPower: RenderState['power'] | null = null, lostAt: number | null = null, lastScareId: string | number | null = null, lastStateTime = 0, wasInspecting = false;
+  let yaw = 0, pitch = 0, dragging = false, lastX = 0, lastY = 0, downX = 0, downY = 0, moved = false;
+  const interactions = new Set<(station: Station) => void>(), raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+  const seatedPosition = new THREE.Vector3(.05, 1.62, .60), desiredPosition = new THREE.Vector3(), desiredTarget = new THREE.Vector3();
+  const aim = camera.clone();
+  // This scene never shares its creature with the shelter scene.
+  const cctvScene = new THREE.Scene(), cctvCamera = new THREE.OrthographicCamera(0, 1, 1, 0, .01, 20);
+  cctvCamera.position.set(0, 0, 5); cctvCamera.lookAt(0, 0, 0);
+  const cctvTarget = new THREE.WebGLRenderTarget(1024, 576, { depthBuffer: true }); cctvTarget.texture.colorSpace = THREE.SRGBColorSpace;
+  const feedImages: Partial<Record<CameraFeed | 'SEALED' | 'OFFLINE', THREE.Texture>> = {};
+  let cctvCreature: THREE.Object3D | null = null, lastDisplay = -Infinity, lastFeed: CameraFeed | null = null;
+  const overlayMaterial = new THREE.MeshBasicMaterial({ map: cctvCaption.texture, transparent: true, depthTest: false, toneMapped: false });
+  const cctvOverlay = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), overlayMaterial); cctvOverlay.position.set(.5, .5, 2); cctvOverlay.renderOrder = 100; cctvScene.add(cctvOverlay);
+  const decals = [['title', titlePlate], ['protocol_card', protocolPlate], ['camera_notice', cameraPlate], ['sensor_notice', sensorPlate], ['door_label', doorPlate], ['emergency_switch', switchPlate]] as const;
+  const extraTextures: THREE.Texture[] = [], loader = new THREE.TextureLoader();
+  const visualsReady = Promise.all([
+    ...decals.map(async ([name, mesh]) => { const texture = await loader.loadAsync(`/assets/decals/${name}.svg`); if (disposed) { texture.dispose(); return; } texture.colorSpace = THREE.SRGBColorSpace; mesh.material.map?.dispose(); mesh.material.map = texture; }),
+    ...([['A', 'cam_a_clearing'], ['B', 'cam_b_path'], ['C', 'cam_c_containment'], ['SEALED', 'cam_c_sealed']] as const).map(async ([feed, name]) => { const texture = await loader.loadAsync(`/assets/cameras/${name}.png`); if (disposed) { texture.dispose(); return; } texture.colorSpace = THREE.SRGBColorSpace; feedImages[feed] = texture; extraTextures.push(texture); }),
+    loader.loadAsync('/assets/decals/feed_offline.svg').then(texture => { if (disposed) texture.dispose(); else { texture.colorSpace = THREE.SRGBColorSpace; feedImages.OFFLINE = texture; extraTextures.push(texture); } }),
+  ]);
+  const modelsReady = loadModels(name => diagnostics.loadedAssets.push(name)).then(assets => {
+    if (disposed) { Object.values(assets).forEach(asset => disposeObject(asset.scene)); return; }
+    const placement: Record<Exclude<ModelName, 'creature_cctv'>, [WorldPosition, number]> = {
+      shelter: [[0, 0, 0], 0], sealed_door: [[-1.75, 0, 2.39], Math.PI], workdesk: [[0, 0, -1.8], 0], terminal: [[-.62, .92, -1.8], 0], security_monitor: [[.72, .92, -1.8], 0], proximity_detector: [[1.85, 1.60, -2.35], 0], radio_speaker: [[-1.30, .92, -1.8], 0], machine_rack: [[2.67, 0, .05], -Math.PI / 2], emergency_switch: [[-.70, 1.35, 2.36], Math.PI],
+    };
+    for (const [name, asset] of Object.entries(assets) as [ModelName, typeof assets.shelter][]) {
+      models.set(name, asset.scene);
+      if (name !== 'creature_cctv') { const [pos, rotation] = placement[name]; asset.scene.position.set(...pos); asset.scene.rotation.y = rotation; weathering.apply(asset.scene); scene.add(asset.scene); }
+      if (name === 'terminal') asset.scene.userData.lockInStation = 'terminal';
+      if (name === 'security_monitor') asset.scene.userData.lockInStation = 'cameras';
+      if (name === 'machine_rack' || name === 'emergency_switch' || name === 'proximity_detector') asset.scene.userData.lockInStation = 'equipment';
+      asset.animations.forEach(clip => diagnostics.animationClips.push(`${name}.${clip.name}`));
     }
-    for (let i = 0; i < 5; i++) {
-      const strip = box([.018, .18, .17], [sign * 3.87, .17 + i * .37, .91], orangeGlow);
-      strip.rotation.x = -.35;
+    function replaceMaterial(mesh: THREE.Mesh, next: THREE.Material) { orphanMaterials.push(...(Array.isArray(mesh.material) ? mesh.material : [mesh.material])); mesh.material = next; }
+    function assign(model: ModelName, node: string, texture: THREE.Texture) { const mesh = models.get(model)!.getObjectByName(node) as THREE.Mesh; if (!mesh?.isMesh) throw new Error(`Missing display ${model}/${node}`); replaceMaterial(mesh, new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })); }
+    assign('terminal', 'terminal_screen', terminalDisplay.texture); assign('proximity_detector', 'proximity_screen', proximityDisplay.texture);
+    cctvTarget.texture.flipY = false; assign('security_monitor', 'security_screen', cctvTarget.texture);
+    machineMixer = new THREE.AnimationMixer(assets.machine_rack.scene); mixers.push(machineMixer);
+    for (let i = 0; i < 4; i++) {
+      const action = machineMixer.clipAction(assets.machine_rack.animations.find(value => value.name === `fault_0${i + 1}`)!); action.play(); action.paused = true; faultActions.push(action);
+      const lamp = assets.machine_rack.scene.getObjectByName(`unit_0${i + 1}_fault_lamp`) as THREE.Mesh;
+      const material = (lamp.material as THREE.MeshStandardMaterial).clone(); replaceMaterial(lamp, material); faultLamps.push(material);
     }
-    label(side === 'left' ? '01 / SERVICE' : '02 / UPLINK', [side === 'left' ? 'CARTRIDGE RECEIVING HATCH' : 'FIELD COUPLER ACCESS', 'SWEEP BEFORE OPENING'], [sign * 3.86, 2.62, 0], 1.52, sign === -1 ? Math.PI / 2 : -Math.PI / 2);
-    box([.16, .64, .5], [sign * 3.85, 1.15, -1.52], steel);
-    label('CONTROL', ['SHUTTER / FIELD', 'REMOTE ACTUATION'], [sign * 3.75, 1.2, -1.51], .43, sign === -1 ? Math.PI / 2 : -Math.PI / 2);
-    const flood = new THREE.SpotLight(0xf6e2ae, 0, 12, .43, .65, 1.3);
-    flood.position.set(sign * 3.1, 1.65, .6); flood.target.position.set(sign * 7.8, 1.2, 0); scene.add(flood, flood.target); floodlights[side] = flood;
-  }
-  label('RELAY / AUXILIARY', ['CARTRIDGE SLOT 02', 'INSERT → CONFIRM'], [0, 2.31, 2.84], 1.5, Math.PI);
-  const titleDecal = label('NIGHT RELAY', ['FIELD OPERATIONS', 'KEEP THE CHANNEL OPEN'], [-2.34, 1.9, 2.84], 1.2, Math.PI, true);
-  for (const x of [-2.4, 2.4]) {
-    box([.11, 2.3, .13], [x, 1.5, 2.8], steel);
-    box([.07, 2.2, .07], [x + .15, 1.5, 2.8], brass);
-  }
-  // Dust is static and subtle: no strobes or camera shake.
-  const dustGeometry = new THREE.BufferGeometry(); const positions = new Float32Array(135);
-  for (let i = 0; i < 45; i++) {
-    positions[i * 3] = Math.sin(i * 91.15) * 3.7;
-    positions[i * 3 + 1] = .3 + (Math.sin(i * 5.26) + 1) * 1.3;
-    positions[i * 3 + 2] = Math.cos(i * 73.24) * 2.5;
-  }
-  dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const dustMaterial = new THREE.PointsMaterial({ color: 0xd3c9a4, size: .009, transparent: true, opacity: .22, depthWrite: false });
-  scene.add(new THREE.Points(dustGeometry, dustMaterial));
-
-  const textureLoader = new THREE.TextureLoader();
-  const decalReady = Promise.all([
-    ...([['rules_card', rulesDecal], ['warning', warningDecal], ['title', titleDecal]] as const).map(async ([name, mesh]) => {
-      const texture = await textureLoader.loadAsync(`/assets/decals/${name}.svg`);
-      if (disposed) { texture.dispose(); return; }
-      texture.colorSpace = THREE.SRGBColorSpace; mesh.material.map?.dispose(); mesh.material.map = texture;
-    }),
-    ...(['work_order', 'challenge_card'] as const).map(async name => {
-      const texture = await textureLoader.loadAsync(`/assets/decals/${name}.svg`);
-      if (!disposed) { cardTemplates[name] = texture.image as CanvasImageSource; lastCard = ''; }
-      texture.dispose();
-    }),
-  ]).catch((error: unknown) => {
-    diagnostics.error = error instanceof Error ? error.message : String(error);
-    throw error;
+    doorMixer = new THREE.AnimationMixer(assets.sealed_door.scene); mixers.push(doorMixer);
+    doorImpact = doorMixer.clipAction(assets.sealed_door.animations.find(value => value.name === 'impact')!); doorImpact.setLoop(THREE.LoopOnce, 1); doorImpact.clampWhenFinished = true;
+    doorDent = doorMixer.clipAction(assets.sealed_door.animations.find(value => value.name === 'dent')!); doorDent.setLoop(THREE.LoopOnce, 1); doorDent.clampWhenFinished = true;
+    switchMixer = new THREE.AnimationMixer(assets.emergency_switch.scene); mixers.push(switchMixer);
+    switchAction = switchMixer.clipAction(assets.emergency_switch.animations.find(value => value.name === 'flip_off')!); switchAction.play(); switchAction.paused = true;
+    cctvCreature = new THREE.Group(); cctvCreature.add(assets.creature_cctv.scene); cctvScene.add(cctvCreature); cctvCreature.visible = false;
+    assets.creature_cctv.scene.traverse(object => { if (object instanceof THREE.Mesh) replaceMaterial(object, new THREE.MeshBasicMaterial({ color: 0x07110c })); });
+    creatureMixer = new THREE.AnimationMixer(assets.creature_cctv.scene); mixers.push(creatureMixer); creatureMixer.clipAction(assets.creature_cctv.animations.find(value => value.name === 'idle')!).play();
+    previousFaults = '';
   });
-  const modelsReady = loadModels(name => diagnostics.loadedAssets.push(name)).then(models => {
-    if (disposed) { for (const model of Object.values(models)) disposeObject(model.scene); return; }
-    scene.add(models.booth.scene);
-    models.console.scene.position.set(.1, .92, -1.37); scene.add(models.console.scene);
-    models.radio.scene.position.set(-.83, .92, -1.6); scene.add(models.radio.scene);
-    models.relay.scene.position.set(0, .96, 2.6); models.relay.scene.rotation.y = Math.PI; scene.add(models.relay.scene);
-    models.fuse.scene.position.set(-3.63, .9, -.52); scene.add(models.fuse.scene);
-    for (const side of ['left', 'right'] as const) {
-      const sign = side === 'left' ? -1 : 1;
-      const shutter = side === 'left' ? models.shutter.scene : cloneModel(models.shutter.scene);
-      shutter.position.set(sign * 4, 0, 0);
-      // The authored ribs/stripe sit on -X; face them inward on each side.
-      shutter.rotation.y = sign === -1 ? Math.PI : 0; scene.add(shutter);
-      const mixer = new THREE.AnimationMixer(shutter); mixers.push(mixer);
-      const clip = models.shutter.animations.find(candidate => candidate.name === 'open');
-      if (!clip) throw new Error('Shutter GLB is missing its open clip');
-      const action = mixer.clipAction(clip); action.play(); action.paused = true;
-      shutters[side] = { mixer, action, progress: 1 };
-      const light = side === 'left' ? models.floodlight.scene : cloneModel(models.floodlight.scene);
-      light.position.set(sign * 3.45, 0, .69); light.rotation.y = sign * Math.PI / 2; scene.add(light);
-      diagnostics.animationClips.push(`shutter.${side}.open`);
-    }
-    mimic = new THREE.Group(); mimic.add(models.mimic.scene); scene.add(mimic); mimic.visible = false;
-    mimicMixer = new THREE.AnimationMixer(models.mimic.scene); mixers.push(mimicMixer);
-    for (const clip of models.mimic.animations) {
-      mimicActions[clip.name] = mimicMixer.clipAction(clip);
-      diagnostics.animationClips.push(`mimic.${clip.name}`);
-    }
-    mimicActions.idle?.play();
-  }).catch((error: unknown) => {
-    diagnostics.error = error instanceof Error ? error.message : String(error);
-    throw error;
-  });
-  const ready = Promise.all([modelsReady, decalReady]).then(() => undefined);
-
-  function resize(): void {
-    if (disposed) return;
-    const width = Math.max(container.clientWidth, 1), height = Math.max(container.clientHeight, 1);
-    camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
+  const ready = Promise.all([modelsReady, visualsReady]).then(() => undefined).catch((error: unknown) => { diagnostics.error = error instanceof Error ? error.message : String(error); throw error; });
+  function drawCctv(state: RenderState) {
+    const feed = state.cameraFeed ?? 'A', powered = state.power === 'on', sealed = state.status === 'won'; diagnostics.cameraFeed = feed;
+    cctvScene.background = powered ? (feedImages[feed === 'C' && sealed ? 'SEALED' : feed] ?? new THREE.Color(0x09110c)) : (feedImages.OFFLINE ?? new THREE.Color(0x020705));
+    const corruption = scareStrength(state.time, state.scare, reducedMotion, state.softScares);
+    const projection = powered && corruption < .3 ? projectCreature(feed, state.creature.position, sealed) : null; diagnostics.silhouetteVisible = !!projection;
+    if (cctvCreature) { cctvCreature.visible = !!projection; if (projection) { cctvCreature.position.set(projection.x, 1 - projection.y, 0); cctvCreature.scale.setScalar(projection.scale); } }
+    drawCameraOverlay(cctvCaption, state, corruption, reducedMotion);
+    renderer.setRenderTarget(cctvTarget); renderer.render(cctvScene, cctvCamera); renderer.setRenderTarget(null);
   }
+  function resize() { if (disposed) return; const w = Math.max(1, container.clientWidth), h = Math.max(1, container.clientHeight); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
   const observer = new ResizeObserver(resize); observer.observe(container); resize();
-  function pointerDown(event: PointerEvent): void {
-    if (event.button !== 0) return; dragging = true; previousX = event.clientX; previousY = event.clientY;
-    renderer.domElement.setPointerCapture(event.pointerId); renderer.domElement.style.cursor = 'grabbing';
+  function stationAt(x: number, y: number): Station | null {
+    const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((x - bounds.left) / bounds.width * 2 - 1, -(y - bounds.top) / bounds.height * 2 + 1);
+    raycaster.setFromCamera(pointer, camera); return hitStation(raycaster, scene);
   }
-  function pointerMove(event: PointerEvent): void {
-    if (!dragging) return;
-    yawOffset = THREE.MathUtils.clamp(yawOffset - (event.clientX - previousX) * .003, -.8, .8);
-    pitchOffset = THREE.MathUtils.clamp(pitchOffset - (event.clientY - previousY) * .0024, -.48, .48);
-    previousX = event.clientX; previousY = event.clientY;
+  function down(event: PointerEvent) { if (event.button !== 0) return; dragging = true; moved = false; downX = lastX = event.clientX; downY = lastY = event.clientY; renderer.domElement.setPointerCapture(event.pointerId); renderer.domElement.style.cursor = 'grabbing'; }
+  function move(event: PointerEvent) {
+    if (!dragging) { diagnostics.hoveredStation = stationAt(event.clientX, event.clientY); renderer.domElement.style.cursor = diagnostics.hoveredStation ? 'pointer' : 'grab'; return; }
+    if (Math.hypot(event.clientX - downX, event.clientY - downY) > 6) moved = true;
+    if (moved) { yaw = THREE.MathUtils.clamp(yaw - (event.clientX - lastX) * .003, -.75, .75); pitch = THREE.MathUtils.clamp(pitch - (event.clientY - lastY) * .0025, -.48, .45); }
+    lastX = event.clientX; lastY = event.clientY;
   }
-  function pointerUp(): void { dragging = false; renderer.domElement.style.cursor = 'grab'; }
-  renderer.domElement.addEventListener('pointerdown', pointerDown);
-  renderer.domElement.addEventListener('pointermove', pointerMove);
-  renderer.domElement.addEventListener('pointerup', pointerUp);
-  renderer.domElement.addEventListener('pointercancel', pointerUp);
-  renderer.domElement.addEventListener('lostpointercapture', pointerUp);
-
+  function up(event: PointerEvent) {
+    const clicked = dragging && !moved && event.type === 'pointerup' && Math.hypot(event.clientX - downX, event.clientY - downY) <= 6;
+    dragging = false; renderer.domElement.style.cursor = 'grab';
+    if (clicked) { const selected = stationAt(event.clientX, event.clientY); if (selected) interactions.forEach(callback => callback(selected)); }
+  }
+  renderer.domElement.addEventListener('pointerdown', down); renderer.domElement.addEventListener('pointermove', move); renderer.domElement.addEventListener('pointerup', up); renderer.domElement.addEventListener('pointercancel', up); renderer.domElement.addEventListener('lostpointercapture', up);
   return {
     ready, diagnostics,
-    setStation(station, motion = false) {
-      reducedMotion = motion;
-      if (station === desiredStation) return;
-      desiredStation = station; yawOffset = 0; pitchOffset = 0;
-    },
+    setStation(next, reduced = false) { reducedMotion = reduced; if (next !== station) { station = next; yaw = 0; pitch = 0; } },
+    onInteract(callback) { interactions.add(callback); return () => { interactions.delete(callback); }; },
     update(state, delta) {
-      if (disposed) return;
-      const dt = state.paused ? 0 : Math.min(.1, Math.max(0, delta));
-      targetCamera.position.copy(camera.position); targetCamera.lookAt(STATION_TARGETS[desiredStation]);
-      const rotation = new THREE.Euler().setFromQuaternion(targetCamera.quaternion, 'YXZ');
-      rotation.y += yawOffset; rotation.x += pitchOffset; targetQuaternion.setFromEuler(rotation);
-      camera.quaternion.slerp(targetQuaternion, reducedMotion ? 1 : 1 - Math.exp(-delta * 9));
-      for (const side of ['left', 'right'] as const) {
-        const shutter = shutters[side];
-        if (shutter) {
-          const open = state.doors[side] ? 1 : 0;
-          shutter.progress += THREE.MathUtils.clamp(open - shutter.progress, -dt * 1.3, dt * 1.3);
-          // Only the supplied clip translates shutter_leaf. No second leaf/root offset.
-          shutter.action.time = Math.min(.79999, shutter.progress * .8); shutter.mixer.update(0);
-        }
-        const safe = Math.max(0, (state.safeUntil?.[side] ?? 0) - state.time);
-        const flood = floodlights[side]; if (flood) flood.intensity = safe > 0 ? 38 * Math.min(1, safe / 2) : 0;
-        const threat = state.creature?.side === side && state.creature.phase === 'threshold';
-        corridorLamps[side].color.setHex(threat ? 0xe69a55 : side === 'left' ? 0xffbc76 : 0x77d4c0);
+      if (disposed) return; const dt = state.paused ? 0 : Math.max(0, Math.min(delta, .1));
+      const inspection = state.inspection && (station === 'terminal' || station === 'cameras');
+      if (!!inspection !== wasInspecting) { yaw = 0; pitch = 0; wasInspecting = !!inspection; }
+      desiredPosition.copy(seatedPosition); desiredTarget.copy(STATION_TARGETS[station]);
+      // On squarer landscape screens the monitor view slides right so the CCTV feed clears the docked panel.
+      if (inspection) { const x = station === 'terminal' ? -.62 : .72 + (camera.aspect >= 1.2 && camera.aspect < 1.5 ? .1 : 0); desiredPosition.set(x, 1.47, -.32); desiredTarget.set(x, 1.33, -1.66); }
+      camera.position.lerp(desiredPosition, reducedMotion ? 1 : 1 - Math.exp(-delta * 5));
+      aim.position.copy(camera.position); aim.lookAt(desiredTarget); const angles = new THREE.Euler().setFromQuaternion(aim.quaternion, 'YXZ'); angles.y += yaw; angles.x += pitch;
+      const scare = scareStrength(state.time, state.scare, reducedMotion, state.softScares);
+      if (!reducedMotion && state.scare?.kind !== 'monitor') angles.z += Math.sin(Math.max(0, state.time - (state.scare?.at ?? 0)) * 32) * scare * .024;
+      camera.quaternion.slerp(new THREE.Quaternion().setFromEuler(angles), reducedMotion ? 1 : 1 - Math.exp(-delta * 9));
+      diagnostics.listenerYaw = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').y;
+      diagnostics.listenerPosition = camera.position.toArray() as WorldPosition;
+      const targetFov = inspection ? 43 : station === 'cameras' ? 48 : station === 'equipment' ? 67 : 63; camera.fov += (targetFov - camera.fov) * (reducedMotion ? 1 : 1 - Math.exp(-delta * 8)); camera.updateProjectionMatrix();
+      const powered = state.power === 'on', light = powered ? 1 : state.power === 'quiet' ? .045 : .012;
+      const red = alarmIntensity(state.time, state.alarm, reducedMotion) * (state.softScares ? .7 : 1);
+      hemisphere.intensity = powered ? .21 : .055; fill.intensity = powered ? .065 : .018; overhead.intensity = 1.15 * light; deskLamp.intensity = 3.2 * light; taskSpot.intensity = 5.2 * light; frontGlow.intensity = powered ? .48 : 0; lampSurface.emissiveIntensity = powered ? .22 : 0;
+      alarm.intensity = .10 + red * 4.2; alarmLens.emissiveIntensity = .16 + red * 1.1;
+      if (switchAction && switchMixer) { switchAction.time = powered ? 0 : .34999; switchMixer.update(0); }
+      const active = powered ? state.faults : [], faultKey = `${active.join(',')}|${reducedMotion}`;
+      if (faultKey !== previousFaults) { previousFaults = faultKey; for (let i = 0; i < 4; i++) {
+        const action = faultActions[i]; if (action) { action.paused = !active.includes(i) || reducedMotion; if (action.paused) action.time = 0; }
+        const lamp = faultLamps[i]; if (lamp) { lamp.color.setHex(active.includes(i) ? 0xbb8241 : 0x233528); lamp.emissive.setHex(active.includes(i) ? 0xdf8531 : 0); lamp.emissiveIntensity = active.includes(i) ? .75 : 0; }
+      } }
+      machineMixer?.update(dt);
+      if (state.status === 'lost' && lostAt === null) { lostAt = state.time; doorImpact?.stop(); doorDent?.reset().play(); }
+      if (state.status !== 'lost' && lostAt !== null) { lostAt = null; doorDent?.stop(); doorImpact?.stop(); }
+      if (state.time < lastStateTime) lastScareId = null; lastStateTime = state.time;
+      if (state.scare && state.scare.id !== lastScareId) {
+        lastScareId = state.scare.id;
+        if (scare > 0 && state.scare.kind === 'impact' && !reducedMotion && state.status !== 'lost') { doorImpact?.reset().setEffectiveWeight(state.softScares ? .35 : 1).play(); }
       }
-      if (mimic && state.creature) {
-        const creature = state.creature, sign = creature.side === 'left' ? -1 : 1;
-        const age = Math.max(0, state.time - (creature.phaseStarted ?? state.time));
-        mimic.visible = !!creature.side && ['approach', 'threshold', 'retreat'].includes(creature.phase);
-        let distance = 7.7;
-        if (creature.phase === 'approach') distance -= 3.2 * THREE.MathUtils.clamp(creature.progress ?? age / 8, 0, 1);
-        if (creature.phase === 'threshold') distance = 4.5;
-        if (creature.phase === 'retreat') distance = 4.5 + 3.2 * Math.min(1, age / 4);
-        mimic.position.set(sign * distance, 0, 0); mimic.rotation.y = sign === -1 ? Math.PI / 2 : -Math.PI / 2;
-        const clip = creature.phase === 'threshold' ? 'reach' : creature.phase === 'approach' && age < 3 ? 'listen' : 'idle';
-        if (clip !== mimicClip) { mimicActions[mimicClip]?.fadeOut(.4); mimicActions[clip]?.reset().fadeIn(.4).play(); mimicClip = clip; }
-      }
-      mimicMixer?.update(dt);
-      const cardKey = `${state.task}|${state.orderId}|${state.challenge?.prompt}|${state.challenge?.response}`;
-      if (cardKey !== lastCard) {
-        lastCard = cardKey; paper.material.map?.dispose();
-        paper.material.map = textTexture(state.orderId ?? 'SERVICE ORDER', [`OPERATION 0${state.task ?? 1} / ACTIVE`, 'CONSOLE IS SOURCE OF TRUTH', 'VERIFY BEFORE COMPLYING'], true, cardTemplates.work_order);
-        challengePaper.material.map?.dispose();
-        challengePaper.material.map = textTexture('PRIVATE KEY', state.challenge ? [`CHALLENGE: ${state.challenge.prompt}`, `RESPONSE: ${state.challenge.response}`, 'ROTATES EVERY CALL'] : ['AWAITING RADIO CALL'], true, cardTemplates.challenge_card);
-      }
-      const screenKey = `${state.task}|${Math.floor((state.power ?? 100) / 5)}|${state.doors.left}|${state.doors.right}`;
-      if (screenKey !== lastScreen) {
-        lastScreen = screenKey; screen.material.map?.dispose();
-        screen.material.map = textTexture('CARRIER / 04', [`OPERATION 0${state.task ?? 1}  /  ACTIVE`, state.doors.left || state.doors.right ? 'FIELD LINK  [ AVAILABLE ]' : 'FIELD LINK  [ ISOLATED ]', `RESERVE      ${Math.round(state.power ?? 100)}%`]);
-      }
-      renderer.render(scene, camera);
+      // A committed loss freezes simulation; its cosmetic dent can still settle.
+      doorMixer?.update(state.status === 'lost' ? Math.max(0, Math.min(delta, .1)) : dt); if (!reducedMotion) creatureMixer?.update(dt);
+      if (state.time < lastDisplay || state.time - lastDisplay >= .08 || state.paused || previousPower !== state.power || lastFeed !== state.cameraFeed) { drawTerminal(terminalDisplay, state); drawProximity(proximityDisplay, state); drawCctv(state); lastDisplay = state.time; lastFeed = state.cameraFeed ?? 'A'; }
+      previousPower = state.power; renderer.render(scene, camera);
     },
     dispose() {
-      if (disposed) return; disposed = true; observer.disconnect();
-      renderer.domElement.removeEventListener('pointerdown', pointerDown);
-      renderer.domElement.removeEventListener('pointermove', pointerMove);
-      renderer.domElement.removeEventListener('pointerup', pointerUp);
-      renderer.domElement.removeEventListener('pointercancel', pointerUp);
-      renderer.domElement.removeEventListener('lostpointercapture', pointerUp);
+      if (disposed) return; disposed = true; observer.disconnect(); interactions.clear();
+      renderer.domElement.removeEventListener('pointerdown', down); renderer.domElement.removeEventListener('pointermove', move); renderer.domElement.removeEventListener('pointerup', up); renderer.domElement.removeEventListener('pointercancel', up); renderer.domElement.removeEventListener('lostpointercapture', up);
       for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()); }
-      dustGeometry.dispose(); dustMaterial.dispose(); lampCone.shadow.dispose(); disposeObject(scene);
-      renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
+      disposeObject(scene); disposeObject(cctvScene); new Set(orphanMaterials).forEach(material => material.dispose()); extraTextures.forEach(texture => texture.dispose());
+      terminalDisplay.texture.dispose(); proximityDisplay.texture.dispose(); cctvCaption.texture.dispose(); cctvTarget.dispose(); weathering.dispose(); taskSpot.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     },
   };
 }

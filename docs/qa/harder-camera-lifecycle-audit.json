@@ -1,0 +1,46 @@
+{
+  "scope": "Read-only review of App, Setup, CameraPanel and JumpScare lifecycle; isolated SensorController mock reproduction.",
+  "hardwareCaptureTested": false,
+  "liveProviderRequested": false,
+  "mockReproduction": {
+    "setup": "Controller previously in Presage mode; mocked SDK stop waits on an explicitly released promise; mocked native availability returns unavailable without accessing hardware or a provider.",
+    "before": {
+      "actions": [
+        "start(manual)",
+        "resume() before SDK retirement completes"
+      ],
+      "observed": {
+        "requestedStop": "manual",
+        "finalSource": "presage",
+        "finalStatus": "unavailable",
+        "nativeAvailabilityChecksAfterStop": 1
+      }
+    },
+    "after": {
+      "actions": [
+        "start(manual)",
+        "start(manual, true) using current preference before SDK retirement completes"
+      ],
+      "observed": {
+        "finalSource": "manual",
+        "finalStatus": "manual",
+        "nativeAvailabilityChecksAfterStop": 0
+      }
+    },
+    "interpretation": "The previous resume call read the controller old mode while manual shutdown was pending. Resuming from current application preferences preserves the explicit stop request."
+  },
+  "readOnlyVerifiedFixes": [
+    "Mount-level visibility handler stops capture in setup, intro and gameplay, and removes its listener on unmount.",
+    "A run created while document.hidden starts paused and does not start capture.",
+    "Gameplay resume starts the current prefsRef sensing mode rather than the controller potentially retiring mode.",
+    "Camera-dialog Escape handling precedes the form-field keyboard guard.",
+    "Selected camera device is stored in App and passed to both setup and in-game CameraPanel instances.",
+    "Camera settings reject ended runs; starting a run and returning to menu reset cameraOpen.",
+    "Normal JumpScare timer cleanup and result-delay cleanup remain present across restart/unmount."
+  ],
+  "limitations": [
+    "The isolated mock verifies asynchronous mode selection only; it does not establish webcam permission, physical track shutdown, native SDK processing or successful pulse capture.",
+    "The patch review was read-only. Browser and hardware verification are separate evidence.",
+    "This ad-hoc reproduction is not included in the automated test count."
+  ]
+}

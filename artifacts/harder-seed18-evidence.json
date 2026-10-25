@@ -1,0 +1,17 @@
+{
+  "passed": false,
+  "url": "http://127.0.0.1:5180",
+  "seed": 18,
+  "checks": [],
+  "errors": [
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "failedResources": [
+    {
+      "url": "http://127.0.0.1:5180/src/ui/App.tsx",
+      "status": 500
+    }
+  ],
+  "failure": "Error: expect(locator).toBeEnabled() failed\n\nLocator: getByRole('button', { name: 'Begin with guidance' })\nExpected: enabled\nTimeout: 20000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeEnabled\" getByRole('button', { name: 'Begin with guidance' }) with timeout 20000ms\n  - waiting for getByRole('button', { name: 'Begin with guidance' })\n",
+  "visibleTextAtFailure": ""
+}

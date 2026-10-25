@@ -14,3 +14,11 @@ export async function authorize(ctx: GenericQueryCtx<DataModel>, sessionId: Gene
   if (hash !== (judge ? session.judgeHash : session.ownerHash)) throw new Error('Session unavailable');
   return session;
 }
+
+/** Expiry ends reading/writing/provider access, but must not prevent erasure.
+ * This helper is used only by sessions:remove and never accepts judge access. */
+export async function authorizeOwnerDeletion(ctx: GenericQueryCtx<DataModel>, sessionId: GenericId<'sessions'>, capability: string) {
+  const session = await ctx.db.get(sessionId);
+  if (!session || await hashCapability(capability) !== session.ownerHash) throw new Error('Session unavailable');
+  return session;
+}

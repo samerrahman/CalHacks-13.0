@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-24T06:52:58.274Z",
+  "scope": "Local Vite API route; playback proof separate",
+  "status": "passed",
+  "httpStatus": 200,
+  "localStatus": {
+    "desktop": false,
+    "presage": false,
+    "offline": false,
+    "gemini": true,
+    "elevenlabs": true,
+    "convex": false,
+    "reasons": [
+      "Local development provider bridge",
+      "Live Presage sensing requires Electron"
+    ]
+  },
+  "authoredLineId": "FIRST_APPROACH",
+  "caption": "I can hear you working.",
+  "source": "elevenlabs",
+  "latencyMs": 436,
+  "providerRequestId": "UhUlbL8UwP9bFg5BfIfE",
+  "audioBytes": 22195,
+  "reason": null
+}

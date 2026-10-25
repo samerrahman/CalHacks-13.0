@@ -1,0 +1,101 @@
+{
+  "configuredModel": "gemini-3.5-flash-lite",
+  "application": "LOCK IN",
+  "checkedAt": "2026-10-24T06:10:45.184Z",
+  "method": "Actual Electron game, visible manual controls, sanitized judge DOM",
+  "cameraRequested": false,
+  "traceSharingEnabled": false,
+  "status": "passed",
+  "errors": [],
+  "configured": {
+    "desktop": true,
+    "offline": false,
+    "presage": true,
+    "gemini": true,
+    "elevenlabs": true,
+    "convex": true,
+    "reasons": []
+  },
+  "visibilityPausesResumed": 0,
+  "quietResponses": 1,
+  "safeRestores": 1,
+  "judge": {
+    "providers": {
+      "GEMINI": "LIVE · 928ms · applied",
+      "ELEVENLABS": "LIVE · 475ms",
+      "PRESAGE": "PULSE INPUT OFF · NEUTRAL",
+      "CONVEX": "Trace sharing off"
+    },
+    "events": [
+      {
+        "time": "22.3s",
+        "identity": "e10 / DIRECTOR_APPLIED",
+        "detail": "GEMINI WAIT NONE"
+      },
+      {
+        "time": "21.3s",
+        "identity": "e9 / DIRECTOR_REQUESTED",
+        "detail": ""
+      },
+      {
+        "time": "21.3s",
+        "identity": "e8 / RESTORED",
+        "detail": "CLEAR"
+      },
+      {
+        "time": "10.2s",
+        "identity": "e5 / QUIET_ENTERED",
+        "detail": ""
+      },
+      {
+        "time": "0.1s",
+        "identity": "e3 / WRONG_INPUT",
+        "detail": "FAULT"
+      }
+    ],
+    "tactic": "Tactic: WAIT → NONEOutcome: GEMINI · WAITEvidence: e8",
+    "audio": {
+      "status": "ready",
+      "loadedEffects": [
+        "relay_confirm",
+        "door_slam",
+        "fault_rattle",
+        "sequence_tone_3",
+        "wall_breath",
+        "forest_run",
+        "intro_alarm",
+        "power_restart",
+        "radio_chime",
+        "sequence_tone_2",
+        "fault_silenced",
+        "monitor_interrupt",
+        "sequence_tone_1",
+        "machine_mistake",
+        "blackout",
+        "terminal_press",
+        "breach_impact",
+        "containment_success",
+        "lure_heartbeat",
+        "room_hum",
+        "breach_warning",
+        "radio_static",
+        "lure_transmit",
+        "sequence_tone_4",
+        "wall_scrape",
+        "steps_approaching",
+        "steps_receding"
+      ],
+      "speech": "idle",
+      "error": null,
+      "decodedSpeech": 1,
+      "startedSpeech": 1,
+      "playbackErrors": 0,
+      "contextState": "running"
+    }
+  },
+  "observedRequestToOutcomeMs": 812,
+  "providerLatencyMs": 928,
+  "speechGenerated": true,
+  "speechPlaybackVerified": true,
+  "reason": "Real LOCK IN proposal accepted by actual reducer; manual sensing, no camera or shared trace"
+}

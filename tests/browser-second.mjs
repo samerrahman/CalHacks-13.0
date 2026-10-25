@@ -1,60 +1,41 @@
-import {chromium,expect} from '@playwright/test';
-import {writeFile} from 'node:fs/promises';
-const browser=await chromium.launch({channel:'chrome',headless:true});
-const errors=[],results=[];
-try{
-const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
-page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
-await page.goto('http://127.0.0.1:5173/');await page.getByRole('button',{name:'Take the night shift'}).waitFor();
-await page.getByRole('button',{name:'+ Operator settings & sensing'}).click();
-await page.getByLabel('Encounter seed').fill('18');
-await page.getByRole('button',{name:'05 MIN Full shift'}).click();
-await page.getByLabel('Sensor source').selectOption('presage');
-await expect(page.getByText('Live Presage requires the Electron app and a configured key')).toBeVisible();
-results.push('Browser live-sensor selection honestly reports unavailability without camera acquisition');
-await page.getByLabel('Sensor source').selectOption('simulated');
-await page.getByLabel('Reduced motion').check();
-await page.getByRole('button',{name:'Take the night shift'}).click();
-await expect(page.locator('.bottom-meta')).toContainText('SIMULATED');
-async function tune(names){for(const name of names){const dial=page.locator('.dial').filter({hasText:name}),text=await dial.innerText(),target=Number(text.match(/TARGET\s+(\d)/)[1]);let value=Number(await dial.locator('output').innerText());while(value!==target){await page.getByRole('button',{name:`Increase ${name}`,exact:true}).click();value=(value+1)%10;}}}
-await tune(['Frequency','Phase','Gain']);
-await page.screenshot({path:'artifacts/game-final.png'});
-await page.waitForTimeout(14000);
-await page.keyboard.press('2');
-await page.getByRole('button',{name:'Open left shutter',exact:true}).click();
-await page.getByRole('button',{name:'Close right shutter',exact:true}).click();
-await page.waitForTimeout(1100);
-await page.screenshot({path:'artifacts/creature-approach.png'});
-await page.getByRole('button',{name:'Close left shutter',exact:true}).click();
-await page.getByRole('button',{name:'Open right shutter',exact:true}).click();
-await expect(page.getByRole('heading',{name:'Replace cartridge',exact:true})).toBeVisible({timeout:15000});
-await page.waitForTimeout(1300);await page.keyboard.press('r');
-await expect(page.getByText('Does not match your current card.')).toBeVisible();
-await page.getByRole('button',{name:'Close work orders',exact:true}).click();await page.getByRole('button',{name:'Reject call ↗',exact:true}).click();
-await page.getByRole('button',{name:'Sweep left tunnel',exact:true}).click();await page.getByRole('button',{name:'Open left shutter',exact:true}).click();await page.getByRole('button',{name:'Close right shutter',exact:true}).click();
-await page.waitForTimeout(1000);await page.screenshot({path:'artifacts/left-open-final.png'});
-await page.getByRole('button',{name:'Collect cartridge · 3s'}).click();await expect(page.getByRole('button',{name:'Cartridge ready → Relay'})).toBeVisible({timeout:6000});
-await page.keyboard.press('4');await page.getByRole('button',{name:'Insert cartridge · 1s'}).click();await expect(page.getByRole('heading',{name:'Transmit uplink',exact:true})).toBeVisible({timeout:5000});
-await page.keyboard.press('3');await tune(['Azimuth','Elevation']);
-await page.keyboard.press('j');
-await expect(page.locator('.sensor-dev')).toContainText('30/30 usable seconds',{timeout:15000});
-await page.getByLabel('Simulate sustained +12 BPM (development only)').check();
-await page.getByRole('button',{name:'Close ×',exact:true}).click();
-await expect(page.getByRole('button',{name:'Sweep right tunnel',exact:true})).toBeEnabled({timeout:15000});
-await page.getByRole('button',{name:'Sweep right tunnel',exact:true}).click();await page.getByRole('button',{name:'Open right shutter',exact:true}).click();await page.getByRole('button',{name:'Close left shutter',exact:true}).click();
-await page.getByRole('button',{name:'Transmit · 4s checkpoints'}).click();await page.waitForTimeout(8500);await page.getByRole('button',{name:'Pause transmission'}).click();
-await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow','8');
-await expect(page.getByRole('button',{name:'Sweep right tunnel',exact:true})).toBeEnabled({timeout:10000});await page.getByRole('button',{name:'Sweep right tunnel',exact:true}).click();
-// A calibrated signal has a 20-second dwell; keep a protected quiet window for its accepted change.
-await expect(page.locator('.bottom-meta')).toContainText('SIMULATED · ELEVATED',{timeout:12000});
-await page.screenshot({path:'artifacts/simulated-elevated.png'});
-results.push('Labeled simulated sensing calibrates30 usable seconds then sustains elevation with dwell; no direct death');
-await page.getByRole('button',{name:'Transmit · 4s checkpoints'}).click();await expect(page.getByRole('heading',{name:'Signal received.',exact:true})).toBeVisible({timeout:8000});
-await page.screenshot({path:'artifacts/win-seed18.png'});
-results.push('Seed18 full-shift preset won through rendered controls with simulated sensing');
-const ending=await page.getByRole('dialog',{name:'Shift results'}).innerText();
-await page.getByRole('button',{name:'Return to desk',exact:true}).click();
-await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Take the night shift'}).click();await page.waitForTimeout(700);await page.screenshot({path:'artifacts/mobile-final.png'});
-const mobile={headerCount:await page.locator('.game-top').count(),overflow:await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)};
-await writeFile('artifacts/second-playthrough.json',JSON.stringify({results,ending,mobile,errors},null,2));console.log(JSON.stringify({results,mobile,errors}));if(errors.length)process.exitCode=1;
-}finally{await browser.close();}
+import { chromium, expect } from '@playwright/test';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { begin, guardDanger, solve, evidenceFor, collectBrowserEvidence, TEST_URL } from './hush-browser-helpers.mjs';
+await mkdir('artifacts', { recursive: true });
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const evidence = { passed: false, url: TEST_URL, seed: 18, checks: [], errors: [], failedResources: [] }; let page;
+try {
+  page = await browser.newPage({ viewport: { width: 1280, height: 720 } }); collectBrowserEvidence(page, evidence);
+  await begin(page, { seed: 18, simulated: true, record: true, calibrate: true });
+  await expect(page.locator('.sensor-label')).toContainText('SIMULATED');
+  await page.keyboard.press('j');
+  await expect(page.locator('.judge-panel')).toContainText('30/30 usable seconds');
+  await page.getByLabel('Simulate sustained +12 BPM (development)').check();
+  await page.getByRole('button', { name: 'Close ×', exact: true }).click();
+  const trendDeadline = Date.now() + 35000;
+  while (!/SIMULATED · ELEVATED/.test(await page.locator('.sensor-label').innerText()) && Date.now() < trendDeadline) { await guardDanger(page); await page.waitForTimeout(100); }
+  await expect(page.locator('.sensor-label')).toContainText('SIMULATED · ELEVATED');
+  await page.screenshot({ path: 'artifacts/harder-simulated-calibrated.png' });
+  evidence.checks.push('Opt-in simulated baseline survives setup-to-game handoff; accepted sustained ELEVATED appears without raw data injection');
+  // Silence makes it lose the trail, so encounters come from working, not waiting.
+  await solve(page, { delayStageThree: true });
+  if (!evidenceFor(page).naturalAlarmDefenses) throw Error('No defense against a natural close approach completed while working');
+  evidence.checks.push('Working draws the creature close (footsteps and captions); timely Q survives each encounter and automatically restores equipment');
+  await expect(page.getByRole('dialog', { name: 'Run results' })).toContainText('4/4');
+  await expect(page.locator('.pulse-report')).toContainText('SIMULATED DATA');
+  await page.screenshot({ path: 'artifacts/harder-seed18-report.png' });
+  evidence.observations = evidenceFor(page); evidence.report = await page.locator('.pulse-report').innerText();
+  if (!evidence.observations.blackouts) throw Error('The delayed overload run did not exercise a visible blackout');
+  if (evidence.observations.wireBoards !== 2) throw Error('Both visible wiring boards were not completed');
+  // The simulated trend moves between ELEVATED and UNKNOWN, so the mask needs 10 or 8 beats depending on that moment.
+  if (!evidence.observations.pulseBeatsNeeded?.every(n => n === 8 || n === 10) || !evidence.observations.pulseBeatsNeeded.length || !evidence.observations.calmHolds) throw Error('The heartbeat-mask and calm-hold tasks were not exercised under simulated sensing');
+  evidence.checks.push(`Seed18 won every stage with SIMULATED pulse input (heartbeat mask needed ${evidence.observations.pulseBeatsNeeded.join('/')} beats), limited isolation, F-only blackout recovery and an opt-in simulated report`);
+  await page.getByRole('button', { name: 'Delete report & shared session', exact: true }).click();
+  await expect(page.locator('.pulse-report')).toContainText('Physiological statistics unrecorded.');
+  evidence.checks.push('Delete removes the local timeline and derived pulse statistics');
+  if (evidence.errors.length || evidence.failedResources.length) throw Error('Browser errors or missing resources');
+  evidence.passed = true;
+} catch (error) {
+  evidence.failure = String(error); process.exitCode = 1;
+  if (page) { await page.screenshot({ path: 'artifacts/harder-seed18-failure.png' }); evidence.visibleTextAtFailure = await page.locator('body').innerText(); }
+} finally { await writeFile('artifacts/harder-seed18-evidence.json', JSON.stringify(evidence, null, 2)); console.log(JSON.stringify(evidence)); await browser.close(); }
