@@ -10,6 +10,41 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const CoopManual = __t.object("CoopManual", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  kind: __t.string(),
+  stage: __t.u8(),
+  panel: __t.u8(),
+  panels: __t.u8(),
+  size: __t.u8(),
+  start: __t.u8(),
+  end: __t.u8(),
+  values: __t.byteArray(),
+  updatedAtMs: __t.u64(),
+});
+export type CoopManual = __Infer<typeof CoopManual>;
+
+export const CoopManualFeed = __t.object("CoopManualFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type CoopManualFeed = __Infer<typeof CoopManualFeed>;
+
+export const CoopManualRow = __t.object("CoopManualRow", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  kind: __t.string(),
+  stage: __t.u8(),
+  panel: __t.u8(),
+  panels: __t.u8(),
+  size: __t.u8(),
+  start: __t.u8(),
+  end: __t.u8(),
+  values: __t.byteArray(),
+});
+export type CoopManualRow = __Infer<typeof CoopManualRow>;
+
 export const Expiry = __t.object("Expiry", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),

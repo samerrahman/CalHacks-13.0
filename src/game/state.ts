@@ -80,7 +80,8 @@ export interface CalmState { progress: number; required: number; pacerStartedAt:
 export type Sector = 'NEAR' | 'A' | 'B' | 'C';
 export interface GameState {
   seed: number;
-  mode: 'standard' | 'demo' | 'tutorial';
+  /** 'coop' plays the standard rules, but a spectating friend holds the puzzle keys (see coop.ts). */
+  mode: 'standard' | 'demo' | 'tutorial' | 'coop';
   time: number;
   status: 'playing' | 'won' | 'lost';
   paused: boolean;

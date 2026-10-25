@@ -2,6 +2,7 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: experimental co-op mode on feat/coop-mode: the spectating friend reads the fault, cable and conduit keys from a manual (`src/game/coop.ts`, `coop_manual` table, `src/ui/CoopManual.tsx`). Solo unchanged; 175/175 tests and 14/14 local SpacetimeDB checks (docs/qa/coop-local-spacetime.json). Setup/App/HUD/SpectateView wiring left to the integrator.
 - 2026-10-24: branch `samer/spectate-physics`: server-authoritative prop physics in SpacetimeDB driven by trace events (docs/PHYSICS.md), read-only `#watch=` spectating with a separate heart-rate opt-in (docs/SPECTATE.md), CSP fix so the SpacetimeDB SDK can run at all, and the webcam "Freeze" stillness prototype (docs/WEBCAM_FREEZE.md). User approved the `spacetimedb/src/index.ts` contract change, the privacy change and the `src/ui` edits; verified on a local SpacetimeDB, not Maincloud.
 - 2026-10-24: prepared a SpacetimeDB module for private, consenting game traces, capability checked judge subscriptions, idempotent event writes and scheduled 24-hour deletion; switched the active client and live check to generated SpacetimeDB bindings. Remote publication remains pending.
 - 2026-10-24: kept the game single player. A promising future mechanic is a private echo of the same player's prior run: selected sanitized actions return as distorted radio logs, with only a coarse Presage trend if trace sharing is enabled. The current branch does not add that mechanic.

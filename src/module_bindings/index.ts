@@ -35,6 +35,7 @@ import {
 
 // Import all reducer arg schemas
 import AppendTraceReducer from "./append_trace_reducer";
+import PublishManualReducer from "./publish_manual_reducer";
 import CreateSessionReducer from "./create_session_reducer";
 import PhysicsKnockReducer from "./physics_knock_reducer";
 import RemoveSessionReducer from "./remove_session_reducer";
@@ -44,6 +45,7 @@ import StopVitalsReducer from "./stop_vitals_reducer";
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import CoopManualFeedRow from "./coop_manual_feed_table";
 import JudgeTraceRow from "./judge_trace_table";
 import PhysicsFeedRow from "./physics_feed_table";
 import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
@@ -52,6 +54,13 @@ import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  coopManualFeed: __table({
+    name: 'coop_manual_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, CoopManualFeedRow),
   judgeTrace: __table({
     name: 'judge_trace',
     indexes: [
@@ -78,6 +87,7 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("append_trace", AppendTraceReducer),
+  __reducerSchema("publish_manual", PublishManualReducer),
   __reducerSchema("create_session", CreateSessionReducer),
   __reducerSchema("physics_knock", PhysicsKnockReducer),
   __reducerSchema("remove_session", RemoveSessionReducer),
@@ -95,7 +105,7 @@ const REMOTE_MODULE = {
     cliVersion: "2.13.0" as const,
   },
   tables: tablesSchema.schemaType.tables,
-  viewsWithArgs: ["judge_trace", "physics_feed", "spectator_vitals_feed"],
+  viewsWithArgs: ["coop_manual_feed", "judge_trace", "physics_feed", "spectator_vitals_feed"],
   reducers: reducersSchema.reducersType.reducers,
   ...proceduresSchema,
 } satisfies __RemoteModule<

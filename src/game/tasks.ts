@@ -62,14 +62,17 @@ export function faultSounds(state: Pick<GameState, 'seed' | 'tasks'>): number[] 
   for (let i = 3; i > 0; i--) { const j = (Math.imul((state.seed ^ 0x51ed27) + state.tasks.stage * 0x9e3779b1 + i * 0x85ebca6b, 2654435761) >>> 0) % (i + 1); [order[i], order[j]] = [order[j]!, order[i]!]; }
   return order;
 }
-/** Which machine the rack key is currently playing, or null when it is not playing. */
-export function listeningTo(state: GameState): number | null {
+/** The rack key window (it also holds back new faults). Same timing in every mode. */
+function rackKey(state: GameState): number | null {
   if (state.tasks.step !== 'faults' || state.equipment !== 'on') return null;
   const index = Math.floor((state.time - state.tasks.faults.listenFrom) / config.tasks.listen.secondsPerMachine);
   return index >= 0 && index < 4 ? index : null;
 }
+/** Which machine the rack key is playing to the player, or null. In co-op it never plays: the friend's manual holds the key. */
+export function listeningTo(state: GameState): number | null { return state.mode === 'coop' ? null : rackKey(state); }
 export function listenToRack(state: GameState): void {
-  if (state.tasks.step !== 'faults' || state.equipment !== 'on' || state.station !== 'terminal' || listeningTo(state) !== null) return;
+  if (state.tasks.step !== 'faults' || state.equipment !== 'on' || state.station !== 'terminal' || rackKey(state) !== null) return;
+  if (state.mode === 'coop') { state.notice = 'No rack key in co-op. Describe the sound to your friend; their manual says which machine makes it.'; return; }
   state.tasks.faults.listenFrom = state.time; emit(state, 'RACK_KEY');
   state.notice = 'Each machine plays its fault sound in turn. Remember which number makes which sound.';
 }
@@ -148,7 +151,8 @@ export function startStage(state: GameState, stage: Stage): void {
     state.tasks.faults = { active: [], completed: 0, required: settings.required, spawned: 0, spawnElapsed: settings.spawnIntervalSeconds, maximumActive: settings.maxActive, listenFrom: state.time };
     state.tasks.memory = emptyMemory();
     state.tasks.wires = createWires(state, settings.wires);
-    state.notice = stage === 1 ? `Listen to the rack: each machine plays its fault sound. Then fix ${settings.required} faults by ear and patch ${settings.wires} cables.` : `The rack sounds have changed. Learn them again, then fix ${settings.required} faults by ear; two can fail at once.`;
+    state.notice = state.mode === 'coop' ? `${stage === 1 ? 'Your friend has the manual' : 'The rack sounds have changed; so has the manual'}. Describe each fault sound; they tell you the machine. Fix ${settings.required} faults${stage === 3 ? ' (two can fail at once)' : ''}, then patch ${settings.wires} cables.`
+      : stage === 1 ? `Listen to the rack: each machine plays its fault sound. Then fix ${settings.required} faults by ear and patch ${settings.wires} cables.` : `The rack sounds have changed. Learn them again, then fix ${settings.required} faults by ear; two can fail at once.`;
   } else if (stage === 2 || stage === 4) {
     state.tasks.faults.active = [];
     state.tasks.memory = { ...emptyMemory(), sequence: sequenceFor(state) };
@@ -178,7 +182,7 @@ function mistake(state: GameState, kind: 'FAULT' | 'MEMORY' | 'WIRE' | 'ROUTING'
     state.pressure = Math.min(config.danger.pressureMaximum, state.pressure + config.danger.mistakePressure);
     contextualTaunt(state, 'AFTER_MISTAKE');
   }
-  state.notice = notice ?? (kind === 'FAULT' ? 'That box was quiet. Press a box marked FAULT.' : kind === 'WIRE' ? 'Wrong terminal. The relay sparked. Match each cable symbol to its socket.' : `Sequence mismatch. Repeat all ${state.tasks.memory.sequence.length} inputs. R replays for free.`);
+  state.notice = notice ?? (kind === 'FAULT' ? 'That box was quiet. Press a box marked FAULT.' : kind === 'WIRE' ? `Wrong terminal. The relay sparked. ${state.mode === 'coop' ? 'Ask your friend which socket code that cable takes.' : 'Match each cable symbol to its socket.'}` : `Sequence mismatch. Repeat all ${state.tasks.memory.sequence.length} inputs. R replays for free.`);
 }
 function readyToTransmit(state: GameState, event: string, notice: string): void {
   state.tasks.step = 'transmit'; state.tasks.memory.armed = true; state.notice = notice;
@@ -264,7 +268,7 @@ export function connectWire(state: GameState, from: number, to: number): void {
   const complete = wires.connections.filter(value => value >= 0).length, panel = wirePanel(wires);
   state.notice = complete % config.tasks.wirePanelSize === 0 && complete < wires.connections.length ? `Panel ${complete / config.tasks.wirePanelSize} of ${panel.count} patched. Next panel live.` : `${complete} / ${wires.connections.length} cables connected.`;
   if (complete === wires.connections.length) {
-    if (state.tasks.stage === 1) { state.tasks.step = 'routing'; state.tasks.routing = createRouting(state, 0); state.notice = 'Cables patched. Rotate the conduit tiles to join the inlet to the relay outlet, then press T.'; }
+    if (state.tasks.stage === 1) { state.tasks.step = 'routing'; state.tasks.routing = createRouting(state, 0); state.notice = `Cables patched. Rotate the conduit tiles to join the inlet to the relay outlet, then press T.${state.mode === 'coop' ? ' The board shows no power; your friend has the solved route.' : ''}`; }
     else { state.tasks.step = 'locate'; state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 }; state.notice = `Cables patched. Use the security monitor to mark its position ${config.tasks.locate.marks} times.`; }
     state.version++;
   }
@@ -285,7 +289,7 @@ export function taskInput(state: GameState, value: number): void {
     faults.active = faults.active.filter(fault => fault !== index); faults.completed++;
     emit(state, 'FAULT_CLEARED', String(stage)); workNoise(state);
     state.notice = `${faults.completed} / ${faults.required} faults resolved.`;
-    if (faults.completed >= faults.required) { state.tasks.step = 'wires'; state.notice = 'Faults cleared. Drag each cable to its matching symbol to restore the relay.'; }
+    if (faults.completed >= faults.required) { state.tasks.step = 'wires'; state.notice = state.mode === 'coop' ? 'Faults cleared. Read each cable symbol to your friend; the manual gives its socket code.' : 'Faults cleared. Drag each cable to its matching symbol to restore the relay.'; }
     return;
   }
   if (step !== 'memory' || (stage !== 2 && stage !== 4)) return;
@@ -332,7 +336,7 @@ export function tickTasks(state: GameState, dt: number): void {
   if (step === 'faults') {
     const faults = state.tasks.faults;
     const interval = stage === 1 ? config.tasks.stage1.spawnIntervalSeconds : config.tasks.stage3.spawnIntervalSeconds;
-    if (listeningTo(state) !== null) return; // no new faults while the rack plays its key
+    if (rackKey(state) !== null) return; // no new faults while the rack plays its key (a silent briefing gap in co-op)
     faults.spawnElapsed += dt;
     if (faults.spawnElapsed >= interval - 1e-8 && faults.active.length < faults.maximumActive && faults.spawned < faults.required) {
       const available = [0, 1, 2, 3].filter(index => !faults.active.includes(index));
