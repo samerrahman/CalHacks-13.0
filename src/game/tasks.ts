@@ -138,7 +138,8 @@ function sequenceFor(state: GameState): number[] {
 function workNoise(state: GameState): void {
   if (state.mode === 'tutorial') return;
   state.transients.push({ at: state.time, strength: config.tasks.workNoise.strength, duration: config.tasks.workNoise.decaySeconds });
-  state.pressure = Math.min(config.danger.pressureMaximum, state.pressure + config.danger.workPressure);
+  // Work tops out at the work cap but never lowers noise that mistakes pushed above it.
+  state.pressure = Math.max(state.pressure, Math.min(config.danger.pressureMaximum, state.pressure + config.danger.workPressure));
 }
 function tempoFor(state: GameState): number {
   return !state.fixedMemoryTempo && state.sensor.source !== 'manual' && state.sensor.quality === 'accepted' && state.sensor.trend === 'ELEVATED' ? config.tasks.memory.maximumTempoMultiplier : 1;
@@ -191,7 +192,7 @@ function mistake(state: GameState, kind: 'FAULT' | 'MEMORY' | 'WIRE' | 'ROUTING'
   if (!last || state.time - last.time >= .25) {
     state.transients.push({ at: state.time, strength: config.tasks.mistakeStrength, duration: config.tasks.mistakeDecaySeconds });
     emit(state, 'WRONG_INPUT', kind);
-    state.pressure = Math.min(config.danger.pressureMaximum, state.pressure + config.danger.mistakePressure);
+    state.pressure = Math.min(config.danger.mistakeMaximum, state.pressure + config.danger.mistakePressure);
     contextualTaunt(state, 'AFTER_MISTAKE');
   }
   state.notice = notice ?? (kind === 'FAULT' ? 'That box was quiet. Press a box marked FAULT.' : kind === 'WIRE' ? `Wrong terminal. The relay sparked. ${state.mode === 'coop' ? 'Ask your friend which socket code that cable takes.' : 'Match each cable symbol to its socket.'}` : `Sequence mismatch. Repeat all ${state.tasks.memory.sequence.length} inputs. R replays for free.`);

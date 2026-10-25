@@ -20,3 +20,5 @@
 /* The ending plays over the HUD after a win; the run report (z 20) follows it. */
 .ending-film,.ending-cards{z-index:15}
 .pulse-numbers{flex-wrap:wrap;row-gap:16px}.report-legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:2px 0 10px;font:9px var(--mono);letter-spacing:1px;text-transform:uppercase;color:#adbc9c}.report-legend i{display:inline-block;width:16px;height:3px;margin-right:7px;vertical-align:middle}.report-legend i.marker{width:8px;height:8px;border-radius:50%;background:#d99450}
+.report-legend i.dashed{background-image:repeating-linear-gradient(90deg,transparent 0 5px,#0b120d 5px 8px)}.report-legend i.tick{width:2px;height:10px;background:#d99450}
+.pulse-chart g[role=button]:focus{outline:none}

@@ -38,8 +38,10 @@ export const config = {
   lineWeights: [.07, .14, .23, .22, .19, .10, .05],
   /** Low exposure drifts it away; high exposure (loud work) rushes it toward the wall. */
   lineBias: { base: .28, dangerScale: 1.36, lostTrailSeconds: 8, lostTrailBias: .6, momentum: .06, providerMaximum: .15, providerDurationSeconds: 8, quietDangerScale: .2, lureDangerScale: .1, minimum: -.85, maximum: 1, finalLure: 1 },
-  /** Pressure is work noise: correct inputs and active faults raise it, quiet cools it. */
-  danger: { base: 10, timeMaximum: 25, pressureMaximum: 55, pressureDecayPerSecond: .6, quietCoolingMultiplier: 3, workPressure: 1.8, machineryPressurePerSecond: .8, mistakePressure: 6, stageRelief: 8, physiologyMaximum: 5, shutdownAdaptation: 2 },
+  /** Pressure is work noise: correct inputs and active faults raise it, quiet cools it. Work alone
+   * stops at pressureMaximum; mistakes keep piling on up to mistakeMaximum, so with the base a
+   * string of mistakes takes exposure all the way to 100. */
+  danger: { base: 10, timeMaximum: 25, pressureMaximum: 55, mistakeMaximum: 90, pressureDecayPerSecond: .6, quietCoolingMultiplier: 3, workPressure: 1.8, machineryPressurePerSecond: .8, mistakePressure: 6, stageRelief: 8, physiologyMaximum: 5, shutdownAdaptation: 2 },
   /** Isolation holds until the player restores it (hold F, from 4 s) or the 25-second cap. */
   shutdown: { charges: 3, stageRefill: 1, durationSeconds: 25, cooldownSeconds: 10, retreatBias: .55, listeningSeconds: 4, manualRestoreAfterSeconds: 4 },
   /** Seeded charges: one per period, at a seeded offset. Isolation and lures still override. */
