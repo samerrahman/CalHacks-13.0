@@ -9,8 +9,9 @@ export type Preferences={seed:number;sensing:SensorMode;recordPulse:boolean;shar
 export const DEFAULT_PREFS:Preferences={seed:17,sensing:'manual',recordPulse:false,shareTrace:false,reducedMotion:false,softScares:false,fixedTempo:false,captions:false};
 export default function Setup({ready,progress=0,error,prefs,onPrefs,onStart,onSensor,sensor,stream,desktop,voiceAvailable,onDevice,cameraDevice,askCamera,onCameraAnswered}:{ready:boolean;progress?:number;error:string|null;prefs:Preferences;onPrefs:(p:Preferences)=>void;onStart:(tutorial:boolean,withFriend?:boolean)=>void;onSensor:(mode:SensorMode)=>void;sensor:SensorView;stream:MediaStream|null;desktop:boolean;voiceAvailable:boolean;cameraDevice:string;onDevice:(id:string)=>void;askCamera:boolean;onCameraAnswered:()=>void}){
  const[settings,setSettings]=useState(false),[camera,setCamera]=useState(false),[pending,setPending]=useState<boolean|null>(null);const update=(p:Partial<Preferences>)=>onPrefs({...prefs,...p});
- // The first start asks for the camera unless pulse input is already chosen; the pending value is the guidance choice.
- const begin=(tutorial:boolean)=>{if(askCamera&&prefs.sensing==='manual')setPending(tutorial);else onStart(tutorial)};
+ const calibrated=sensor.source==='presage'&&sensor.baselineBpm!==null&&sensor.acceptedSeconds>=30;
+ // The first start asks for the camera unless pulse input is already chosen; if Presage is selected, require full calibration before proceeding.
+ const begin=(tutorial:boolean)=>{if((askCamera&&prefs.sensing==='manual')||(prefs.sensing==='presage'&&!calibrated))setPending(tutorial);else onStart(tutorial)};
  const capture=(on:boolean)=>{update({sensing:on?'presage':'manual'});onSensor(on?'presage':'manual')};
  const go=()=>{const tutorial=pending??true;setPending(null);onCameraAnswered();onStart(tutorial)};
  if(!ready&&!error)return <main className="setup setup-loading" aria-label="Loading HUSH"><div className="setup-grain"/><div className="setup-loader"><WornTitle text="HUSH"/><div className="setup-loader-bar" role="progressbar" aria-label="Loading shelter assets" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><div className="setup-loader-fill" style={{width:`${Math.max(6,progress)}%`}}/></div></div></main>;

@@ -52,6 +52,6 @@ export function signalCheck(view: SensorView, desktop = true): SignalCheck {
     return { state: 'adjust', issue, validationCode: d.validationCode, title, detail, ...base };
   }
   if (d.warmupRemainingSeconds > 0) return { state: 'warming', title: 'Warming up', detail: 'Pulse needs a 12-second window. Hold still.', secondsLeft: Math.ceil(d.warmupRemainingSeconds), ...base };
-  if (view.quality === 'accepted' && view.pulseBpm !== null) return { state: 'ok', title: 'Signal OK', detail: base.calibrated ? 'Baseline calibrated.' : `Pulse accepted · baseline ${baselineSeconds}/30 usable seconds, finishing during the opening film.`, ...base };
+  if (view.quality === 'accepted' && view.pulseBpm !== null) return { state: 'ok', title: 'Signal OK', detail: base.calibrated ? 'Baseline calibrated.' : `Pulse accepted · calibrating baseline (${baselineSeconds}/30 usable seconds). Hold still to finish calibration.`, ...base };
   return { state: 'warming', title: 'Waiting for a steady pulse', detail: d.pulse.state === 'rejected' ? `Hold still in steady light. ${d.pulse.reasons[0] ?? ''}`.trim() : 'Waiting for the first accepted pulse estimate.', secondsLeft: 0, ...base };
 }

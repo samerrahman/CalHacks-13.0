@@ -4,6 +4,7 @@ import { TrendTracker } from './trend';
 import { NativeMetricStream } from './nativeMetrics';
 import { sanitizeSensorError } from './sensorError';
 import { REQUESTED_METRICS, validationBlocksMetric } from './metricPolicy';
+import { BrowserRppgSession } from './browserRppg';
 import { simulatedSample, simulatedSignals, simulatedWaveforms } from './simulated';
 import type { SensorWaveforms } from './signals';
 import { acceptedPulse, FRESHNESS_MS, type SensorMode, type SensorSample, type SensorView } from './types';
@@ -22,7 +23,7 @@ export class SensorController {
   private previewListeners = new Set<(stream: MediaStream | null) => void>();
   private cameraDeviceId = '';
   private browserCamera = false;
-  private browserStreamActive = false;
+  private browserRppg: BrowserRppgSession | null = null;
   /** Local-only view of the same consenting capture, never another camera stream. */
   subscribePreview(listener:(stream:MediaStream|null)=>void):()=>void { this.previewListeners.add(listener);listener(this.stream);return()=>{this.previewListeners.delete(listener)}; }
   setCameraDevice(deviceId:string):void { this.cameraDeviceId=deviceId; }
@@ -51,7 +52,7 @@ export class SensorController {
     const usable = this.status === 'calibrating' || this.status === 'ready';
     const captureState = this.stream ? 'live' : this.status === 'starting' ? 'acquiring' : 'off';
     const diagnostics = this.mode === 'presage' ? this.native.view(now, captureState) : undefined;
-    const signals = this.browserStreamActive || this.mode === 'simulated' ? simulatedSignals(now, this.elevated, usable) : diagnostics ? this.native.signalView(now, captureState, diagnostics) : undefined;
+    const signals = this.mode === 'simulated' ? simulatedSignals(now, this.elevated, usable) : diagnostics ? this.native.signalView(now, captureState, diagnostics) : undefined;
     // The display status for pulse follows the game's own accepted pulse.
     if (signals && signals.status.pulse.status === 'ok' && !(usable && pulse !== null)) signals.status.pulse = { status: 'rejected', reason: this.sample?.qualityReasons[0] ?? this.hint };
     return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...this.breathingView(now, usable), ...(diagnostics ? { diagnostics } : {}), ...(signals ? { signals } : {}) };
@@ -59,7 +60,7 @@ export class SensorController {
   /** Bounded local waveform buffers (last 20 s) for display; never part of SensorView. */
   waveforms(): SensorWaveforms | null {
     const now = performance.now();
-    return this.browserStreamActive || this.mode === 'simulated' ? simulatedWaveforms(now, this.elevated) : this.mode === 'presage' ? this.native.waveforms(now) : null;
+    return this.mode === 'simulated' ? simulatedWaveforms(now, this.elevated) : this.mode === 'presage' ? this.native.waveforms(now) : null;
   }
   private breathingView(now: number, usable: boolean): Pick<SensorView, 'breathingRpm' | 'breathingAtMs' | 'restingBreathingRpm'> {
     const fresh = usable && this.breathing !== null && now - this.breathing.atMs <= FRESHNESS_MS && this.breathing.atMs <= now + 1000;
@@ -135,22 +136,41 @@ export class SensorController {
         }
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280, max: 1920 }, height: { ideal: 720, max: 1080 }, frameRate: { ideal: 30, max: 30 }, facingMode: 'user', ...(this.cameraDeviceId ? { deviceId: { exact: this.cameraDeviceId } } : {}) }, audio: false });
         if (generation !== this.generation) { stream.getTracks().forEach(t => t.stop()); return; }
-        this.stream = stream; this.browserStreamActive = true; this.publishPreview();
+        this.stream = stream; this.publishPreview();
         stream.getTracks().forEach(track => track.addEventListener('ended', () => { if (generation === this.generation) void this.unavailable('Camera stopped or permission revoked'); }, { once: true }));
         this.startedAt = performance.now();
-        this.native.processing(3);
-        this.native.setValidation(0, 'Capture validated');
-        this.native.firstFrameAt = this.startedAt - 31_000;
-        const tick = () => {
-          if (generation !== this.generation || this.disposed) return;
-          const now = performance.now(), wall = Date.now(), sim = simulatedSample(now, this.elevated), rpm = this.elevated ? 18 : 14;
-          this.native.frame(true, Math.round(now * 1000), now);
-          const sample = this.native.ingest({ cardio: { pulseRate: [{ value: sim.pulseBpm ?? 72, confidence: 92, stable: true, timestamp: wall * 1000 }] }, breathing: { rate: [{ value: rpm, confidence: 90, stable: true, timestamp: wall * 1000 }] } }, now, wall);
-          this.observeBreathing(rpm, now);
-          this.accept(sample ?? { ...sim, source: 'presage' });
-        };
-        tick();
-        this.timer = setInterval(tick, 1000);
+        this.browserRppg = new BrowserRppgSession(stream, {
+          onProcessing: code => {
+            if (generation !== this.generation || this.disposed) return;
+            this.native.processing(code);
+            if (code === 3) this.status = this.baseline.value === null ? 'calibrating' : 'ready';
+            else if (code === 0 || code === 1 || code === 2) this.status = 'starting';
+            if (code !== 3) { this.sample = null; this.trends.discard(); this.baseline.discardContinuity(); }
+            this.publishDiagnostics(true);
+          },
+          onFrame: (sent, timestampUs, nowMs) => {
+            if (generation !== this.generation || this.disposed) return;
+            this.native.frame(sent, timestampUs, nowMs);
+            this.publishDiagnostics();
+          },
+          onValidation: (code, hint) => {
+            if (generation !== this.generation || this.disposed) return;
+            this.applyValidation(code, hint);
+          },
+          onMetrics: (metrics, nowMs, wallMs) => {
+            if (generation !== this.generation || this.disposed) return;
+            const sample = this.native.ingest(metrics, nowMs, wallMs);
+            if (sample) {
+              if (this.native.processingStatus !== 'running') { sample.quality = 'rejected'; sample.qualityReasons.unshift(`Native processing: ${this.native.processingStatus}`); }
+              this.accept(sample);
+            } else this.publishDiagnostics();
+          },
+        });
+        this.browserRppg.start();
+        this.timer = setInterval(() => {
+          if (generation === this.generation && !this.disposed) this.publishDiagnostics(true);
+        }, 1000);
+        this.publishDiagnostics(true);
         return;
       }
       const [{ SmartSpectraSDK: SDK, MetricType }, { decodeMetrics }] = await Promise.all([import('@smartspectra/node-sdk/renderer'), import('@smartspectra/node-sdk/messages')]);
@@ -217,7 +237,7 @@ export class SensorController {
   }
   private async stopResources(): Promise<void> {
     if (this.timer) clearInterval(this.timer); this.timer = null;
-    this.browserStreamActive = false;
+    this.browserRppg?.stop(); this.browserRppg = null;
     const stream = this.stream; this.stream = null; this.publishPreview();
     const sdk = this.sdk; this.sdk = null;
     this.sample = null; this.trends.discard(); this.baseline.discardContinuity(); this.breathing = null; this.breathingBaseline.discardContinuity();
