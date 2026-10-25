@@ -41,6 +41,7 @@ export class SensorController {
   private status: SensorView['status'] = 'manual';
   private hint = 'MANUAL · no camera or pulse data';
   private elevated = false;
+  private wasLiveElevated = false;
   private native = new NativeMetricStream();
   private diagnosticPublishedAt = 0;
   subscribe(listener: (view: SensorView) => void): () => void { this.listeners.add(listener); listener(this.view()); return () => this.listeners.delete(listener); }
@@ -55,7 +56,22 @@ export class SensorController {
     const signals = this.mode === 'simulated' ? simulatedSignals(now, this.elevated, usable) : diagnostics ? this.native.signalView(now, captureState, diagnostics) : undefined;
     // The display status for pulse follows the game's own accepted pulse.
     if (signals && signals.status.pulse.status === 'ok' && !(usable && pulse !== null)) signals.status.pulse = { status: 'rejected', reason: this.sample?.qualityReasons[0] ?? this.hint };
-    return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...this.breathingView(now, usable), ...(diagnostics ? { diagnostics } : {}), ...(signals ? { signals } : {}) };
+    const bView = this.breathingView(now, usable);
+    let trend = usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN';
+    if (this.browserRppg && usable && pulse !== null && this.baseline.value !== null) {
+      const fearHigh = (signals?.fear ?? 0) >= 0.34;
+      const breathHigh = bView.breathingRpm != null && bView.breathingRpm >= (bView.restingBreathingRpm ?? 14) + 4;
+      const pulseHigh = pulse - this.baseline.value >= 6;
+      if (fearHigh || breathHigh || pulseHigh) {
+        trend = 'ELEVATED';
+        this.wasLiveElevated = true;
+      } else if (this.wasLiveElevated) {
+        trend = 'RECOVERED';
+      } else {
+        trend = 'STEADY';
+      }
+    }
+    return { source: this.mode, status: this.status, trend, quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...bView, ...(diagnostics ? { diagnostics } : {}), ...(signals ? { signals } : {}) };
   }
   /** Bounded local waveform buffers (last 20 s) for display; never part of SensorView. */
   waveforms(): SensorWaveforms | null {
@@ -90,6 +106,10 @@ export class SensorController {
     this.sample = sample;
     if (sample.source === 'simulated') this.observeBreathing(sample.quality === 'accepted' ? this.elevated ? 18 : 14 : null, sample.measuredMonotonicMs);
     this.baseline.add(sample, performance.now(), this.mode === 'simulated');
+    if (this.browserRppg && sample.quality === 'accepted' && this.baseline.value === null) {
+      this.baseline.acceptedMs = Math.min(30_000, this.baseline.acceptedMs + 1250);
+      if (this.baseline.acceptedMs >= 30_000 && sample.pulseBpm !== null) this.baseline.value = Math.round(sample.pulseBpm);
+    }
     this.trends.add(sample);
     if (this.mode !== 'presage' || this.native.processingStatus === 'running') this.status = this.baseline.value === null ? 'calibrating' : 'ready';
     this.hint = sample.quality === 'accepted' ? this.mode === 'simulated' ? 'SIMULATED · development fixture, camera off' : this.baseline.value === null ? 'Stable capture · collecting 30 usable seconds' : 'LIVE · accepted sustained pulse trend' : sample.qualityReasons.join(' · ');

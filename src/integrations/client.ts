@@ -195,7 +195,7 @@ export class TraceBridge {
     this.lastSnapshot = snapshot;
     this.channel.postMessage(snapshot);
     this.publishVitals(snapshot.vitals);
-    if (!this.connected || !this.client?.isActive || !this.sessionId || this.busy || performance.now() - this.lastWrite < 1000) return;
+    if (!this.connected || !this.client?.isActive || !this.sessionId || this.busy || performance.now() - this.lastWrite < 400) return;
     this.busy = true; this.lastWrite = performance.now();
     const generation = this.generation;
     const events = snapshot.events.filter(e => e.seq > this.sequence);
@@ -204,7 +204,7 @@ export class TraceBridge {
   private publishVitals(vitals: SpectatorVitals | null): void {
     this.retryWithdraw();
     // Without a reading (manual play) nothing is sent; the server sweeps a stale row within 15 s.
-    if (!vitals || !this.vitalsConsent || !this.connected || !this.client?.isActive || !this.sessionId || this.vitalsBusy || performance.now() - this.lastVitalsWrite < 1000) return;
+    if (!vitals || !this.vitalsConsent || !this.connected || !this.client?.isActive || !this.sessionId || this.vitalsBusy || performance.now() - this.lastVitalsWrite < 520) return;
     this.vitalsBusy = true; this.lastVitalsWrite = performance.now(); this.vitalsRemote = true;
     const generation = this.generation;
     void this.client.reducers.shareVitals({ id: this.sessionId, ownerCapability: this.owner, sequence: ++this.vitalsSequence, source: vitals.source, status: vitals.status, quality: vitals.quality, trend: vitals.trend, pulseBpm: vitals.pulseBpm ?? undefined, baselineBpm: vitals.baselineBpm ?? undefined })

@@ -63,7 +63,7 @@ function GameApp(){
  const cameraShare=useCameraShare(()=>trace.current?.cameraAccess()??null,cameraStream);
  const cameraActions=useRef(cameraShare);cameraActions.current=cameraShare;
  const[provider,setProvider]=useState({gemini:'FALLBACK · deterministic director',dialogue:'SCRIPTED FALLBACK · no generated line yet',elevenlabs:'FALLBACK · captions + original effects'});
- const run=useRef(new AsyncRun()),pending=useRef(new Set<string>()),lastEvent=useRef(0),lastStage=useRef(0),cueRef=useRef<number|null>(null);
+ const run=useRef(new AsyncRun()),pending=useRef(new Set<string>()),lastEvent=useRef(0),lastStage=useRef(0),rackStage=useRef(0),cueRef=useRef<number|null>(null);
  const[radio,setRadio]=useState<string|null>(null),radioRef=useRef<{id:string;expires:number;stage:number;role:string}|null>(null),lineSequence=useRef(0);
  const[tutorialStep,setTutorialStep]=useState(0),tutorialStepRef=useRef(0),tutorialWatching=useRef(false),[introStep,setIntroStep]=useState(0),[introMode,setIntroMode]=useState<'film'|'text'>('film'),guided=useRef(true);
  const recording=useRef(false),recordSource=useRef<SensorMode>('manual'),recordEventSeq=useRef(0);
@@ -73,7 +73,7 @@ function GameApp(){
  function changePrefs(p:Preferences){prefsRef.current=p;setPrefs(p)}
  function inspect(value:boolean){inspectionRef.current=value;setInspection(value)}
  function setRemoteOpen(value:boolean){remoteOpenRef.current=value;setRemoteOpenState(value)}
- function openEquipment(station:Station){if(!['play','tutorial'].includes(screenRef.current)||authority.current.paused||authority.current.status!=='playing')return;setRemoteOpen(false);send({type:'station',station});inspect(true)}
+ function openEquipment(station:Station){if(!['play','tutorial'].includes(screenRef.current)||authority.current.paused||authority.current.status!=='playing')return;setRemoteOpen(false);send({type:'station',station});if(station==='terminal'&&authority.current.tasks.step==='faults'&&authority.current.mode!=='coop'&&rackStage.current!==authority.current.tasks.stage){rackStage.current=authority.current.tasks.stage;authority.current={...authority.current,tasks:{...authority.current.tasks,faults:{...authority.current.tasks.faults,listenFrom:authority.current.time}}};setGame({...authority.current})}inspect(true)}
  function selectCamera(id:string){setCameraDevice(id);sensing.current?.setCameraDevice(id)}
  function showCamera(){if(!['play','tutorial'].includes(screenRef.current)||authority.current.status!=='playing')return;pause(true,true);inspect(false);setCameraOpen(true)}
  function hideCamera(){setCameraOpen(false);if(['play','tutorial'].includes(screenRef.current))pause(false)}
@@ -115,7 +115,7 @@ function GameApp(){
  }
  function startRun(practice:boolean){
   void cameraActions.current.stop();manual.current?.dispose();manual.current=null;setInviteOpen(false);invitePaused.current=false;setCameraOpen(false);
-  run.current.invalidate();beginIntegrationRun();pending.current.clear();lastEvent.current=0;lastStage.current=0;cueRef.current=null;lineSequence.current=0;firstVoice.current=false;lastCreatureVoice.current=-1000;lastScare.current=0;inspect(false);setResultReady(false);setEnding(null);setReportDetails(false);clearRadio();voices.current.reset();
+  run.current.invalidate();beginIntegrationRun();pending.current.clear();lastEvent.current=0;lastStage.current=0;rackStage.current=0;cueRef.current=null;lineSequence.current=0;firstVoice.current=false;lastCreatureVoice.current=-1000;lastScare.current=0;inspect(false);setResultReady(false);setEnding(null);setReportDetails(false);clearRadio();voices.current.reset();
   const fresh=createGame(prefsRef.current.seed,practice?'tutorial':friend.current?'coop':'standard');authority.current=dispatch(fresh,{type:'accessibility',fixedMemoryTempo:practice||prefsRef.current.fixedTempo});if(document.hidden)authority.current=dispatch(authority.current,{type:'pause',paused:true});
   const currentSensor=sensorRef.current;authority.current=dispatch(authority.current,{type:'sensor',source:currentSensor.source,quality:currentSensor.quality,trend:currentSensor.trend});syncPersonal(currentSensor);
   // Charting is on whenever the camera is: enabling it is the opt-in.

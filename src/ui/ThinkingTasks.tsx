@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import type { GameAction, GameState, Sector } from '../game/state';
 import { config } from '../game/config';
 import { calmBreath, calmInhale, calmMatched, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, heartElevated, listeningTo, pulseFlash, pulseRequirement, tileOpenings } from '../game/tasks';
@@ -39,6 +39,9 @@ export function ConduitTask({ g, send, coop = g.mode === 'coop' }: { g: GameStat
 export function FaultTask({ g, send, coop = g.mode === 'coop' }: { g: GameState; send: Send; coop?: boolean }) {
   const f = g.tasks.faults, sounds = faultSounds(g), playing = coop ? null : listeningTo(g);
   const heard = f.active.map(machine => FAULT_SOUNDS[sounds[machine]!]);
+  useEffect(() => {
+    if (!coop && playing === null && f.completed === 0) send({ type: 'listen' });
+  }, [coop, g.tasks.stage]);
   return <>
     <p>{coop ? `Tell your friend what you hear; their manual says which machine makes that sound. Up to ${f.maximumActive} can fail at once. Wrong guesses clang loudly.` : playing !== null ? 'Listen: each machine plays its fault sound in turn. Remember which number makes which sound.' : `Fix the machine that is making the noise. Up to ${f.maximumActive} can fail at once. Wrong guesses clang loudly.`}</p>
     <div className="fault-grid listen-grid">{[0, 1, 2, 3].map(i => <button key={i} data-tutorial={!coop && i === f.active[0] ? 'fault-box-1' : undefined} className={`machine ${playing === i ? 'playing' : ''}`} aria-label={playing === i ? `Machine ${i + 1}: ${FAULT_SOUNDS[sounds[i]!]}` : `Machine ${i + 1}`} onClick={() => send({ type: 'input', value: i + 1 })}>
