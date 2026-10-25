@@ -36,6 +36,7 @@ import {
 // Import all reducer arg schemas
 import AppendTraceReducer from "./append_trace_reducer";
 import PublishManualReducer from "./publish_manual_reducer";
+import FriendSignalReducer from "./friend_signal_reducer";
 import CreateSessionReducer from "./create_session_reducer";
 import PhysicsKnockReducer from "./physics_knock_reducer";
 import RemoveSessionReducer from "./remove_session_reducer";
@@ -54,6 +55,7 @@ import CameraPlayerInboxRow from "./camera_player_inbox_table";
 import CameraShareFeedRow from "./camera_share_feed_table";
 import CameraSpectatorInboxRow from "./camera_spectator_inbox_table";
 import CoopManualFeedRow from "./coop_manual_feed_table";
+import CoopRemoteInboxRow from "./coop_remote_inbox_table";
 import JudgeTraceRow from "./judge_trace_table";
 import PhysicsFeedRow from "./physics_feed_table";
 import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
@@ -90,6 +92,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, CoopManualFeedRow),
+  coopRemoteInbox: __table({
+    name: 'coop_remote_inbox',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, CoopRemoteInboxRow),
   judgeTrace: __table({
     name: 'judge_trace',
     indexes: [
@@ -117,6 +126,7 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("append_trace", AppendTraceReducer),
   __reducerSchema("publish_manual", PublishManualReducer),
+  __reducerSchema("friend_signal", FriendSignalReducer),
   __reducerSchema("create_session", CreateSessionReducer),
   __reducerSchema("physics_knock", PhysicsKnockReducer),
   __reducerSchema("remove_session", RemoveSessionReducer),
@@ -139,7 +149,7 @@ const REMOTE_MODULE = {
     cliVersion: "2.13.0" as const,
   },
   tables: tablesSchema.schemaType.tables,
-  viewsWithArgs: ["camera_player_inbox", "camera_share_feed", "camera_spectator_inbox", "coop_manual_feed", "judge_trace", "physics_feed", "spectator_vitals_feed"],
+  viewsWithArgs: ["camera_player_inbox", "camera_share_feed", "camera_spectator_inbox", "coop_manual_feed", "coop_remote_inbox", "judge_trace", "physics_feed", "spectator_vitals_feed"],
   reducers: reducersSchema.reducersType.reducers,
   ...proceduresSchema,
 } satisfies __RemoteModule<

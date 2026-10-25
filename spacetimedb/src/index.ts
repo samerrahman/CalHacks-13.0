@@ -3,7 +3,7 @@ import { ScheduleAt } from 'spacetimedb';
 import { applyTraceImpulses, dropPhysics, physicsBody, physicsExports, physicsTick, physicsWorld } from './physics';
 import { dropVitals, spectateExports, spectatorVitals, vitalsSweep } from './spectate';
 import { cameraPeer, cameraShare, cameraSignal, cameraSweep, dropSignal, signalExports } from './signal';
-import { coopExports, coopManual, dropCoop } from './coop';
+import { coopExports, coopManual, coopRemote, dropCoop } from './coop';
 
 // All stored rows are private. The judge sees one capability-filtered view.
 const event = t.row('PublicEvent', {
@@ -28,12 +28,12 @@ const expiry = table({ name: 'expiry' }, {
   scheduledAt: t.scheduleAt(),
   sessionId: t.string(),
 });
-const db = schema({ session, expiry, physicsWorld, physicsBody, physicsTick, spectatorVitals, vitalsSweep, cameraShare, cameraPeer, cameraSignal, cameraSweep, coopManual });
+const db = schema({ session, expiry, physicsWorld, physicsBody, physicsTick, spectatorVitals, vitalsSweep, cameraShare, cameraPeer, cameraSignal, cameraSweep, coopManual, coopRemote });
 export default db;
 
 const DAY_MS = 86_400_000n;
 const capability = (value: string) => /^[a-f0-9]{64}$/.test(value);
-const eventTypes = new Set(['UNKNOWN', 'NEAR_LISTEN', 'TAUNT', 'DIRECTOR_APPLIED', 'DIRECTOR_REJECTED', 'DIRECTOR_REQUESTED', 'MEMORY_REPLAY', 'TASK_COMPLETE', 'WRONG_INPUT', 'FAULT_CLEARED', 'MEMORY_ARMED', 'FINAL_BROADCAST', 'FAULT_STARTED', 'MEMORY_READY', 'MEMORY_EXPIRED', 'LURE_TRANSMITTED', 'QUIET_ENTERED', 'RESTORED', 'APPROACH', 'LURE_ARRIVED', 'WON', 'LURE_RELEASED', 'QUIET_RETREAT', 'RESTORE_WINDOW', 'BREACH_WARNING', 'LOST', 'RUN_STARTED', 'BLACKOUT_STARTED', 'SENSOR_TREND', 'PAUSED', 'RESUMED', 'PROXIMITY_ALARM', 'ATTACK_COMMITTED', 'SCARE', 'MONSTER_STEP', 'QUIET_EXHAUSTED', 'QUIET_COOLDOWN', 'TIMEOUT', 'WIRE_CONNECTED']);
+const eventTypes = new Set(['UNKNOWN', 'NEAR_LISTEN', 'TAUNT', 'DIRECTOR_APPLIED', 'DIRECTOR_REJECTED', 'DIRECTOR_REQUESTED', 'MEMORY_REPLAY', 'TASK_COMPLETE', 'WRONG_INPUT', 'FAULT_CLEARED', 'MEMORY_ARMED', 'FINAL_BROADCAST', 'FAULT_STARTED', 'MEMORY_READY', 'MEMORY_EXPIRED', 'LURE_TRANSMITTED', 'QUIET_ENTERED', 'RESTORED', 'APPROACH', 'LURE_ARRIVED', 'WON', 'LURE_RELEASED', 'QUIET_RETREAT', 'RESTORE_WINDOW', 'BREACH_WARNING', 'LOST', 'RUN_STARTED', 'BLACKOUT_STARTED', 'SENSOR_TREND', 'PAUSED', 'RESUMED', 'PROXIMITY_ALARM', 'ATTACK_COMMITTED', 'SCARE', 'MONSTER_STEP', 'QUIET_EXHAUSTED', 'QUIET_COOLDOWN', 'TIMEOUT', 'WIRE_CONNECTED', 'RECOVERY_REWARD', 'FRIEND_WARNING', 'FRIEND_DECOY', 'DOOR_UNLOCKED']);
 function safeDetail(type: string, detail: string): string {
   if (type === 'RUN_STARTED' && /^(standard|demo|tutorial|coop)$/.test(detail)) return detail;
   if (type === 'FAULT_CLEARED' && /^(1|3)$/.test(detail)) return detail;

@@ -42,3 +42,29 @@ Consent: co-op needs trace sharing, since the link is how the friend gets the ma
 - The integrated spectator layout fits 390 px; not published to Maincloud; no human playtest of the difficulty.
 - v2 has no manual for the heartbeat mask.
 - The module with the v2 validator is published to Maincloud (`scary-5zsk8`); [20/20 live checks](qa/coop-maincloud-v2.json), including memory, locate and calm pages reaching the friend and malformed ones refused. No human playtest of the v2 difficulty yet.
+
+## The friend as a second player (warning, decoys, door key, voice)
+
+Beyond the manual, the friend now has three things to do, all optional for the player and all revalidated by the player's game (the reducer never trusts the spectator page):
+
+| Feature | Friend does | Player sees | Rules (`config.coop`, `src/game/coop.ts`) |
+| --- | --- | --- | --- |
+| **Warning lamp** | Presses **It's close · warn them** (it pulses when the creature is within ~9 units). | A flashing red lamp, "YOUR FRIEND: IT'S CLOSE · Go quiet now", and a radio chime. | Information only: no effect on movement, danger or isolation. One every 3 s. |
+| **Remote decoy** | Arms an emitter by solving one of the player's own puzzles on their page (a conduit board, then a memory sequence, alternating; a practice copy of the real task code), then fires it. | "DECOY FIRED · n left" and the lure sound far out in the trees. | +0.75 outward bias for 7 s. Three per run, 25 s apart. Refused once an attack has committed or after the final broadcast. |
+| **Two-key door** | Reads a four-digit key (digits 1–4) from a new **Basement door key** manual page. | At the final terminal, four key slots and buttons 1–4; T stays locked until the key turns. A wrong digit is a loud `WRONG_INPUT` and starts over. | Key from the seed only (`doorKeyFor`), so it never shifts the run's RNG. Solo runs, and a run whose friend pressed **Stop sharing**, never need it. |
+
+New public events: `FRIEND_WARNING`, `FRIEND_DECOY`, `DOOR_UNLOCKED` (and `RECOVERY_REWARD` from the wellness rules). The door key, door input and counters stay out of the trace and the director request (tested).
+
+### Friend → player transport
+
+- **Same browser:** the spectator posts `{ kind, id }` on `${channel}-friend`; `FriendSignalReceiver` (`src/integrations/coop.ts`) dedupes by id.
+- **SpacetimeDB:** `friendSignal(id, judgeCapability, kind)` (`spacetimedb/src/coop.ts`) checks the judge capability from the link, a live **co-op** session and flood limits (`FRIEND_LIMITS` in `coopRules.ts`: warn ≥ 2 s apart, decoy ≥ 15 s apart, at most 3), then bumps running counts in the private `coop_remote` row. The player subscribes to the owner-only `coop_remote_inbox(id, ownerCapability)` view and acts only on increases seen after subscribing (capped per update). `removeSession` and the 24-hour expiry delete the row.
+- The door page travels on the existing manual feed (`kind: 'door'`, validated by `manualRowValid`).
+
+### Needs a module publish before it works across devices
+
+The friend-signal reducer and view, the `door` manual kind and the new event types are module changes. Until `spacetimedb/` is republished to the database (`scary-5zsk8`) and `npm run spacetime:generate` is run, remote friends cannot warn, fire decoys or see the door key (the same-browser link works). `src/module_bindings/` was updated by hand to match the module; regenerating should produce the same files. `TraceBridge` resends the new event types as `UNKNOWN` if an older module rejects them, so the trace never stalls.
+
+### Not verified
+
+No two-device run yet, no live SpacetimeDB test of `friendSignal`, and no human playtest of decoy balance.

@@ -29,3 +29,6 @@
 .coop-rings{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}.coop-rings strong{display:flex;align-items:center;gap:8px;font:18px var(--mono);color:#d0ddad}.coop-rings kbd{font-size:26px;padding:4px 12px}
 .coop-pacer{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;align-items:baseline;padding:14px 16px;margin:10px 0;border:1px solid #63785866;transition:background .3s}.coop-pacer strong{font:20px var(--mono);letter-spacing:1px}.coop-pacer span{font:16px var(--mono);color:#9da99c}.coop-pacer.in{background:#1d3324;color:#cfe8b4}.coop-pacer.out{background:#2c2116;color:#ecc694}
 
+
+/* Two-key door: the friend's digits, large enough to read aloud. */
+.coop-door-key{display:flex;flex-wrap:wrap;gap:12px;margin:6px 0 4px}.coop-door-key kbd{display:grid;place-items:center;width:58px;height:66px;border:1px solid #e2d6ac99;font:34px var(--mono);color:#f0e4b8;background:#1d1f15}

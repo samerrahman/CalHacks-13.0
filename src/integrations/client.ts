@@ -73,6 +73,8 @@ export function sanitizedTrace(state: GameState, sensor: SensorView): TraceSnaps
 }
 function token(): string { return Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join(''); }
 type JudgeAccess = { channel: string; sessionId?: string; capability?: string; host?: string; database?: string };
+/** Event types added after the first Maincloud publish (see spacetimedb/src/index.ts eventTypes). */
+const NEWER_EVENT_TYPES = new Set(['RECOVERY_REWARD', 'FRIEND_WARNING', 'FRIEND_DECOY', 'DOOR_UNLOCKED']);
 export class TraceBridge {
   /** Owner access stays inside the player app; only the judge capability enters invite links. */
   cameraAccess(): import('./webrtc').CameraSignalAccess | null {
@@ -111,6 +113,8 @@ export class TraceBridge {
   private vitalsSequence = 0;
   private lastVitalsWrite = -Infinity;
   private lastSnapshot: TraceSnapshot | null = null;
+  /** Set when the database refuses newer event types (a module published before them); those then go as UNKNOWN. */
+  private legacyEvents = false;
   async connect(consent: boolean, seed: number, mode: string): Promise<void> {
     if (!consent || this.channel || this.disposed || this.connecting) return;
     const generation = ++this.generation;
@@ -198,8 +202,12 @@ export class TraceBridge {
     if (!this.connected || !this.client?.isActive || !this.sessionId || this.busy || performance.now() - this.lastWrite < 400) return;
     this.busy = true; this.lastWrite = performance.now();
     const generation = this.generation;
-    const events = snapshot.events.filter(e => e.seq > this.sequence);
-    void this.client.reducers.appendTrace({ id: this.sessionId, ownerCapability: this.owner, events, summary: { ...snapshot.summary, sensorAgeMs: snapshot.summary.sensorAgeMs ?? undefined } }).then(() => { if (generation === this.generation && this.connected) { this.sequence = events.at(-1)?.seq ?? this.sequence; this.status = 'SpacetimeDB live trace'; } }).catch(() => { if (generation === this.generation && this.connected) this.status = 'SpacetimeDB disconnected · retrying trace'; }).finally(() => { this.busy = false; });
+    const events = snapshot.events.filter(e => e.seq > this.sequence).map(e => this.legacyEvents && NEWER_EVENT_TYPES.has(e.type) ? { ...e, type: 'UNKNOWN', detail: '' } : e);
+    void this.client.reducers.appendTrace({ id: this.sessionId, ownerCapability: this.owner, events, summary: { ...snapshot.summary, sensorAgeMs: snapshot.summary.sensorAgeMs ?? undefined } }).then(() => { if (generation === this.generation && this.connected) { this.sequence = events.at(-1)?.seq ?? this.sequence; this.status = 'SpacetimeDB live trace'; } }).catch((error: unknown) => {
+      // An older published module rejects the whole batch for one unknown event type; resend those as UNKNOWN instead of stalling the trace.
+      if (/invalid event/i.test(error instanceof Error ? error.message : String(error)) && events.some(e => NEWER_EVENT_TYPES.has(e.type))) this.legacyEvents = true;
+      if (generation === this.generation && this.connected) this.status = 'SpacetimeDB disconnected · retrying trace';
+    }).finally(() => { this.busy = false; });
   }
   private publishVitals(vitals: SpectatorVitals | null): void {
     this.retryWithdraw();

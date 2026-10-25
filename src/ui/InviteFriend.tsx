@@ -5,7 +5,7 @@ import './invite.css';
 
 /** The one multiplayer surface: the link to send, what the friend sees, start or stop. The
  * bridge is read on a short timer because game time (and its re-render) is frozen meanwhile. */
-export default function InviteFriend({ bridge, camera, cameraWanted, onToggleCamera, vitalsShare, onVitalsConsent, starting, onStart, onStop }: { bridge: TraceBridge | null; camera: CameraShareState; cameraWanted: boolean; onToggleCamera: (on: boolean) => void; vitalsShare: boolean; onVitalsConsent: (on: boolean) => void; starting: boolean; onStart: () => void; onStop: () => void }) {
+export default function InviteFriend({ bridge, camera, cameraWanted, onToggleCamera, vitalsShare, onVitalsConsent, voice, voiceState, onVoice, starting, onStart, onStop }: { bridge: TraceBridge | null; camera: CameraShareState; cameraWanted: boolean; onToggleCamera: (on: boolean) => void; vitalsShare: boolean; onVitalsConsent: (on: boolean) => void; voice: boolean; voiceState: { mic: 'off' | 'opening' | 'live' | 'denied'; friends: number }; onVoice: (on: boolean) => void; starting: boolean; onStart: () => void; onStop: () => void }) {
   const [, tick] = useState(0), [copied, setCopied] = useState(false);
   useEffect(() => { const timer = setInterval(() => tick(n => n + 1), 300); return () => clearInterval(timer); }, []);
   const shareable = bridge?.shareableSpectateUrl() ?? null, link = shareable ?? bridge?.spectateUrl() ?? null, ready = !!bridge?.remoteReady;
@@ -24,6 +24,8 @@ export default function InviteFriend({ bridge, camera, cameraWanted, onToggleCam
     <fieldset className="invite-sharing"><legend>What they see live</legend>
       <label className="check"><input type="checkbox" checked={cameraWanted} onChange={e => onToggleCamera(e.target.checked)} /> Share live webcam video</label>
       <label className="check"><input type="checkbox" checked={vitalsShare} onChange={e => onVitalsConsent(e.target.checked)} /> Share live emotion, breathing & vitals</label>
+      <label className="check invite-voice"><input type="checkbox" checked={voice} disabled={!ready || !shareable} onChange={e => onVoice(e.target.checked)}/> Talk with your friend (microphone, optional)</label>
+      <p className="small muted" role="status">{!ready || !shareable ? 'Voice chat needs an online invitation.' : voice ? voiceState.mic === 'denied' ? 'Microphone blocked. Allow it in your browser or system settings, or keep playing without voice.' : voiceState.mic === 'live' ? `Mic on${voiceState.friends ? ` · hearing ${voiceState.friends}` : ' · waiting for your friend to join voice'}. Headphones stop the game sound echoing.` : 'Opening your microphone…' : 'Off. Your friend can still warn you with a button and read you the manual. Turn it on or off any time with MIC in the bottom bar.'}</p>
     </fieldset>
     {cameraWanted && <p className="small muted" role="status">{camera.status === 'live' ? camera.camera === 'ready' ? `Camera live · ${camera.viewers} watching` : 'Waiting for your camera' : camera.status === 'error' ? 'Live camera unavailable. The manual and game view still work.' : 'Connecting your camera…'}</p>}
     <button className="primary" onClick={onStart}>{starting ? 'Start' : 'Back to the shelter'} <span>→</span></button>

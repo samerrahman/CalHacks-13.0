@@ -151,6 +151,12 @@ class MockPeer {
   }
   async addIceCandidate(c: RTCIceCandidateInit) { this.added.push(c); }
   getReceivers() { return []; }
+  /** Answerer side of the player's optional voice line (the offerer's second, sendrecv transceiver). */
+  audioLine: { receiver: { track: { kind: string } }; direction: RTCRtpTransceiverDirection; sender: MockSender } | null = null;
+  getTransceivers() {
+    if (!this.transceivers.length && this.other?.transceivers.some(t => t.init.direction === 'sendrecv')) this.audioLine ??= { receiver: { track: { kind: 'audio' } }, direction: 'recvonly', sender: new MockSender(null) };
+    return this.audioLine ? [this.audioLine] : [];
+  }
   settle() { const o = this.other; if (!o || !this.localDescription || !this.remoteDescription || !o.localDescription || !o.remoteDescription) return; for (const p of [this, o]) if (p.connectionState === 'new') p.state('connected'); }
   state(s: RTCPeerConnectionState) { this.connectionState = s; this.onconnectionstatechange?.(); }
   close() { this.closed = true; this.connectionState = 'closed'; }
@@ -374,4 +380,42 @@ test('a spectate link without SpacetimeDB reports the camera as unavailable', ()
   assert.equal(camera.current.status, 'unavailable');
   assert.equal(SpectatorCamera.fromWatchHash('#watch=garbage').current.status, 'unavailable');
   camera.dispose();
+});
+
+test('voice chat: an optional two-way audio line rides on each peer, and mics switch without renegotiating', async () => {
+  const hub = new Hub(), audio = (label: string) => Object.assign(new MockTrack(label), { kind: 'audio' });
+  let mic: MockTrack | null = null;
+  const heard: [string, unknown][] = [];
+  const player = playerFor(hub, { video: false, voice: { mic: () => mic as unknown as MediaStreamTrack, onFriendAudio: (key, stream) => heard.push([key, stream]) } });
+  assert.equal(await player.start(), true);
+  assert.equal(player.current.camera, 'waiting', 'voice only: no camera opened');
+  const a = spectatorFor(hub);
+  void a.camera.start();
+  await until(() => a.camera.current.status === 'live');
+  const out = senders()[0]!, into = receivers()[0]!;
+  assert.equal(out.transceivers.length, 2);
+  assert.equal(out.transceivers[0]!.init.direction, 'sendonly'); assert.equal(out.transceivers[0]!.sender.track, null, 'the video line stays empty');
+  assert.equal(out.transceivers[1]!.init.direction, 'sendrecv'); assert.equal(out.transceivers[1]!.sender.track, null, 'silent until the player turns the mic on');
+  assert.equal(into.transceivers.length, 0); assert.equal(into.audioLine?.direction, 'sendrecv', 'the spectator answers the voice line two-way');
+  assert.equal(into.audioLine?.sender.track, null, 'and stays silent until they join voice');
+  assert.equal(a.camera.current.voice, true);
+  mic = audio('player-mic'); player.refreshMic(); await tick();
+  assert.equal(out.transceivers[1]!.sender.track, mic);
+  const friendMic = audio('friend-mic');
+  a.camera.setMic(friendMic as unknown as MediaStreamTrack); await tick();
+  assert.equal(into.audioLine?.sender.track, friendMic);
+  mic = null; player.refreshMic(); a.camera.setMic(null); await tick();
+  assert.equal(out.transceivers[1]!.sender.track, null); assert.equal(into.audioLine?.sender.track, null);
+  await player.stop();
+  assert.ok(heard.some(([, stream]) => stream === null), 'a closed peer drops its friend audio');
+  a.camera.dispose();
+});
+
+test('a camera share without voice carries no audio line', async () => {
+  const hub = new Hub(), player = playerFor(hub, { stream: () => streamOf(new MockTrack('sensor')) });
+  assert.equal(await player.start(), true);
+  const a = spectatorFor(hub); void a.camera.start();
+  await until(() => a.camera.current.status === 'live');
+  assert.equal(senders()[0]!.transceivers.length, 1); assert.equal(receivers()[0]!.audioLine, null); assert.equal(a.camera.current.voice, false);
+  await player.stop(); a.camera.dispose();
 });

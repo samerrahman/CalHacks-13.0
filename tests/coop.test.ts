@@ -129,7 +129,7 @@ test('coopManual gives exactly the key for the live task and solves stage 1 with
   const calm = solveMemoryByManual(four); assert.equal(calm.tasks.step, 'calm');
   const pacer = coopManual(calm) as Extract<CoopManual, { kind: 'calm' }>;
   assert.equal(pacer.kind, 'calm'); assert.equal(pacer.inhale, true); assert.equal(pacer.halfTenths, Math.round(calm.tasks.calm.halfSeconds * 10)); assert.equal(pacer.required, calm.tasks.calm.required);
-  const final = structuredClone(twelve); startStage(final, 5); assert.equal(coopManual(final), null);
+  const final = structuredClone(twelve); startStage(final, 5); assert.deepEqual(coopManual(final), { kind: 'door', stage: 5, key: final.coop.doorKey }, 'the basement door needs the friend\'s key');
   assert.equal(coopManual({ ...still('coop'), status: 'lost' }), null, 'nothing once the run ends');
 });
 

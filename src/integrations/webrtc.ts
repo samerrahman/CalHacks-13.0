@@ -93,8 +93,13 @@ export type PlayerCameraOptions = {
   /** Open peer connections at once; each costs the player upload bandwidth. */
   maxViewers?: number;
   disconnectGraceMs?: number;
+  /** False for a voice-only share: never opens a camera. The (empty) video line stays in the offer. */
+  video?: boolean;
+  /** Optional voice chat: every peer also carries a two-way audio line. `mic()` is the player's
+   * microphone track (null keeps it silent); `onFriendAudio` receives each spectator's voice, or null when they leave. */
+  voice?: { mic: () => MediaStreamTrack | null; onFriendAudio: (key: string, stream: MediaStream | null) => void };
 };
-type PlayerPeer = { key: string; pc: RTCPeerConnection; sender: RTCRtpSender | null; remote: boolean; answering: boolean; offered: boolean; inbound: IceInit[]; outbound: IceInit[]; sent: number; flush: Timer | null; grace: Timer | null };
+type PlayerPeer = { key: string; pc: RTCPeerConnection; sender: RTCRtpSender | null; audio: RTCRtpSender | null; remote: boolean; answering: boolean; offered: boolean; inbound: IceInit[]; outbound: IceInit[]; sent: number; flush: Timer | null; grace: Timer | null };
 
 /** The player's side: one sendonly peer connection per spectator key, offer first. */
 export class PlayerCameraShare {
@@ -122,7 +127,7 @@ export class PlayerCameraShare {
     this.active = true; this.lastId = 0n;
     this.emit({ ...CAMERA_SHARE_OFF, status: 'starting', message: 'Starting the live camera' });
     try {
-      if (!this.track() && this.options.capture) {
+      if (!this.track() && this.options.capture && this.options.video !== false) {
         const stream = await this.options.capture();
         if (generation !== this.generation) { stopTracks(stream); return false; }
         this.owned = stream;
@@ -164,6 +169,12 @@ export class PlayerCameraShare {
     if (this.active && this.state.status === 'live') this.emit({ ...this.state, camera: track ? 'ready' : 'waiting' });
   }
 
+  /** Call when the player's microphone turns on or off; live connections switch without renegotiating. */
+  refreshMic(): void {
+    const mic = this.options.voice?.mic() ?? null;
+    for (const peer of this.peers.values()) if (peer.audio && peer.audio.track !== mic) void peer.audio.replaceTrack(mic).catch(silence);
+  }
+
   private emit(state: CameraShareState): void { if (this.disposed) return; this.state = state; this.listeners.forEach(l => l(state)); }
   private track(): MediaStreamTrack | null {
     for (const stream of [this.options.stream(), this.owned]) { const track = stream?.getVideoTracks().find(t => t.readyState === 'live'); if (track) return track; }
@@ -200,7 +211,10 @@ export class PlayerCameraShare {
     const pc = (this.options.createPeer ?? defaultPeer)({ iceServers: this.options.iceServers ?? iceServers(), bundlePolicy: 'max-bundle' });
     const track = this.track();
     const { sender } = pc.addTransceiver(track ?? 'video', { direction: 'sendonly', sendEncodings: [{ maxBitrate: 600_000, maxFramerate: 24 }] });
-    const peer: PlayerPeer = { key, pc, sender, remote: false, answering: false, offered: false, inbound: [], outbound: [], sent: 0, flush: null, grace: null };
+    const voice = this.options.voice;
+    const audio = voice ? pc.addTransceiver(voice.mic() ?? 'audio', { direction: 'sendrecv' }).sender : null;
+    if (voice) pc.ontrack = e => { if (e.track.kind === 'audio' && this.peers.get(key)?.pc === pc) voice.onFriendAudio(key, e.streams[0] ?? new MediaStream([e.track])); };
+    const peer: PlayerPeer = { key, pc, sender, audio, remote: false, answering: false, offered: false, inbound: [], outbound: [], sent: 0, flush: null, grace: null };
     this.peers.set(key, peer);
     pc.onicecandidate = e => { const c = candidate(e); if (c && peer.sent + peer.outbound.length < MAX_SENT_ICE) { peer.outbound.push(c); this.flushIce(peer); } };
     pc.onconnectionstatechange = () => this.peerState(peer);
@@ -252,8 +266,9 @@ export class PlayerCameraShare {
     this.peers.delete(key);
     if (peer.flush) clearTimeout(peer.flush);
     if (peer.grace) clearTimeout(peer.grace);
-    peer.pc.onicecandidate = null; peer.pc.onconnectionstatechange = null;
+    peer.pc.onicecandidate = null; peer.pc.onconnectionstatechange = null; peer.pc.ontrack = null;
     try { peer.pc.close(); } catch { /* already closed */ }
+    if (peer.audio) this.options.voice?.onFriendAudio(key, null);
     this.count();
   }
   private count(): void {
@@ -264,7 +279,9 @@ export class PlayerCameraShare {
   }
 }
 
-export type SpectatorCameraState = { status: 'unavailable' | 'connecting' | 'waiting' | 'joining' | 'live' | 'ended' | 'full' | 'error'; stream: MediaStream | null; message: string };
+export type SpectatorCameraState = { status: 'unavailable' | 'connecting' | 'waiting' | 'joining' | 'live' | 'ended' | 'full' | 'error'; stream: MediaStream | null; message: string;
+  /** The player's voice line, when their share offers voice chat. Play it only after the spectator chooses to listen. */
+  audio?: MediaStream | null; voice?: boolean };
 export type SpectatorCameraOptions = {
   sessionId: string;
   judgeCapability: string;
@@ -281,7 +298,7 @@ export type SpectatorCameraOptions = {
   maxRetries?: number;
   disconnectGraceMs?: number;
 };
-type Attempt = { key: string; handle: Sub | null; joined: boolean; pc: RTCPeerConnection | null; remote: boolean; answered: boolean; inbound: IceInit[]; outbound: IceInit[]; sent: number; stream: MediaStream | null; lastId: bigint; timer: Timer | null; flush: Timer | null; grace: Timer | null };
+type Attempt = { audio: RTCRtpSender | null; voice: MediaStream | null; key: string; handle: Sub | null; joined: boolean; pc: RTCPeerConnection | null; remote: boolean; answered: boolean; inbound: IceInit[]; outbound: IceInit[]; sent: number; stream: MediaStream | null; lastId: bigint; timer: Timer | null; flush: Timer | null; grace: Timer | null };
 
 /** A spectator page's side: a fresh key per attempt, answer the player's offer, show the remote stream. */
 export class SpectatorCamera {
@@ -295,9 +312,17 @@ export class SpectatorCamera {
   private retries = 0;
   private retryTimer: Timer | null = null;
   private disposed = false;
+  private mic: MediaStreamTrack | null = null;
   private readonly syncShare = () => this.share();
   private readonly syncInbox = () => this.drain();
   constructor(private readonly options: SpectatorCameraOptions) {}
+
+  /** The spectator's own microphone for voice chat (null mutes it). Sent only on a voice line the player offered. */
+  setMic(track: MediaStreamTrack | null): void {
+    this.mic = track;
+    const sender = this.attempt?.audio;
+    if (sender && sender.track !== track) void sender.replaceTrack(track).catch(silence);
+  }
 
   /** For `#watch=` pages: opens its own connection only when the link names this build's database. */
   static fromWatchHash(hash: string): SpectatorCamera {
@@ -371,7 +396,7 @@ export class SpectatorCamera {
     if (!connection || this.disposed || this.epoch === null) return;
     const { sessionId: id, judgeCapability } = this.options;
     const key = (this.options.newKey ?? hex)();
-    const attempt: Attempt = { key, handle: null, joined: false, pc: null, remote: false, answered: false, inbound: [], outbound: [], sent: 0, stream: null, lastId: 0n, timer: null, flush: null, grace: null };
+    const attempt: Attempt = { audio: null, voice: null, key, handle: null, joined: false, pc: null, remote: false, answered: false, inbound: [], outbound: [], sent: 0, stream: null, lastId: 0n, timer: null, flush: null, grace: null };
     this.attempt = attempt;
     this.emit({ status: 'joining', stream: null, message: 'Asking the player for their camera' });
     attempt.timer = setTimeout(() => this.retry(attempt, 'No answer from the player yet · retrying'), this.options.offerTimeoutMs ?? 20_000);
@@ -412,7 +437,9 @@ export class SpectatorCamera {
     const pc = (this.options.createPeer ?? defaultPeer)({ iceServers: this.options.iceServers ?? iceServers(), bundlePolicy: 'max-bundle' });
     attempt.pc = pc;
     pc.ontrack = e => {
-      if (this.attempt !== attempt || e.track.kind !== 'video') return;
+      if (this.attempt !== attempt) return;
+      if (e.track.kind === 'audio') { attempt.voice = e.streams[0] ?? (this.options.createStream ?? (tracks => new MediaStream(tracks)))([e.track]); if (this.state.status === 'live') this.emit({ ...this.state, audio: attempt.voice, voice: true }); return; }
+      if (e.track.kind !== 'video') return;
       attempt.stream = e.streams[0] ?? (this.options.createStream ?? (tracks => new MediaStream(tracks)))([e.track]);
       if (pc.connectionState === 'connected') this.live(attempt);
     };
@@ -421,6 +448,9 @@ export class SpectatorCamera {
     try {
       await pc.setRemoteDescription({ type: 'offer', sdp });
       attempt.remote = true;
+      // Voice chat: answer the player's audio line two-way, silent until this spectator turns their mic on.
+      const line = pc.getTransceivers?.().find(t => t.receiver?.track?.kind === 'audio');
+      if (line) { line.direction = 'sendrecv'; attempt.audio = line.sender; if (this.mic) await line.sender.replaceTrack(this.mic).catch(silence); }
       for (const c of attempt.inbound.splice(0)) await pc.addIceCandidate(c).catch(silence);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
@@ -462,7 +492,7 @@ export class SpectatorCamera {
       const tracks = attempt.pc.getReceivers().map(r => r.track).filter(t => t?.kind === 'video');
       if (tracks.length) attempt.stream = (this.options.createStream ?? (all => new MediaStream(all)))(tracks);
     }
-    if (attempt.stream) this.emit({ status: 'live', stream: attempt.stream, message: 'Live · peer to peer from the player' });
+    if (attempt.stream) this.emit({ status: 'live', stream: attempt.stream, message: 'Live · peer to peer from the player', audio: attempt.voice, voice: !!attempt.audio });
   }
   private full(attempt: Attempt): void {
     if (this.attempt !== attempt) return;

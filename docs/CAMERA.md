@@ -42,3 +42,13 @@ Every received payload is revalidated on both sides (`spacetimedb/src/signalRule
 - No real WebRTC media: Node has no `RTCPeerConnection`, and no browser or Electron run with two devices has been recorded yet. NAT traversal with STUN only can fail on strict networks; there is no TURN relay configured.
 - App, TraceBridge, the invitation and SpectateView are connected in the integrated branch. The combined local module passed 26 signaling checks (see `qa/integrated-camera-local.json`).
 - Not published to Maincloud.
+
+## Voice chat (optional)
+
+Co-op runs can add two-way voice on the same peer connection. Each peer the player opens in a friend run carries a second, `sendrecv` audio line next to the video line; both stay silent until someone opts in, and switching a mic on or off uses `replaceTrack` (no renegotiation).
+
+- **Player:** "Talk with your friend (microphone, optional)" in the invitation, or **MIC** in the bottom bar. On: opens the mic (echo cancellation, noise suppression) and plays friends' voices; off: closes the mic and mutes them. With no camera chosen, a voice-only share starts: no camera opens and the video line stays empty. The mic closes whenever the share stops (pause, hidden app, results, Stop sharing).
+- **Spectator:** **Join voice** under the player camera opens their mic and plays the player. The card reads "Camera off · voice chat available" for a voice-only share.
+- Nothing new passes through SpacetimeDB: the offer still has a video section, so the published signaling rules accept it unchanged. Echo cancellation is the browser's; headphones avoid game sound feeding back.
+- Not verified: no real two-device audio test (Node has no WebRTC; the state machines are covered with mocks in `src/integrations/webrtc.test.ts`). An offer with audio is larger but expected to stay under the 8 KB signaling cap; if a browser exceeds it, the peer closes and video/voice are unavailable for that viewer.
+

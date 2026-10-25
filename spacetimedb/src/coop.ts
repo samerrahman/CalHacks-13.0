@@ -1,6 +1,6 @@
 import { table, t, SenderError } from 'spacetimedb/server';
 import { capability, ownedSession, type HushCtx, type HushDb } from './access';
-import { manualRowValid } from './coopRules';
+import { FRIEND_LIMITS, friendSignalValid, manualRowValid } from './coopRules';
 
 // Experimental co-op: the spectating friend reads the key for the player's live puzzle. Only a session
 // created in 'coop' mode may hold a row; one row per session, the latest page only, no history.
@@ -14,9 +14,21 @@ export const coopManual = table({ name: 'coop_manual' }, {
   updatedAtMs: t.u64(),
 });
 
+/** The friend's remote actions for one co-op session: running counts only, no history. The player's
+ * game revalidates every action (cooldowns, charges, attack state); this only carries and floods-limits them. */
+export const coopRemote = table({ name: 'coop_remote' }, {
+  sessionId: t.string().primaryKey(),
+  warnCount: t.u32(),
+  decoyCount: t.u32(),
+  lastWarnAtMs: t.u64(),
+  lastDecoyAtMs: t.u64(),
+});
+
 const MIN_WRITE_GAP_MS = 250n;
 
-export function dropCoop(ctx: HushCtx, sessionId: string): void { ctx.db.coopManual.sessionId.delete(sessionId); }
+export function dropCoop(ctx: HushCtx, sessionId: string): void { ctx.db.coopManual.sessionId.delete(sessionId); ctx.db.coopRemote.sessionId.delete(sessionId); }
+
+const remoteInboxRow = t.row('CoopRemoteRow', { sessionId: t.string().primaryKey(), warnCount: t.u32(), decoyCount: t.u32() });
 
 const manualFeedRow = t.row('CoopManualRow', {
   sessionId: t.string().primaryKey(), sequence: t.u32(), kind: t.string(),
@@ -55,5 +67,36 @@ export function coopExports(db: HushDb) {
     },
   );
 
-  return db.exportGroup({ publishManual, coopManualFeed });
+  /** The spectating friend (judge capability from the link) signals the player. Co-op sessions only. */
+  const friendSignal = db.reducer({ id: t.string(), judgeCapability: t.string(), kind: t.string() }, (ctx, args) => {
+    const session = ctx.db.session.id.find(args.id), now = ctx.timestamp.toMillis();
+    if (!session || !capability(args.judgeCapability) || session.judgeCapability !== args.judgeCapability || session.expiresAtMs < now) throw new SenderError('Session unavailable');
+    if (session.mode !== 'coop') throw new SenderError('Not a co-op session');
+    if (!friendSignalValid(args.kind)) throw new SenderError('Invalid signal');
+    const row = ctx.db.coopRemote.sessionId.find(args.id) ?? { sessionId: args.id, warnCount: 0, decoyCount: 0, lastWarnAtMs: 0n, lastDecoyAtMs: 0n };
+    const next = { ...row };
+    if (args.kind === 'warn') {
+      if (now - row.lastWarnAtMs < BigInt(FRIEND_LIMITS.warnGapMs)) throw new SenderError('Too frequent');
+      next.warnCount = row.warnCount + 1; next.lastWarnAtMs = now;
+    } else {
+      if (row.decoyCount >= FRIEND_LIMITS.maxDecoys) throw new SenderError('No decoys left');
+      if (now - row.lastDecoyAtMs < BigInt(FRIEND_LIMITS.decoyGapMs)) throw new SenderError('Too frequent');
+      next.decoyCount = row.decoyCount + 1; next.lastDecoyAtMs = now;
+    }
+    if (ctx.db.coopRemote.sessionId.find(args.id)) ctx.db.coopRemote.sessionId.update(next); else ctx.db.coopRemote.insert(next);
+  });
+
+  /** The player's inbox for friend signals (owner capability). */
+  const coopRemoteInbox = db.anonymousView(
+    { name: 'coop_remote_inbox', public: true },
+    { id: t.string(), ownerCapability: t.string() },
+    t.array(remoteInboxRow),
+    (ctx, args) => {
+      const session = ctx.db.session.id.find(args.id), row = ctx.db.coopRemote.sessionId.find(args.id);
+      if (!session || !row || !capability(args.ownerCapability) || session.ownerCapability !== args.ownerCapability) return [];
+      return [{ sessionId: row.sessionId, warnCount: row.warnCount, decoyCount: row.decoyCount }];
+    },
+  );
+
+  return db.exportGroup({ publishManual, coopManualFeed, friendSignal, coopRemoteInbox });
 }

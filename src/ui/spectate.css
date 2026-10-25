@@ -50,3 +50,18 @@
 .spectate-readout>span{font:11px var(--mono);letter-spacing:1px;color:#b4c29e}.spectate-readout.mood-fear>strong,.spectate-readout.mood-fear>span{color:#edb078}.spectate-readout.mood-tense>strong,.spectate-readout.mood-tense>span{color:#d8c48a}
 .spectate-vitals.held .spectate-readouts{opacity:.45}
 @media(max-width:820px){.spectate-readouts{grid-template-columns:1fr 1fr}.spectate-readout.primary>strong{font-size:34px}}
+/* Co-op friend controls: a big warning button, decoys earned by solving the player's own puzzles. */
+.friend-controls{border-color:#a3956a66}
+.friend-warn{display:grid;gap:6px;text-align:left;padding:16px 18px;background:#2a120c;border:1px solid #b4553a;color:#f0c7ad}
+.friend-warn strong{font:15px var(--mono);letter-spacing:1px}.friend-warn span{font-size:11px;color:#d9a991;line-height:1.5}
+.friend-warn:hover:not(:disabled){background:#3d170d;border-color:#ff7a52}
+.friend-warn.urgent:not(:disabled){animation:friend-urgent .9s ease-in-out infinite;border-color:#ff7a52}
+.friend-decoy-card{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.friend-decoy-head{display:flex;justify-content:space-between;align-items:baseline}.friend-decoy-head b{font:12px var(--mono);letter-spacing:1px;font-weight:400;color:#e2d6ac}.friend-decoy-head span{font:14px var(--mono);letter-spacing:3px;color:#8fbf8f}
+.friend-decoy-card>p,.friend-challenge p{font-size:12px;color:#aebc9f;line-height:1.6;margin:0}
+.friend-challenge{display:grid;gap:10px;background:#0b120d;border:1px solid var(--line);padding:14px}
+.friend-challenge .conduit{max-width:260px}
+.friend-armed{color:#cfe3c6!important}
+.spectate-voice{display:grid;gap:6px}.spectate-voice button{justify-self:start;font:11px var(--mono);letter-spacing:1px}.spectate-voice button.on{border-color:#8fbf8f;color:#cfe3c6}.spectate-voice span{font-size:11px;color:#aebc9f}
+@keyframes friend-urgent{50%{box-shadow:0 0 22px #ff5a3666}}
+@media(prefers-reduced-motion:reduce){.friend-warn.urgent{animation:none}}

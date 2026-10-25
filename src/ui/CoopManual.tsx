@@ -74,23 +74,30 @@ function Calm({ manual }: { manual: Extract<Manual, { kind: 'calm' }> }) {
   </>;
 }
 
-const TITLES: Record<Manual['kind'], string> = { faults: 'Rack sound key', wires: 'Cable patch', routing: 'Conduit route', memory: 'Signal sequence', locate: 'Radar reading', calm: 'Breathing pacer' };
+function Door({ manual }: { manual: Extract<Manual, { kind: 'door' }> }) {
+  return <>
+    <p>All four locks are released. The basement door motor needs your key too. Read these digits to the player in order; they press 1–4 at the terminal. A wrong digit buzzes loudly and they start over.</p>
+    <div className="coop-door-key" role="img" aria-label={`Door key ${manual.key.join(' ')}`}>{manual.key.map((digit, i) => <kbd key={i}>{digit}</kbd>)}</div>
+  </>;
+}
+
+const TITLES: Record<Manual['kind'], string> = { faults: 'Rack sound key', wires: 'Cable patch', routing: 'Conduit route', memory: 'Signal sequence', locate: 'Radar reading', calm: 'Breathing pacer', door: 'Basement door key' };
 /** One page: the key for the player's live task only. */
 export function ManualPage({ manual }: { manual: Manual | null }) {
-  if (!manual) return <div className="coop-empty"><strong>No page right now.</strong><span>The heartbeat mask has no page. Help the player listen for footsteps.</span></div>;
+  if (!manual) return <div className="coop-empty"><strong>No page right now.</strong><span>The heartbeat mask has no page. Watch the creature's distance: warn the player when it gets close, or earn a decoy below.</span></div>;
   return <div className={`coop-page coop-${manual.kind}`}>
     <h2>{TITLES[manual.kind]} <small>STAGE {manual.stage}</small></h2>
-    {manual.kind === 'faults' ? <Faults manual={manual}/> : manual.kind === 'wires' ? <Wires manual={manual}/> : manual.kind === 'memory' ? <Memory manual={manual}/> : manual.kind === 'locate' ? <Locate manual={manual}/> : manual.kind === 'calm' ? <Calm manual={manual}/> : <Routing manual={manual}/>}
+    {manual.kind === 'faults' ? <Faults manual={manual}/> : manual.kind === 'wires' ? <Wires manual={manual}/> : manual.kind === 'memory' ? <Memory manual={manual}/> : manual.kind === 'locate' ? <Locate manual={manual}/> : manual.kind === 'calm' ? <Calm manual={manual}/> : manual.kind === 'door' ? <Door manual={manual}/> : <Routing manual={manual}/>}
   </div>;
 }
 
 /** Spectator panel for a co-op run. Mount it only when the trace mode is 'coop'; it reads the link in `hash`. */
-export default function CoopManual({ hash }: { hash: string }) {
+export default function CoopManual({ hash, feed: shared }: { hash: string; feed?: CoopManualFeed | null }) {
   const [state, setState] = useState<CoopFeedState | null>(null), [now, setNow] = useState(() => performance.now());
   useEffect(() => {
-    const feed = new CoopManualFeed(hash), off = feed.subscribe(next => { setState(next); setNow(performance.now()); }), clock = setInterval(() => setNow(performance.now()), 500);
-    return () => { off(); clearInterval(clock); feed.dispose(); };
-  }, [hash]);
+    const feed = shared ?? new CoopManualFeed(hash), off = feed.subscribe(next => { setState(next); setNow(performance.now()); }), clock = setInterval(() => setNow(performance.now()), 500);
+    return () => { off(); clearInterval(clock); if (!shared) feed.dispose(); };
+  }, [hash, shared]);
   const manual = state ? currentManual(state, now) : null;
   return <section className="spectate-card coop-manual" aria-live="polite">
     <small>THE MANUAL · CO-OP <em>{state?.status ?? 'Connecting'}</em></small>

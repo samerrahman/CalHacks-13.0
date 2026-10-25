@@ -1,5 +1,6 @@
 import { config } from './config';
 import { applyLure, contextualTaunt } from './creature';
+import { doorNeedsKey, enterDoorKey } from './coop';
 import { emit, random, type CalmState, type GameState, type LocateState, type MemoryState, type PulseMaskState, type RoutingState, type Sector, type Stage, type WireState } from './state';
 
 export function emptyWires(): WireState { return { targetOrder: [], connections: [] }; }
@@ -170,7 +171,10 @@ export function startStage(state: GameState, stage: Stage): void {
     replayMemory(state);
   } else if (stage === 5) {
     state.tasks.memory = emptyMemory(); state.tasks.faults.active = [];
-    state.notice = 'All four basement locks are released. Press T to send the last decoy heartbeat; the door motor starts once it holds. The motor is loud.';
+    state.coop.doorInput = [];
+    state.notice = state.mode === 'coop' && !state.coop.doorUnlocked
+      ? 'All four basement locks are released. The door motor needs a second key, and your friend has it. Enter their four digits with 1–4, then press T.'
+      : 'All four basement locks are released. Press T to send the last decoy heartbeat; the door motor starts once it holds. The motor is loud.';
   }
   // Each research stage releases one of the basement door's four locks.
   if (stage >= 2 && stage <= 4 && state.mode !== 'tutorial') state.notice = `Basement lock ${stage - 1} of 4 released. ${state.notice}`;
@@ -186,7 +190,7 @@ function completeStage(state: GameState): void {
   state.transients.push({ at: state.time, strength: config.tasks.completionStrength, duration: config.tasks.completionDecaySeconds });
   emit(state, 'TASK_COMPLETE', String(stage));
 }
-function mistake(state: GameState, kind: 'FAULT' | 'MEMORY' | 'WIRE' | 'ROUTING' | 'LOCATE', notice?: string): void {
+export function mistake(state: GameState, kind: 'FAULT' | 'MEMORY' | 'WIRE' | 'ROUTING' | 'LOCATE' | 'DOOR', notice?: string): void {
   // Reducer rate limit covers rapid repeated buttons, not only keyboard repeat.
   const last = [...state.events].reverse().find(event => event.type === 'WRONG_INPUT');
   if (!last || state.time - last.time >= .25) {
@@ -314,6 +318,7 @@ export function taskInput(state: GameState, value: number): void {
     if (faults.completed >= faults.required) { state.tasks.step = 'wires'; state.notice = state.mode === 'coop' ? 'Faults cleared. Read each cable symbol to your friend; the manual gives its socket code.' : 'Faults cleared. Drag each cable to its matching symbol to restore the relay.'; }
     return;
   }
+  if (step === 'final') { enterDoorKey(state, value); return; }
   if (step !== 'memory' || (stage !== 2 && stage !== 4)) return;
   const memory = state.tasks.memory;
   if (memory.playing || memory.armed || memory.needsReplay) return;
@@ -349,6 +354,7 @@ export function transmit(state: GameState): void {
     completeStage(state); applyLure(state, stage === 2 ? 'EMITTER_A' : 'EMITTER_B');
     startStage(state, stage === 2 ? 3 : 5);
   } else if (stage === 5 && !state.tasks.finalTransmitted && state.tasks.completedStages.length === 4) {
+    if (doorNeedsKey(state)) { state.notice = 'The door motor needs your friend’s key first. Ask them to read it, then enter it with 1–4.'; return; }
     state.tasks.finalTransmitted = true;
     applyLure(state, 'CONTAINMENT'); emit(state, 'FINAL_BROADCAST'); state.version++;
   }

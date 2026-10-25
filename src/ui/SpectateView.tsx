@@ -6,6 +6,8 @@ import type { PropView } from '../integrations/physics';
 import { DOOR, OBSTACLES, ROOM } from '../../spacetimedb/src/physicsSim';
 import './spectate.css';
 import CoopManual from './CoopManual';
+import FriendControls from '../spectate/FriendControls';
+import { CoopManualFeed } from '../integrations/coop';
 import SpectateCamera from './SpectateCamera';
 import { emotionLabel, fearFromPulse, type EmotionLabel } from './vitalsHold';
 
@@ -15,7 +17,7 @@ const MOMENTS: Record<string, (detail: string) => string> = {
   RUN_STARTED: () => 'The run started', PROXIMITY_ALARM: () => 'It reached the wall', SCARE: d => d === 'breach' ? 'It broke through' : 'Something hit the door',
   ATTACK_COMMITTED: () => 'It is coming through', WRONG_INPUT: d => `A mistake (${d.toLowerCase() || 'input'})`, TASK_COMPLETE: d => `Stage ${d} complete`,
   LURE_TRANSMITTED: d => `Lure sent to ${d.replace('_', ' ').toLowerCase()}`, QUIET_ENTERED: () => 'Equipment isolated', RESTORED: () => 'Power restored',
-  BLACKOUT_STARTED: () => 'Blackout', FINAL_BROADCAST: () => 'Final broadcast', WON: () => 'Contained', LOST: () => 'Lost', TIMEOUT: () => 'Out of time', PAUSED: () => 'Paused', RESUMED: () => 'Resumed',
+  BLACKOUT_STARTED: () => 'Blackout', FRIEND_WARNING: () => 'You warned them', FRIEND_DECOY: () => 'Your decoy fired', DOOR_UNLOCKED: () => 'Your door key turned', RECOVERY_REWARD: () => 'They steadied · it lost their trail', FINAL_BROADCAST: () => 'Final broadcast', WON: () => 'Contained', LOST: () => 'Lost', TIMEOUT: () => 'Out of time', PAUSED: () => 'Paused', RESUMED: () => 'Resumed',
 };
 const MOOD: Record<EmotionLabel, string> = { 'FEAR / STARTLE': 'FEAR / ELEVATED', TENSE: 'TENSE', CALM: 'CALM', CALIBRATING: 'CALIBRATING' };
 /** Only heart rate is shared, never the player's breathing or expressions, so spectators get an
@@ -76,6 +78,9 @@ export default function SpectateView() {
     let raf = requestAnimationFrame(function frame(t) { drawShelter(canvas.current, current.props(t)); raf = requestAnimationFrame(frame); });
     return () => { off(); clearInterval(clock); cancelAnimationFrame(raf); current.dispose(); if (feed.current === current) feed.current = null; };
   }, []);
+  const coop = state?.trace?.mode === 'coop', [coopFeed, setCoopFeed] = useState<CoopManualFeed | null>(null);
+  // One manual feed per page in co-op: it reads the manual and carries the friend's warning and decoys.
+  useEffect(() => { if (!coop) return; const next = new CoopManualFeed(location.hash); setCoopFeed(next); return () => { next.dispose(); setCoopFeed(null); }; }, [coop]);
   const trace = state?.trace, s = trace?.summary, traceAge = state?.traceReceivedAt == null ? null : now - state.traceReceivedAt;
   const moments = (trace?.events ?? []).filter(e => MOMENTS[e.type]).slice(-6).reverse();
   // Run time carried forward between updates (at most 2 s) so the distance keeps drifting smoothly.
@@ -84,13 +89,14 @@ export default function SpectateView() {
     <div className="eyebrow">HUSH / SPECTATING · READ ONLY</div>
     <h1>{trace?.mode==='coop'?"You're their lifeline.":"You're watching."}</h1>
     <p className="small muted">{state?.status ?? 'Connecting'}{traceAge !== null && traceAge > HELD_MS && ` · no update for ${Math.floor(traceAge / 1000)} s`}</p>
-    {trace?.mode==='coop'&&<CoopManual hash={location.hash}/>}
+    {coop&&coopFeed&&<CoopManual hash={location.hash} feed={coopFeed}/>}
     <div className="spectate-main">
       <section className="spectate-card spectate-cctv-card" aria-label="Shelter camera">
         <small>SHELTER CAMERA <em>DRAWN ON THIS DEVICE FROM THE GAME STATE · NOT THE PLAYER’S WEBCAM</em></small>
         <CctvFeed trace={trace ?? null} propsAt={propsAt} />
       </section>
       <div className="spectate-side">
+        {coop&&coopFeed&&<FriendControls feed={coopFeed} trace={trace ?? null}/>}
         <SpectateCamera hash={location.hash}/>
         <Vitals vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt} />
         {s && distance ? <section className="spectate-card">
@@ -112,6 +118,6 @@ export default function SpectateView() {
         <ol className="spectate-moments">{moments.length ? moments.map(e => <li key={e.id}><time>{Math.floor(e.time / 60)}:{String(Math.floor(e.time % 60)).padStart(2, '0')}</time>{MOMENTS[e.type]!(e.detail)}</li>) : <li>Nothing yet.</li>}</ol>
       </section>
     </div>
-    <p className="small muted spectate-privacy">You see game events, the creature's distance, a shelter camera your own browser draws from those events and, only if the player turned it on, their current heart rate. When enabled, their webcam streams directly to you without being recorded. In co-op, use the manual to talk them through the puzzles; your controls never change their game. A camera pulse estimate is a game input, not a medical reading.</p>
+    <p className="small muted spectate-privacy">You see game events, the creature's distance, a shelter camera your own browser draws from those events and, only if the player turned it on, their current heart rate. When enabled, their webcam streams directly to you without being recorded. In co-op, use the manual to talk them through the puzzles, warn them when it gets close, and earn decoys; their game checks every action and decides what happens. A camera pulse estimate is a game input, not a medical reading.</p>
   </main>;
 }

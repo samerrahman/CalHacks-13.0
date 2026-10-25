@@ -115,6 +115,28 @@ export const CoopManualRow = __t.object("CoopManualRow", {
 });
 export type CoopManualRow = __Infer<typeof CoopManualRow>;
 
+export const CoopRemote = __t.object("CoopRemote", {
+  sessionId: __t.string(),
+  warnCount: __t.u32(),
+  decoyCount: __t.u32(),
+  lastWarnAtMs: __t.u64(),
+  lastDecoyAtMs: __t.u64(),
+});
+export type CoopRemote = __Infer<typeof CoopRemote>;
+
+export const CoopRemoteInbox = __t.object("CoopRemoteInbox", {
+  id: __t.string(),
+  ownerCapability: __t.string(),
+});
+export type CoopRemoteInbox = __Infer<typeof CoopRemoteInbox>;
+
+export const CoopRemoteRow = __t.object("CoopRemoteRow", {
+  sessionId: __t.string(),
+  warnCount: __t.u32(),
+  decoyCount: __t.u32(),
+});
+export type CoopRemoteRow = __Infer<typeof CoopRemoteRow>;
+
 export const Expiry = __t.object("Expiry", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),

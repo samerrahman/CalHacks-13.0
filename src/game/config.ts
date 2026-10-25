@@ -48,6 +48,9 @@ export const config = {
   hunt: { firstSeconds: 45, periodSeconds: 60, durationSeconds: 10, bias: -.85 },
   /** Calming down (accepted ELEVATED → RECOVERED) makes it lose your trail: an outward bias, once per stage. */
   recovery: { bias: .6, durationSeconds: 8 },
+  /** Co-op friend actions. A warning is information only. A decoy is noise far out in the trees: an outward
+   * bias for a few seconds, a few per run, never during a committed attack or the final broadcast. */
+  coop: { warnCooldownSeconds: 3, warnShowSeconds: 3, decoy: { charges: 3, cooldownSeconds: 25, bias: .75, durationSeconds: 7 }, doorKeyLength: 4 },
   lineLure: { EMITTER_A: 20, EMITTER_B: 22, CONTAINMENT: 24, bias: .85, durationSeconds: 12 },
 };
 export const FIXED_DT = 1 / config.simulation.fixedStepHz;

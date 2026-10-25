@@ -1,6 +1,7 @@
 import { config, currentSedation, finite, FIXED_DT, NODES } from './config';
 import { cameraVisible, canRestore, commitIfEligible, enterQuiet, proximityAlarm, triggerScare, lureProtected, projectCreature, restoreEquipment, tickCreature, updateCaption, updateClues, updateDanger, updateDistanceSensor, warningRemaining } from './creature';
 import { receiveProposal, tickDirector } from './directorValidation';
+import { doorKeyFor, friendSignal } from './coop';
 import { breathe, connectWire, emptyCalm, emptyLocate, emptyMemory, emptyPulse, emptyRouting, emptyWires, engageRoute, listenToRack, markSector, replayMemory, rotateTile, startStage, tapPulse, taskInput, tickTasks, transmit } from './tasks';
 import { emit, random, type GameAction, type GameState, type SensorState } from './state';
 
@@ -21,7 +22,7 @@ export function createGame(seed = 17, mode: GameState['mode'] = 'standard'): Gam
     quiet: null, scare: null, scareCount: 0, restoreHeld: false, restoreHold: 0,
     blackout: { count: 0, lastAt: -1000, nextAt: config.blackout.firstEligibleAtSeconds, startedAt: null },
     clues: { machinery: 0, transient: 0, physiology: 0 }, transients: [],
-    sensor: { source: 'manual', quality: 'unknown', trend: 'UNKNOWN' }, personal: { restingBpm: null, restingBreathsPerMinute: null }, recovery: { until: 0, rewardedStages: [] }, trend: 'UNKNOWN', fixedMemoryTempo: false,
+    sensor: { source: 'manual', quality: 'unknown', trend: 'UNKNOWN' }, personal: { restingBpm: null, restingBreathsPerMinute: null }, recovery: { until: 0, rewardedStages: [] }, coop: { warnedAt: -1000, warnings: 0, decoysUsed: 0, lastDecoyAt: -1000, decoyUntil: 0, doorKey: doorKeyFor(safeSeed), doorInput: [], doorUnlocked: false }, trend: 'UNKNOWN', fixedMemoryTempo: false,
     events: [], eventSequence: 0,
     director: { nextAt: 12, request: null, requestStarted: 0, requestSequence: 0, usedRequestIds: [], lastTactic: 'WAIT', lastTarget: 'NONE', source: 'FALLBACK', lastOutcome: 'LOCAL · ready', lastEvidenceIds: [], fallbackCount: 0, tauntId: 'NONE', lastTauntAt: -1000, tauntCount: 0 },
     notice: '', caption: 'NO NEARBY MOVEMENT', rng: safeSeed, accumulator: 0,
@@ -133,6 +134,7 @@ export function dispatch(previous: GameState, action: GameAction): GameState {
     case 'mark': markSector(state, action.sector); break;
     case 'tap': tapPulse(state); break;
     case 'breathe': breathe(state, action.holding); break;
+    case 'friend': friendSignal(state, action.signal); break;
     case 'practice-memory': if (state.mode === 'tutorial') startStage(state, 2); break;
     case 'replay': if (state.station === 'terminal') replayMemory(state); break;
     case 'transmit': transmit(state); break;

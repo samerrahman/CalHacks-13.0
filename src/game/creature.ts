@@ -125,6 +125,8 @@ export function movementProbabilities(state: GameState): { step: number; probabi
   if (huntActive(state)) bias = config.hunt.bias;
   // Recovery reward: after you calm down it briefly loses your trail (softens, never cancels, a hunt).
   if (state.time < state.recovery.until) bias += config.recovery.bias;
+  // Co-op decoy: your friend made noise far out in the trees.
+  if (state.time < state.coop.decoyUntil) bias += config.coop.decoy.bias;
   if (state.time < c.biasUntil) bias += clamp(c.tacticBias, -settings.providerMaximum, settings.providerMaximum);
   if (state.equipment === 'quiet') bias = config.shutdown.retreatBias - state.danger / 100 * settings.quietDangerScale;
   if (lureProtected(state)) bias = c.lure?.target === 'CONTAINMENT' ? settings.finalLure : config.lineLure.bias - state.danger / 100 * settings.lureDangerScale;

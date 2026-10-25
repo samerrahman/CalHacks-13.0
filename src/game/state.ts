@@ -157,6 +157,10 @@ export interface GameState {
   personal: PersonalBaseline;
   /** Recovery reward: calming from ELEVATED to RECOVERED makes it lose your trail until `until`, once per stage. */
   recovery: { until: number; rewardedStages: number[] };
+  /** Co-op second player (only acts in 'coop' mode). The friend can flash a warning lamp, fire a limited
+   * remote decoy that briefly pulls the creature away, and holds the key the basement door needs.
+   * `doorKey` is private: only the friend's manual page shows it (see coop.ts). */
+  coop: { warnedAt: number; warnings: number; decoysUsed: number; lastDecoyAt: number; decoyUntil: number; doorKey: number[]; doorInput: number[]; doorUnlocked: boolean };
   /** Alias for concise HUDs; always identical to sensor.trend. */
   trend: Trend;
   fixedMemoryTempo: boolean;
@@ -204,6 +208,8 @@ export type GameAction =
   | { type: 'sensor'; source: SensorSource; quality: SensorQuality; trend: Trend }
   | { type: 'trend'; trend: Trend }
   | { type: 'personal'; restingBpm: number | null; restingBreathsPerMinute: number | null }
+  /** A co-op friend's remote action, already revalidated by the transport. Ignored outside co-op. */
+  | { type: 'friend'; signal: 'warn' | 'decoy' }
   | { type: 'accessibility'; fixedMemoryTempo: boolean }
   | { type: 'proposal'; proposal: unknown; source: ProposalSource };
 export type Action = GameAction;
