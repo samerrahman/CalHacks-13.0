@@ -26,12 +26,20 @@ export const SHOTS: Shot[] = [
 ];
 
 export type Caption = { start: number; end: number; text: string };
+/** Bracketed captions describe only what can be heard (user decision, 2026-10-25): the picture is
+ * never narrated. PA lines are the facility's robotic announcements (`pa_*.opus` in SOUND_CUES, eSpeak NG,
+ * spoken over the alarm); the last plain line is the film's own instruction text. The first match
+ * wins, so a caption listed earlier holds the screen over a later one it overlaps. */
+export const PA_AT = { containment: B.alarm + 0.25, evacuate: B.turn + 0.15 } as const;
+/** How long each PA line speaks (espeak-ng render, measured to −38 dB silence), so its caption holds as long as the voice. */
+export const PA_SPEAKS = { containment: 3.7, evacuate: 5.45 } as const;
 export const CAPTIONS: Caption[] = [
-  { start: B.alarm + 0.1, end: B.thud2 - 0.2, text: 'Containment failure. Proceed to the emergency observation shelter.' },
-  { start: B.open, end: B.snatch, text: '[the hatch bursts open — something grips the frame]' },
-  { start: B.snatch, end: B.turn + 0.4, text: '[it seizes your colleague and drags them inside]' },
-  { start: B.forest + 0.4, end: B.forest + 4.8, text: "[running through wet branches — heavy footsteps behind you]" },
-  { start: B.slam, end: B.crash - 0.1, text: '[the door slams shut — a heartbeat in the dark]' },
+  { start: PA_AT.containment, end: B.thud1, text: 'PA: Warning. Containment failure, in chamber two.' },
+  { start: B.thud1, end: B.open, text: '[heavy thuds from inside the tube] PA: …in chamber two.' },
+  { start: B.open, end: B.snatch, text: '[metal bursts — a hiss of steam, a low growl]' },
+  { start: B.snatch, end: PA_AT.evacuate, text: '[a roar, a crunch, metal dragging]' },
+  { start: PA_AT.evacuate, end: PA_AT.evacuate + PA_SPEAKS.evacuate, text: '[alarms blaring] PA: Specimen is loose. All personnel, proceed to the emergency observation shelter.' },
+  { start: PA_AT.evacuate + PA_SPEAKS.evacuate, end: B.forest + 4.8, text: '[heavy footsteps behind you]' },
   { start: B.crash, end: B.crash + 2.3, text: '[something slams into the door]' },
   { start: B.black + 0.5, end: B.end, text: 'Silence the faults. Release the four basement locks. Get out.' },
 ];
@@ -41,6 +49,10 @@ export const CAPTIONS: Caption[] = [
  * (and raises the pitch), `until` ends it, `env` scales it over time (absolute seconds), e.g. for distance. */
 export type SoundCue = { at: number; file: string; gain: number; from?: number; until?: number; fadeIn?: number; fadeOut?: number; loop?: number; rate?: number; env?: [number, number][] };
 export const SOUND_CUES: SoundCue[] = [
+  // The facility PA: a robotic synthesised voice through ceiling speakers, over the alarm. The
+  // evacuation order is still finishing as you burst outside, heard back through the open door.
+  { at: PA_AT.containment, file: 'pa_containment.opus', gain: 0.95 },
+  { at: PA_AT.evacuate, file: 'pa_evacuate.opus', gain: 0.95, env: [[0, 1], [B.barge, 1], [B.barge + 0.4, 0.55], [B.forest + 1.2, 0.4]] },
   // Your breathing, built from real breaths and kept under everything else: shallow and scared
   // as it breaks loose, panting on the run, held after the slam, panic after the hit.
   { at: B.thud1 - 0.3, file: 'breath_scared.opus', gain: 0.45, until: B.turn + 0.2, fadeIn: 0.8, fadeOut: 0.3 },
@@ -70,7 +82,7 @@ export type SynthLayer =
   | { kind: 'gallop'; gain: Env }
   | { kind: 'breath'; rate: Env; gain: Env }
   | { kind: 'heartbeat'; rate: Env; gain: Env }
-  | { kind: 'drone' | 'rain' | 'rain_muffled' | 'wind' | 'riser' | 'hum' | 'alarm' | 'buzz' | 'motor'; gain: Env }
+  | { kind: 'drone' | 'rain' | 'rain_muffled' | 'wind' | 'riser' | 'hum' | 'alarm' | 'klaxon' | 'buzz' | 'motor'; gain: Env }
   | { kind: 'hit'; at: number; level: number; ring: number[]; decay: number; crack: number }
   | { kind: 'wham'; at: number; level: number; tail: number }
   | { kind: 'creak'; at: number; dur: number; rate: [number, number]; modes: number[]; level: number }
@@ -93,6 +105,8 @@ export const SYNTH: SynthLayer[] = [
   { kind: 'hum', gain: [[0, 0.16], [B.open - 0.1, 0.16], [B.open + 0.3, 0.08], [B.turn + 0.2, 0.05], [B.flashlight, 0]] },
   { kind: 'buzz', gain: [[B.flicker - 0.05, 0], [B.flicker, 0.12], [B.alarm - 0.1, 0.12], [B.alarm, 0]] },
   { kind: 'alarm', gain: [[B.alarm - 0.1, 0], [B.alarm + 0.2, 0.24], [B.turn + 1, 0.2], [B.barge - 0.1, 0.18], [B.forest, 0.05], [B.forest + 1, 0]] },
+  // Once it is loose, the evacuation horn joins the alarm; outside it carries from the building behind you, fading as you run.
+  { kind: 'klaxon', gain: [[B.open, 0], [B.open + 0.4, 0.15], [B.barge - 0.1, 0.17], [B.barge + 0.3, 0.1], [B.forest + 2, 0.06], [B.forest + 6, 0]] },
   // Something inside the tube: three impacts, the metal groaning, a seam hissing.
   { kind: 'hit', at: B.thud1, level: 0.45, ring: [180, 290, 430], decay: 7, crack: 0.15 },
   { kind: 'hit', at: B.thud2, level: 0.7, ring: [170, 275, 420], decay: 6, crack: 0.25 },

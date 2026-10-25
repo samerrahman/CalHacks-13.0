@@ -120,6 +120,9 @@ export class TraceBridge {
   /** shareFear failures in a row; after three (say, a module published before the fear table) it is retried only every 30 s. */
   private fearFailures = 0;
   private fearRetryAt = -Infinity;
+  /** The same back-off for shareSignals (the readings under FEAR). */
+  private signalsFailures = 0;
+  private signalsRetryAt = -Infinity;
   private lastSnapshot: TraceSnapshot | null = null;
   /** Set when the database refuses newer event types (a module published before them); those then go as UNKNOWN. */
   private legacyEvents = false;
@@ -228,12 +231,14 @@ export class TraceBridge {
       .then(() => {
         if (generation !== this.generation) return;
         if (!this.vitalsConsent) { this.withdrawVitals(); return; }
-        // The combined fear goes second, so the server already holds the vitals row it belongs to; it
-        // drops a fear write that lands after a withdrawal.
-        if (performance.now() < this.fearRetryAt) return;
-        return client.reducers.shareFear({ id, ownerCapability: this.owner, sequence, source: vitals.source, fearPct: vitals.fearPct ?? undefined })
-          .then(() => { this.fearFailures = 0; if (generation === this.generation && !this.vitalsConsent) this.withdrawVitals(); },
-            () => { if (++this.fearFailures >= 3) { this.fearFailures = 0; this.fearRetryAt = performance.now() + 30_000; } });
+        // The combined fear and the readings under it go second, so the server already holds the
+        // vitals row they belong to; it drops either one if it lands after a withdrawal.
+        const now = performance.now(), signals = vitals.signals;
+        const fear = now < this.fearRetryAt ? null : client.reducers.shareFear({ id, ownerCapability: this.owner, sequence, source: vitals.source, fearPct: vitals.fearPct ?? undefined })
+          .then(() => { this.fearFailures = 0; }, () => { if (++this.fearFailures >= 3) { this.fearFailures = 0; this.fearRetryAt = performance.now() + 30_000; } });
+        const detail = !signals || now < this.signalsRetryAt ? null : client.reducers.shareSignals({ id, ownerCapability: this.owner, sequence, source: vitals.source, breathingRpm: signals.breathingRpm ?? undefined, emotion: signals.emotion ?? undefined, emotionPct: signals.emotionPct ?? undefined, blinksPerMinute: signals.blinksPerMinute ?? undefined, hrvMs: signals.hrvMs ?? undefined })
+          .then(() => { this.signalsFailures = 0; }, () => { if (++this.signalsFailures >= 3) { this.signalsFailures = 0; this.signalsRetryAt = performance.now() + 30_000; } });
+        return Promise.all([fear, detail]).then(() => { if (generation === this.generation && !this.vitalsConsent) this.withdrawVitals(); });
       })
       .catch(() => { /* The next reading retries; the local link is unaffected. */ })
       .finally(() => { this.vitalsBusy = false; });

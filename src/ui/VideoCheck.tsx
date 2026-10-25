@@ -37,9 +37,9 @@ export default function VideoCheck({sensor,stream,desktop,withFriend=false,devic
   {canCapture&&onDevice&&<label className="camera-device">Camera<select aria-label="Camera device" value={deviceId} onChange={e=>onDevice(e.target.value)}><option value="">System default camera</option>{devices.map((d,i)=><option key={d.deviceId||i} value={d.deviceId}>{d.label||`Camera ${i+1}`}</option>)}</select></label>}
   {sharing&&<fieldset className="video-check-sharing"><legend>Multiplayer & data sharing</legend>
    <label className="check"><input type="checkbox" checked={cameraWanted} disabled={!withFriend||sensor.source==='simulated'} onChange={e=>sharing.onToggleCamera(e.target.checked)}/> Share live webcam video with friend</label>
-   <label className="check"><input type="checkbox" checked={sharing.vitalsShare} disabled={!sharing.shareTrace&&!withFriend} onChange={e=>sharing.onVitalsConsent(e.target.checked)}/> Share your fear level and heart rate with spectators</label>
+   <label className="check"><input type="checkbox" checked={sharing.vitalsShare} disabled={!sharing.shareTrace&&!withFriend} onChange={e=>sharing.onVitalsConsent(e.target.checked)}/> Share your fear level and vitals with spectators</label>
    <label className="check"><input type="checkbox" checked={sharing.shareTrace||withFriend} disabled={withFriend} onChange={e=>sharing.onToggleShareTrace(e.target.checked)}/> Share live shelter trace & puzzle manual</label>
-   <p className="small muted">{withFriend?'Playing with a friend always shares the trace and manual.':'Spectators need the trace to follow your run.'} Spectators see one fear level, worked out on this device from your face, breathing and heart rate, and your heart rate is sent with it. No camera frames are shared; video goes only to your friend.</p>
+   <p className="small muted">{withFriend?'Playing with a friend always shares the trace and manual.':'Spectators need the trace to follow your run.'} Spectators see one fear level worked out on this device, with your heart rate, breathing rate, strongest expression, blink rate and heart-rate variability under it as whole numbers. No camera frames, waveforms or recordings; video goes only to your friend.</p>
   </fieldset>}
   <div className="video-check-actions worn-menu">
    {ready&&<button className="primary" autoFocus onClick={onContinue}>Continue →</button>}

@@ -115,32 +115,6 @@ export const CoopManualRow = __t.object("CoopManualRow", {
 });
 export type CoopManualRow = __Infer<typeof CoopManualRow>;
 
-export const Prediction = __t.object("Prediction", {
-  key: __t.string(),
-  sessionId: __t.string(),
-  voter: __t.string(),
-  name: __t.string(),
-  choice: __t.string(),
-  stage: __t.u8(),
-  updatedAtMs: __t.u64(),
-});
-export type Prediction = __Infer<typeof Prediction>;
-
-export const PredictionFeed = __t.object("PredictionFeed", {
-  id: __t.string(),
-  judgeCapability: __t.string(),
-});
-export type PredictionFeed = __Infer<typeof PredictionFeed>;
-
-export const PredictionRow = __t.object("PredictionRow", {
-  key: __t.string(),
-  voter: __t.string(),
-  name: __t.string(),
-  choice: __t.string(),
-  stage: __t.u8(),
-});
-export type PredictionRow = __Infer<typeof PredictionRow>;
-
 export const CoopRemote = __t.object("CoopRemote", {
   sessionId: __t.string(),
   warnCount: __t.u32(),
@@ -239,6 +213,32 @@ export const PhysicsWorld = __t.object("PhysicsWorld", {
 });
 export type PhysicsWorld = __Infer<typeof PhysicsWorld>;
 
+export const Prediction = __t.object("Prediction", {
+  key: __t.string(),
+  sessionId: __t.string(),
+  voter: __t.string(),
+  name: __t.string(),
+  choice: __t.string(),
+  stage: __t.u8(),
+  updatedAtMs: __t.u64(),
+});
+export type Prediction = __Infer<typeof Prediction>;
+
+export const PredictionFeed = __t.object("PredictionFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type PredictionFeed = __Infer<typeof PredictionFeed>;
+
+export const PredictionRow = __t.object("PredictionRow", {
+  key: __t.string(),
+  voter: __t.string(),
+  name: __t.string(),
+  choice: __t.string(),
+  stage: __t.u8(),
+});
+export type PredictionRow = __Infer<typeof PredictionRow>;
+
 export const PublicEvent = __t.object("PublicEvent", {
   id: __t.string(),
   seq: __t.u32(),
@@ -287,6 +287,37 @@ export const SpectatorFearRow = __t.object("SpectatorFearRow", {
   fearPct: __t.option(__t.u8()),
 });
 export type SpectatorFearRow = __Infer<typeof SpectatorFearRow>;
+
+export const SpectatorSignals = __t.object("SpectatorSignals", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  source: __t.string(),
+  breathingRpm: __t.option(__t.u8()),
+  emotion: __t.option(__t.string()),
+  emotionPct: __t.option(__t.u8()),
+  blinksPerMinute: __t.option(__t.u8()),
+  hrvMs: __t.option(__t.u16()),
+  updatedAtMs: __t.u64(),
+});
+export type SpectatorSignals = __Infer<typeof SpectatorSignals>;
+
+export const SpectatorSignalsFeed = __t.object("SpectatorSignalsFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type SpectatorSignalsFeed = __Infer<typeof SpectatorSignalsFeed>;
+
+export const SpectatorSignalsRow = __t.object("SpectatorSignalsRow", {
+  sessionId: __t.string(),
+  sequence: __t.u32(),
+  source: __t.string(),
+  breathingRpm: __t.option(__t.u8()),
+  emotion: __t.option(__t.string()),
+  emotionPct: __t.option(__t.u8()),
+  blinksPerMinute: __t.option(__t.u8()),
+  hrvMs: __t.option(__t.u16()),
+});
+export type SpectatorSignalsRow = __Infer<typeof SpectatorSignalsRow>;
 
 export const SpectatorVitals = __t.object("SpectatorVitals", {
   sessionId: __t.string(),

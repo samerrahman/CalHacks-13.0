@@ -135,8 +135,13 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   const unlitVoid = new THREE.MeshBasicMaterial({ color: 0x000000 }), unlitTorch = new THREE.MeshBasicMaterial({ color: 0x15191b });
   scene.traverse(o => { if (o instanceof THREE.Mesh && (o.material as THREE.Material).name === 'void') o.material = unlitVoid; });
   find(arms, 'flashlight')?.traverse(o => { if (o instanceof THREE.Mesh && o.name !== 'flashlight_lens') o.material = unlitTorch; });
-  // The route below has its own path; the ground's straight path and its puddles, roots and twigs would float off it.
-  for (const n of ['path', 'puddle_0', 'puddle_1', 'puddle_2', 'roots', 'twigs']) find(ground, n)?.traverse(o => { o.visible = false; });
+  // The route below has its own path. The ground's straight path is cut out of the terrain (its
+  // triangles are the path mesh), so it is re-dressed as moss rather than hidden: hiding it left a
+  // hole where the sky showed through by the first trees. Its puddles, roots and twigs would
+  // float off the route, so those go.
+  const moss = (find(ground, 'ground_moss') as THREE.Mesh | null)?.material;
+  find(ground, 'path')?.traverse(o => { if (o instanceof THREE.Mesh && moss) o.material = moss; });
+  for (const n of ['puddle_0', 'puddle_1', 'puddle_2', 'roots', 'twigs']) find(ground, n)?.traverse(o => { o.visible = false; });
   scene.updateMatrixWorld(true);
 
   // Terrain height under (x, z), so the route, the shed and every scattered prop sit on the ground.
@@ -209,6 +214,16 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
   const labAlarms = labAlarmAt.map(at => { const l = new THREE.PointLight(0xff2a1a, 0, 10, 2); l.position.copy(at); scene.add(l); return l; });
   const corridorAlarms = corridorAlarmAt.map(at => { const l = new THREE.PointLight(0xff2a1a, 0, 7, 2); l.position.copy(at); scene.add(l); return l; });
   const exitGlow = new THREE.PointLight(0x3dff6e, 0, 3.5, 2); exitGlow.position.copy(worldOf(find(exit, 'exit_sign'), new THREE.Vector3(0, 2.4, EXIT_Z))).add(new THREE.Vector3(0, -0.15, -0.35)); scene.add(exitGlow);
+  // The facility's outside alarm beacon, on the wall above the exit: as you run from it, its red
+  // pulse washes the ground and trees ahead of you and throws their shadows forward, fading with
+  // distance. A small lamp marks it, a red smear in the fog when you look back.
+  const BEACON_AT = new THREE.Vector3(0.9, 3.1, EXIT_Z + 0.45);
+  const beacon = new THREE.SpotLight(0xff2a1a, 0, 38, 1.05, 0.7, 1.6);
+  beacon.position.copy(BEACON_AT); beacon.target.position.set(2.5, 0, EXIT_Z + 16); beacon.castShadow = true;
+  beacon.shadow.mapSize.set(1024, 1024); beacon.shadow.camera.near = 0.4; beacon.shadow.bias = -0.002;
+  scene.add(beacon, beacon.target);
+  const beaconLamp = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.16), new THREE.MeshStandardMaterial({ color: 0x3a0604, emissive: 0xff2a1a, emissiveIntensity: 0 }));
+  beaconLamp.position.copy(BEACON_AT).add(new THREE.Vector3(0, 0.05, -0.08)); beaconLamp.castShadow = false; forestSet.add(beaconLamp);
   const moon = new THREE.DirectionalLight(0x7d93b8, 0); moon.position.set(-25, 40, 10); moon.target.position.set(0, 0, 32); scene.add(moon, moon.target);
   const shelterLamp = new THREE.PointLight(0xffb35c, 0, 16, 2); shelterLamp.position.copy(worldOf(find(shelter, 'lamp_bulb'), SHED.clone().add(new THREE.Vector3(0, 3, 0)))).add(new THREE.Vector3(0, -0.3, -1.0)); scene.add(shelterLamp); // out from the wall, so it washes the door
   const vestibuleFill = new THREE.PointLight(0x9fb4c8, 0, 3.5, 2); vestibuleFill.position.copy(SHED).add(new THREE.Vector3(-0.65, shelter.position.y + 2.45, 0.3)); scene.add(vestibuleFill); // rakes across the door so the dent reads
@@ -524,6 +539,9 @@ export async function createCutscene(renderer: THREE.WebGLRenderer, prop: PropSo
     }
 
     // Forest and shed.
+    const beaconPulse = 0.12 + 0.88 * pulse(t + 0.2, 1.1, 4);
+    beacon.intensity = forestSet.visible && t >= B.barge - 0.2 && t < B.slam ? 55 * beaconPulse : 0;
+    glow(beaconLamp, t < B.slam ? 0.5 + 3 * beaconPulse : 0);
     moon.intensity = forestSet.visible && t < B.slam ? 1.6 : 0;
     shelterLamp.intensity = forestSet.visible && t < B.slam ? 6 + 5 * ramp(t, B.arrive - 2, B.arrive) + 1.2 * hash(Math.floor(t * 9)) * (t > B.arrive - 3 ? 1 : 0) : 0;
     glow(lampBulb, t < B.slam ? 2.4 : 0.2);

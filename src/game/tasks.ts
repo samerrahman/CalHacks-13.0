@@ -32,6 +32,13 @@ export function energizedTiles(routing: RoutingState): Set<number> {
   }
   return seen;
 }
+/** Co-op rule: power from the inlet reaches every tile of the rated route (`answer` ≥ 0, the route on
+ * the friend's board), in any orientation that follows it. Extra branches through the off-route
+ * tiles are fine. A route found without the board almost never covers those tiles. */
+export function ratedRouteLive(routing: RoutingState): boolean {
+  const lit = energizedTiles(routing);
+  return conduitConnected(routing) && routing.answer.every((turns, tile) => turns < 0 || lit.has(tile));
+}
 export function conduitConnected(routing: RoutingState): boolean {
   const outlet = routing.end * routing.size + routing.size - 1;
   return energizedTiles(routing).has(outlet) && !!(tileOpenings(routing.kinds[outlet]!, routing.turns[outlet]!) & 2);
@@ -192,7 +199,7 @@ export function beginStep(state: GameState, step: TaskStep, done = ''): void {
     state.notice = lead + (coop ? `Patch ${total} cables. Tell your friend the panel and each cable's symbol; their manual gives its socket code.` : `Patch ${total} cables: drag each cable to its matching symbol.`);
   } else if (step === 'routing') {
     state.tasks.routing = createRouting(state, 0);
-    state.notice = lead + (coop ? 'Rotate the conduit tiles to join the inlet to the outlet, then press T. The board shows no power: tell your friend which rows IN and OUT are on so they can find your board in the manual.' : 'Rotate the conduit tiles to join the inlet to the relay outlet, then press T.');
+    state.notice = lead + (coop ? 'Only the rated route on your friend\'s board carries the surge, and this board shows no power. Tell them which rows IN and OUT are on so they can find your board, rotate each tile as they say, then press T.' : 'Rotate the conduit tiles to join the inlet to the relay outlet, then press T.');
   } else if (step === 'locate') {
     state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 };
     state.notice = lead + (coop ? `Your radar is dark. Your friend can see how far out it is, and their manual says which key that range is this run. Mark it ${config.tasks.locate.marks} times.` : `Use the radar to mark its position ${config.tasks.locate.marks} times.`);
@@ -276,7 +283,9 @@ export function rotateTile(state: GameState, tile: number): void {
 export function engageRoute(state: GameState): void {
   if (state.equipment !== 'on' || state.station !== 'terminal' || state.tasks.step !== 'routing') return;
   const routing = state.tasks.routing;
-  if (!conduitConnected(routing)) { mistake(state, 'ROUTING', 'The conduit is broken. The surge arced loudly. Connect the inlet to the outlet first.'); return; }
+  if (!conduitConnected(routing)) { mistake(state, 'ROUTING', state.mode === 'coop' ? 'The conduit is broken. The surge arced loudly. Ask your friend how each tile on the rated route points.' : 'The conduit is broken. The surge arced loudly. Connect the inlet to the outlet first.'); return; }
+  // Co-op: only the rated route on the friend's board carries the surge, so a path the player finds alone fails.
+  if (state.mode === 'coop' && !ratedRouteLive(routing)) { mistake(state, 'ROUTING', 'Power ran through dead conduit and arced, loudly. Only the rated route on your friend\'s board carries the surge: ask them how each of its tiles points.'); return; }
   workNoise(state); emit(state, 'ROUTING_ENGAGED');
   if (routing.round + 1 < routing.rounds) { state.tasks.routing = createRouting(state, routing.round + 1); state.notice = 'Relay engaged. Another conduit is broken.'; return; }
   finishStep(state);

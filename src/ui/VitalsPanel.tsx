@@ -48,6 +48,6 @@ export default function VitalsPanel({sensor,waves,initiallyOpen=false}:{sensor:S
    {wave&&state.status!=='unavailable'&&<canvas ref={el=>{canvases.current[wave]=el}} aria-hidden="true"/>}
    {state.status!=='ok'&&state.reason&&<small>{state.reason}</small>}
   </li>})}</ul>
-  <p className="vitals-panel-note">{simulated?'SIMULATED development fixture · not a live reading. ':''}Camera estimates for a game, not medical readings. Shown only here; never shared with the director, and spectators get at most one combined fear number made from them.</p></>}
+  <p className="vitals-panel-note">{simulated?'SIMULATED development fixture · not a live reading. ':''}Camera estimates for a game, not medical readings. Shown only here and never sent to the director. With vitals sharing on, spectators get a fear number plus whole-number breathing, strongest expression, blinks and heart-rate variability; never waveforms or the rest.</p></>}
  </aside>
 }

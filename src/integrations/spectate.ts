@@ -1,14 +1,20 @@
 import type { DbConnection } from '../module_bindings';
-import type { SensorView, Trend } from '../sensing/types';
+import type { ExpressionName, SensorView, Trend } from '../sensing/types';
 import type { PublicEvent } from '../game/state';
 import type { TraceSnapshot, TraceSummary } from './client';
 import { capabilityQuery, connectSpacetime, spacetimeConfig } from './spacetime';
 import { LocalPhysics, type PropView } from './physics';
 
 /** The only physiology a spectator receives, and only under the separate vitals consent: the
- * current accepted estimate in whole BPM, the frozen baseline, coarse labels and one combined
- * fear percentage worked out on the player's device (`spectatorFear`). */
-export type SpectatorVitals = { source: 'presage' | 'simulated'; status: SensorView['status']; quality: SensorView['quality']; trend: Trend; pulseBpm: number | null; baselineBpm: number | null; fearPct: number | null };
+ * current accepted estimate in whole BPM, the frozen baseline, coarse labels, one combined fear
+ * percentage worked out on the player's device (`spectatorFear`) and the whole-number readings
+ * under it (`spectatorSignals`). */
+export type SpectatorVitals = { source: 'presage' | 'simulated'; status: SensorView['status']; quality: SensorView['quality']; trend: Trend; pulseBpm: number | null; baselineBpm: number | null; fearPct: number | null; signals: SpectatorSignals | null };
+/** The small readings under FEAR (user decision, 2026-10-25), each whole-numbered and only while its
+ * estimate is ok: breathing rate, the strongest facial expression and its strength, blink rate and
+ * heart-rate variability (RMSSD). Never waveforms, expression maps, EDA, talking or clocks. */
+export type SpectatorSignals = { breathingRpm: number | null; emotion: ExpressionName | null; emotionPct: number | null; blinksPerMinute: number | null; hrvMs: number | null };
+export const EXPRESSIONS: readonly ExpressionName[] = ['angry', 'contempt', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'];
 /** Same threshold SpectateView uses to dim a reading as held. */
 const HELD_AFTER_MS = 5000;
 const wholeBpm = (value: number | null) => value === null || !Number.isFinite(value) ? null : Math.min(110, Math.max(40, Math.round(value)));
@@ -41,10 +47,26 @@ export function spectatorFear(sensor: SensorView): number | null {
   return Math.round(Math.max(elevated, .6 * peak + .4 * mean) * 100);
 }
 
+const whole = (value: number | null | undefined, low: number, high: number) => finite(value) && value >= low && value <= high ? Math.round(value) : null;
+export function spectatorSignals(sensor: SensorView): SpectatorSignals | null {
+  const s = sensor.signals;
+  if (sensor.source === 'manual' || sensor.status === 'manual' || !s) return null;
+  const ok = (name: keyof SensorSignalsStatus) => s.status[name].status === 'ok';
+  const top = ok('expressions') && s.expressions ? Object.entries(s.expressions).filter((e): e is [ExpressionName, number] => EXPRESSIONS.includes(e[0] as ExpressionName) && finite(e[1])).sort((a, b) => b[1] - a[1])[0] : undefined;
+  const signals: SpectatorSignals = {
+    breathingRpm: ok('breathing') ? whole(sensor.breathingRpm ?? s.breathingBpm, 4, 60) : null,
+    emotion: top ? top[0] : null, emotionPct: top ? Math.round(unit(top[1]) * 100) : null,
+    blinksPerMinute: ok('blinking') ? whole(s.blinksPerMinute, 0, 120) : null,
+    hrvMs: ok('hrv') && s.hrv ? whole(s.hrv.rmssdMs, 1, 400) : null,
+  };
+  return Object.values(signals).some(v => v !== null) ? signals : null;
+}
+type SensorSignalsStatus = NonNullable<SensorView['signals']>['status'];
+
 export function spectatorVitals(sensor: SensorView): SpectatorVitals | null {
   if (sensor.source === 'manual' || sensor.status === 'manual') return null;
   const pulseBpm = sensor.quality === 'accepted' ? wholeBpm(sensor.pulseBpm) : null;
-  return { source: sensor.source, status: sensor.status, quality: pulseBpm === null ? (sensor.quality === 'rejected' ? 'rejected' : 'unknown') : 'accepted', trend: pulseBpm === null ? 'UNKNOWN' : sensor.trend, pulseBpm, baselineBpm: wholeBpm(sensor.baselineBpm), fearPct: spectatorFear(sensor) };
+  return { source: sensor.source, status: sensor.status, quality: pulseBpm === null ? (sensor.quality === 'rejected' ? 'rejected' : 'unknown') : 'accepted', trend: pulseBpm === null ? 'UNKNOWN' : sensor.trend, pulseBpm, baselineBpm: wholeBpm(sensor.baselineBpm), fearPct: spectatorFear(sensor), signals: spectatorSignals(sensor) };
 }
 
 export type SpectateState = {
@@ -59,6 +81,7 @@ export type SpectateState = {
 type Access = { channel: string; sessionId?: string; capability?: string; host?: string; database?: string };
 type RemoteVitals = { source: string; status: string; quality: string; trend: string; pulseBpm?: number; baselineBpm?: number; sequence?: number };
 type RemoteFear = { source: string; fearPct?: number; sequence?: number };
+type RemoteSignals = { source: string; sequence?: number; breathingRpm?: number; emotion?: string; emotionPct?: number; blinksPerMinute?: number; hrvMs?: number };
 /** The player writes the fear row right after the vitals row with the same sequence. A fear row more
  * than this many readings away is left over (the player stopped sending it), not current. */
 const FEAR_SEQUENCE_WINDOW = 3;
@@ -73,18 +96,28 @@ export function parseWatchAccess(hash: string): Access {
 /** Revalidates remote rows: anything unexpected is treated as not shared. The fear row counts only
  * with a valid vitals row of the same source and a nearby sequence; a module without the fear table
  * leaves it null. */
-export function remoteVitals(row: RemoteVitals | undefined, fear?: RemoteFear): SpectatorVitals | null {
+export function remoteVitals(row: RemoteVitals | undefined, fear?: RemoteFear, signals?: RemoteSignals): SpectatorVitals | null {
   if (!row || !['presage', 'simulated'].includes(row.source) || !['starting', 'calibrating', 'ready', 'unavailable', 'paused'].includes(row.status) || !['accepted', 'rejected', 'unknown'].includes(row.quality) || !['UNKNOWN', 'STEADY', 'ELEVATED', 'RECOVERED'].includes(row.trend)) return null;
   const pulse = row.quality === 'accepted' ? wholeBpm(row.pulseBpm ?? null) : null;
   const current = row.sequence === undefined || fear?.sequence === undefined || Math.abs(row.sequence - fear.sequence) <= FEAR_SEQUENCE_WINDOW;
   const fearPct = current && fear?.source === row.source && Number.isInteger(fear.fearPct) && fear.fearPct! >= 0 && fear.fearPct! <= 100 ? fear.fearPct! : null;
-  return { source: row.source as SpectatorVitals['source'], status: row.status as SpectatorVitals['status'], quality: pulse === null && row.quality === 'accepted' ? 'unknown' : row.quality as SpectatorVitals['quality'], trend: pulse === null ? 'UNKNOWN' : row.trend as Trend, pulseBpm: pulse, baselineBpm: wholeBpm(row.baselineBpm ?? null), fearPct };
+  const near = (sequence?: number) => row.sequence === undefined || sequence === undefined || Math.abs(row.sequence - sequence) <= FEAR_SEQUENCE_WINDOW;
+  return { source: row.source as SpectatorVitals['source'], status: row.status as SpectatorVitals['status'], quality: pulse === null && row.quality === 'accepted' ? 'unknown' : row.quality as SpectatorVitals['quality'], trend: pulse === null ? 'UNKNOWN' : row.trend as Trend, pulseBpm: pulse, baselineBpm: wholeBpm(row.baselineBpm ?? null), fearPct,
+    signals: signals?.source === row.source && near(signals.sequence) ? checkedSignals(signals) : null };
+}
+/** Revalidates the small readings; an out-of-range field is dropped, and nothing left means none. */
+function checkedSignals(raw: RemoteSignals): SpectatorSignals | null {
+  const intIn = (value: unknown, low: number, high: number) => typeof value === 'number' && Number.isInteger(value) && value >= low && value <= high ? value : null;
+  const emotion = typeof raw.emotion === 'string' && EXPRESSIONS.includes(raw.emotion as ExpressionName) ? raw.emotion as ExpressionName : null, emotionPct = intIn(raw.emotionPct, 0, 100);
+  const signals: SpectatorSignals = { breathingRpm: intIn(raw.breathingRpm, 4, 60), emotion: emotion && emotionPct !== null ? emotion : null, emotionPct: emotion ? emotionPct : null, blinksPerMinute: intIn(raw.blinksPerMinute, 0, 120), hrvMs: intIn(raw.hrvMs, 1, 400) };
+  return Object.values(signals).some(v => v !== null) ? signals : null;
 }
 /** A local-link snapshot's vitals, revalidated like a remote row (an older player build sends no fear). */
 export function localVitals(vitals: unknown): SpectatorVitals | null {
   if (!vitals || typeof vitals !== 'object') return null;
   const v = vitals as Partial<SpectatorVitals>, number = (value: unknown) => typeof value === 'number' ? value : undefined;
-  return remoteVitals({ source: String(v.source), status: String(v.status), quality: String(v.quality), trend: String(v.trend), pulseBpm: number(v.pulseBpm), baselineBpm: number(v.baselineBpm) }, { source: String(v.source), fearPct: number(v.fearPct) });
+  const signals = v.signals && typeof v.signals === 'object' ? { ...(v.signals as object), source: String(v.source) } as RemoteSignals : undefined;
+  return remoteVitals({ source: String(v.source), status: String(v.status), quality: String(v.quality), trend: String(v.trend), pulseBpm: number(v.pulseBpm), baselineBpm: number(v.baselineBpm) }, { source: String(v.source), fearPct: number(v.fearPct) }, signals);
 }
 
 /** Read-only spectator feed. It never sends anything to the player or the database. */
@@ -156,11 +189,11 @@ export class SpectateFeed {
       // The fear row arrives on its own subscription (so a module without it cannot break this feed)
       // and is merged into the vitals here; either one changing counts as a fresh reading.
       const syncVitals = () => {
-        const row = [...connection.db.spectatorVitalsFeed.iter()][0], fear = [...connection.db.spectatorFearFeed.iter()][0];
-        const key = row ? `${row.sequence}:${fear?.sequence ?? '-'}:${fear?.fearPct ?? '-'}` : null;
+        const row = [...connection.db.spectatorVitalsFeed.iter()][0], fear = [...connection.db.spectatorFearFeed.iter()][0], signals = [...connection.db.spectatorSignalsFeed.iter()][0];
+        const key = row ? `${row.sequence}:${fear?.sequence ?? '-'}:${fear?.fearPct ?? '-'}:${signals?.sequence ?? '-'}` : null;
         if (key === vitalsKey) return;
         vitalsKey = key;
-        const vitals = remoteVitals(row, fear);
+        const vitals = remoteVitals(row, fear, signals);
         this.emit({ vitals, vitalsReceivedAt: vitals ? stamp() : null });
       };
       const syncProps = () => {
@@ -172,6 +205,7 @@ export class SpectateFeed {
       connection.db.judgeTrace.onInsert(syncTrace); connection.db.judgeTrace.onDelete(syncTrace);
       connection.db.spectatorVitalsFeed.onInsert(syncVitals); connection.db.spectatorVitalsFeed.onDelete(syncVitals);
       connection.db.spectatorFearFeed.onInsert(syncVitals); connection.db.spectatorFearFeed.onDelete(syncVitals);
+      connection.db.spectatorSignalsFeed.onInsert(syncVitals); connection.db.spectatorSignalsFeed.onDelete(syncVitals);
       connection.db.physicsFeed.onInsert(syncProps); connection.db.physicsFeed.onDelete(syncProps);
       connection.subscriptionBuilder()
         .onApplied(() => {
@@ -186,6 +220,9 @@ export class SpectateFeed {
       // to the heart-rate estimate on the spectator's page.
       connection.subscriptionBuilder().onApplied(() => { replaying = true; syncVitals(); replaying = false; }).onError(() => { /* no fear feed on this module */ })
         .subscribe([capabilityQuery('spectator_fear_feed', id, capability)]);
+      // Likewise the small readings under FEAR, on their own subscription.
+      connection.subscriptionBuilder().onApplied(() => { replaying = true; syncVitals(); replaying = false; }).onError(() => { /* no signals feed on this module */ })
+        .subscribe([capabilityQuery('spectator_signals_feed', id, capability)]);
     } catch { this.emit({ status: 'SpacetimeDB unavailable · same-browser link only' }); }
   }
 }

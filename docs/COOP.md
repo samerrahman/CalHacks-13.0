@@ -10,7 +10,7 @@ The friend's manual is a book they flip through on the spectate page (`src/ui/Co
 | --- | --- | --- |
 | Faults by ear (stage 1, 3) | No rack key. "Research 1, I hear a high whine." | Rack fault sounds: for each stage, which machine makes each sound. |
 | Cables (stage 1, 3) | Cable symbols; each socket shows the book's code for the cable that belongs in it. "Panel 2, the star." | Cable patch codes: for each panel, symbol → socket code. |
-| Conduit (stage 1) | No power glow or joined reading; the IN and OUT rows are labelled. "IN row 2, OUT row 4." | Conduit boards: four solved boards, one per IN/OUT pair. The game picks one of the four for each conduit. |
+| Conduit (stage 1) | No power glow or joined reading; the IN and OUT rows are labelled. "IN row 2, OUT row 4." Only the rated route carries the surge: engaging a path that leaves out any of its tiles arcs loudly (`ratedRouteLive`), so a route found without the book fails. | Conduit boards: four solved boards, one per IN/OUT pair. The game picks one of the four for each conduit. Off-route tiles (·) still don't matter. |
 | Memory (stage 2, 4) | Symbols during playback (☾ MOON, ◉ EYE, ✕ CROSS, ☰ BARS), one neutral tone; digits 1–4 to enter. "Moon, eye, eye, bars." | Signal symbols: for each stage, symbol → digit. |
 | Locate (stage 3) | The radar is dark; keys 1–4 with no ring names. | Radar range keys: distance band → key, plus the live range from the trace. |
 | Calm hold (stage 4) | The pacer is hidden. | Breathing pacer: the only live page (`coopManual`), so the friend can call in and out. |

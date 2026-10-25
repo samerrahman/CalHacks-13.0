@@ -10,9 +10,11 @@ A 36-second first-person film. You never see the monster. You stand at the obser
 | `src/cutscene/style.ts` | Shared palette and low-poly helpers. |
 | `src/cutscene/look.ts` | The film's look: `ironlung` (default) or `flat`. Texture assignments per palette key, and the final image pass. |
 | `cutscene/textures/` | CC0 Poly Haven textures for the `ironlung` look (credits in `SOURCES.md`). |
-| `cutscene/audio/` | Door, metal, breathing and footstep recordings mixed into the soundtrack (credits in `SOURCES.md`). |
+| `cutscene/audio/` | Door, metal, breathing and footstep recordings, plus the two PA announcements synthesised with eSpeak NG, mixed into the soundtrack (credits in `SOURCES.md`). |
 | `cutscene/models/*.glb` | The props the renderer actually loads. **Replace these to change the art.** |
 | `tools/cutscene.mjs` | Offline tool: previews, GLB export, stills, final render. |
+
+A robotic facility PA (eSpeak NG, open-source text-to-speech, processed as ceiling speakers) announces the containment failure as the alarm starts and orders the evacuation as you run; a faster evacuation horn joins the alarm once it is loose and fades behind you outside. Out in the woods the facility's red alarm beacon, above the exit, pulses over the ground and trees ahead and throws their shadows forward, fading with distance. Captions describe sounds only (user decision, 2026-10-25), plus the PA lines.
 
 ## Ending cutscene
 
@@ -71,7 +73,7 @@ It renders in headless Chrome on the GPU and encodes with `ffmpeg` (`brew instal
 
 - Never use `Math.random()` or `Date` in `src/cutscene/`.
 - Keep props **low detail**: simple blocky placeholders of a few hundred triangles. They're meant to be replaced.
-- The soundtrack is synthesised by ffmpeg from the `SYNTH` layers in `timeline.ts` (impacts, hiss, steps, heartbeat, rain, wind, drone), except the doors, the groaning metal, your breathing and the creature's footsteps behind you. Those use public-domain and CC0 recordings in `cutscene/audio/` (credits in its `SOURCES.md`), mixed by `SOUND_CUES`. Breathing and the heartbeat sit well under the impacts on purpose: loud, they make the film feel cluttered. It uses none of the game's WAVs. Change either list, then re-render.
+- The soundtrack is synthesised by ffmpeg from the `SYNTH` layers in `timeline.ts` (impacts, hiss, steps, heartbeat, rain, wind, drone), except the doors, the groaning metal, your breathing and the creature's footsteps behind you. Those use public-domain and CC0 recordings in `cutscene/audio/` (credits in its `SOURCES.md`), mixed by `SOUND_CUES`, as do the facility PA lines (`pa_*.opus`, synthesised with eSpeak NG). Breathing and the heartbeat sit well under the impacts on purpose: loud, they make the film feel cluttered. It uses none of the game's WAVs. Change either list, then re-render.
 - Keep the run sparse: footsteps, breathing and light weather. Layers that pile up there read as mush.
 - Materials named `void` render pure black and unlit. Use them for openings into darkness.
 - Textures must be CC0 or similarly free, and credited in `cutscene/textures/SOURCES.md`.

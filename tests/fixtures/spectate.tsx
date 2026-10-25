@@ -30,7 +30,7 @@ function Fixture() {
       if (target.current !== null && s.creature.linePosition !== target.current) { s.creature.linePosition += Math.sign(target.current - s.creature.linePosition); projectCreature(s); emit(s, 'MONSTER_STEP'); if (s.creature.linePosition <= 7 && !s.creature.alarmLatched) { s.creature.alarmLatched = true; emit(s, 'PROXIMITY_ALARM'); } if (s.creature.linePosition >= 10) s.creature.alarmLatched = false; }
       pulse.current += (72 + Math.max(0, 9 - s.creature.linePosition) * 4 - pulse.current) * .15;
       const snapshot = sanitizedTrace(s, sensor);
-      snapshot.vitals = { source: 'simulated', status: 'ready', quality: 'accepted', trend: pulse.current > 85 ? 'ELEVATED' : 'STEADY', pulseBpm: Math.round(pulse.current), baselineBpm: 72, fearPct: Math.max(0, Math.min(100, Math.round((pulse.current - 72) * 2.2))) };
+      snapshot.vitals = { source: 'simulated', status: 'ready', quality: 'accepted', trend: pulse.current > 85 ? 'ELEVATED' : 'STEADY', pulseBpm: Math.round(pulse.current), baselineBpm: 72, fearPct: Math.max(0, Math.min(100, Math.round((pulse.current - 72) * 2.2))), signals: { breathingRpm: Math.round(14 + (pulse.current - 72) * .3), emotion: pulse.current > 85 ? 'fear' : 'neutral', emotionPct: pulse.current > 85 ? 46 : 70, blinksPerMinute: Math.round(15 + (pulse.current - 72) * .4), hrvMs: Math.round(Math.max(18, 44 - (pulse.current - 72))) } };
       out.postMessage(snapshot);
     }, 400);
     return () => { clearInterval(timer); out.close(); };

@@ -40,60 +40,140 @@
       "text": "The sedative is wearing off. Working makes noise. Staying here does not finish the protocol."
     },
     {
+      "id": "TUTORIAL_TERMINAL",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 20,
+      "text": "Click the computer in the room, or press E, to use its controls."
+    },
+    {
       "id": "TUTORIAL_FAULT",
       "role": "supervisor",
       "event": "tutorial",
       "priority": 5,
-      "maxAgeSeconds": 7,
-      "text": "Select the box marked FAULT, or press its number. Leave the quiet boxes alone."
+      "maxAgeSeconds": 20,
+      "text": "Listen: each machine plays its own sound in turn. Then press the number of the machine making the noise. Wrong ones clang."
     },
     {
       "id": "TUTORIAL_QUIET",
       "role": "supervisor",
       "event": "tutorial",
       "priority": 5,
-      "maxAgeSeconds": 8,
-      "text": "Press Q to isolate the equipment. The illuminated switch works even in a blackout."
+      "maxAgeSeconds": 20,
+      "text": "Press Q, the orange QUIET button on your remote, or turn around and pull the lever down, to silence the machines. Silent machines lower exposure. A real run has three cells. Act when its footsteps get loud; at the wall it is too late."
     },
     {
       "id": "TUTORIAL_LISTEN",
       "role": "supervisor",
       "event": "tutorial",
       "priority": 5,
-      "maxAgeSeconds": 8,
-      "text": "Wait for receding footsteps. The sound captions give the same information."
+      "maxAgeSeconds": 20,
+      "text": "Listen for receding footsteps. Captions carry the same clue."
     },
     {
       "id": "TUTORIAL_RESTORE",
       "role": "supervisor",
       "event": "tutorial",
       "priority": 5,
-      "maxAgeSeconds": 7,
-      "text": "Hold F for one second to restore power. Your progress is saved."
+      "maxAgeSeconds": 20,
+      "text": "Hold F, the green button on your remote, or push the lever up and hold it, for one second to bring the power back. In a real run you choose when: wait until the footsteps fade. It ends by itself after 25 seconds. Your work is saved."
     },
     {
       "id": "TUTORIAL_MEMORY",
       "role": "supervisor",
       "event": "tutorial",
       "priority": 5,
-      "maxAgeSeconds": 8,
-      "text": "Watch four pulses, then repeat their numbers. R replays the same sequence."
+      "maxAgeSeconds": 20,
+      "text": "Press R to watch four pulses. Replay is always free."
+    },
+    {
+      "id": "TUTORIAL_REPEAT",
+      "role": "supervisor",
+      "event": "tutorial",
+      "priority": 5,
+      "maxAgeSeconds": 20,
+      "text": "Repeat the practice sequence. Real sequences are longer."
     },
     {
       "id": "TUTORIAL_TRANSMIT",
       "role": "supervisor",
       "event": "tutorial",
       "priority": 5,
-      "maxAgeSeconds": 7,
-      "text": "The selected emitter is already set. Press T when the sequence is calibrated."
+      "maxAgeSeconds": 20,
+      "text": "Press T to send the heartbeat away from the shelter."
+    },
+    {
+      "id": "BRIEFING_RECORDING",
+      "role": "supervisor",
+      "event": "briefing",
+      "priority": 5,
+      "maxAgeSeconds": 90,
+      "text": "This is a recorded message from Doctor Elias Hale, director of this station. If you are hearing it, the shelter has sealed itself around you, and the specimen is loose."
+    },
+    {
+      "id": "BRIEFING_HEARING",
+      "role": "supervisor",
+      "event": "briefing",
+      "priority": 5,
+      "maxAgeSeconds": 90,
+      "text": "Listen carefully. It is nearly blind, but it hears everything. Every machine you run, every mistake you make. Give it enough noise, and it will come through that door."
+    },
+    {
+      "id": "BRIEFING_LOCKS",
+      "role": "supervisor",
+      "event": "briefing",
+      "priority": 5,
+      "maxAgeSeconds": 90,
+      "text": "There is one way out: the basement. Its door has four locks, and each research protocol on the terminal in front of you releases one."
+    },
+    {
+      "id": "BRIEFING_QUIET",
+      "role": "supervisor",
+      "event": "briefing",
+      "priority": 5,
+      "maxAgeSeconds": 90,
+      "text": "When its footsteps come close, press Q, or pull the lever behind you, and the machines go silent. Wait until the steps fade, then hold F to bring the power back. You have three cells. Spend them carefully."
+    },
+    {
+      "id": "BRIEFING_LURES",
+      "role": "supervisor",
+      "event": "briefing",
+      "priority": 5,
+      "maxAgeSeconds": 90,
+      "text": "The emitters outside can play a heartbeat from somewhere else, and it will hunt the sound. So keep your own heart steady. It can hear that too."
+    },
+    {
+      "id": "BRIEFING_COOP",
+      "role": "supervisor",
+      "event": "briefing",
+      "priority": 5,
+      "maxAgeSeconds": 90,
+      "text": "I have patched a line through to someone on the outside. They have the manuals you do not. Tell them what you hear and see, and they will tell you what to press."
+    },
+    {
+      "id": "BRIEFING_GO",
+      "role": "supervisor",
+      "event": "briefing",
+      "priority": 5,
+      "maxAgeSeconds": 90,
+      "text": "You have five minutes before the sedative wears off completely. After that, nothing in here will hold it. Four locks. Then you run. Good luck."
     },
     {
       "id": "FAULTS_START",
       "role": "supervisor",
       "event": "stage-1",
       "priority": 3,
-      "maxAgeSeconds": 9,
-      "text": "Twenty-four faults, then the cables. Running equipment is loud. Isolate the machines when its footsteps get close, even mid-task. Do not wait for it to reach the wall."
+      "maxAgeSeconds": 90,
+      "text": "First protocol: six rack faults, a cable patch and a broken conduit, in whatever order the terminal gives them. For the faults, listen as each machine plays its sound, then press the number of the one that sounds wrong."
+    },
+    {
+      "id": "FAULTS_START_COOP",
+      "role": "supervisor",
+      "event": "stage-1",
+      "priority": 3,
+      "maxAgeSeconds": 90,
+      "text": "First protocol: six rack faults, a cable patch and a broken conduit, in the order the terminal gives them. Describe what you hear and see to your friend, and they will tell you what to press."
     },
     {
       "id": "FAULTS_FINISHED",
@@ -109,7 +189,7 @@
       "event": "stage-2",
       "priority": 3,
       "maxAgeSeconds": 7,
-      "text": "The sequence grows each round. Repeat every pulse, then mask your heartbeat and send it to emitter A."
+      "text": "First lock released. Second protocol: repeat the signal sequence and copy the heartbeat on the screen, then send it out through emitter A."
     },
     {
       "id": "LURE_A_SUCCESS",
@@ -117,7 +197,7 @@
       "event": "lure-success",
       "priority": 4,
       "maxAgeSeconds": 8,
-      "text": "The remote signal has it. Clear thirty-six overload faults before it comes back."
+      "text": "It took the bait. Second lock released. Third protocol: the rack is overloading, eight faults, two at a time. There are twelve cables to patch, and you will have to find it on the radar."
     },
     {
       "id": "OVERLOAD_START",
@@ -141,7 +221,7 @@
       "event": "stage-4",
       "priority": 3,
       "maxAgeSeconds": 8,
-      "text": "Longer sequences this time. Calibrate emitter B, then stay calm until it loses your trail."
+      "text": "Third lock released. Last protocol: a longer sequence, and slow, steady breathing until it loses your trail. Then send it out through emitter B."
     },
     {
       "id": "LURE_B_SUCCESS",
@@ -157,7 +237,7 @@
       "event": "final-ready",
       "priority": 4,
       "maxAgeSeconds": 8,
-      "text": "Press T to send the last decoy. The door motor starts once it holds, and it is loud."
+      "text": "Fourth lock released. Press T to send the last decoy. The door motor starts once it holds, and it is loud."
     },
     {
       "id": "CONTAINMENT_ROUTE",

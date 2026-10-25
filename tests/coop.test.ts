@@ -7,7 +7,8 @@ import { config, createGame, dispatch, step } from '../src/game/reducer';
 import { buildDirectorRequest } from '../src/game/directorValidation';
 import { coopManual, socketCode, type CoopManual } from '../src/game/coop';
 import { coopBook, LOCATE_BANDS, MEMORY_GLYPHS, memoryGlyphs, wireCodes, type CoopBook } from '../src/game/book';
-import { FAULT_SOUNDS, calmInhale, faultSounds, listeningTo, sectorsAt, stageSteps, tileOpenings, wirePanel } from '../src/game/tasks';
+import { FAULT_SOUNDS, beginStep, calmInhale, conduitConnected, faultSounds, listeningTo, ratedRouteLive, sectorsAt, stageSteps, tileOpenings, wirePanel } from '../src/game/tasks';
+import type { RoutingState } from '../src/game/state';
 import type { GameState } from '../src/game/state';
 import type { SensorView } from '../src/sensing/types';
 import { publicDirectorRequest } from '../src/integrations/contracts';
@@ -184,3 +185,25 @@ test('co-op hides the rack key from the player but keeps its timing; L cannot re
   assert.deepEqual(FAULT_SOUNDS.filter(name => renderToStaticMarkup(createElement(FaultTask, { g: standard, send: noop, coop: true })).includes(name)), [], 'the prop overrides');
 });
 
+/** A 4×4 board, IN and OUT on row 1. The rated route runs straight along row 1 (a tee, two straights,
+ * a tee); a second connected path dips through row 2 and skips the two straights. Kinds: 1 straight,
+ * 2 elbow, 3 tee, 0 blank. */
+function twoRouteBoard(turns: number[]): RoutingState {
+  const kinds = [3, 1, 1, 3, 2, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0], answer = kinds.map((_, i) => i < 4 ? 1 : -1);
+  return { round: 0, rounds: 1, size: 4, kinds, turns, answer, start: 0, end: 0 };
+}
+const ALONE = [2, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0]; // tee down, the row-2 detour, tee up: connected, but not the rated route
+const RATED = [1, 1, 1, 1, 0, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0]; // row 1 straight across (the detour may stay lit: off-route tiles don't matter)
+
+test('co-op conduit: only the rated route on the friend\'s board carries the surge', () => {
+  assert.ok(conduitConnected(twoRouteBoard(ALONE)) && !ratedRouteLive(twoRouteBoard(ALONE)), 'a path found alone connects but misses the rated tiles');
+  assert.ok(ratedRouteLive(twoRouteBoard(RATED)));
+  const engage = (mode: 'coop' | 'standard', turns: number[]) => {
+    const s = createGame(17, mode); beginStep(s, 'routing'); s.tasks.routing = twoRouteBoard(turns); s.station = 'terminal'; s.equipment = 'on';
+    const after = dispatch(s, { type: 'engage' });
+    return after.events.slice(s.events.length).map(e => e.type);
+  };
+  assert.ok(engage('coop', ALONE).includes('WRONG_INPUT') && !engage('coop', ALONE).includes('ROUTING_ENGAGED'), 'co-op: the detour arcs loudly');
+  assert.ok(engage('coop', RATED).includes('ROUTING_ENGAGED'), 'co-op: the friend\'s route engages');
+  assert.ok(engage('standard', ALONE).includes('ROUTING_ENGAGED'), 'solo keeps any connected path');
+});

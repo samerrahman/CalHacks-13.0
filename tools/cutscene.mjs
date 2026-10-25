@@ -163,6 +163,10 @@ function synthSources(layers, duration, stepRate) {
         src(noise('brown', 23, 0.8), `bandpass=f=170:width_type=h:w=220,volume='0.9*(${gain})':eval=frame`);
         src(ev(ticks(41, 380)), `highpass=f=400,${modes([760, 1290, 2100], 4, 9)},lowpass=f=4500,volume='0.45*(${gain})':eval=frame`);
         break;
+      case 'klaxon': // the evacuation horn once it is loose: the same low distorted horn, a fifth up, pulsing twice as fast
+        src(ev(`st(0,mod(t,0.85));clip(ld(0)/0.06,0,1)*clip((0.55-ld(0))/0.08,0,1)*0.3*tanh(2.2*((2*mod(146.8*t,1)-1)+0.8*(2*mod(155.4*t,1)-1)+0.6*(2*mod(73.4*t,1)-1)))`),
+          `lowpass=f=1300,aecho=0.6:0.5:110|210:0.4|0.25,${vol}`);
+        break;
       case 'buzz': // a failing light: flickering 120 Hz buzz
         src(ev('0.3*sgn(sin(2*PI*120*t))*gt(sin(2*PI*17*t)*sin(2*PI*7.3*t),0)'), `lowpass=f=3000,${vol}`);
         break;

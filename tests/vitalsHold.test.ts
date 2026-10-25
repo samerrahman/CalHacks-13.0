@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readSpectatorFear, readVitals, SPECTATOR_FEAR_HOLD_MS, spectatorFearMemory, type VitalsMemory } from '../src/ui/vitalsHold';
+import { readSpectatorDetail, readSpectatorFear, readVitals, SPECTATOR_FEAR_HOLD_MS, spectatorDetailMemory, spectatorFearMemory, type VitalsMemory } from '../src/ui/vitalsHold';
 import type { SensorDiagnostics, SensorView } from '../src/sensing/types';
 
 const memory = (): VitalsMemory => ({ source: null, pulse: null, breathing: null, trend: 'UNKNOWN' });
@@ -50,4 +50,12 @@ test("the spectator FEAR shows the player's combined camera number while it keep
   assert.equal(readSpectatorFear(m, v({ fearPct: 30 }), SPECTATOR_FEAR_HOLD_MS + 2).label, 'TENSE', 'and the camera number returns when it does');
   assert.equal(readSpectatorFear(spectatorFearMemory(), v({ baselineBpm: null, fearPct: 12 }), 0).fearPct, 12, 'needs no baseline');
   assert.equal(readSpectatorFear(m, v({ source: 'simulated', fearPct: null }), SPECTATOR_FEAR_HOLD_MS + 3).basis, 'heart rate', 'a new source starts over');
+});
+
+test('the readings under FEAR hold through short dropouts, then show as missing', () => {
+  const m = spectatorDetailMemory(), signals = { breathingRpm: 18, emotion: 'fear', emotionPct: 40, blinksPerMinute: 22, hrvMs: 37 };
+  assert.deepEqual(readSpectatorDetail(m, { source: 'presage', pulseBpm: 84, baselineBpm: 72, signals }, 0), { pulse: 84, delta: 12, breathingRpm: 18, emotion: 'fear', emotionPct: 40, blinksPerMinute: 22, hrvMs: 37 });
+  assert.deepEqual(readSpectatorDetail(m, { source: 'presage', pulseBpm: null, baselineBpm: 72, signals: null }, SPECTATOR_FEAR_HOLD_MS), { pulse: 84, delta: 12, breathingRpm: 18, emotion: 'fear', emotionPct: 40, blinksPerMinute: 22, hrvMs: 37 }, 'held');
+  assert.deepEqual(readSpectatorDetail(m, { source: 'presage', pulseBpm: null, baselineBpm: 72, signals: { ...signals, breathingRpm: 20, emotion: null, emotionPct: null } }, SPECTATOR_FEAR_HOLD_MS + 1), { pulse: null, delta: null, breathingRpm: 20, emotion: null, emotionPct: null, blinksPerMinute: 22, hrvMs: 37 }, 'stale values drop out one by one');
+  assert.equal(readSpectatorDetail(m, { source: 'simulated', pulseBpm: null, baselineBpm: null, signals: null }, SPECTATOR_FEAR_HOLD_MS + 2).breathingRpm, null, 'a new source clears them');
 });

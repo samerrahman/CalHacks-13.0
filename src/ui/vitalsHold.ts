@@ -91,3 +91,26 @@ export function readSpectatorFear(memory: SpectatorFearMemory, vitals: { source:
   const fearPct = fearFromPulse(memory.pulse, vitals.baselineBpm, memory.trend);
   return { fearPct, label: spectatorLabel(fearPct), trend: memory.trend, live: pulseLive, basis: fearPct === null ? null : 'heart rate' };
 }
+
+/** The small readings under FEAR: heart rate against the resting rate, breathing, the strongest
+ * facial expression, blinking and heart-rate variability. Each keeps its last value for up to
+ * SPECTATOR_FEAR_HOLD_MS through dropouts, then shows as missing; a new source clears them. */
+export type SpectatorDetail = { pulse: number | null; delta: number | null; breathingRpm: number | null; emotion: string | null; emotionPct: number | null; blinksPerMinute: number | null; hrvMs: number | null };
+type DetailSignals = { breathingRpm: number | null; emotion: string | null; emotionPct: number | null; blinksPerMinute: number | null; hrvMs: number | null };
+export type SpectatorDetailMemory = { source: string | null; held: Map<string, { value: number | string; at: number }> };
+export const spectatorDetailMemory = (): SpectatorDetailMemory => ({ source: null, held: new Map() });
+
+export function readSpectatorDetail(memory: SpectatorDetailMemory, vitals: { source: string; pulseBpm: number | null; baselineBpm: number | null; signals?: DetailSignals | null }, nowMs: number): SpectatorDetail {
+  if (memory.source !== vitals.source) { memory.source = vitals.source; memory.held.clear(); }
+  const s = vitals.signals ?? null;
+  // Emotion and its strength travel together, so they are held as one value.
+  const fresh: Record<string, number | string | null> = { pulse: vitals.pulseBpm, breathingRpm: s?.breathingRpm ?? null, emotion: s?.emotion && s.emotionPct !== null ? `${s.emotion}:${s.emotionPct}` : null, blinksPerMinute: s?.blinksPerMinute ?? null, hrvMs: s?.hrvMs ?? null };
+  const read = (key: string) => {
+    const value = fresh[key];
+    if (value !== null && value !== undefined) memory.held.set(key, { value, at: nowMs });
+    const held = memory.held.get(key);
+    return held && nowMs - held.at <= SPECTATOR_FEAR_HOLD_MS ? held.value : null;
+  };
+  const pulse = read('pulse') as number | null, emotion = read('emotion') as string | null, [name, pct] = emotion ? emotion.split(':') : [null, null];
+  return { pulse, delta: pulse !== null && finite(vitals.baselineBpm) ? pulse - vitals.baselineBpm : null, breathingRpm: read('breathingRpm') as number | null, emotion: name, emotionPct: pct === null ? null : Number(pct), blinksPerMinute: read('blinksPerMinute') as number | null, hrvMs: read('hrvMs') as number | null };
+}

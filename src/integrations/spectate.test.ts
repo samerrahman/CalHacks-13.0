@@ -4,21 +4,32 @@ import { createGame } from '../game/reducer';
 import { emit } from '../game/state';
 import type { SensorView } from '../sensing/types';
 import { TraceBridge, sanitizedTrace, type TraceSnapshot } from './client';
-import { localVitals, parseWatchAccess, remoteVitals, SpectateFeed, spectatorFear, spectatorVitals, type SpectateState } from './spectate';
+import { localVitals, parseWatchAccess, remoteVitals, SpectateFeed, spectatorFear, spectatorSignals, spectatorVitals, type SpectateState } from './spectate';
 import type { SensorSignals } from '../sensing/types';
 import { LocalPhysics } from './physics';
 
 const view = (patch: Partial<SensorView>): SensorView => ({ source: 'simulated', status: 'ready', trend: 'STEADY', quality: 'accepted', hint: 'SIMULATED', baselineBpm: 71.6, pulseBpm: 83.4, ageMs: 200, acceptedSeconds: 30, canContinueManual: true, sampleAtMs: 1234, captureSegment: 1, ...patch });
 const nextMessage = (channel: BroadcastChannel) => new Promise<TraceSnapshot>(resolve => { channel.onmessage = e => resolve(e.data as TraceSnapshot); });
 
-test('spectators get whole BPM, coarse labels and one fear number only, never for manual play', () => {
-  assert.deepEqual(spectatorVitals(view({})), { source: 'simulated', status: 'ready', quality: 'accepted', trend: 'STEADY', pulseBpm: 83, baselineBpm: 72, fearPct: 47 });
+test('spectators get whole BPM, coarse labels, one fear number and whole-number readings only, never for manual play', () => {
+  assert.deepEqual(spectatorVitals(view({})), { source: 'simulated', status: 'ready', quality: 'accepted', trend: 'STEADY', pulseBpm: 83, baselineBpm: 72, fearPct: 47, signals: null });
   assert.equal(spectatorVitals(view({ source: 'manual', status: 'manual' })), null);
-  assert.deepEqual(spectatorVitals(view({ source: 'presage', quality: 'rejected', pulseBpm: null, trend: 'ELEVATED' })), { source: 'presage', status: 'ready', quality: 'rejected', trend: 'UNKNOWN', pulseBpm: null, baselineBpm: 72, fearPct: null });
-  const shared = spectatorVitals(view({ source: 'presage', diagnostics: undefined, breathingRpm: 21, restingBreathingRpm: 14, signals: signals({ fear: .41, edaRelative: 1.2 }) }))!;
-  assert.deepEqual(Object.keys(shared).sort(), ['baselineBpm', 'fearPct', 'pulseBpm', 'quality', 'source', 'status', 'trend']);
-  assert.equal(JSON.stringify(shared).includes('1234'), false, 'no measurement clock');
-  assert.equal(/21|14|41|1\.2|breath|express|eda/i.test(JSON.stringify(shared)), false, 'none of the parts behind the fear number');
+  assert.deepEqual(spectatorVitals(view({ source: 'presage', quality: 'rejected', pulseBpm: null, trend: 'ELEVATED' })), { source: 'presage', status: 'ready', quality: 'rejected', trend: 'UNKNOWN', pulseBpm: null, baselineBpm: 72, fearPct: null, signals: null });
+  const shared = spectatorVitals(view({ source: 'presage', diagnostics: undefined, breathingRpm: 21.4, restingBreathingRpm: 14, signals: signals({ fear: .41, edaRelative: 1.2, blinksPerMinute: 23.6, hrv: { rmssdMs: 38.2, sdnnMs: 51 }, expressions: { neutral: .3, fear: .55, surprise: .1 }, talking: true, abdomenShare: .4, breathPhase: 'in' }) }))!;
+  assert.deepEqual(Object.keys(shared).sort(), ['baselineBpm', 'fearPct', 'pulseBpm', 'quality', 'signals', 'source', 'status', 'trend']);
+  assert.deepEqual(shared.signals, { breathingRpm: 21, emotion: 'fear', emotionPct: 55, blinksPerMinute: 24, hrvMs: 38 }, 'whole numbers and the single strongest expression');
+  const json = JSON.stringify(shared);
+  assert.equal(json.includes('1234'), false, 'no measurement clock');
+  assert.equal(/neutral|surprise|eda|talking|abdomen|phase|sdnn|1\.2|0\.4/i.test(json), false, 'no full expression map, EDA, talking, breath phase, abdomen share or SDNN');
+});
+
+test('the small readings are each sent only while their estimate is ok', () => {
+  const s = signals({ blinksPerMinute: 20, hrv: { rmssdMs: 40, sdnnMs: 50 }, expressions: { fear: .3 } });
+  s.status = { ...s.status, blinking: { status: 'stale', reason: '' }, hrv: { status: 'warming', reason: '' } };
+  assert.deepEqual(spectatorSignals(view({ source: 'presage', breathingRpm: 16, restingBreathingRpm: 14, signals: s })), { breathingRpm: 16, emotion: 'fear', emotionPct: 30, blinksPerMinute: null, hrvMs: null });
+  const none = signals({}); none.status = { ...none.status, breathing: { status: 'rejected', reason: '' }, expressions: { status: 'unavailable', reason: '' } };
+  assert.equal(spectatorSignals(view({ source: 'presage', breathingRpm: 16, signals: none })), null, 'nothing measured, nothing sent');
+  assert.equal(spectatorSignals(view({ source: 'manual', status: 'manual', signals: signals({ blinksPerMinute: 20 }) })), null);
 });
 
 /** Presage-style signals where every estimate is ok; tests override the values they need. */
@@ -47,7 +58,13 @@ test('the fear number blends face, heart rate, breathing and skin response, led 
 });
 
 test('remote vitals rows are revalidated before display', () => {
-  assert.deepEqual(remoteVitals({ source: 'simulated', status: 'ready', quality: 'accepted', trend: 'ELEVATED', pulseBpm: 91, baselineBpm: 70 }), { source: 'simulated', status: 'ready', quality: 'accepted', trend: 'ELEVATED', pulseBpm: 91, baselineBpm: 70, fearPct: null });
+  assert.deepEqual(remoteVitals({ source: 'simulated', status: 'ready', quality: 'accepted', trend: 'ELEVATED', pulseBpm: 91, baselineBpm: 70 }), { source: 'simulated', status: 'ready', quality: 'accepted', trend: 'ELEVATED', pulseBpm: 91, baselineBpm: 70, fearPct: null, signals: null });
+  const base = { source: 'simulated', status: 'ready', quality: 'accepted', trend: 'STEADY', pulseBpm: 80, baselineBpm: 70, sequence: 9 };
+  assert.deepEqual(remoteVitals(base, undefined, { source: 'simulated', sequence: 9, breathingRpm: 18, emotion: 'fear', emotionPct: 40, blinksPerMinute: 30, hrvMs: 41 })?.signals, { breathingRpm: 18, emotion: 'fear', emotionPct: 40, blinksPerMinute: 30, hrvMs: 41 });
+  assert.deepEqual(remoteVitals(base, undefined, { source: 'simulated', sequence: 9, breathingRpm: 200, emotion: 'giddy', emotionPct: 40, hrvMs: 41.5 })?.signals ?? null, null, 'out-of-range or unknown fields are dropped');
+  assert.equal(remoteVitals(base, undefined, { source: 'presage', sequence: 9, breathingRpm: 18 })?.signals, null, 'the source must match the vitals row');
+  assert.equal(remoteVitals(base, undefined, { source: 'simulated', sequence: 2, breathingRpm: 18 })?.signals, null, 'a left-over row is not current');
+  assert.deepEqual(localVitals({ ...spectatorVitals(view({ source: 'presage', breathingRpm: 17, restingBreathingRpm: 14, signals: signals({ expressions: { happy: .2 } }) })) })?.signals, { breathingRpm: 17, emotion: 'happy', emotionPct: 20, blinksPerMinute: null, hrvMs: null }, 'the same-browser link carries them too');
   assert.equal(remoteVitals({ source: 'simulated', status: 'ready', quality: 'accepted', trend: 'STEADY', pulseBpm: 80, baselineBpm: 70 }, { source: 'simulated', fearPct: 64 })?.fearPct, 64);
   for (const fear of [{ source: 'presage', fearPct: 64 }, { source: 'simulated', fearPct: 101 }, { source: 'simulated', fearPct: 12.5 }, { source: 'simulated', fearPct: -1 }, { source: 'simulated' }])
     assert.equal(remoteVitals({ source: 'simulated', status: 'ready', quality: 'accepted', trend: 'STEADY', pulseBpm: 80, baselineBpm: 70 }, fear)?.fearPct, null, JSON.stringify(fear));

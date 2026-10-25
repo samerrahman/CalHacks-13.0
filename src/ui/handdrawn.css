@@ -147,6 +147,18 @@ body .locate-only .locate-buttons button{font-family:var(--typed);background:non
 body .locate-only .locate-buttons button:hover:not(:disabled){border-color:#b8261a;color:#fff3dc;background:none}
 /* With the judge button gone, keep the station bar centred on the screen. */
 body .game-footer nav{position:absolute;left:50%;transform:translateX(-50%)}
+/* Wider screens: a three-column footer (camera label, the workstation buttons centred, debug controls),
+ * so nothing can land on the buttons. Friend-run controls live in .share-controls at the top right. */
+@media(min-width:721px){body .game-footer{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;column-gap:18px}body .game-footer nav{position:static;transform:none;grid-column:2}body .game-footer .sensor-label{grid-column:1;justify-self:start;width:auto;max-width:100%}body .game-footer .footer-controls{grid-column:3;justify-self:end;display:flex;gap:12px}}
+body .share-controls{position:fixed;top:50px;right:18px;z-index:5;display:grid;justify-items:end;gap:2px;opacity:.75;transition:opacity .2s}
+body .share-controls:hover,body .share-controls:focus-within{opacity:1}
+body .share-controls button{font-family:var(--typed);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8c8371;background:none;border:0;padding:5px 6px;text-shadow:0 1px 3px #000;text-decoration:none;white-space:nowrap}
+body .share-controls button small{font-size:9px;letter-spacing:1px;margin-left:6px;color:#5a5244}
+body .share-controls .live-badge{color:#d7745a}body .share-controls .voice-toggle.on{color:#e6d4af}
+body .share-controls .voice-toggle{grid-column:auto;grid-row:auto;justify-self:end}
+/* James's whisper warning: the MIC label turns red while the game hears the player talking. */
+body .share-controls .voice-toggle.loud{color:#ff9a72}body .share-controls .voice-toggle.loud small{color:#e7a58b}
+body .share-controls button:hover{color:#e4dccb}
 /* Isolation switch panel, in the same language as the tutorial cards. */
 body .task-panel.equipment-panel{background:#050404eb;border:1px solid #3a352b;border-left:2px solid #b8261a;border-radius:0;box-shadow:0 10px 40px #000c;padding:16px 20px 18px;width:min(360px,calc(100vw - 32px));font-family:var(--typed);color:#a49b86}
 body .equipment-panel .inspection-close{display:block;margin:0 0 12px auto;border:0;background:none!important;font-family:var(--typed);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#6a6252}

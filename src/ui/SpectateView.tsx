@@ -23,7 +23,7 @@ import { CoopManualFeed } from '../integrations/coop';
 import { Heartbeat, WornTitle } from './Worn';
 import './spectate-worn.css';
 import SpectateCamera from './SpectateCamera';
-import { readSpectatorFear, spectatorFearMemory } from './vitalsHold';
+import { readSpectatorDetail, readSpectatorFear, spectatorDetailMemory, spectatorFearMemory } from './vitalsHold';
 
 const HELD_MS = 5000, GONE_MS = 15000, REACTION_MS = 3200;
 const TREND: Record<SpectatorVitals['trend'], string> = { UNKNOWN: 'No sustained change yet', STEADY: 'Holding steady', ELEVATED: 'Up and staying up', RECOVERED: 'Coming back down' };
@@ -73,21 +73,30 @@ function drawShelter(canvas: HTMLCanvasElement | null, props: PropView[], player
  * one percentage, held through dropouts; an older player build only lets it be estimated from heart
  * rate (vitalsHold.ts). */
 function Fear({ vitals, age, now, children }: { vitals: SpectatorVitals | null; age: number | null; now: number; children?: ReactNode }) {
-  const memory = useRef(spectatorFearMemory());
+  const memory = useRef(spectatorFearMemory()), detailMemory = useRef(spectatorDetailMemory());
   if (!vitals || age === null || age > GONE_MS) {
     // Not shared (or gone): forget the last reading, so a re-enabled share never resurfaces it.
-    memory.current = spectatorFearMemory();
+    memory.current = spectatorFearMemory(); detailMemory.current = spectatorDetailMemory();
     return <section className="spectate-card spectate-vitals spectate-fear off"><small>FEAR</small><strong>—</strong><span>{vitals ? 'No recent reading' : 'Not shared'}</span></section>;
   }
   const fear = readSpectatorFear(memory.current, vitals, now), held = age > HELD_MS || fear.fearPct !== null && !fear.live;
   const status = vitals.status === 'calibrating' || vitals.status === 'starting' ? 'Calibrating their camera' : vitals.status === 'paused' ? 'Capture paused' : vitals.quality === 'rejected' ? 'Reading rejected (movement or lighting)' : 'Waiting for a reading';
   const note = fear.fearPct === null ? status : fear.live ? TREND[fear.trend] : `${status} · showing their last reading`;
+  const d = readSpectatorDetail(detailMemory.current, vitals, now), per = (value: number | null, unit: string) => value === null ? '—' : <>{value}<small> {unit}</small></>;
   return <section className={`spectate-card spectate-vitals spectate-fear mood-${fear.label.toLowerCase()}${held ? ' held' : ''}`}>
     <small>FEAR <em className={vitals.source}>{vitals.source === 'simulated' ? 'SIMULATED' : fear.basis === 'heart rate' ? 'FROM THEIR HEART RATE' : 'FROM THEIR CAMERA'}</em></small>
     <strong>{fear.fearPct === null ? '—' : `${fear.fearPct}%`}<span>{fear.label}</span></strong>
     <div className="spectate-meter"><meter aria-label="Fear level" min={0} max={100} low={25} high={50} optimum={0} value={fear.fearPct ?? 0} /></div>
     {children}
     <span>{note}{age > HELD_MS && ` · held, no update for ${Math.floor(age / 1000)} s`}</span>
+    {/* What the number is made of, in small type: camera estimates, not medical readings. */}
+    <dl className="spectate-fear-detail" aria-label="Their readings">
+      <div><dt>Heart</dt><dd>{per(d.pulse, 'bpm')}{d.delta !== null && <small> · {d.delta > 0 ? '+' : ''}{d.delta} vs resting</small>}</dd></div>
+      <div><dt>Breathing</dt><dd>{per(d.breathingRpm, '/ min')}</dd></div>
+      <div><dt>Emotion</dt><dd>{d.emotion ? <>{d.emotion}<small> {d.emotionPct}%</small></> : '—'}</dd></div>
+      <div><dt>Blinking</dt><dd>{per(d.blinksPerMinute, '/ min')}</dd></div>
+      <div><dt>Heart variability</dt><dd>{per(d.hrvMs, 'ms')}</dd></div>
+    </dl>
   </section>;
 }
 
@@ -245,7 +254,7 @@ export default function SpectateView() {
     </div>
     {reaction && reaction.from !== null && afterRise !== null && now < reaction.until + 6000 && <div className="spectate-reaction-toast" role="status"><b>♥ {afterRise - reaction.from >= 3 ? `${reaction.from} → ${afterRise}` : reaction.from} BPM</b><span>{reaction.kind === 'ATTACK_COMMITTED' ? 'as it came through' : 'after the hit on the door'}</span></div>}
     {caption && <p className="spectate-narration" aria-live="polite">{caption}</p>}
-    <p className="spectate-privacy">Nothing is recorded · sound, cameras and the narrator are rebuilt on this device from the game · fear is a camera estimate from their face, breathing and heart rate, not a medical reading · spectators can't change the run{coop ? " · their game checks every warning and decoy" : ""}.</p>
+    <p className="spectate-privacy">Nothing is recorded · sound, cameras and the narrator are rebuilt on this device from the game · fear and the readings under it are camera estimates, not medical readings · spectators can't change the run{coop ? " · their game checks every warning and decoy" : ""}.</p>
   </main>;
 }
 
