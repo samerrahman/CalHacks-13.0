@@ -25,7 +25,7 @@ export interface SceneView {
   dispose(): void;
   diagnostics: { loadedAssets: string[]; animationClips: string[]; error: string | null; cameraFeed: CameraFeed; silhouetteVisible: boolean; listenerYaw: number; listenerPosition: WorldPosition; hoveredStation: Station | null; anchors: Record<'terminal' | 'quiet' | 'restore', { x: number; y: number } | null> };
 }
-export function createScene(container: HTMLElement): SceneView {
+export function createScene(container: HTMLElement, onProgress?: (loaded: number, total: number) => void): SceneView {
   const diagnostics: SceneView['diagnostics'] = { loadedAssets: [], animationClips: [], error: null, cameraFeed: 'A', silhouetteVisible: false, listenerYaw: 0, listenerPosition: [.05, 1.62, .60], hoveredStation: null, anchors: { terminal: null, quiet: null, restore: null } };
   let disposed = false, reducedMotion = false, station: Station = 'terminal';
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x020303); scene.fog = new THREE.FogExp2(0x040504, .065);
@@ -124,12 +124,13 @@ export function createScene(container: HTMLElement): SceneView {
   const cctvOverlay = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), overlayMaterial); cctvOverlay.position.set(.5, .5, 2); cctvOverlay.renderOrder = 100; cctvScene.add(cctvOverlay);
   const decals = [['title', titlePlate], ['protocol_card', protocolPlate], ['camera_notice', cameraPlate], ['sensor_notice', sensorPlate], ['door_label', doorPlate], ['emergency_switch', switchPlate]] as const;
   const extraTextures: THREE.Texture[] = [], loader = new THREE.TextureLoader();
+  let loadedCount = 0; const totalAssets = 21, stepProgress = () => onProgress?.(++loadedCount, totalAssets);
   const visualsReady = Promise.all([
-    ...decals.map(async ([name, mesh]) => { const texture = await loader.loadAsync(`/assets/decals/${name}.svg`); if (disposed) { texture.dispose(); return; } texture.colorSpace = THREE.SRGBColorSpace; mesh.material.map?.dispose(); mesh.material.map = texture; }),
-    ...([['A', 'cam_a_clearing'], ['B', 'cam_b_path'], ['C', 'cam_c_containment'], ['SEALED', 'cam_c_sealed']] as const).map(async ([feed, name]) => { const texture = await loader.loadAsync(`/assets/cameras/${name}.png`); if (disposed) { texture.dispose(); return; } texture.colorSpace = THREE.SRGBColorSpace; feedImages[feed] = texture; extraTextures.push(texture); }),
-    loader.loadAsync('/assets/decals/feed_offline.svg').then(texture => { if (disposed) texture.dispose(); else { texture.colorSpace = THREE.SRGBColorSpace; feedImages.OFFLINE = texture; extraTextures.push(texture); } }),
+    ...decals.map(async ([name, mesh]) => { const texture = await loader.loadAsync(`/assets/decals/${name}.svg`); stepProgress(); if (disposed) { texture.dispose(); return; } texture.colorSpace = THREE.SRGBColorSpace; mesh.material.map?.dispose(); mesh.material.map = texture; }),
+    ...([['A', 'cam_a_clearing'], ['B', 'cam_b_path'], ['C', 'cam_c_containment'], ['SEALED', 'cam_c_sealed']] as const).map(async ([feed, name]) => { const texture = await loader.loadAsync(`/assets/cameras/${name}.png`); stepProgress(); if (disposed) { texture.dispose(); return; } texture.colorSpace = THREE.SRGBColorSpace; feedImages[feed] = texture; extraTextures.push(texture); }),
+    loader.loadAsync('/assets/decals/feed_offline.svg').then(texture => { stepProgress(); if (disposed) texture.dispose(); else { texture.colorSpace = THREE.SRGBColorSpace; feedImages.OFFLINE = texture; extraTextures.push(texture); } }),
   ]);
-  const modelsReady = loadModels(name => diagnostics.loadedAssets.push(name)).then(assets => {
+  const modelsReady = loadModels(name => { diagnostics.loadedAssets.push(name); stepProgress(); }).then(assets => {
     if (disposed) { Object.values(assets).forEach(asset => disposeObject(asset.scene)); return; }
     const placement: Record<Exclude<ModelName, 'creature_cctv'>, [WorldPosition, number]> = {
       shelter: [[0, 0, 0], 0], sealed_door: [[-1.75, 0, 2.39], Math.PI], workdesk: [[0, 0, -1.8], 0], terminal: [[-.62, .92, -1.8], 0], security_monitor: [[.72, .92, -1.8], 0], proximity_detector: [[1.85, 1.60, -2.35], 0], radio_speaker: [[-1.30, .92, -1.8], 0], machine_rack: [[2.67, 0, .05], -Math.PI / 2], emergency_switch: [[-.70, 1.35, 2.36], Math.PI],

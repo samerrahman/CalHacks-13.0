@@ -157,4 +157,8 @@ body .equipment-panel .worn-menu kbd{font-family:var(--typed);font-size:11px;bor
 body .equipment-panel .worn-menu button:disabled{opacity:.35}
 body .equipment-panel .inspection-close{text-align:right;width:auto}
 body .equipment-panel .worn-menu button{font-size:14px;letter-spacing:4px}
+body .setup.setup-loading{align-items:center;justify-content:center;padding:0;background:#010202}
+body .setup-loader{position:relative;z-index:8;display:flex;flex-direction:column;align-items:center;gap:28px}
+body .setup-loader-bar{width:min(380px,68vw);height:2px;background:#1a1412;overflow:hidden;position:relative}
+body .setup-loader-fill{height:100%;background:#b8261a;box-shadow:0 0 10px #ff3a1a88;transition:width .18s ease-out}
 body .results .screen-left>p.small+.worn-menu{margin-top:5vh}
