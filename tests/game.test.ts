@@ -140,6 +140,21 @@ test('early F or a direct restore call cannot bypass the isolation restore windo
   state = dispatch(state, { type: 'restore', held: true }); state = step(state, 1.1); assert.equal(state.equipment, 'on');
 });
 
+test('repeated mistakes keep raising exposure until it reaches 100', () => {
+  let state = firstFault(createGame(4)), last = state.danger;
+  for (let i = 0; i < 40 && state.danger < 100; i++) {
+    const wrong = [1, 2, 3, 4].find(value => !state.tasks.faults.active.includes(value - 1))!;
+    state = dispatch(state, { type: 'input', value: wrong }); state = step(state, .3);
+    if (i < 12) assert.ok(state.danger > last, `mistake ${i + 1} raised exposure (${last} → ${state.danger})`);
+    last = state.danger;
+  }
+  assert.equal(state.danger, 100);
+  // Correct work and the machinery hum stop at the work cap but never pull mistake noise back down to it.
+  const loud = state.pressure;
+  state = dispatch(state, { type: 'input', value: state.tasks.faults.active[0] + 1 });
+  assert.ok(state.pressure >= loud && state.pressure > config.danger.pressureMaximum);
+});
+
 test('danger uses bounded accepted coarse physiology and work noise, never raw pulse', () => {
   const base = createGame(4);
   const elevated = dispatch(base, { type: 'sensor', source: 'presage', quality: 'accepted', trend: 'ELEVATED' });
@@ -148,7 +163,7 @@ test('danger uses bounded accepted coarse physiology and work noise, never raw p
   assert.equal(dispatch(base, { type: 'sensor', source: 'manual', quality: 'accepted', trend: 'ELEVATED' }).danger, base.danger);
   let state = base;
   for (let i = 0; i < 20; i++) { const wrong = [1, 2, 3, 4].find(value => !state.tasks.faults.active.includes(value - 1))!; state = dispatch(state, { type: 'input', value: wrong }); state = step(state, .3); }
-  assert.ok(state.pressure <= config.danger.pressureMaximum && state.danger <= 100);
+  assert.ok(state.pressure > config.danger.pressureMaximum && state.pressure <= config.danger.mistakeMaximum && state.danger <= 100, 'mistakes push noise past the work cap, never past the mistake cap');
   let quietState = firstFault(createGame(4)); const before = quietState.pressure;
   quietState = dispatch(quietState, { type: 'input', value: quietState.tasks.faults.active[0] + 1 }); assert.equal(quietState.pressure, before + config.danger.workPressure, 'correct work is loud');
 });

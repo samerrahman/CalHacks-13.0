@@ -106,7 +106,7 @@ export function updateDanger(state: GameState, dt: number): void {
   // and it cools whenever the room is quiet, fastest while isolated.
   const cooling = config.danger.pressureDecayPerSecond * (state.equipment === 'quiet' ? config.danger.quietCoolingMultiplier : 1);
   const machinery = state.equipment === 'on' && state.mode !== 'tutorial' ? state.clues.machinery * config.danger.machineryPressurePerSecond : 0;
-  state.pressure = clamp(state.pressure + (machinery - cooling) * dt, 0, config.danger.pressureMaximum);
+  state.pressure = clamp(state.pressure + (machinery - cooling) * dt, 0, Math.max(config.danger.pressureMaximum, state.pressure));
   const part = dangerParts(state);
   state.danger = state.mode === 'tutorial' ? 0 : clamp(part.base + part.time + part.noise + part.pulse + part.isolation, 0, 100);
 }

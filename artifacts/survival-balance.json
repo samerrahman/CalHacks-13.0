@@ -98,6 +98,7 @@
       "base": 10,
       "timeMaximum": 25,
       "pressureMaximum": 55,
+      "mistakeMaximum": 90,
       "pressureDecayPerSecond": 0.6,
       "quietCoolingMultiplier": 3,
       "workPressure": 1.8,

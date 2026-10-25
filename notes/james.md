@@ -2,6 +2,10 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: Exposure is no longer stuck near 65. Work noise was capped at 55 (base 10 + 55); now correct work and machinery still stop at 55, but mistakes keep adding up to 90, so repeated mistakes reach 100. Correct inputs and the hum no longer pull mistake noise back to 55. New test; the balance sweep is unchanged (28/23/13/0/5 of 30). Check passes (161).
+
+- 2026-10-24: Run report chart redesign (Lea's `PulseReport.tsx`, at the user's request). Pulse and breathing are continuous lines over the whole run, from `src/ui/pulseChart.ts`. They start at the baseline, bridge gaps and hold the last reading, drawn as monotone curves with a soft fill. Measured stretches are bright, bridged ones dim, and the numbers still use measured readings only. Real axes, a labelled baseline, a marked peak, and jump-scare/steadied lines with other events as lane ticks. App passes the run length. Fixture `tests/fixtures/report.html`. Check passes (160), seed-18 report run passes.
+
 - 2026-10-24: At the user's request, charting is automatic whenever the camera (or simulation) is on. The "Chart my pulse" checkboxes and the Operator "Record accepted pulse" option are removed; the camera prompt and Operator settings say the report charts it locally. A camera started mid-run records from then on. An empty report says camera off or no accepted readings. Check passes (157); loss and simulated-pulse chart browser runs pass.
 
 - 2026-10-24: Fixed the empty physiology report (touching Lea's `src/ui`). Recording needed the off-by-default "Record accepted pulse" box hidden in Operator settings, and a camera started mid-run never recorded. The camera prompt now shows "Chart my pulse and breathing", ticked by default. The camera panel (setup, prompt, in-game dialog) carries the same box. Starting the camera or ticking the box mid-run starts recording; unticking discards it. An empty report says why: charting off, camera off, or no accepted readings. Check passes (157). Loss and simulated-pulse (chart) browser runs pass.

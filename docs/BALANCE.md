@@ -31,7 +31,7 @@ Every correct fault, cable, memory digit, sector mark or routing engage: P += 1.
 Wrong input of any kind: P += 6 (plus a loud transient).
 Machinery noise is the larger of 0.35 per active fault (at most 0.9) and, while powered with a live
 research task after the grace period, a 0.45 equipment floor. P += 0.8 × machinery per second while powered.
-P cools by 0.6 per second, three times faster while isolated, bounded to [0, 55].
+P cools by 0.6 per second, three times faster while isolated. Correct work and running machines raise P only up to 55; mistakes keep adding to it up to 90, so repeated mistakes take exposure all the way to 100 (base 10 + 90).
 Completed research stage: P -= 8.
 
 D = clamp(10 + 25 × clamp(t / 480, 0, 1) + P + 5 × E + 2 × U, 0, 100)
