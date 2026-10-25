@@ -2,25 +2,24 @@
 
 A friend opens a link and watches your run read-only: the creature's distance, exposure, stage, key moments, the shelter's props (see [PHYSICS.md](PHYSICS.md)) and, only if you turn it on separately, your live heart rate.
 
-## Consent
+## Play with a friend
 
-Two separate opt-ins, both off at the start of every run, both in the J panel:
+Choose **Play with a friend** on the start screen. This opts the run into sharing and starts `coop` mode: the friend holds the fault, cable and conduit instructions. The optional camera check lets the player continue with a camera or choose **Play without camera**. The invitation holds game time until **Start**; the **LIVE** button reopens it during play. **Stop sharing** closes video, removes the shared session and gives the player their solo puzzle keys back. Ordinary solo runs create no shared session.
 
-1. **Share sanitized game events** (the existing trace consent). Creates the private session and the link. Without it there is nothing to watch.
-2. **Also share my live heart rate with spectators** (new, needs 1). Adds the current accepted pulse in whole BPM, the change from your frozen baseline, the coarse trend and signal quality. Turning it off withdraws it from the local link at once and deletes the database row. Turning off trace sharing or deleting the session removes everything.
+One invitation grants access to game events, the latest accepted heart rate when sensing is enabled, and the co-op manual. Live webcam video is included only when the player chooses to enable the camera; it travels peer to peer and is not recorded. Game events expire after 24 hours. The developer trace controls are available only with `?debug`; they are absent from the normal player UI.
 
-Anyone with the link can see what you share; the link is the capability. Each run creates a new session and link. Until the SpacetimeDB session exists the button reads "Copy same-browser link". A friend on another machine needs a page they can open: set `VITE_SPECTATE_ORIGIN` to a hosted web build (any static host); the desktop app's `hush://` page and a loopback dev server cannot be opened elsewhere, so without it the copy button is disabled there. "Open spectator view" works locally in both builds.
+Anyone holding the link can see the shared run. Each run makes a new link. For another device, both the database and a reachable web build are needed: set `VITE_SPACETIMEDB_HOST`, `VITE_SPACETIMEDB_DB_NAME` and `VITE_SPECTATE_ORIGIN` before building. Loopback URLs and desktop `hush://` pages are labelled as local-only. The UI waits for connection setup before letting the player copy a link, so it cannot copy a temporary local capability as a remote invite.
 
-A further, separate opt-in shares your camera as live peer-to-peer video that is never stored: see [CAMERA.md](CAMERA.md). Without it, no camera image reaches a spectator, and even with it no frame passes through the database.
+The shelter camera is a local rendering of the room from public game events. Drag or hold arrow keys to look around; release to return to the fixed mount. Reduced motion returns immediately. This is separate from the player's real webcam.
 
 ## What a spectator receives, and what never leaves
 
-| Shared (with consent 2) | Never shared |
+| Heart-rate feed | Excluded from the heart-rate feed |
 | --- | --- |
-| Pulse in whole BPM (only while accepted and fresh), frozen baseline in whole BPM | Camera frames, preview images or recordings |
+| Pulse in whole BPM (only while accepted and fresh), frozen baseline in whole BPM | Camera frames, preview images or recordings (optional video uses the separate peer-to-peer path) |
 | Trend label (UNKNOWN, STEADY, ELEVATED, RECOVERED), quality (accepted, rejected, unknown) | Pulse history (the server keeps one latest row, no history; a row not refreshed for 15 s is swept) |
 | Source: `presage` or `simulated`; simulated shows **SIMULATED · not a real heart rate** | Measurement clocks, native confidence, validation codes, diagnostics |
-| Capture status (calibrating, ready, paused…) | Puzzle answers, wire solutions, RNG state |
+| Capture status (calibrating, ready, paused…) | RNG state and puzzle state (co-op keys use their own narrow manual feed) |
 
 One exception by design: in an experimental co-op run ([COOP.md](COOP.md)) the link also carries the key for the player's live fault, cable or conduit task, because the friend reads it out. Standard runs never publish it, and it never enters the trace.
 
@@ -28,7 +27,7 @@ The game reducer never reads anything spectators do; spectators cannot send anyt
 
 ## How it flows
 
-- **Player:** `TraceBridge` (`src/integrations/client.ts`) already publishes a sanitized snapshot every ~90 ms to a BroadcastChannel and appends the trace to SpacetimeDB at most once a second. With consent 2 it adds `vitals` (`spectatorVitals()` in `src/integrations/spectate.ts`) to the local snapshot and calls `shareVitals` at most once a second. Nothing here runs in the game step or waits on the network.
+- **Player:** `TraceBridge` (`src/integrations/client.ts`) already publishes a sanitized snapshot every ~90 ms to a BroadcastChannel and appends the trace to SpacetimeDB at most once a second. During a friend run it adds `vitals` (`spectatorVitals()` in `src/integrations/spectate.ts`) to the local snapshot and calls `shareVitals` at most once a second. Nothing here runs in the game step or waits on the network.
 - **Spectator:** `#watch=<access>` routes to `src/ui/SpectateView.tsx`, which reads `SpectateFeed`. It subscribes to three capability-checked views, `judge_trace`, `spectator_vitals_feed` and `physics_feed`, all keyed by the session ID and the judge capability in the link. Without SpacetimeDB (or on the same browser) it falls back to the BroadcastChannel and replays prop physics locally from the same public events. The page labels which transport and physics source it is showing.
 - **Freshness:** the spectator times readings on its own clock from when each update arrived (never a remote clock). After 5 s without an update the reading is dimmed and marked held; after 15 s it is hidden. Rows already present when the page subscribes (possibly from a player who left) start out held until a genuinely new update arrives. On the server, a share nobody refreshes for 15 s (closed tab, crash, pause) is swept; a closing game also withdraws its row on a best-effort basis.
 - **Revoking:** the client treats the row as possibly present from the moment a share is sent, and retries `stopVitals` until one lands after its last share, including a revoke during an in-flight share, during a reconnect or after a failed stop. Deleting the session detaches the connection first, so a restart in the same click cannot cancel the delete.
@@ -56,7 +55,7 @@ VITE_SPACETIMEDB_HOST=ws://127.0.0.1:3000 VITE_SPACETIMEDB_DB_NAME=hush-local np
 VITE_SPACETIMEDB_HOST=ws://127.0.0.1:3000 VITE_SPACETIMEDB_DB_NAME=hush-local npm run dev
 ```
 
-In the game: Operator settings → Pulse input SIMULATED (browser) → Share sanitized game events → start → J → tick "Also share my live heart rate" → Copy spectate link. Open the link at `http://localhost:5173/#watch=…` (a different origin than `127.0.0.1`, so it cannot use the BroadcastChannel and must go through SpacetimeDB, like a friend on another machine). In the desktop app the same flow shows the live Presage reading labelled PRESAGE.
+In the game: **Play with a friend → camera check (or Play without camera) → skip the cutscene → copy the invite → Start**. To exercise remote transport on one computer, open the invite on `localhost` while the player uses `127.0.0.1`; these are different origins and cannot use the same BroadcastChannel.
 
 ## Verified
 
@@ -65,8 +64,15 @@ In the game: Operator settings → Pulse input SIMULATED (browser) → Share san
 - [Local SpacetimeDB evidence](qa/spectate-physics-local-spacetime.json): 15/15 server checks (`npm run spacetime:e2e`, including the 15 s sweep), owner SQL showing both schedules stopped, and a browser run with the spectator on a separate origin.
 - [Maincloud evidence](qa/spectate-physics-maincloud.json): the same 15/15 checks against `scary-5zsk8` after the owner published this branch, with owner SQL showing every physics/vitals table and schedule empty afterwards; plus a browser run on Maincloud (spectator on a separate origin, live vitals, revoke within 3 s, delete leaves no rows). A friend on another machine or network was not checked. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
 
+## Integrated branch verification
+
+- `npm run check`: 228/228 tests, web build and Electron build passed on 2026-10-24.
+- The combined module was published only to the local `hush-integrated` test database: [co-op 14/14](qa/integrated-coop-local.json), [camera signaling 26/26](qa/integrated-camera-local.json), [spectating and physics 15/15](qa/integrated-spectate-local.json).
+- Browser: friend start, paused invitation, co-op manual across origins through SpacetimeDB, shelter camera, keyboard look, stop sharing, hidden judge controls, and a 390 px layout without horizontal overflow. [Browser evidence](qa/integrated-friend-browser.json).
+- The earlier Maincloud evidence above covers the spectate/physics baseline. **The combined camera/co-op module has not been published to Maincloud.** The database owner must publish the module from this checkout, then rebuild/host the web client with matching public connection settings.
+
 ## Not verified / not done
 
 - Not run in Electron with a live Presage camera session; the browser run used SIMULATED input.
-- Only pulse, baseline, trend and quality are shared. Breathing and the other Presage signals are not yet carried by `SensorView`.
+- All ten requested Presage metrics are available locally through `SensorView.signals` and `SensorController.waveforms()`. Additional signals are not automatically mapped to win conditions. The spectator heart-rate feed still carries pulse, baseline, trend and quality only.
 - One link per run: a restart makes a new session, so friends need the new link.

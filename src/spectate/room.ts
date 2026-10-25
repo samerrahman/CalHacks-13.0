@@ -4,6 +4,7 @@ import { createWeathering } from '../render/weathering';
 import type { PropView } from '../integrations/physics';
 import type { TraceSnapshot } from '../integrations/client';
 import { camLighting, newTracker, trackFeed, type DoorCue, type Signal } from './feedState';
+import { SpringLook } from './look';
 
 type V3 = [number, number, number];
 // Copied from createScene in src/render/scene.ts (model placements, signage, lamp, alarm and
@@ -62,6 +63,38 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   const canvas = renderer.domElement; canvas.style.cssText = 'display:block;width:100%;height:100%';
   container.appendChild(canvas);
+  const look = new SpringLook();
+  let pointer: number | null = null, lastX = 0, lastY = 0;
+  const releaseLook = () => { pointer = null; look.release(); container.classList.remove('dragging'); };
+  const pointerDown = (event: PointerEvent) => {
+    if (event.button !== 0 || !event.isPrimary || pointer !== null) return;
+    event.preventDefault(); container.focus({ preventScroll: true });
+    pointer = event.pointerId; lastX = event.clientX; lastY = event.clientY;
+    look.begin(); canvas.setPointerCapture(pointer); container.classList.add('dragging');
+  };
+  const pointerMove = (event: PointerEvent) => {
+    if (event.pointerId !== pointer) return;
+    look.drag((event.clientX - lastX) / Math.max(1, container.clientWidth) * Math.PI,
+      (event.clientY - lastY) / Math.max(1, container.clientHeight) * Math.PI / 2);
+    lastX = event.clientX; lastY = event.clientY;
+  };
+  const pointerUp = (event: PointerEvent) => {
+    if (event.pointerId !== pointer) return;
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    releaseLook();
+  };
+  const keyDown = (event: KeyboardEvent) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault(); look.begin();
+    look.drag(event.key === 'ArrowLeft' ? -.08 : event.key === 'ArrowRight' ? .08 : 0,
+      event.key === 'ArrowUp' ? -.06 : event.key === 'ArrowDown' ? .06 : 0);
+  };
+  const keyUp = (event: KeyboardEvent) => { if (event.key.startsWith('Arrow') || event.key === 'Escape') releaseLook(); };
+  canvas.addEventListener('pointerdown', pointerDown); canvas.addEventListener('pointermove', pointerMove);
+  canvas.addEventListener('pointerup', pointerUp); canvas.addEventListener('pointercancel', pointerUp);
+  canvas.addEventListener('lostpointercapture', releaseLook);
+  container.addEventListener('keydown', keyDown); container.addEventListener('keyup', keyUp); container.addEventListener('blur', releaseLook);
+  window.addEventListener('blur', releaseLook);
   let disposed = false, lostContext = false, lastRender = -Infinity, frameNo = 0, gain = 1, noise = .06, shakeAt = -Infinity, shakeAmp = 0;
   let tracker = newTracker(), lastTrace: TraceSnapshot | null | undefined;
 
@@ -167,7 +200,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
       if (trace !== lastTrace) {
         lastTrace = trace;
         const { next, cues, restarted } = trackFeed(tracker, trace);
-        if (restarted) { door?.impact.stop(); door?.dent.stop(); }
+        if (restarted) { door?.impact.stop(); door?.dent.stop(); look.reset(); }
         const joinedDented = next.dented && !tracker.dented && !cues.includes('dent');
         tracker = next; diagnostics.signal = next.signal;
         if (joinedDented) settleDent();
@@ -175,6 +208,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
       }
       if (lostContext || nowMs - lastRender < FRAME_MS) return tracker.signal;
       const dt = Number.isFinite(lastRender) ? Math.min(.25, (nowMs - lastRender) / 1000) : 0; lastRender = nowMs;
+      look.step(dt, reducedMotion);
       frameNo++; diagnostics.frames++;
       const u = post.uniforms, live = tracker.signal === 'live' && diagnostics.loaded;
       u.uTime!.value = reducedMotion ? 0 : nowMs / 1000; u.uFrame!.value = reducedMotion ? Math.floor(nowMs / 500) % 1000 : frameNo % 1000;
@@ -189,6 +223,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
         if (lever) { lever.action.time = light.screens ? 0 : .34999; lever.mixer.update(0); }
         door?.mixer.update(dt); syncProps(propsAt());
         camera.position.set(...CAMERA.position); camera.lookAt(...CAMERA.target);
+        camera.rotateY(look.yaw); camera.rotateX(look.pitch);
         const shake = reducedMotion ? 0 : shakeAmp * Math.max(0, 1 - (nowMs - shakeAt) / 600);
         if (shake > 0) { camera.rotateZ(Math.sin(nowMs * .05) * shake); camera.rotateX(Math.sin(nowMs * .071) * shake * .6); }
         renderer.setRenderTarget(target); renderer.render(scene, camera); renderer.setRenderTarget(null);
@@ -198,6 +233,11 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
     },
     dispose() {
       if (disposed) return; disposed = true; observer.disconnect(); canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('pointerdown', pointerDown); canvas.removeEventListener('pointermove', pointerMove);
+      canvas.removeEventListener('pointerup', pointerUp); canvas.removeEventListener('pointercancel', pointerUp);
+      canvas.removeEventListener('lostpointercapture', releaseLook);
+      container.removeEventListener('keydown', keyDown); container.removeEventListener('keyup', keyUp); container.removeEventListener('blur', releaseLook);
+      window.removeEventListener('blur', releaseLook);
       for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()); }
       disposeObject(scene); new Set([...orphans, lampSurface, alarmLens]).forEach(material => material.dispose()); weathering?.dispose();
       target.dispose(); quad.geometry.dispose(); post.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove();

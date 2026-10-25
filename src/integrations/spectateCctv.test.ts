@@ -65,7 +65,7 @@ test('lighting follows the equipment state; the alarm is slow and steady under r
   const on = camLighting('on', false, 14, 3, false), quiet = camLighting('quiet', false, 14, 3, false), dark = camLighting('blackout', false, 14, 3, false);
   assert.equal(on.level, 1); assert.equal(on.screens, true); assert.equal(on.alarm, 0);
   assert.ok(quiet.level > 0 && quiet.level < .5); assert.equal(quiet.screens, false);
-  assert.equal(dark.level, 0); assert.equal(dark.screens, false); assert.equal(dark.emergency, 1);
+  assert.equal(dark.level, 0); assert.equal(dark.screens, false); assert.ok(dark.emergency > quiet.emergency && quiet.emergency > on.emergency, 'emergency light brightens as equipment goes dark');
   assert.ok(dark.gain > quiet.gain && quiet.gain > on.gain, 'gain rises in the dark');
   const pulses = Array.from({ length: 40 }, (_, i) => camLighting('on', true, 2, i * .1, false).alarm);
   assert.ok(Math.max(...pulses) - Math.min(...pulses) > .1, 'the alarm breathes');

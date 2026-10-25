@@ -39,3 +39,7 @@
 @media(max-width:1080px){.spectate-main{grid-template-columns:1fr}.spectate-side{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}}
 @media(max-width:820px){.spectate-grid{grid-template-columns:1fr}.spectate-vitals>strong{font-size:48px}.spectate-card{padding:16px}.spectate-cctv-card{padding:10px}.spectate-side{grid-template-columns:minmax(0,1fr)}.spectate-cctv-osd{font-size:10px;letter-spacing:1px;padding:7px 9px}}
 @media(prefers-reduced-motion:reduce){.spectate-vitals .beat,.spectate-cctv-osd .rec{animation:none}}
+.spectate-cctv-view{cursor:grab;touch-action:none}
+.spectate-cctv-view.dragging{cursor:grabbing}
+.spectate-cctv-view:focus-visible{outline:2px solid #c6bb88;outline-offset:-3px}
+.spectate-cctv-osd .spectate-look-hint{position:absolute;bottom:30px;left:12px;font-size:9px;opacity:.65}

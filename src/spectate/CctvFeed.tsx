@@ -34,11 +34,12 @@ export default function CctvFeed({ trace, propsAt }: { trace: TraceSnapshot | nu
   const s = trace?.summary, live = signal === 'live' && !failed;
   const label = `Shelter security camera, drawn on this device from the game state. ${failed ? 'Unavailable on this device.' : signal === 'lost' ? 'Signal lost.' : signal === 'none' ? 'No signal yet.' : `Equipment ${s?.equipment ?? 'on'}.`}`;
   return <div className={`spectate-cctv ${failed ? 'failed' : signal}`} data-signal={failed ? 'failed' : signal}>
-    <div ref={host} className="spectate-cctv-view" role="img" aria-label={label} />
+    <div ref={host} className="spectate-cctv-view" role="img" tabIndex={0} aria-label={`${label} Drag or hold arrow keys to look around; release to return.`} />
     <div className="spectate-cctv-osd" aria-hidden="true">
       <span>CAM 02 · SHELTER 04</span>
       <span>{live && <><i className="rec" />REC{s && s.equipment !== 'on' ? ' · LOW LIGHT' : ''}</>}</span>
       <time ref={clock} />
+      {live && <span className="spectate-look-hint">DRAG TO LOOK · RELEASE TO RETURN</span>}
     </div>
     {!live && <div className="spectate-cctv-lost" aria-hidden="true">
       <strong>{failed ? 'CAMERA UNAVAILABLE' : signal === 'lost' ? 'SIGNAL LOST' : 'NO SIGNAL'}</strong>

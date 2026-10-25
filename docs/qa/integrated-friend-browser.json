@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-10-25T01:28:34.520Z",
+  "server": "ws://127.0.0.1:3000",
+  "database": "hush-integrated",
+  "playerOrigin": "http://127.0.0.1:5187",
+  "spectatorOrigin": "http://localhost:5187",
+  "checks": {
+    "pausedInvitation": {
+      "dialogVisible": true,
+      "hasWatchHash": true,
+      "loopbackHonestNote": "This link only works on this computer. Online invitations are not available in this build yet."
+    },
+    "hiddenJudgeControls": {
+      "judgeButtonCountWithoutDebug": 0
+    },
+    "coopManualAcrossOrigins": {
+      "transport": "Live · SpacetimeDB",
+      "heading": "You're their lifeline.",
+      "manualExcerpt": "THE MANUAL · CO-OP | Live · SpacetimeDB | Rack sound key | STAGE 1 |  | The player hears a machine fail. Ask what it sounds like, then tell them which number to press. One fails at a time."
+    },
+    "shelterCameraAndLook": {
+      "signal": "live",
+      "osd": "CAM 02 · SHELTER 04 REC 2026-10-24 18:28:48 DRAG TO LOOK · RELEASE TO RETURN",
+      "keyboardLookTested": true
+    },
+    "layout390px": {
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "noHorizontalOverflow": true
+    },
+    "stopSharing": {
+      "playerLiveBadgeRemoved": true,
+      "spectatorRevokedStatus": "The player stopped sharing or the session expired"
+    }
+  },
+  "errors": [],
+  "passed": true
+}

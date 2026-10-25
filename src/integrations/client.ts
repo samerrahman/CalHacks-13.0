@@ -74,6 +74,17 @@ export function sanitizedTrace(state: GameState, sensor: SensorView): TraceSnaps
 function token(): string { return Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join(''); }
 type JudgeAccess = { channel: string; sessionId?: string; capability?: string; host?: string; database?: string };
 export class TraceBridge {
+  /** Owner access stays inside the player app; only the judge capability enters invite links. */
+  cameraAccess(): import('./webrtc').CameraSignalAccess | null {
+    return this.isRemoteLive && this.client && this.sessionId
+      ? { connection: this.client, sessionId: this.sessionId, ownerCapability: this.owner } : null;
+  }
+  coopLink(): import('./coop').CoopLink | null {
+    return this.access && !this.disposed ? {
+      channel: this.access.channel, connection: this.remoteReady ? this.client : null,
+      sessionId: this.sessionId, ownerCapability: this.owner,
+    } : null;
+  }
   connected = false;
   get isRemoteLive(): boolean { return this.connected && !!this.client?.isActive; }
   status = 'Trace sharing off';
@@ -142,12 +153,15 @@ export class TraceBridge {
   shareableSpectateUrl(): string | null {
     if (!this.access) return null;
     const hosted = String(import.meta.env?.VITE_SPECTATE_ORIGIN ?? '').replace(/\/+$/, '');
-    const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
-    const base = /^https?:\/\/[^/]+$/.test(hosted) ? `${hosted}/` : /^https?:$/.test(location.protocol) && !loopback ? `${location.origin}${location.pathname}` : null;
+    const loopback = (host: string) => /^(localhost|127\..*|0\.0\.0\.0|\[::1\])$/.test(host) || host.endsWith('.localhost');
+    let hostedOrigin: string | null = null;
+    try { const url = new URL(hosted); if (/^https?:$/.test(url.protocol) && url.pathname === '/' && !url.search && !url.hash && !url.username && !url.password && !loopback(url.hostname)) hostedOrigin = url.origin; } catch { /* no hosted build configured */ }
+    const base = hostedOrigin ? `${hostedOrigin}/` : /^https?:$/.test(location.protocol) && !loopback(location.hostname) ? `${location.origin}${location.pathname}` : null;
     return base && `${base}#watch=${encodeURIComponent(btoa(JSON.stringify(this.access)))}`;
   }
   /** True once the SpacetimeDB session exists; before that a link reaches only this browser. */
   get remoteReady(): boolean { return !!this.access?.sessionId; }
+  get remoteConnecting(): boolean { return this.connecting; }
   get sharingVitals(): boolean { return this.vitalsConsent; }
   /** Separate, revocable consent for the live heart rate. It needs trace sharing; turning it
    * off withdraws vitals from the local link at once and deletes the remote row. */

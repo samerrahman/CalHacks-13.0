@@ -5,6 +5,8 @@ import { creatureDistance, METRES_PER_UNIT } from '../spectate/distance';
 import type { PropView } from '../integrations/physics';
 import { DOOR, OBSTACLES, ROOM } from '../../spacetimedb/src/physicsSim';
 import './spectate.css';
+import CoopManual from './CoopManual';
+import SpectateCamera from './SpectateCamera';
 
 const HELD_MS = 5000, GONE_MS = 15000;
 const TREND: Record<SpectatorVitals['trend'], string> = { UNKNOWN: 'No sustained change yet', STEADY: 'Holding steady', ELEVATED: 'Up and staying up', RECOVERED: 'Coming back down' };
@@ -67,16 +69,16 @@ export default function SpectateView() {
   const distance = s ? creatureDistance(s.linePosition, s.time + (s.status === 'playing' && traceAge !== null ? Math.min(2, traceAge / 1000) : 0), trace!.seed) : null;
   return <main className="judge-page spectate-page">
     <div className="eyebrow">HUSH / SPECTATING · READ ONLY</div>
-    <h1>You're watching.</h1>
+    <h1>{trace?.mode==='coop'?"You're their lifeline.":"You're watching."}</h1>
     <p className="small muted">{state?.status ?? 'Connecting'}{traceAge !== null && traceAge > HELD_MS && ` · no update for ${Math.floor(traceAge / 1000)} s`}</p>
+    {trace?.mode==='coop'&&<CoopManual hash={location.hash}/>}
     <div className="spectate-main">
       <section className="spectate-card spectate-cctv-card" aria-label="Shelter camera">
         <small>SHELTER CAMERA <em>DRAWN ON THIS DEVICE FROM THE GAME STATE · NOT THE PLAYER’S WEBCAM</em></small>
         <CctvFeed trace={trace ?? null} propsAt={propsAt} />
       </section>
       <div className="spectate-side">
-        {/* SLOT: live player camera. The player-camera component (separate branch) mounts here, inside this div. */}
-        <div className="spectate-player-camera" data-slot="player-camera" />
+        <SpectateCamera hash={location.hash}/>
         <Vitals vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt} />
         {s && distance ? <section className="spectate-card">
           <small>THE RUN</small>
@@ -97,6 +99,6 @@ export default function SpectateView() {
         <ol className="spectate-moments">{moments.length ? moments.map(e => <li key={e.id}><time>{Math.floor(e.time / 60)}:{String(Math.floor(e.time % 60)).padStart(2, '0')}</time>{MOMENTS[e.type]!(e.detail)}</li>) : <li>Nothing yet.</li>}</ol>
       </section>
     </div>
-    <p className="small muted spectate-privacy">You see game events, the creature's distance, a shelter camera your own browser draws from those events and, only if the player turned it on, their current heart rate. The player's webcam image, recordings and puzzle answers are not shared, and you cannot affect the game. A camera pulse estimate is a game input, not a medical reading.</p>
+    <p className="small muted spectate-privacy">You see game events, the creature's distance, a shelter camera your own browser draws from those events and, only if the player turned it on, their current heart rate. When enabled, their webcam streams directly to you without being recorded. In co-op, use the manual to talk them through the puzzles; your controls never change their game. A camera pulse estimate is a game input, not a medical reading.</p>
   </main>;
 }

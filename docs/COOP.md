@@ -35,6 +35,6 @@ Consent: co-op needs trace sharing, since the link is how the friend gets the ma
 
 ## Not verified / not done
 
-- Not wired into Setup, App, HUD or SpectateView yet (hook snippets go to the integrator), so no end-to-end browser run of a real co-op game.
-- Not checked at phone width; not published to Maincloud; no human playtest of the difficulty.
+- Wired into **Play with a friend**, the invitation, LIVE/Stop controls and spectator manual. The combined local module passed 14 co-op checks and the manual was checked across browser origins; see `qa/integrated-coop-local.json` and `qa/integrated-friend-browser.json`.
+- The integrated spectator layout fits 390 px; not published to Maincloud; no human playtest of the difficulty.
 - v1 has no manual for memory, heartbeat mask, locate or calm hold.

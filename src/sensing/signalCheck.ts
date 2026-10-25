@@ -40,8 +40,8 @@ export function signalCheck(view: SensorView, desktop = true): SignalCheck {
   const base = { baselineSeconds, calibrated: view.baselineBpm !== null && view.acceptedSeconds >= 30, simulated: view.source === 'simulated' };
   const d = view.diagnostics;
   if (view.source === 'simulated') return { state: 'ok', title: 'SIMULATED signals', detail: 'Development fixture · camera off · not a live reading.', ...base };
-  if (!desktop) return { state: 'needs-desktop', title: 'Desktop app required', detail: 'Live camera sensing runs only in the HUSH desktop app (npm run desktop). Play without a camera or use SIMULATED signals.', ...base };
-  if (view.source === 'manual' || view.status === 'manual' || view.status === 'paused') return { state: 'needs-camera', title: view.status === 'paused' ? 'Camera paused' : 'Camera off', detail: 'Turn on your camera for a quick signal check. Frames are never saved or shared.', ...base };
+  if (!desktop) return { state: 'needs-desktop', title: 'Desktop app required', detail: 'Camera signal sensing is available in the HUSH desktop app. You can play without sensing.', ...base };
+  if (view.source === 'manual' || view.status === 'manual' || view.status === 'paused') return { state: 'needs-camera', title: view.status === 'paused' ? 'Camera paused' : 'Camera off', detail: 'Turn on your camera for a quick signal check. No camera recording is saved.', ...base };
   if (view.status === 'unavailable' || d?.processingStatus === 'error') return { state: 'failed', title: 'Camera check failed', detail: sanitizeSensorError(d?.blocker || view.hint || 'Camera unavailable'), ...base };
   if (!d || d.captureState !== 'live') return { state: 'starting', title: 'Starting camera', detail: 'Waiting for camera access.', ...base };
   if (d.processingStatus !== 'running') return { state: 'starting', title: 'Starting analysis', detail: `Native processing: ${d.processingStatus}.`, ...base };

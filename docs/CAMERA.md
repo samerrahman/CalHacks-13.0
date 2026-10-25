@@ -4,14 +4,14 @@ Friends watching a run (see [SPECTATE.md](SPECTATE.md)) can also see the player'
 
 ## Consent
 
-A third, separate opt-in in the J panel: **Share my camera live with spectators (peer-to-peer video, never stored)**. It needs trace sharing connected to SpacetimeDB, starts off on every run and can be stopped at any time from the always-visible LIVE badge. Stopping closes every peer connection at once, then deletes every signaling row on the server. Deleting the session or the 24-hour expiry removes everything too.
+**Play with a friend** is the single entry point. The camera check explains live sharing; **Continue with live camera** (browser) or enabling Presage and continuing (desktop) enables video for that run. **Play without camera** keeps it off. No extra sharing checkboxes appear in the normal game. The invitation shows camera status; **Stop sharing** closes every peer immediately and deletes the session. Pause, hiding the app, results, restart and leaving the run also stop outgoing video. Resuming an opted-in run restarts it.
 
 Peer to peer means each spectator's browser connects directly to the player's device, so spectators can learn its network (IP) address, as in any video call. A TURN relay in `VITE_RTC_ICE_SERVERS` hides it only when the relay is forced, which this build does not do.
 
 ## Which camera
 
 - **Desktop app:** the stream `SensorController` already owns for Presage. Sharing never opens a second camera and never stops that one. With capture off it waits ("waiting for camera") and switches tracks in place (`refreshTrack`, no renegotiation) when capture starts.
-- **Browser build:** there is no Presage stream, so ticking the box opens a 640×480 camera (`getUserMedia`) after that explicit consent. Only that track is stopped on revoke.
+- **Browser build:** there is no Presage stream, so continuing with live camera opens a 640×480 camera (`getUserMedia`) after that explicit consent. Only that track is stopped on revoke.
 
 Each spectator gets one sendonly connection at 600 kbps and 24 fps at most; the player accepts four at once and tells the rest the camera is full.
 
@@ -40,5 +40,5 @@ Every received payload is revalidated on both sides (`spacetimedb/src/signalRule
 ## Not verified
 
 - No real WebRTC media: Node has no `RTCPeerConnection`, and no browser or Electron run with two devices has been recorded yet. NAT traversal with STUN only can fail on strict networks; there is no TURN relay configured.
-- The App, client and SpectateView wiring is not in this change; see the integration notes.
+- App, TraceBridge, the invitation and SpectateView are connected in the integrated branch. The combined local module passed 26 signaling checks (see `qa/integrated-camera-local.json`).
 - Not published to Maincloud.

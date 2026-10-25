@@ -21,6 +21,24 @@ function connectedBridge() {
   return { bridge, client, calls, names: () => calls.map(c => c.name), state: () => ({ remote: raw.vitalsRemote, pending: raw.withdrawPending }) };
 }
 
+test('friend links never advertise loopback addresses as reachable on another device', async () => {
+  const { bridge } = connectedBridge(), previous = Object.getOwnPropertyDescriptor(globalThis, 'location');
+  try {
+    for (const address of ['http://localhost:5187/', 'http://127.0.0.2:5187/', 'http://[::1]:5187/', 'http://game.localhost:5187/', 'hush://app/']) {
+      Object.defineProperty(globalThis, 'location', { configurable: true, value: new URL(address) });
+      assert.equal(bridge.shareableSpectateUrl(), null);
+    }
+    Object.defineProperty(globalThis, 'location', { configurable: true, value: new URL('https://hush.example/game/') });
+    const link = new URL(bridge.shareableSpectateUrl()!);
+    assert.equal(link.origin, 'https://hush.example'); assert.equal(link.pathname, '/game/');
+    const access = JSON.parse(atob(decodeURIComponent(link.hash.slice('#watch='.length))));
+    assert.equal('ownerCapability' in access, false);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'location', previous); else Reflect.deleteProperty(globalThis, 'location');
+    await bridge.dispose();
+  }
+});
+
 test('revoking while the first share is in flight still deletes the remote row', async () => {
   const { bridge, calls, names, state } = connectedBridge();
   try {
