@@ -2,8 +2,9 @@ import { Baseline } from './baseline';
 import { TrendTracker } from './trend';
 import { NativeMetricStream } from './nativeMetrics';
 import { sanitizeSensorError } from './sensorError';
-import { validationBlocksMetric } from './metricPolicy';
-import { simulatedSample } from './simulated';
+import { REQUESTED_METRICS, validationBlocksMetric } from './metricPolicy';
+import { simulatedSample, simulatedSignals, simulatedWaveforms } from './simulated';
+import type { SensorWaveforms } from './signals';
 import { acceptedPulse, type SensorMode, type SensorSample, type SensorView } from './types';
 import type { SmartSpectraSDK } from '@smartspectra/node-sdk/renderer';
 import '../integrations/contracts';
@@ -41,8 +42,17 @@ export class SensorController {
     const now = performance.now();
     const pulse = acceptedPulse(this.sample, now, this.mode === 'simulated');
     const usable = this.status === 'calibrating' || this.status === 'ready';
-    const diagnostics = this.mode === 'presage' ? this.native.view(now, this.stream ? 'live' : this.status === 'starting' ? 'acquiring' : 'off') : undefined;
-    return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...(diagnostics ? { diagnostics } : {}) };
+    const captureState = this.stream ? 'live' : this.status === 'starting' ? 'acquiring' : 'off';
+    const diagnostics = this.mode === 'presage' ? this.native.view(now, captureState) : undefined;
+    const signals = diagnostics ? this.native.signalView(now, captureState, diagnostics) : this.mode === 'simulated' ? simulatedSignals(now, this.elevated, usable) : undefined;
+    // The display status for pulse follows the game's own accepted pulse.
+    if (signals && signals.status.pulse.status === 'ok' && !(usable && pulse !== null)) signals.status.pulse = { status: 'rejected', reason: this.sample?.qualityReasons[0] ?? this.hint };
+    return { source: this.mode, status: this.status, trend: usable && pulse !== null ? this.trends.classify(this.baseline.value, now, this.mode === 'simulated') : 'UNKNOWN', quality: usable && pulse !== null ? 'accepted' : this.sample?.quality === 'rejected' ? 'rejected' : 'unknown', hint: this.hint, baselineBpm: this.baseline.value, pulseBpm: usable ? pulse : null, ageMs: this.sample ? Math.max(0, now - this.sample.receivedMonotonicMs) : null, acceptedSeconds: Math.min(30, this.baseline.acceptedMs / 1000), canContinueManual: now - this.startedAt >= 60_000 || this.status === 'unavailable' || this.mode !== 'presage', sampleAtMs: usable && pulse !== null ? this.sample!.measuredMonotonicMs : null, captureSegment: this.captureSegment, ...(diagnostics ? { diagnostics } : {}), ...(signals ? { signals } : {}) };
+  }
+  /** Bounded local waveform buffers (last 20 s) for display; never part of SensorView. */
+  waveforms(): SensorWaveforms | null {
+    const now = performance.now();
+    return this.mode === 'presage' ? this.native.waveforms(now) : this.mode === 'simulated' ? simulatedWaveforms(now, this.elevated) : null;
   }
   private publish(): void { const view = this.view(); this.listeners.forEach(l => l(view)); }
   private publishDiagnostics(force = false): void {
@@ -103,7 +113,7 @@ export class SensorController {
       if (generation !== this.generation) { stream.getTracks().forEach(t => t.stop()); return; }
       this.stream = stream; this.publishPreview();
       stream.getTracks().forEach(track => track.addEventListener('ended', () => { if (generation === this.generation) void this.unavailable('Camera stopped or permission revoked'); }, { once: true }));
-      const sdk = new SDK({ requestedMetrics: [MetricType.PULSE_RATE, MetricType.BREATHING_RATE], enableTelemetry: false, sendTimeoutMs: 8000 });
+      const sdk = new SDK({ requestedMetrics: REQUESTED_METRICS.map(name => MetricType[name]), enableTelemetry: false, sendTimeoutMs: 8000 });
       this.sdk = sdk;
       sdk.on('processingStatus', code => {
         if (generation !== this.generation) return;

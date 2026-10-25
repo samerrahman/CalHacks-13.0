@@ -6,7 +6,8 @@ import { build } from 'esbuild';
 
 type Packet = { kind: string; [key: string]: unknown };
 const flush = () => new Promise<void>(resolve => setImmediate(resolve));
-async function harness() {
+const METRIC_TYPE = { CHEST_BREATHING: 0, ABDOMEN_BREATHING: 1, BREATHING_RATE: 2, EDA_TRACE: 10, BLINKING: 12, TALKING: 13, EXPRESSIONS: 14, PULSE_RATE: 15, ARTERIAL_PRESSURE_TRACE: 16, HRV: 17, PULSE_RATE_STRICT: 18, BREATHING_RATE_STRICT: 19 };
+async function harness(env: Record<string, string> = {}) {
   const ipcMain = new EventEmitter(), instances: FakeSDK[] = [], history: string[] = [];
   let delayStop: Promise<void> = Promise.resolve();
   class FakeSDK {
@@ -22,13 +23,13 @@ async function harness() {
     async destroy() { history.push('destroy'); }
     sendFrame() { this.frames++; if (this.frameFailure) throw this.frameFailure; return true; }
   }
-  const fixture = { ipcMain, require: (name: string) => name.endsWith('/main') ? { bindSmartSpectraIpc() {} } : { SmartSpectraSDK: FakeSDK, MetricType: { PULSE_RATE: 15, BREATHING_RATE: 2 } } };
+  const fixture = { ipcMain, require: (name: string) => name.endsWith('/main') ? { bindSmartSpectraIpc() {} } : { SmartSpectraSDK: FakeSDK, MetricType: METRIC_TYPE } };
   const result = await build({ entryPoints: ['electron/presageAdapter.ts'], bundle: true, platform: 'node', format: 'cjs', write: false, logLevel: 'silent', plugins: [{ name: 'isolated-native-fixture', setup(builder) {
     builder.onResolve({ filter: /^(electron|node:module)$/ }, args => ({ path: args.path, namespace: 'mock' }));
     builder.onLoad({ filter: /.*/, namespace: 'mock' }, args => ({ contents: args.path === 'electron' ? 'export const ipcMain=globalThis.fixture.ipcMain' : 'export const createRequire=()=>globalThis.fixture.require', loader: 'js' }));
   } }] });
   const module = { exports: {} as { bindPresage(window: unknown): () => void } };
-  runInNewContext(result.outputFiles[0]!.text, { module, exports: module.exports, fixture, process: { env: { PRESAGE_API_KEY: 'fixture-secret' } }, URL, Uint8Array, ArrayBuffer });
+  runInNewContext(result.outputFiles[0]!.text, { module, exports: module.exports, fixture, process: { env: { PRESAGE_API_KEY: 'fixture-secret', ...env } }, URL, Uint8Array, ArrayBuffer });
   const webContents = { mainFrame: {} }, window = { webContents };
   const unbind = module.exports.bindPresage(window);
   class Port extends EventEmitter { messages: Packet[] = []; closed = false; postMessage(value: Packet) { this.messages.push(value); } start() {} close() { if (!this.closed) { this.closed = true; this.emit('close'); } } }
@@ -51,8 +52,20 @@ test('native replacement waits for stop and destroy before constructor; retired 
     release(); await flush();
     assert.equal(h.instances.length, 2);
     assert.ok(h.history.indexOf('destroy') < h.history.lastIndexOf('construct'));
-    assert.deepEqual(JSON.parse(JSON.stringify(h.instances[1]!.options)), { apiKey: 'fixture-secret', requestedMetrics: [15, 2], enableTelemetry: false });
+    assert.deepEqual(JSON.parse(JSON.stringify(h.instances[1]!.options)), { apiKey: 'fixture-secret', requestedMetrics: [15, 2, 0, 1, 17, 12, 13, 14, 10, 16], enableTelemetry: false });
   } finally { h.unbind(); await flush(); }
+});
+
+test('main requests all ten standard metrics, never strict variants; PRESAGE_METRICS=core restores pulse + breathing only', async () => {
+  for (const [env, expected] of [[{}, [15, 2, 0, 1, 17, 12, 13, 14, 10, 16]], [{ PRESAGE_METRICS: 'core' }, [15, 2]]] as const) {
+    const h = await harness(env);
+    try {
+      h.send({ kind: 'configure', requestedMetrics: [18, 19] }); await flush();
+      const options = JSON.parse(JSON.stringify(h.instances[0]!.options)) as { requestedMetrics: number[] };
+      assert.deepEqual(options.requestedMetrics, expected, 'renderer-supplied metrics are ignored');
+      assert.ok(!options.requestedMetrics.includes(18) && !options.requestedMetrics.includes(19));
+    } finally { h.unbind(); await flush(); }
+  }
 });
 
 test('bridge forwards real frame/metrics events and first sanitized native failure without invalid-state masking', async () => {

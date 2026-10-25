@@ -5,9 +5,21 @@ import { METRIC_POLICY, validationBlocksMetric } from './metricPolicy';
  * against @smartspectra/node-sdk 3.4.0 generated MeasurementWithConfidence types.
  * Confidence is documented 0..100, retained unchanged. The pulse field's
  * documented confidence floor is 40, independently requiring stable=true. */
-export type NativeMeasurement = { value?: number | null; stable?: boolean | null; confidence?: number | null; timestamp?: number | { toNumber(): number } | null };
-export type NativeMetrics = { cardio?: { pulseRate?: NativeMeasurement[] | null } | null; breathing?: { rate?: NativeMeasurement[] | null } | null };
-export function measurementTimestamp(pulse: NativeMeasurement | undefined): number | null {
+export type NativeStamp = number | { toNumber(): number } | null;
+export type NativeMeasurement = { value?: number | null; stable?: boolean | null; confidence?: number | null; timestamp?: NativeStamp };
+/** Also verified against 3.4.0 generated.d.ts: Hrv, DetectionStatus and Expression
+ * (scores are ExpressionType + confidence 0..100). Traces are Measurement without
+ * confidence except arterialPressureTrace (MeasurementWithConfidence). */
+export type NativeHrv = { rmssd?: number | null; meanNn?: number | null; sdnn?: number | null; baevsky?: number | null; confidence?: number | null; stable?: boolean | null; timestamp?: NativeStamp };
+export type NativeDetection = { detected?: boolean | null; stable?: boolean | null; timestamp?: NativeStamp };
+export type NativeExpression = { stable?: boolean | null; timestamp?: NativeStamp; scores?: { type?: number | null; confidence?: number | null }[] | null };
+export type NativeMetrics = {
+  cardio?: { pulseRate?: NativeMeasurement[] | null; arterialPressureTrace?: NativeMeasurement[] | null; hrv?: NativeHrv[] | null } | null;
+  breathing?: { rate?: NativeMeasurement[] | null; upperTrace?: NativeMeasurement[] | null; lowerTrace?: NativeMeasurement[] | null } | null;
+  face?: { blinking?: NativeDetection[] | null; talking?: NativeDetection[] | null; expression?: NativeExpression[] | null } | null;
+  eda?: { trace?: NativeMeasurement[] | null } | null;
+};
+export function measurementTimestamp(pulse: { timestamp?: NativeStamp } | undefined): number | null {
   const stamp = typeof pulse?.timestamp === 'number' ? pulse.timestamp : pulse?.timestamp?.toNumber() ?? null;
   return stamp !== null && Number.isFinite(stamp) && stamp > 0 ? stamp : null;
 }

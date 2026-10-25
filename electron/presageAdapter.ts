@@ -2,13 +2,16 @@ import { ipcMain, type BrowserWindow, type MessagePortMain } from 'electron';
 import { createRequire } from 'node:module';
 import type { SmartSpectraSDK as NativeSDK } from '@smartspectra/node-sdk';
 import { sanitizeSensorError } from '../src/sensing/sensorError';
+import { CORE_METRICS, REQUESTED_METRICS } from '../src/sensing/metricPolicy';
 
 const require = createRequire(import.meta.url);
 let retiring: Promise<unknown> = Promise.resolve();
 
 /** Verified 3.4.0 renderer protocol. Equivalent to the vendor sample's main
- * bridge, restricted to camera input, pulse and breathing metrics. Credentials are
- * injected here, never transported into the renderer or browser bundle. */
+ * bridge, restricted to camera input and the ten standard metrics in
+ * REQUESTED_METRICS (PRESAGE_METRICS=core: pulse and breathing rate only).
+ * Main alone chooses the request. Credentials are injected here, never
+ * transported into the renderer or browser bundle. */
 export function bindPresage(window: BrowserWindow): () => void {
   if (process.env.PRESAGE_API_KEY) {
     // The documented host binding prepares the SDK's per-app native cache.
@@ -61,7 +64,8 @@ export function bindPresage(window: BrowserWindow): () => void {
             if (closed || token !== generation) return;
             if (!process.env.PRESAGE_API_KEY) throw new Error('PRESAGE_API_KEY is not configured in Electron main.');
             const native = require('@smartspectra/node-sdk') as typeof import('@smartspectra/node-sdk');
-            const target = new native.SmartSpectraSDK({ apiKey: process.env.PRESAGE_API_KEY, requestedMetrics: [native.MetricType.PULSE_RATE, native.MetricType.BREATHING_RATE], enableTelemetry: false });
+            const requestedMetrics = (process.env.PRESAGE_METRICS === 'core' ? CORE_METRICS : REQUESTED_METRICS).map(name => native.MetricType[name]);
+            const target = new native.SmartSpectraSDK({ apiKey: process.env.PRESAGE_API_KEY, requestedMetrics, enableTelemetry: false });
             sdk = target;
             const current = () => !closed && token === generation && target === sdk;
             target.on('processingStatus', status => { if (current()) post({ kind: 'processingStatus', status }); });

@@ -1,6 +1,8 @@
 import { measurementTimestamp, normalizePresage, type NativeMeasurement, type NativeMetrics } from './presageSample';
 import { FRESHNESS_MS, type SensorDiagnosticMetric, type SensorDiagnostics, type SensorSample } from './types';
 import { METRIC_POLICY, validationBlocksMetric, type MetricKind } from './metricPolicy';
+import { SignalTracker, type SensorWaveforms } from './signals';
+import type { SensorSignals } from './types';
 
 type Reading = { measurement: NativeMeasurement; received: number; measured: number | null; validationCode: number | null; invalidated: boolean; intervalMs: number | null };
 const statuses: SensorDiagnostics['processingStatus'][] = ['uninitialized', 'idle', 'starting', 'running', 'stopping', 'error'];
@@ -18,6 +20,8 @@ export class NativeMetricStream {
   framesRejected = 0;
   lastMetricAt: number | null = null;
   failure: string | null = null;
+  /** All other requested signals and their bounded waveform buffers. */
+  readonly signals = new SignalTracker();
   private pulse: Reading | null = null;
   private breathing: Reading | null = null;
   private frameTimes: number[] = [];
@@ -28,6 +32,7 @@ export class NativeMetricStream {
     this.validation = { code, hint };
     if (this.pulse && validationBlocksMetric(code, 'pulse')) this.pulse.invalidated = true;
     if (this.breathing && validationBlocksMetric(code, 'breathing')) this.breathing.invalidated = true;
+    this.signals.setValidation(code, hint);
   }
   frame(sent: boolean, timestampUs: number, now: number): void {
     if (!sent) { this.framesRejected++; return; }
@@ -49,6 +54,7 @@ export class NativeMetricStream {
   }
   ingest(metrics: NativeMetrics, now: number, wall: number): SensorSample | null {
     this.metricsPackets++; this.lastMetricAt = now;
+    this.signals.ingest(metrics, now, wall, this.validation);
     const pulse = this.latest(metrics.cardio?.pulseRate, this.pulse, now, wall);
     const breathing = this.latest(metrics.breathing?.rate, this.breathing, now, wall);
     if (breathing) { this.breathing = breathing; this.breathingSamples++; }
@@ -100,4 +106,8 @@ export class NativeMetricStream {
       lastMetricAgeMs: this.lastMetricAt === null ? null : Math.max(0, now - this.lastMetricAt), pulse, breathing,
       blocker: this.failure ?? (pulse.eligible ? null : pulse.reasons[0] ?? 'Waiting for pulse estimate') };
   }
+  signalView(now: number, captureState: SensorDiagnostics['captureState'], diagnostics = this.view(now, captureState)): SensorSignals {
+    return this.signals.view(now, { captureState, processing: this.processingStatus, firstFrameAt: this.firstFrameAt, validation: this.validation }, diagnostics);
+  }
+  waveforms(now: number): SensorWaveforms { return this.signals.waveforms(now); }
 }
