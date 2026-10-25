@@ -340,8 +340,8 @@
     {
       "path": "public/assets/decals/title.svg",
       "url": "/assets/decals/title.svg",
-      "bytes": 491,
-      "sha256": "1662ecbce6310b961dddab295a69f704c7411ed6ea06e65c4f6a2a008e16a823",
+      "bytes": 488,
+      "sha256": "26f02f5495f10b6a647afa1a28ae7d93d063470fd6ff0d7de2a906b4b00dab60",
       "source": "lock-in-kit/assets/decals/title.svg",
       "license": "public/assets/LICENSE.txt"
     },
@@ -432,6 +432,54 @@
       "sha256": "54103e88cc1e9f3efd065382471e9eec23dc338c8927f5dd813e7d9989f573b3",
       "source": "lock-in-kit/assets/models/workdesk.glb",
       "license": "public/assets/LICENSE.txt"
+    },
+    {
+      "path": "public/assets/fonts/RockSalt-Regular.ttf",
+      "url": "/assets/fonts/RockSalt-Regular.ttf",
+      "bytes": 124372,
+      "sha256": "c5421d1ced1949488f29d11b75b7ef967abe2d870f816246bf18fdc0f3e29c96",
+      "source": "Google Fonts: Rock Salt by Font Diner (github.com/google/fonts apache/rocksalt)",
+      "license": "Apache-2.0; public/assets/fonts/LICENSE-Apache-2.0.txt"
+    },
+    {
+      "path": "public/assets/fonts/SpecialElite-Regular.ttf",
+      "url": "/assets/fonts/SpecialElite-Regular.ttf",
+      "bytes": 166180,
+      "sha256": "a776fcb4ceb8bdf03e2967688ebdad42680de5b91a7e62c17e718ae212d14bc4",
+      "source": "Google Fonts: Special Elite by Astigmatic (github.com/google/fonts apache/specialelite)",
+      "license": "Apache-2.0; public/assets/fonts/LICENSE-Apache-2.0.txt"
+    },
+    {
+      "path": "public/assets/fonts/Caveat.ttf",
+      "url": "/assets/fonts/Caveat.ttf",
+      "bytes": 403648,
+      "sha256": "0bdb6b660482d31531b3945849fba5916b3ef8695da7024a9e6b9ee3c4157988",
+      "source": "Google Fonts: Caveat by Impallari Type (github.com/google/fonts ofl/caveat)",
+      "license": "SIL OFL 1.1; public/assets/fonts/OFL-Caveat.txt"
+    },
+    {
+      "path": "public/assets/fonts/LICENSE-Apache-2.0.txt",
+      "url": "/assets/fonts/LICENSE-Apache-2.0.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source": "Apache License 2.0 text shipped with Rock Salt and Special Elite",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "public/assets/fonts/OFL-Caveat.txt",
+      "url": "/assets/fonts/OFL-Caveat.txt",
+      "bytes": 4385,
+      "sha256": "1f9d81d094273d82f3898a1ee8b598a717d050ecbf5ff7bede105b704880157b",
+      "source": "SIL Open Font License text shipped with Caveat",
+      "license": "SIL OFL 1.1"
+    },
+    {
+      "path": "public/assets/scares/breach-creature-blocky.svg",
+      "url": "/assets/scares/breach-creature-blocky.svg",
+      "bytes": 375839,
+      "sha256": "02f043a05ad360acb7c286a84b027d7269153e5f8d549399efc57d89d57176b0",
+      "source": "tools/blocky-scare.mjs (deterministic block-art breach face, generated 2026-10-24)",
+      "license": "Generated for this project; see docs/ASSETS.md"
     },
     {
       "path": "public/assets/scares/breach-creature.png",

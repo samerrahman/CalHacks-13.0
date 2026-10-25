@@ -6,6 +6,8 @@ The models, animations, effects and SVG graphics are original procedural or vect
 
 `public/assets/scares/breach-creature.png` is an additional original OpenAI built-in image-generation output created for LOCK IN on 2026-10-23, recorded separately in the runtime manifest. Its use is subject to the applicable image-generation service terms. It is separate from the fictional camera feeds and is not a creature model placed inside the Three.js shelter. Its presentation belongs to the application UI.
 
+`public/assets/scares/breach-creature-blocky.svg` replaces it at runtime (2026-10-24): a 96×64 block-art face (16 px blocks, 1536×1024) generated deterministically by `tools/blocky-scare.mjs` so the breach matches the game's blocky style. Its jaw split and eye sockets line up with the layers in `src/ui/jumpscare.css`. The PNG stays in the repository as an archived reference.
+
 ## Room and model placement
 
 Units are metres, up is +Y, and unrotated props face +Z. The enclosed, windowless shelter interior is 6 × 5 × 3 m, centered on its floor origin. All four walls and the ceiling are solid. The reinforced door sits over the rear wall and has no open state. The runtime camera starts inside at `(0.05, 1.62, 0.60)`, with bounded mouse look and terminal, cameras and equipment station targets. Inspecting the terminal or monitor moves closer to that actual object; closing inspection returns to the seat. The equipment view faces the rear door and fixed emergency switch. There is no hallway.
@@ -99,3 +101,7 @@ These checks establish file integrity and behavior contracts. Render screenshots
 The darker runtime was visually inspected in [room](../artifacts/harder-room.png), [terminal inspection](../artifacts/harder-terminal.png), [unpowered monitor](../artifacts/harder-dark-monitor.png) and [emergency equipment](../artifacts/harder-equipment.png) screenshots. These show the near-black room, localized amber light, worn surfaces, legible inspection controls and visible emergency locator. [The browser evidence](../artifacts/harder-visual-evidence.json) records actual terminal/monitor mesh clicks and the absence of browser errors. Subsequent [active-alarm](../artifacts/harder-alarm-active.png) and [active breach-scare](../artifacts/harder-breach-scare-active.png) screenshots were also inspected. Their [loss evidence](../artifacts/harder-loss-evidence.json) records actual alarm graph activity, late Q failing after commitment, a visible scare before results and no browser errors. Complete gameplay evidence is recorded in HANDOFF.
 
 The separate generated breach image uses the built-in image generation tool. Its exact prompt, method and final workspace path are recorded in [breach artwork provenance](qa/breach-art-provenance.md). It is shown briefly on loss; softer scares suppress the face.
+
+## Fonts (2026-10-24)
+
+The title screen and run report (`src/ui/handdrawn.css`) bundle three Google Fonts from github.com/google/fonts, kept in `public/assets/fonts/` with their license texts: **Rock Salt** (Font Diner, Apache-2.0) for scrawled headings, **Caveat** (Impallari Type, SIL OFL 1.1) for handwritten body text and buttons, and **Special Elite** (Astigmatic, Apache-2.0) for typewritten labels. They are self-hosted because the page's Content-Security-Policy only allows same-origin fonts.

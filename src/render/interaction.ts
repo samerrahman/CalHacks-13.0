@@ -12,3 +12,14 @@ export function hitStation(raycaster: Raycaster, scene: Object3D): Station | nul
   }
   return null;
 }
+/** True when the first visible surface under the pointer is the wall status unit. */
+export function hitStatus(raycaster: Raycaster, scene: Object3D): boolean {
+  const hit = raycaster.intersectObjects(scene.children, true).find(candidate => visible(candidate.object));
+  return !!hit && hit.object.userData.lockInStatus === true;
+}
+/** The part of the hand-held remote under the pointer, if it is the first visible surface. */
+export function hitRemote(raycaster: Raycaster, scene: Object3D): 'remote' | 'quiet' | 'restore' | null {
+  const hit = raycaster.intersectObjects(scene.children, true).find(candidate => visible(candidate.object));
+  const target = hit?.object.userData.lockInRemote;
+  return target === 'remote' || target === 'quiet' || target === 'restore' ? target : null;
+}

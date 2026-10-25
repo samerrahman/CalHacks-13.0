@@ -1,0 +1,149 @@
+/* Hand-drawn, ominous treatment for the title screen and the run report: scrawled ink headings,
+ * handwritten notes, typewritten field labels, stained paper and wobbly hand-ruled boxes.
+ * Fonts are bundled in public/assets/fonts (Apache-2.0 / OFL); see docs/ASSETS.md. */
+@font-face{font-family:'Rock Salt';src:url('/assets/fonts/RockSalt-Regular.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Caveat';src:url('/assets/fonts/Caveat.ttf') format('truetype');font-weight:400 700;font-display:swap}
+@font-face{font-family:'Special Elite';src:url('/assets/fonts/SpecialElite-Regular.ttf') format('truetype');font-display:swap}
+:root{--scrawl:'Rock Salt',cursive;--hand:'Caveat',cursive;--typed:'Special Elite',var(--mono);--ink:#d9cdb0;--ink-dim:#a89c80;--blood:#8f2416;--blood-bright:#b8381f;
+ --paper-noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .45 0 0 0 0 .32 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+ --scribble:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='18' viewBox='0 0 220 18'%3E%3Cpath d='M2 11C30 4 52 15 80 8S130 3 160 10 205 14 218 6' fill='none' stroke='%23b8381f' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M10 14C46 9 90 12 130 9S190 8 212 12' fill='none' stroke='%238f2416' stroke-width='1.6' stroke-linecap='round' opacity='.7'/%3E%3C/svg%3E")}
+
+/* ---- Title screen: near-total darkness. A weak torch beam drifts across a night forest and,
+ * on some passes, catches something tall standing between the trees. A worn name, a faltering
+ * heartbeat and a quiet menu sit in the upper left. ---- */
+body .setup{--watcher:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 500'%3E%3Cg fill='%23010101' transform='skewX(-3)'%3E%0A%3Cellipse cx='103' cy='42' rx='15' ry='23'/%3E%3Cpath d='M97 62h12l2 26h-16z'/%3E%3Cpath d='M80 86h46l-6 150h-34z'/%3E%0A%3Cpath d='M82 90l-11 6-16 236 4 40 3-40 4 34 2-34 4 30 3-36 15-218z'/%3E%3Cpath d='M124 90l11 6 14 220 4 46-4-42-3 38-3-38-4 30-2-40-14-202z'/%3E%0A%3Cpath d='M88 232h11l-3 250h-9zM107 232h11l1 250h-10z'/%3E%3C/g%3E%0A%3Ccircle cx='97' cy='40' r='2.3' fill='%23a8281a'/%3E%3Ccircle cx='109' cy='40' r='2.3' fill='%23a8281a'/%3E%3C/svg%3E");background:#000;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:0 0 0 9vw;overflow:hidden}
+body .setup-backdrop{position:fixed;inset:0;pointer-events:none;overflow:hidden;background:#010202}
+body .setup-dark,body .setup-lit{position:absolute;inset:0}
+/* Outside the beam the forest is barely there. */
+body .setup-dark{opacity:.16;filter:brightness(.6)}
+body .setup-forest{position:absolute;inset:-3%;background-position:center bottom;background-size:cover;background-repeat:no-repeat}
+body .setup-forest.far{background-image:var(--forest-far);filter:blur(6px)}
+body .setup-forest.mid{background-image:var(--forest-mid);filter:blur(3px)}
+body .setup-forest.near{background-image:var(--forest-near);filter:blur(1.2px)}
+body .setup-forest.frame{z-index:3;background-image:var(--forest-frame);filter:blur(5px) brightness(.4)}
+body .setup-lit{background:radial-gradient(ellipse 60% 50% at 50% 45%,#2c3a33,#0d1411 70%);
+ -webkit-mask-image:radial-gradient(circle closest-side,#000 0,#000c 30%,#0005 58%,transparent 100%);mask-image:radial-gradient(circle closest-side,#000 0,#000c 30%,#0005 58%,transparent 100%);
+ -webkit-mask-size:56vmax 56vmax;mask-size:56vmax 56vmax;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation:torch 18s ease-in-out infinite}
+body .setup-beam{position:absolute;inset:0;z-index:2;background:radial-gradient(circle closest-side,#fff1d424,#ffe6b80d 45%,transparent 100%) no-repeat;background-size:56vmax 56vmax;mix-blend-mode:screen;animation:torch-light 18s ease-in-out infinite}
+body .setup-fog{position:absolute;left:-30%;right:-30%;height:45%;background:radial-gradient(ellipse 30% 40% at 25% 50%,#9fb4a840,transparent 70%),radial-gradient(ellipse 35% 45% at 70% 55%,#9fb4a833,transparent 70%);filter:blur(20px)}
+body .setup-fog.f2{bottom:28%;animation:fog-drift 63s linear infinite alternate-reverse}
+body .setup-fog.f1{bottom:10%;animation:fog-drift 46s linear infinite alternate}
+/* The watcher: only there on some passes of the beam, and never moving while you look. */
+body .setup-watcher{position:absolute;left:55%;bottom:21vh;width:15vh;height:38vh;background:var(--watcher) center bottom/contain no-repeat;filter:blur(4px);opacity:0;animation:watcher 36s ease-in-out infinite}
+body .setup-grain{z-index:7;background-image:var(--paper-noise);opacity:.16;mix-blend-mode:overlay}
+body .setup-content{position:relative;z-index:8;width:min(560px,86vw);margin:0;padding:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+/* Chipped-paint mask for worn titles. */
+:root{--erode:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='e'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 1.75'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 1 1 1 1 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23e)'/%3E%3C/svg%3E")}
+/* ---- Shared menu language (start screen, pause, run report): a chipped, crooked typewriter title
+ * (WornTitle), a faltering heartbeat (Heartbeat) and a small, spaced, left-aligned menu. ---- */
+body :is(h1,h2).worn-title{display:flex;gap:.04em;font-family:var(--typed);font-weight:400;font-size:clamp(82px,10vw,150px);line-height:1;letter-spacing:0;margin:0;color:#e4dccb;transform:none;text-shadow:none;animation:none;
+ -webkit-mask-image:var(--erode);mask-image:var(--erode);-webkit-mask-size:240px;mask-size:240px;filter:drop-shadow(0 0 18px #0009)}
+body .worn-title .letter{display:inline-block;color:inherit;text-shadow:2px 3px 0 #0b0806}
+body .worn-title .l3{animation:loose-letter 11s steps(1) infinite}
+body .worn-title .worn-gap{width:.35em}
+/* A heartbeat that falters: a beat, a weak beat, then a flat line for a while. */
+body .worn-pulse{width:min(420px,70vw);height:40px;margin:10px 0 7vh;overflow:visible}
+body .worn-pulse path{fill:none;stroke:#b8261a;stroke-width:2.2;stroke-linejoin:round;stroke-dasharray:420;stroke-dashoffset:420;filter:drop-shadow(0 0 4px #ff3a1a88);animation:pulse-draw 4.6s linear infinite}
+body .setup-actions,body .worn-menu{display:flex;flex-direction:column;align-items:flex-start;gap:16px;max-width:none}
+body .setup .primary,body .setup .text-button,body .setup .settings-toggle,body .worn-menu button,body .worn-menu button.primary{position:relative;font-family:var(--typed);font-size:15px;font-weight:400;letter-spacing:5px;text-transform:uppercase;color:#a49b86;background:none;border:0;border-radius:0;box-shadow:none;padding:4px 0;margin:0;width:auto;transform:none;text-decoration:none;text-align:left;white-space:nowrap;transition:color .3s,padding .3s,text-shadow .3s}
+body .setup .primary,body .worn-menu button.primary{color:#e0d6c0}
+body .setup .primary:hover,body .setup .text-button:hover,body .setup .settings-toggle:hover,body .setup .primary:focus-visible,body .setup .text-button:focus-visible,body .setup .settings-toggle:focus-visible,body .worn-menu button:hover,body .worn-menu button:focus-visible{background:none;color:#fff3dc;padding-left:16px;text-shadow:0 0 10px #ffffff40;transform:none;box-shadow:none}
+body .setup .primary:hover::before,body .setup .text-button:hover::before,body .setup .settings-toggle:hover::before,body .setup .primary:focus-visible::before,body .setup .text-button:focus-visible::before,body .worn-menu button:hover::before,body .worn-menu button:focus-visible::before{content:'';position:absolute;left:0;top:50%;width:8px;height:2px;background:#b8261a;box-shadow:0 0 8px #ff3a1a}
+body .setup .primary:disabled{opacity:.3}
+body .setup .settings-toggle{position:relative;font-family:var(--typed);font-size:15px;font-weight:400;letter-spacing:5px;text-transform:uppercase;color:#a49b86;background:none;border:0;box-shadow:none;padding:4px 0;transform:none;text-decoration:none;text-align:left;transition:color .3s,padding .3s,text-shadow .3s}
+body .setup .primary{color:#e0d6c0}
+body .setup .primary:hover,body .setup .text-button:hover,body .setup .settings-toggle:hover,body .setup .primary:focus-visible,body .setup .text-button:focus-visible,body .setup .settings-toggle:focus-visible{background:none;color:#fff3dc;padding-left:16px;text-shadow:0 0 10px #ffffff40;transform:none;box-shadow:none}
+body .setup .primary:hover::before,body .setup .text-button:hover::before,body .setup .settings-toggle:hover::before,body .setup .primary:focus-visible::before,body .setup .text-button:focus-visible::before{content:'';position:absolute;left:0;top:50%;width:8px;height:2px;background:#b8261a;box-shadow:0 0 8px #ff3a1a}
+body .setup .primary:disabled{opacity:.3}
+body .setup .settings-toggle{font-size:12px;letter-spacing:4px;color:#6a6252;justify-content:flex-start;gap:10px;margin-top:2px}
+body .setup .settings-toggle:first-of-type{margin-top:6vh}
+body .setup .voice-availability{font-family:var(--typed);font-size:10px;letter-spacing:2px;color:#4a4437;margin:6px 0}
+body .setup .setup-settings,body .setup .camera-calibration{text-align:left;font-family:var(--hand);font-size:18px;background:#050404d9;padding:14px}
+body .setup-footer{position:fixed;z-index:8;bottom:26px;left:9vw;right:auto;padding:0;justify-content:flex-start;background:none;border:0;font-family:var(--typed);font-size:11px;letter-spacing:5px;color:#4a4437}
+@keyframes torch{0%,100%{-webkit-mask-position:18% 72%;mask-position:18% 72%}22%{-webkit-mask-position:38% 58%;mask-position:38% 58%}45%{-webkit-mask-position:62% 64%;mask-position:62% 64%}52%{-webkit-mask-position:66% 62%;mask-position:66% 62%}72%{-webkit-mask-position:92% 50%;mask-position:92% 50%}86%{-webkit-mask-position:55% 80%;mask-position:55% 80%}}
+@keyframes torch-light{0%,100%{background-position:18% 72%}22%{background-position:38% 58%}45%{background-position:62% 64%}52%{background-position:66% 62%}72%{background-position:92% 50%}86%{background-position:55% 80%}}
+@keyframes watcher{0%,17%{opacity:0}23%,26%{opacity:.62}32%,100%{opacity:0}}
+@keyframes pulse-draw{0%{stroke-dashoffset:420;opacity:1}38%{stroke-dashoffset:0;opacity:1}70%{stroke-dashoffset:0;opacity:.25}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes loose-letter{0%,100%{transform:translateY(3px) rotate(-1deg)}61%{transform:translateY(5px) rotate(-6deg)}62%{transform:translateY(3px) rotate(-1deg)}}
+@keyframes fog-drift{from{transform:translateX(-8%)}to{transform:translateX(8%)}}
+@media(prefers-reduced-motion:reduce){body .setup-lit{animation:none;-webkit-mask-position:40% 62%;mask-position:40% 62%}body .setup-beam{animation:none;background-position:40% 62%}body .setup-watcher,body .setup-fog,body .worn-pulse path,body .worn-title .l3{animation:none}body .worn-pulse path{stroke-dashoffset:0}}
+@media(max-width:720px){body .setup{padding-left:7vw}body .worn-title{font-size:72px}}
+/* ---- Pause menu and run report: the start screen's language laid over the blurred game, with the
+ * darkness heaviest on the left where the text sits. ---- */
+body .modal-shade.pause-shade,body .modal-shade.result-shade{background:linear-gradient(90deg,#000000f2 0%,#000000cc 36%,#00000080 68%,#00000052 100%),radial-gradient(ellipse 85% 75% at 60% 45%,transparent 35%,#000c 90%);backdrop-filter:blur(12px) saturate(.5) brightness(.7);padding:0;place-items:stretch}
+body .modal.pause-screen,body .modal.results{position:relative;width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:11vh 9vw 9vh;background:none;border:0;border-radius:0;box-shadow:none;transform:none;overflow:auto;
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:safe center;gap:0;text-align:left;font-family:var(--typed);color:#a49b86}
+body .modal.results::before{content:none}
+body .pause-screen .screen-left,body .pause-screen .screen-right,body .results .screen-left,body .results .screen-right{display:flex;flex-direction:column;align-items:flex-start;width:min(620px,100%)}
+body .pause-screen .worn-title,body .results .worn-title{font-size:clamp(64px,8vw,124px)}
+/* Pause settings: small typewritten notes under the menu. */
+body .pause-screen .screen-right{margin-top:5vh;gap:14px}
+body .pause-screen .controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;margin:0 0 6px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8c8371;transform:none}
+body .pause-screen kbd{font-family:var(--typed);font-size:11px;color:#d8cdb8;background:none;border:1px solid #4a4437;border-radius:2px;padding:1px 6px;margin-right:8px}
+body .pause-screen .screen-right>p{font-family:var(--typed);font-size:12px;line-height:1.7;color:#8c5a48;max-width:520px;margin:0}
+body .pause-screen .volume-row,body .pause-screen .check{font-family:var(--typed);font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#8c8371;width:min(420px,100%);justify-content:flex-start;gap:16px;margin:0}
+body .pause-screen .volume-row input{accent-color:#b8261a}body .pause-screen .check input{accent-color:#b8261a;width:15px;height:15px}
+/* Run report: the verdict, why, and the numbers, then the menu; the pulse note sits quietly last. */
+body .results .result-verdict{font-family:var(--typed);font-weight:400;font-size:16px;letter-spacing:4px;text-transform:uppercase;color:#d8cdb8;margin:0 0 10px}
+body .results .screen-left>p:not(.small){font-family:var(--typed);font-size:14px;line-height:1.7;color:#8c8371;max-width:520px;margin:0}
+body .results .result-stats{display:flex;gap:46px;padding:4vh 0 2vh}
+body .results .result-stats strong{font-family:var(--typed);font-weight:400;font-size:34px;color:#e4dccb}
+body .results .result-stats span{font-family:var(--typed);font-size:10px;letter-spacing:3px;color:#6a6252}
+body .results .screen-left>p.small{font-family:var(--typed);font-size:10px;letter-spacing:2px;color:#4f483b;margin:0}
+body .results .screen-right{margin-top:5vh}
+body .results .pulse-report{margin-top:6vh;border:0;padding:0;max-width:560px}
+body .results .pulse-report,body .results .pulse-report *{font-family:var(--typed)}
+body .results .pulse-report .eyebrow{font-size:10px;letter-spacing:4px;color:#6a6252}
+body .results .pulse-report h3{font-size:13px;letter-spacing:3px;text-transform:uppercase;font-weight:400;color:#a49b86;margin:8px 0 4px}
+body .results .pulse-report p,body .results .pulse-report .small{font-size:11px;line-height:1.6;color:#5a5244}
+body .results .pulse-report strong{font-weight:400;color:#d8cdb8}
+@media(max-width:900px){body .modal.pause-screen,body .modal.results{padding:8vh 24px}body .pause-screen .controls-grid{grid-template-columns:1fr}}
+/* ---- In-game text overlays in the same language: typewriter text, bone and dried-blood colours,
+ * darkness instead of boxes. Layout, positions and gameplay graphics are unchanged. ---- */
+body .sound-caption{font-family:var(--typed);font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#d8cdb8;background:linear-gradient(90deg,transparent,#000000c4 18%,#000000c4 82%,transparent);border:0;box-shadow:none;padding:12px 40px}
+body .sound-caption .action-notice{display:block;margin-top:6px;font-family:var(--typed);font-size:12px;letter-spacing:.5px;text-transform:none;color:#8c8371}
+body .radio-caption{background:linear-gradient(90deg,#000000d9,#000000a6 80%,transparent);border:0;border-left:2px solid #4a4437;box-shadow:none}
+body .radio-caption>span{font-family:var(--typed);font-size:10px;letter-spacing:4px;color:#6a6252}
+body .radio-caption p{font-family:var(--typed);font-size:13px;line-height:1.6;color:#d8cdb8}
+body .radio-caption.creature-voice{border-left-color:#b8261a;background:linear-gradient(90deg,#0d0302e6,#000000a6 80%,transparent)}
+body .creature-voice>span{color:#b8261a}body .creature-voice p{font-family:var(--typed);font-size:16px;letter-spacing:.5px;color:#e2c3b4}
+body .voice-source{font-family:var(--typed);font-size:9px;letter-spacing:2px;color:#4f483b}
+body .tutorial-card{background:#050404eb;border:1px solid #3a352b;border-left:2px solid #b8261a;border-radius:0;box-shadow:0 10px 40px #000c}
+body .tutorial-card .eyebrow{font-family:var(--typed);font-size:10px;letter-spacing:4px;color:#b8261a}
+body .tutorial-card p{font-family:var(--typed);font-size:13px;line-height:1.65;color:#d8cdb8}
+body .tutorial-card small{font-family:var(--typed);font-size:10px;letter-spacing:2px;color:#5a5244}
+body .tutorial-actions button{font-family:var(--typed);font-size:11px;letter-spacing:3px;text-transform:uppercase;background:none;border:0;color:#a49b86;padding:4px 0}
+body .tutorial-actions button:hover{color:#fff3dc}
+body .tutorial-arrow path{stroke:#b8261a}
+body .status-guide{background:#050404eb;border:1px solid #3a352b;border-left:2px solid #b8261a;box-shadow:0 10px 40px #000c}
+body .status-guide-row b{font-family:var(--typed);letter-spacing:3px;color:#d8cdb8}
+body .status-guide-row p{font-family:var(--typed);font-size:12px;line-height:1.65;color:#8c8371}
+body .status-guide-row small{font-family:var(--typed);color:#c26a4a}
+body .status-guide .inspection-close,body .status-guide .inspection-close kbd{font-family:var(--typed);color:#6a6252}
+body .quiet-status{font-family:var(--typed);background:linear-gradient(90deg,transparent,#000000cc 20%,#000000cc 80%,transparent);border:0}
+body .quiet-status .eyebrow{font-family:var(--typed);letter-spacing:4px;color:#b8261a}
+body .quiet-status h2{font-family:var(--typed);font-weight:400;letter-spacing:2px;color:#e4dccb}
+body .quiet-status p{font-family:var(--typed);font-size:12px;color:#8c8371}
+body .protocol-progress{font-family:var(--typed);background:#000000b3;border-color:#3a352b;color:#8c8371}
+body .header-controls button{font-family:var(--typed);letter-spacing:3px;color:#8c8371}
+body .game-footer{background:linear-gradient(transparent,#000000e6 40%);border:0}
+body .game-footer nav button{font-family:var(--typed);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#8c8371}
+body .game-footer nav .selected{color:#e4dccb;border-top-color:#b8261a;background:none}
+body .sensor-label,body .judge-toggle{font-family:var(--typed);letter-spacing:2px;color:#5a5244}
+body .modal-shade:not(.pause-shade):not(.result-shade){background:#000000d9;backdrop-filter:blur(10px) brightness(.6)}
+body .modal.camera-modal{background:#050404f0;border:1px solid #3a352b;border-left:2px solid #b8261a;border-radius:0;font-family:var(--typed);color:#a49b86}
+body .modal.camera-modal *{font-family:var(--typed)}
+body .modal.camera-modal button{letter-spacing:2px}
+body .modal.camera-modal .text-button{text-transform:uppercase;letter-spacing:4px;color:#a49b86}
+/* Captions are off by default (pause → Settings → Show captions) but stay readable by screen readers. */
+body .caption-hidden{position:fixed!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+/* Beat the base stylesheet's pale hover fill on primary buttons: menu items only brighten. */
+body .setup button.primary:hover:not(:disabled),body .setup button.primary:focus-visible:not(:disabled),body .worn-menu button.primary:hover:not(:disabled),body .worn-menu button.primary:focus-visible:not(:disabled){background:none;color:#fff3dc}
+/* At the monitor, only the marking choices appear (during the locate task); the sonar itself is in the room. */
+body .task-panel.camera-panel.locate-only{background:#050404e6;border:1px solid #3a352b;border-left:2px solid #b8261a;border-radius:0;padding:12px 16px;width:min(340px,calc(100vw - 32px));font-family:var(--typed)}
+body .locate-only .locate-heading span{font-family:var(--typed);font-size:11px;letter-spacing:3px;color:#d8cdb8}
+body .locate-only .locate-heading small{font-family:var(--typed);font-size:10px;color:#6a6252}
+body .locate-only .locate-buttons button{font-family:var(--typed);background:none;border:1px solid #3a352b;border-radius:0;color:#a49b86}
+body .locate-only .locate-buttons button:hover:not(:disabled){border-color:#b8261a;color:#fff3dc;background:none}
+/* With the judge button gone, keep the station bar centred on the screen. */
+body .game-footer nav{position:absolute;left:50%;transform:translateX(-50%)}
