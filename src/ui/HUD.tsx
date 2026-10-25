@@ -7,7 +7,7 @@ import { memoryRounds } from '../game/tasks';
 import SurvivalStatus from './SurvivalStatus';
 import './survival.css';
 const equipment=['COOLANT','VENTILATION','RELAY','TRANSMITTER'];
-const names=['','Find the faults by ear.','Transmit a false heartbeat.','Clear the overload.','Lead it away from the door.','Open the basement door.','You escaped.'];
+const names=['','Find the faults by ear.','Transmit a false heartbeat.','Clear the overload.','Lead it away from the door.','Open the basement door.','Into the basement.'];
 const feeds={A:'CLEARING',B:'SERVICE PATH',C:'FACILITY'};
 const stepTitles:Partial<Record<GameState['tasks']['step'],string>>={wires:'Reconnect the relay.',routing:'Reconnect the conduit.',locate:'Mark its position.',pulse:'Mask your heartbeat.',calm:'Let it lose your trail.'};
 export default function HUD({game:g,send,onPause,onJudge,live,onStopSharing,muted,setMuted,sensorLabel,radio,radioRole,radioSource,inspection,onOpen,onClose,onCamera,captions=true}:{game:GameState;send:(a:GameAction)=>void;onPause:()=>void;onJudge?:()=>void;live?:()=>void;onStopSharing?:()=>void;muted:boolean;setMuted:(v:boolean)=>void;sensorLabel:string;radio:string|null;radioRole:string;radioSource:string;inspection:boolean;onOpen:(station:Station)=>void;onClose:()=>void;onCamera:()=>void;captions?:boolean}){

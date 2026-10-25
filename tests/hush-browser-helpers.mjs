@@ -312,7 +312,7 @@ export async function watchSequence(page, { tutorial = false, retry = 0 } = {}) 
 export async function solve(page, { delayStageThree = false } = {}) {
   let delayed = false; const end = Date.now() + 760000; const data = evidenceFor(page);
   while (Date.now() < end) {
-    if (await page.getByRole('dialog', { name: 'Run results' }).getByRole('heading', { name: 'You escaped.', exact: true }).isVisible()) return data.stages;
+    if (await page.getByRole('dialog', { name: 'Run results' }).getByRole('heading', { name: 'You are not alone down here.', exact: true }).isVisible()) return data.stages;
     // A win plays the ending (text cards under reduced motion) before the run report; skip it once seen.
     const ending = page.getByRole('main', { name: /^Ending/ });
     if (await ending.isVisible()) { data.ending = await ending.getAttribute('aria-label'); await ending.getByRole('button', { name: 'Skip cutscene →' }).click(); continue; }

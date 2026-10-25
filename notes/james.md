@@ -2,6 +2,8 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
+- 2026-10-24: Ending film revamped for the new map (no cameras) with a cliffhanger, 46 s. The room matches the game: the sonar scope and wall status unit, drawn by the game's own `drawSonar`/`drawStatus`; no monitor, wall radar, title sign or feed plate. The CCTV beat is now the scope: each pinging sweep finds the contact closer. After the stairs the pounding stops and a new `basement_vault` prop holds a burst tank, gouges and a KEEP ALL FOUR LOCKS ENGAGED sign. A black shape with eye glints comes closer each time the torch flickers, then lunges; the end card reads "You are not alone down here." Lea's App/HUD win text and OUTRO cards follow (results title NOT ALONE). New `ping`/`drip` synth layers.
+
 - 2026-10-24: Exposure is no longer stuck near 65. Work noise was capped at 55 (base 10 + 55); now correct work and machinery still stop at 55, but mistakes keep adding up to 90, so repeated mistakes reach 100. Correct inputs and the hum no longer pull mistake noise back to 55. New test; the balance sweep is unchanged (28/23/13/0/5 of 30). Check passes (161).
 
 - 2026-10-24: Run report chart redesign (Lea's `PulseReport.tsx`, at the user's request). Pulse and breathing are continuous lines over the whole run, from `src/ui/pulseChart.ts`. They start at the baseline, bridge gaps and hold the last reading, drawn as monotone curves with a soft fill. Measured stretches are bright, bridged ones dim, and the numbers still use measured readings only. Real axes, a labelled baseline, a marked peak, and jump-scare/steadied lines with other events as lane ticks. App passes the run length. Fixture `tests/fixtures/report.html`. Check passes (160), seed-18 report run passes.

@@ -87,7 +87,7 @@ Each source page dedicates the recording to the public domain under [CC0 1.0](ht
 
 ## Ending cutscene video
 
-`public/assets/video/ending.mp4` (640×360, 30 fps, H.264 + AAC, 38.5 s) plays after a win. It is rendered the same way (`npm run cutscene -- render --film=ending`) from `src/cutscene/ending.ts` and `endingScene.ts`, inside the game's own shelter GLBs from `public/assets/models` plus two new placeholder props (`basement_door`, `basement_stairs`). Its CCTV shot reuses the `cam_a_clearing.png` plate. The soundtrack is synthesised the same way and re-sequences only the recordings already in `cutscene/audio/`; no new third-party media.
+`public/assets/video/ending.mp4` (640×360, 30 fps, H.264 + AAC, 46 s) plays after a win. It is rendered the same way (`npm run cutscene -- render --film=ending`) from `src/cutscene/ending.ts` and `endingScene.ts`, inside the game's own shelter GLBs from `public/assets/models` plus three placeholder props (`basement_door`, `basement_stairs`, `basement_vault`, the last reusing `containment_tank`). Its sonar scope and wall status unit are drawn by the game's display code; it uses no camera plates. The soundtrack is synthesised the same way and re-sequences only the recordings already in `cutscene/audio/`; no new third-party media.
 
 ## Checks
 

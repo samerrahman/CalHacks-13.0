@@ -77,7 +77,7 @@ export type SynthLayer =
   | { kind: 'scrape'; at: number; dur: number; chatter: number; modes: number[]; level: number }
   | { kind: 'growl'; at: number; dur: number; pitch: number; level: number }
   | { kind: 'crunch' | 'hiss'; at: number; dur: number; level: number }
-  | { kind: 'click'; at: number; level: number };
+  | { kind: 'click' | 'ping' | 'drip'; at: number; level: number };
 
 export const SYNTH: SynthLayer[] = [
   // Lab: mains hum, the lights buzz as they stutter, then a low industrial horn.
