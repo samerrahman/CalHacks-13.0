@@ -11,6 +11,8 @@ Two separate opt-ins, both off at the start of every run, both in the J panel:
 
 Anyone with the link can see what you share; the link is the capability. Each run creates a new session and link. Until the SpacetimeDB session exists the button reads "Copy same-browser link". A friend on another machine needs a page they can open: set `VITE_SPECTATE_ORIGIN` to a hosted web build (any static host); the desktop app's `hush://` page and a loopback dev server cannot be opened elsewhere, so without it the copy button is disabled there. "Open spectator view" works locally in both builds.
 
+A further, separate opt-in shares your camera as live peer-to-peer video that is never stored: see [CAMERA.md](CAMERA.md). Without it, no camera image reaches a spectator, and even with it no frame passes through the database.
+
 ## What a spectator receives, and what never leaves
 
 | Shared (with consent 2) | Never shared |

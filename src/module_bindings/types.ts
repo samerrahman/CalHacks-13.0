@@ -10,6 +10,76 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const CameraInboxRow = __t.object("CameraInboxRow", {
+  id: __t.u64(),
+  spectatorKey: __t.string(),
+  kind: __t.string(),
+  payload: __t.string(),
+});
+export type CameraInboxRow = __Infer<typeof CameraInboxRow>;
+
+export const CameraPeer = __t.object("CameraPeer", {
+  id: __t.u64(),
+  sessionId: __t.string(),
+  spectatorKey: __t.string(),
+  joinedAtMs: __t.u64(),
+  windowStartMs: __t.u64(),
+  windowCount: __t.u32(),
+});
+export type CameraPeer = __Infer<typeof CameraPeer>;
+
+export const CameraPlayerInbox = __t.object("CameraPlayerInbox", {
+  id: __t.string(),
+  ownerCapability: __t.string(),
+});
+export type CameraPlayerInbox = __Infer<typeof CameraPlayerInbox>;
+
+export const CameraShare = __t.object("CameraShare", {
+  sessionId: __t.string(),
+  live: __t.bool(),
+  epoch: __t.u32(),
+  windowStartMs: __t.u64(),
+  windowCount: __t.u32(),
+});
+export type CameraShare = __Infer<typeof CameraShare>;
+
+export const CameraShareFeed = __t.object("CameraShareFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type CameraShareFeed = __Infer<typeof CameraShareFeed>;
+
+export const CameraShareRow = __t.object("CameraShareRow", {
+  sessionId: __t.string(),
+  live: __t.bool(),
+  epoch: __t.u32(),
+});
+export type CameraShareRow = __Infer<typeof CameraShareRow>;
+
+export const CameraSignal = __t.object("CameraSignal", {
+  id: __t.u64(),
+  sessionId: __t.string(),
+  spectatorKey: __t.string(),
+  direction: __t.string(),
+  kind: __t.string(),
+  payload: __t.string(),
+  createdAtMs: __t.u64(),
+});
+export type CameraSignal = __Infer<typeof CameraSignal>;
+
+export const CameraSpectatorInbox = __t.object("CameraSpectatorInbox", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+  spectatorKey: __t.string(),
+});
+export type CameraSpectatorInbox = __Infer<typeof CameraSpectatorInbox>;
+
+export const CameraSweep = __t.object("CameraSweep", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+});
+export type CameraSweep = __Infer<typeof CameraSweep>;
+
 export const Expiry = __t.object("Expiry", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),

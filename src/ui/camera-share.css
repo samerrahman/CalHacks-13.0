@@ -1,0 +1,14 @@
+.spectate-camera .camera-frame{position:relative;aspect-ratio:4/3;background:#050806;border:1px solid #2b3527;display:grid;place-items:center;overflow:hidden}
+.spectate-camera video{display:block;width:100%;height:100%;object-fit:cover;background:#050806}
+.spectate-camera video[hidden]{display:none}
+.spectate-camera .camera-frame p{margin:0;padding:18px;text-align:center;font:11px/1.7 var(--mono);color:#9da99c;max-width:340px}
+.spectate-camera .camera-label{position:absolute;left:10px;top:10px;font:10px var(--mono);letter-spacing:1px;color:#f1dfc0;background:#140806cc;border:1px solid #b4553a88;padding:3px 7px}
+.spectate-camera .camera-label i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#d0583b;margin-right:6px;animation:camera-pulse 1.4s ease-in-out infinite}
+.spectate-camera.ended .camera-frame p,.spectate-camera.error .camera-frame p{color:#d9b48a}
+.camera-share-badge{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:21;display:flex;align-items:center;gap:10px;padding:6px 8px 6px 12px;background:#140806ee;border:1px solid #b4553a99;color:#f1dfc0;font:10px var(--mono);letter-spacing:1px;box-shadow:0 6px 20px #0009;max-width:calc(100vw - 32px)}
+.camera-share-badge i{flex:none;width:8px;height:8px;border-radius:50%;background:#d0583b;animation:camera-pulse 1.4s ease-in-out infinite}
+.camera-share-badge span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.camera-share-badge button{flex:none;font:10px var(--mono);letter-spacing:1px;color:#f1dfc0;background:#2a0f0a;border:1px solid #b4553a;padding:4px 10px;cursor:pointer}
+.camera-share-badge button:focus-visible{outline:2px solid #f1dfc0;outline-offset:2px}
+@keyframes camera-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.camera-share-badge i,.spectate-camera .camera-label i{animation:none}}

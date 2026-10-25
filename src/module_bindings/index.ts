@@ -38,12 +38,20 @@ import AppendTraceReducer from "./append_trace_reducer";
 import CreateSessionReducer from "./create_session_reducer";
 import PhysicsKnockReducer from "./physics_knock_reducer";
 import RemoveSessionReducer from "./remove_session_reducer";
+import SetCameraShareReducer from "./set_camera_share_reducer";
+import JoinCameraReducer from "./join_camera_reducer";
+import LeaveCameraReducer from "./leave_camera_reducer";
+import SignalToSpectatorReducer from "./signal_to_spectator_reducer";
+import SignalToPlayerReducer from "./signal_to_player_reducer";
 import ShareVitalsReducer from "./share_vitals_reducer";
 import StopVitalsReducer from "./stop_vitals_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import CameraPlayerInboxRow from "./camera_player_inbox_table";
+import CameraShareFeedRow from "./camera_share_feed_table";
+import CameraSpectatorInboxRow from "./camera_spectator_inbox_table";
 import JudgeTraceRow from "./judge_trace_table";
 import PhysicsFeedRow from "./physics_feed_table";
 import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
@@ -52,6 +60,27 @@ import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  cameraPlayerInbox: __table({
+    name: 'camera_player_inbox',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, CameraPlayerInboxRow),
+  cameraShareFeed: __table({
+    name: 'camera_share_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, CameraShareFeedRow),
+  cameraSpectatorInbox: __table({
+    name: 'camera_spectator_inbox',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, CameraSpectatorInboxRow),
   judgeTrace: __table({
     name: 'judge_trace',
     indexes: [
@@ -81,6 +110,11 @@ const reducersSchema = __reducers(
   __reducerSchema("create_session", CreateSessionReducer),
   __reducerSchema("physics_knock", PhysicsKnockReducer),
   __reducerSchema("remove_session", RemoveSessionReducer),
+  __reducerSchema("set_camera_share", SetCameraShareReducer),
+  __reducerSchema("join_camera", JoinCameraReducer),
+  __reducerSchema("leave_camera", LeaveCameraReducer),
+  __reducerSchema("signal_to_spectator", SignalToSpectatorReducer),
+  __reducerSchema("signal_to_player", SignalToPlayerReducer),
   __reducerSchema("share_vitals", ShareVitalsReducer),
   __reducerSchema("stop_vitals", StopVitalsReducer),
 );
@@ -95,7 +129,7 @@ const REMOTE_MODULE = {
     cliVersion: "2.13.0" as const,
   },
   tables: tablesSchema.schemaType.tables,
-  viewsWithArgs: ["judge_trace", "physics_feed", "spectator_vitals_feed"],
+  viewsWithArgs: ["camera_player_inbox", "camera_share_feed", "camera_spectator_inbox", "judge_trace", "physics_feed", "spectator_vitals_feed"],
   reducers: reducersSchema.reducersType.reducers,
   ...proceduresSchema,
 } satisfies __RemoteModule<
