@@ -43,6 +43,31 @@ export type SensorSample = {
   nativeConfidence: unknown;
   validationCode: number | string | null;
 };
+export type SignalName = 'pulse' | 'breathing' | 'chest' | 'abdomen' | 'hrv' | 'blinking' | 'talking' | 'expressions' | 'eda' | 'arterial';
+export type SignalStatus = 'ok' | 'warming' | 'unavailable' | 'rejected' | 'stale';
+export type SignalState = { status: SignalStatus; reason: string; secondsLeft?: number };
+export type ExpressionName = 'angry' | 'contempt' | 'disgust' | 'fear' | 'happy' | 'neutral' | 'sad' | 'surprise';
+/** Coarse local camera estimates for game use, not medical readings. Every
+ * value is null unless its signal's status is 'ok' (fear and lastBlinkAgeMs
+ * may still be null when ok). Never part of traces, provider projections,
+ * spectator vitals or SpacetimeDB. Waveforms stay in SensorController.waveforms(). */
+export type SensorSignals = {
+  breathingBpm: number | null;
+  breathPhase: 'in' | 'out' | null;
+  /** Abdomen share of chest + abdomen breathing movement, 0..1. */
+  abdomenShare: number | null;
+  hrv: { rmssdMs: number; sdnnMs: number } | null;
+  blinksPerMinute: number | null;
+  lastBlinkAgeMs: number | null;
+  talking: boolean | null;
+  /** Stable expression scores, 0..1 per expression. */
+  expressions: Partial<Record<ExpressionName, number>> | null;
+  /** FEAR score boosted by a quarter of SURPRISE, 0..1. */
+  fear: number | null;
+  /** Recent EDA proxy versus the player's first accepted minute, in that minute's spreads, -3..3. */
+  edaRelative: number | null;
+  status: Record<SignalName, SignalState>;
+};
 export type SensorView = {
   source: SensorMode;
   status: 'manual' | 'starting' | 'calibrating' | 'ready' | 'unavailable' | 'paused';
@@ -58,6 +83,8 @@ export type SensorView = {
   sampleAtMs: number | null;
   captureSegment: number;
   diagnostics?: SensorDiagnostics;
+  /** Local only, like diagnostics. Present for presage and simulated sources. */
+  signals?: SensorSignals;
 };
 export const FRESHNESS_MS = 5000;
 
