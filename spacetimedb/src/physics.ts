@@ -1,7 +1,7 @@
 import { table, t, SenderError } from 'spacetimedb/server';
 import { ScheduleAt } from 'spacetimedb';
 import { capability, ownedSession, type HushCtx, type HushDb } from './access';
-import { allAsleep, applyImpulse, impulsesFromEvents, PROPS, sanitizeBody, spawnBodies, stepBodies, TICK_MS, TICK_STEPS, type Body, type PhysicsEvent } from './physicsSim';
+import { allAsleep, applyImpulse, forceSleep, impulsesFromEvents, MAX_AWAKE_TICKS, PROPS, sanitizeBody, spawnBodies, stepBodies, TICK_MS, TICK_STEPS, type Body, type PhysicsEvent } from './physicsSim';
 
 // Server-authoritative prop physics, one world per consenting trace session. The game's own
 // reducer never reads it; trace events only push props around. See docs/PHYSICS.md.
@@ -12,6 +12,8 @@ export const physicsWorld = table({ name: 'physics_world' }, {
   lastEventSeq: t.u32(),
   knocks: t.u32(),
   lastKnockAtMs: t.u64(),
+  // Appended with a default so publishing over the first version stays an additive migration.
+  lastImpulseTick: t.u32().default(0),
 });
 export const physicsBody = table({ name: 'physics_body' }, {
   id: t.u64().primaryKey().autoInc(),
@@ -52,20 +54,21 @@ function ensureWorld(ctx: HushCtx, sessionId: string) {
   const existing = ctx.db.physicsWorld.sessionId.find(sessionId);
   if (existing) return existing;
   for (const b of spawnBodies()) ctx.db.physicsBody.insert({ id: 0n, sessionId, ...b });
-  return ctx.db.physicsWorld.insert({ sessionId, tick: 0, awake: false, lastEventSeq: 0, knocks: 0, lastKnockAtMs: 0n });
+  return ctx.db.physicsWorld.insert({ sessionId, tick: 0, awake: false, lastEventSeq: 0, lastImpulseTick: 0, knocks: 0, lastKnockAtMs: 0n });
 }
 
-/** Called by appendTrace with the events it just accepted (already sanitized). */
-export function applyTraceImpulses(ctx: HushCtx, sessionId: string, events: readonly PhysicsEvent[]): void {
+/** Called by appendTrace with the events it just accepted (already sanitized) and the batch's
+ * game time; only events from the last couple of game seconds push props. */
+export function applyTraceImpulses(ctx: HushCtx, sessionId: string, events: readonly PhysicsEvent[], nowGameSeconds: number): void {
   const world = ensureWorld(ctx, sessionId);
   const fresh = events.filter(e => e.seq > world.lastEventSeq);
   if (!fresh.length) return;
-  const impulses = impulsesFromEvents(fresh);
+  const impulses = impulsesFromEvents(fresh, nowGameSeconds);
   const lastEventSeq = Math.max(world.lastEventSeq, ...fresh.map(e => e.seq));
   if (!impulses.length) { ctx.db.physicsWorld.sessionId.update({ ...world, lastEventSeq }); return; }
   const rows = bodyRows(ctx, sessionId);
   writeBodies(ctx, rows, impulses.reduce(applyImpulse, rows.map(toBody)));
-  ctx.db.physicsWorld.sessionId.update({ ...world, lastEventSeq, awake: true });
+  ctx.db.physicsWorld.sessionId.update({ ...world, lastEventSeq, awake: true, lastImpulseTick: world.tick });
   ensureTicking(ctx);
 }
 
@@ -86,7 +89,8 @@ export function physicsExports(db: HushDb) {
     for (const world of [...ctx.db.physicsWorld.iter()].filter(w => w.awake)) {
       if (!ctx.db.session.id.find(world.sessionId)) { dropPhysics(ctx, world.sessionId); continue; }
       const rows = bodyRows(ctx, world.sessionId);
-      const bodies = stepBodies(rows.map(toBody), TICK_STEPS);
+      // Backstop: nothing in the shelter should still be moving 30 s after the last hit.
+      const bodies = world.tick - world.lastImpulseTick >= MAX_AWAKE_TICKS ? forceSleep(rows.map(toBody)) : stepBodies(rows.map(toBody), TICK_STEPS);
       writeBodies(ctx, rows, bodies);
       const stillAwake = !allAsleep(bodies);
       ctx.db.physicsWorld.sessionId.update({ ...world, tick: world.tick + 1, awake: stillAwake });
@@ -103,7 +107,7 @@ export function physicsExports(db: HushDb) {
     if (now - world.lastKnockAtMs < KNOCK_GAP_MS) return;
     const rows = bodyRows(ctx, args.id);
     writeBodies(ctx, rows, applyImpulse(rows.map(toBody), { seq: KNOCK_SEQ_BASE + world.knocks, source: 'KNOCK', strength: 1, slot: args.slot }));
-    ctx.db.physicsWorld.sessionId.update({ ...world, knocks: world.knocks + 1, lastKnockAtMs: now, awake: true });
+    ctx.db.physicsWorld.sessionId.update({ ...world, knocks: world.knocks + 1, lastKnockAtMs: now, awake: true, lastImpulseTick: world.tick });
     ensureTicking(ctx);
   });
 

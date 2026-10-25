@@ -2,7 +2,7 @@
 
 The root application is HUSH: a sealed research shelter, four fault/memory stages, remote heartbeat lures and physical containment. NIGHT RELAY is archived reference material only. The explicit user request authorized the root replacement and required cross-area contract updates.
 
-Read `README.md`, `src/game/config.ts` and `docs/HANDOFF.md` for current behavior and verification. The subsequent user request authorizes harder rules, darker art, equipment interactions, camera setup and live monster speech across ownership areas. The preserved kit GAME_SPEC describes the earlier version; current tuning supersedes its unconditional late-quiet rescue and visible breach warning.
+Read `README.md`, `src/game/config.ts` and `docs/HANDOFF.md` for current behavior and verification. The subsequent user request authorizes harder rules, darker art, equipment interactions, camera setup and live monster speech across ownership areas. The preserved kit GAME_SPEC describes the earlier version; current tuning supersedes its unconditional late-quiet rescue and visible breach warning. The user decided on 2026-10-24 that HUSH does infer fear and emotion from Presage (expression scores plus physiology) as game input, superseding the kit's "does not infer emotions"; present these as camera estimates, never medical readings.
 
 Stack: **TypeScript**, React (menus/HUD), Three.js (scene), Vite, Electron 45 (camera and provider bridge), Gemini (`@google/genai`), ElevenLabs (voice), Presage (`@smartspectra/node-sdk`), SpacetimeDB (consented trace and judge view). `convex/` is historical reference.
 

@@ -11,7 +11,7 @@ export type Body = { slot: number; x: number; y: number; z: number; vx: number; 
 export type ImpulseSource = 'DOOR_POUND' | 'FOOTSTEPS' | 'BREACH' | 'KNOCK';
 export type Impulse = { seq: number; source: ImpulseSource; strength: number; slot?: number };
 /** Only the fields the shared trace already carries after sanitizing. */
-export type PhysicsEvent = { seq: number; type: string; detail: string };
+export type PhysicsEvent = { seq: number; time: number; type: string; detail: string };
 
 export const PHYSICS_HZ = 60;
 export const STEP_SECONDS = 1 / PHYSICS_HZ;
@@ -19,6 +19,10 @@ export const STEP_SECONDS = 1 / PHYSICS_HZ;
 export const TICK_STEPS = 3;
 export const TICK_MS = 50;
 export const IMPULSE_SOURCES: readonly ImpulseSource[] = ['DOOR_POUND', 'FOOTSTEPS', 'BREACH', 'KNOCK'];
+/** Events older than this (game seconds) are history, not a hit happening now. */
+export const RECENT_EVENT_SECONDS = 2;
+/** A world still awake this long after its last impulse is put to sleep (30 s). */
+export const MAX_AWAKE_TICKS = 600;
 
 const GRAVITY = -9.81;
 const AIR = 0.999;
@@ -56,6 +60,7 @@ export function spawnBodies(): Body[] {
   return PROPS.map((spec, slot) => ({ slot, x: spec.at[0], y: spec.at[1], z: spec.at[2], vx: 0, vy: 0, vz: 0, rest: SLEEP_STEPS, sleeping: true }));
 }
 export const allAsleep = (bodies: readonly Body[]): boolean => bodies.every(b => b.sleeping);
+export const forceSleep = (bodies: readonly Body[]): Body[] => bodies.map(b => ({ ...b, vx: 0, vy: 0, vz: 0, rest: SLEEP_STEPS, sleeping: true }));
 
 /** Advance by whole fixed steps. Returns new bodies; the input is not modified. */
 export function stepBodies(bodies: readonly Body[], steps = 1): Body[] {
@@ -104,10 +109,13 @@ export function applyImpulse(bodies: readonly Body[], impulse: Impulse): Body[] 
   });
 }
 
-/** The fixed map from sanitized public events to impulses, shared by server and fallback. */
-export function impulsesFromEvents(events: readonly PhysicsEvent[]): Impulse[] {
+/** The fixed map from sanitized public events to impulses, shared by server and fallback.
+ * Only events within RECENT_EVENT_SECONDS of `nowGameSeconds` count, so a backlog (a late
+ * world, a reconnect, a spectator joining mid-run) never fires as one stacked blast. */
+export function impulsesFromEvents(events: readonly PhysicsEvent[], nowGameSeconds: number): Impulse[] {
   const out: Impulse[] = [];
   for (const e of events) {
+    if (!(e.time >= nowGameSeconds - RECENT_EVENT_SECONDS)) continue;
     if (e.type === 'SCARE' && e.detail === 'impact') out.push({ seq: e.seq, source: 'DOOR_POUND', strength: 0.75 });
     else if (e.type === 'SCARE' && e.detail === 'monitor') out.push({ seq: e.seq, source: 'FOOTSTEPS', strength: 0.4 });
     else if (e.type === 'SCARE' && e.detail === 'breach') out.push({ seq: e.seq, source: 'BREACH', strength: 1 });
@@ -160,10 +168,12 @@ function collideBox(b: Body, box: Aabb): boolean {
   else {
     // Centre inside the box: leave through the nearest face.
     let best = Infinity, axis = 1, sign = 1;
+    // Faces flush with a room wall or the floor are not exits: leaving through them would push
+    // the prop out of the room, and the room clamp would put it straight back inside the box.
     for (let a = 0; a < 3; a++) {
       const toMin = p[a] - box.min[a]!, toMax = box.max[a]! - p[a];
-      if (toMin < best) { best = toMin; axis = a; sign = -1; }
-      if (toMax < best) { best = toMax; axis = a; sign = 1; }
+      if (box.min[a]! > ROOM.min[a]! && toMin < best) { best = toMin; axis = a; sign = -1; }
+      if (box.max[a]! < ROOM.max[a]! && toMax < best) { best = toMax; axis = a; sign = 1; }
     }
     n = [0, 0, 0]; n[axis] = sign; depth = best + r;
   }
@@ -187,16 +197,21 @@ function collidePairs(bodies: Body[], supported: boolean[]): void {
       const sa = PROPS[a.slot]!, sc = PROPS[c.slot]!;
       const dx = c.x - a.x, dy = c.y - a.y, dz = c.z - a.z, dist = Math.hypot(dx, dy, dz), reach = sa.radius + sc.radius;
       if (dist >= reach + 0.01 || dist < 1e-9) continue;
-      // A moving neighbour within a centimetre wakes a sleeper, so a stack never floats.
-      if (a.sleeping) { a.sleeping = false; a.rest = 0; }
-      if (c.sleeping) { c.sleeping = false; c.rest = 0; }
+      const n: Vec = [dx / dist, dy / dist, dz / dist];
+      const closing = (c.vx - a.vx) * n[0] + (c.vy - a.vy) * n[1] + (c.vz - a.vz) * n[2];
+      // Only a real hit wakes a sleeper: a neighbour still moving, or one pressing into it. A
+      // resting neighbour treats the sleeper as static, so touching props can both fall asleep,
+      // while a prop sliding out from under a stack still wakes what sits on it.
+      for (const [sleeper, other] of [[a, c], [c, a]] as const) {
+        if (sleeper.sleeping && (speedOf(other) > SLEEP_SPEED || dist < reach && closing < -SLEEP_SPEED)) { sleeper.sleeping = false; sleeper.rest = 0; }
+      }
       if (dist >= reach) continue;
-      const n: Vec = [dx / dist, dy / dist, dz / dist], wa = 1 / sa.mass, wc = 1 / sc.mass, depth = reach - dist;
+      const wa = a.sleeping ? 0 : 1 / sa.mass, wc = c.sleeping ? 0 : 1 / sc.mass, depth = reach - dist;
+      if (wa + wc === 0) continue;
       a.x -= n[0] * depth * wa / (wa + wc); a.y -= n[1] * depth * wa / (wa + wc); a.z -= n[2] * depth * wa / (wa + wc);
       c.x += n[0] * depth * wc / (wa + wc); c.y += n[1] * depth * wc / (wa + wc); c.z += n[2] * depth * wc / (wa + wc);
-      const closing = (c.vx - a.vx) * n[0] + (c.vy - a.vy) * n[1] + (c.vz - a.vz) * n[2];
       if (closing < 0) {
-        const e = Math.min(sa.restitution, sc.restitution), j = -(1 + e) * closing / (wa + wc);
+        const e = -closing < BOUNCE_MIN ? 0 : Math.min(sa.restitution, sc.restitution), j = -(1 + e) * closing / (wa + wc);
         a.vx -= j * wa * n[0]; a.vy -= j * wa * n[1]; a.vz -= j * wa * n[2];
         c.vx += j * wc * n[0]; c.vy += j * wc * n[1]; c.vz += j * wc * n[2];
       }
@@ -212,6 +227,8 @@ function settle(b: Body, supported: boolean): void {
   b.rest = supported && slow ? Math.min(255, b.rest + 1) : 0;
   if (b.rest >= SLEEP_STEPS) { b.sleeping = true; b.vx = 0; b.vy = 0; b.vz = 0; }
 }
+
+function speedOf(b: Body): number { return Math.hypot(b.vx, b.vy, b.vz); }
 
 function clampSpeed(b: Body): void {
   const speed = Math.hypot(b.vx, b.vy, b.vz);

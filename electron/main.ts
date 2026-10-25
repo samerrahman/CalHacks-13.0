@@ -10,7 +10,8 @@ import { bindPresage } from './presageAdapter';
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Node's native env reader keeps secrets in the trusted main process.
-for (const name of ['.env', '.env.local']) { const p = path.join(root, name); if (existsSync(p)) process.loadEnvFile(p); }
+// loadEnvFile never overrides a set variable, so load in Vite's precedence: .env.local wins over .env.
+for (const name of ['.env.local', '.env']) { const p = path.join(root, name); if (existsSync(p)) process.loadEnvFile(p); }
 // Explicit QA gate: a configured account must not turn an offline smoke into
 // a live network/camera test. This mutates only the child process environment.
 const offline = process.env.HUSH_OFFLINE === '1';
@@ -83,8 +84,9 @@ async function createWindow(): Promise<void> {
   win.webContents.setWindowOpenHandler(({ url }) => {
     const target = new URL(url);
     const current = new URL(win.webContents.getURL());
-    if (target.protocol === current.protocol && target.host === current.host && target.pathname === current.pathname && target.hash.startsWith('#judge=') && BrowserWindow.getAllWindows().length < 3) {
-      const judge = new BrowserWindow({ width: 1100, height: 800, title: 'HUSH · Judge trace', backgroundColor: '#071114', webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
+    const watch = target.hash.startsWith('#watch=');
+    if (target.protocol === current.protocol && target.host === current.host && target.pathname === current.pathname && (watch || target.hash.startsWith('#judge=')) && BrowserWindow.getAllWindows().length < 3) {
+      const judge = new BrowserWindow({ width: 1100, height: 800, title: watch ? 'HUSH · Spectator' : 'HUSH · Judge trace', backgroundColor: '#071114', webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true } });
       restrictNavigation(judge);
       void judge.loadURL(target.href);
     }

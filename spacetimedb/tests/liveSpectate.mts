@@ -48,7 +48,7 @@ const displaced = settled.map(p => Math.hypot(p.x - spawn.get(p.slot)!.x, p.z - 
 check('props settle back to sleep within 4 s, displaced by the pound', settled.every(p => p.sleeping) && Math.max(...displaced) > 0.05, { maxDisplacementM: +Math.max(...displaced).toFixed(3), tick: Math.max(...settled.map(p => p.tick)) });
 const tickAfter = Math.max(...settled.map(p => p.tick));
 await wait(800);
-check('the scheduled tick stops once every prop sleeps', Math.max(...[...props.values()].map(p => p.tick)) === tickAfter);
+check("the world's tick freezes once every prop sleeps (verify the physics_tick row with owner SQL separately)", Math.max(...[...props.values()].map(p => p.tick)) === tickAfter);
 // Resending an acknowledged batch must not kick again.
 await player.reducers.appendTrace({ id, ownerCapability: owner, events: [{ id: 'e3', seq: 3, time: 30, type: 'SCARE', detail: 'impact' }], summary: summary(31) });
 await wait(500);
@@ -73,13 +73,20 @@ await player.reducers.stopVitals({ id, ownerCapability: owner });
 await wait(400);
 check('withdrawing consent deletes the row for the spectator', vitals === null);
 
-// 3. Owner knock and capability isolation.
+// 3. A share nobody refreshes (player closed the game) is swept instead of shown as live.
+await player.reducers.shareVitals({ id, ownerCapability: owner, sequence: 5, source: 'simulated', status: 'ready', quality: 'accepted', trend: 'STEADY', pulseBpm: 80, baselineBpm: 72 });
+await wait(500);
+const sharedAgain = vitals !== null;
+await wait(21_000);
+check('an abandoned heart-rate row is swept within 21 s', sharedAgain && vitals === null);
+
+// 4. Owner knock and capability isolation.
 await player.reducers.physicsKnock({ id, ownerCapability: owner, slot: 1 });
 await wait(300);
 check('an owner knock moves exactly that prop', props.get(1)?.sleeping === false && [...props.values()].filter(p => !p.sleeping).length >= 1);
 check('a spectator with the wrong capability receives no rows at all', strangerRows === 0);
 
-// 4. Removing the session cascades.
+// 5. Removing the session cascades.
 await player.reducers.removeSession({ id, ownerCapability: owner });
 await wait(600);
 check('removing the session removes trace and props from the spectator', trace === null && props.size === 0, { props: props.size });

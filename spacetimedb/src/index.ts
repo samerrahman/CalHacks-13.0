@@ -1,7 +1,7 @@
 import { schema, table, t, SenderError } from 'spacetimedb/server';
 import { ScheduleAt } from 'spacetimedb';
 import { applyTraceImpulses, dropPhysics, physicsBody, physicsExports, physicsTick, physicsWorld } from './physics';
-import { dropVitals, spectateExports, spectatorVitals } from './spectate';
+import { dropVitals, spectateExports, spectatorVitals, vitalsSweep } from './spectate';
 
 // All stored rows are private. The judge sees one capability-filtered view.
 const event = t.row('PublicEvent', {
@@ -26,7 +26,7 @@ const expiry = table({ name: 'expiry' }, {
   scheduledAt: t.scheduleAt(),
   sessionId: t.string(),
 });
-const db = schema({ session, expiry, physicsWorld, physicsBody, physicsTick, spectatorVitals });
+const db = schema({ session, expiry, physicsWorld, physicsBody, physicsTick, spectatorVitals, vitalsSweep });
 export default db;
 
 const DAY_MS = 86_400_000n;
@@ -94,7 +94,7 @@ export const appendTrace = db.reducer({
     lastSequence = item.seq;
   }
   ctx.db.session.id.update({ ...row, lastSequence, summary: s, events: next.slice(-100) });
-  applyTraceImpulses(ctx, row.id, next.filter(e => e.seq > row.lastSequence));
+  applyTraceImpulses(ctx, row.id, next.filter(e => e.seq > row.lastSequence), s.time);
 });
 
 export const removeSession = db.reducer({ id: t.string(), ownerCapability: t.string() }, (ctx, args) => {

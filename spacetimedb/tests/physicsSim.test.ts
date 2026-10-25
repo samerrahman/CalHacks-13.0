@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyImpulse, allAsleep, impulsesFromEvents, OBSTACLES, PROPS, ROOM, sanitizeBody, spawnBodies, stepBodies, type Body } from '../src/physicsSim';
+import { applyImpulse, allAsleep, forceSleep, impulsesFromEvents, OBSTACLES, PROPS, ROOM, sanitizeBody, spawnBodies, stepBodies, TICK_STEPS, type Body } from '../src/physicsSim';
 
 function run(seqs: number[], steps = 900): Body[] {
   let bodies = spawnBodies();
@@ -61,15 +61,15 @@ test('knocks only move their own slot and zero-strength impulses do nothing', ()
 
 test('only known sanitized events become impulses', () => {
   const impulses = impulsesFromEvents([
-    { seq: 1, type: 'SCARE', detail: 'impact' },
-    { seq: 2, type: 'SCARE', detail: 'breach' },
-    { seq: 3, type: 'ATTACK_COMMITTED', detail: '' },
-    { seq: 4, type: 'MONSTER_STEP', detail: 'from=3 to=1 step=-2' },
-    { seq: 5, type: 'MONSTER_STEP', detail: 'from=8 to=5 step=-3' },
-    { seq: 6, type: 'MONSTER_STEP', detail: 'to=0' },
-    { seq: 7, type: 'WRONG_INPUT', detail: 'WIRE' },
-    { seq: 8, type: 'SCARE', detail: '' },
-  ]);
+    { seq: 1, time: 10, type: 'SCARE', detail: 'impact' },
+    { seq: 2, time: 10, type: 'SCARE', detail: 'breach' },
+    { seq: 3, time: 10, type: 'ATTACK_COMMITTED', detail: '' },
+    { seq: 4, time: 10, type: 'MONSTER_STEP', detail: 'from=3 to=1 step=-2' },
+    { seq: 5, time: 10, type: 'MONSTER_STEP', detail: 'from=8 to=5 step=-3' },
+    { seq: 6, time: 10, type: 'MONSTER_STEP', detail: 'to=0' },
+    { seq: 7, time: 10, type: 'WRONG_INPUT', detail: 'WIRE' },
+    { seq: 8, time: 10, type: 'SCARE', detail: '' },
+  ], 10.5);
   assert.deepEqual(impulses.map(i => [i.seq, i.source]), [[1, 'DOOR_POUND'], [2, 'BREACH'], [3, 'DOOR_POUND'], [4, 'FOOTSTEPS']]);
   assert.ok(Math.abs(impulses[3]!.strength - 0.4) < 1e-9);
 });
@@ -82,4 +82,35 @@ test('corrupt stored bodies are reset or clamped back into the room', () => {
   assert.equal(clamped.y, PROPS[0]!.radius);
   assert.equal(clamped.rest, 255);
   assert.throws(() => sanitizeBody({ ...mug!, slot: 99 }));
+});
+
+test('a backlog of old events is history, not a blast happening now', () => {
+  const events = [{ seq: 1, time: 30, type: 'SCARE', detail: 'impact' }, { seq: 2, time: 61, type: 'ATTACK_COMMITTED', detail: '' }];
+  assert.deepEqual(impulsesFromEvents(events, 62).map(i => i.seq), [2]);
+  assert.deepEqual(impulsesFromEvents(events, 90), []);
+});
+
+test('every breach and attack settles, so the server tick always stops', () => {
+  // Regression: two resting props a few millimetres apart used to wake each other forever.
+  for (const [source, count] of [['BREACH', 400], ['DOOR_POUND', 200]] as const) {
+    for (let seq = 1; seq <= count; seq++) {
+      let bodies = applyImpulse(spawnBodies(), { seq, source, strength: 1 }), ticks = 0;
+      while (!allAsleep(bodies) && ticks < 400) { bodies = stepBodies(bodies.map(sanitizeBody), TICK_STEPS); ticks++; }
+      assert.ok(allAsleep(bodies), `${source} seq ${seq} still awake after ${ticks} ticks`);
+    }
+  }
+});
+
+test('a fast prop landing on the rack by the wall rests on top instead of inside it', () => {
+  const [rack] = OBSTACLES.slice(1), r = PROPS[10]!.radius;
+  let bodies = spawnBodies().map(b => b.slot === 10 ? { ...b, x: ROOM.max[0] - r, y: rack!.max[1] + r + 0.001, vy: -6, sleeping: false, rest: 0 } : b);
+  bodies = stepBodies(bodies, 240);
+  const bolt = bodies[10]!;
+  assert.ok(bolt.y >= rack!.max[1] + r - 1e-3, `bolt y ${bolt.y} is below the rack top`);
+});
+
+test('forceSleep stops everything in place', () => {
+  const kicked = applyImpulse(spawnBodies(), { seq: 3, source: 'BREACH', strength: 1 });
+  const slept = forceSleep(stepBodies(kicked, 5));
+  assert.ok(allAsleep(slept) && slept.every(b => b.vx === 0 && b.vy === 0 && b.vz === 0));
 });

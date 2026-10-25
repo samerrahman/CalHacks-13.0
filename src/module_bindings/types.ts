@@ -82,6 +82,7 @@ export const PhysicsWorld = __t.object("PhysicsWorld", {
   lastEventSeq: __t.u32(),
   knocks: __t.u32(),
   lastKnockAtMs: __t.u64(),
+  lastImpulseTick: __t.u32(),
 });
 export type PhysicsWorld = __Infer<typeof PhysicsWorld>;
 
@@ -162,4 +163,10 @@ export const TraceSummary = __t.object("TraceSummary", {
   sensorAgeMs: __t.option(__t.u32()),
 });
 export type TraceSummary = __Infer<typeof TraceSummary>;
+
+export const VitalsSweep = __t.object("VitalsSweep", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+});
+export type VitalsSweep = __Infer<typeof VitalsSweep>;
 

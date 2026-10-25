@@ -1,7 +1,19 @@
 {
-  "what": "Server-authoritative prop physics and consented spectator vitals against a local SpacetimeDB 2.13 standalone server (127.0.0.1:3000, database hush-local). Not Maincloud.",
+  "what": "Server-authoritative prop physics and consented spectator vitals against a local SpacetimeDB 2.13 standalone server (127.0.0.1:3000, databases hush-local (first run) and hush-local-2 (after review fixes)). Not Maincloud.",
   "sensing": "SIMULATED development fixture (browser build has no native Presage). Labelled SIMULATED on the spectator page.",
-  "serverEndToEnd": {
+  "browser": {
+    "checkedAt": "2026-10-24",
+    "player": "http://127.0.0.1:5181 (npm run dev with VITE_SPACETIMEDB_HOST=ws://127.0.0.1:3000, VITE_SPACETIMEDB_DB_NAME=hush-local); trace sharing and the separate heart-rate consent turned on in the J panel; status read 'SpacetimeDB live trace'.",
+    "spectator": "http://localhost:5181/#watch=... (different origin, so no BroadcastChannel; data came only through SpacetimeDB). Page read 'Live \u00b7 SpacetimeDB', SIMULATED 72 BPM, 0 vs baseline, Holding steady, Stage 1 of 4, creature 16-17 of 24, exposure 13-14%, 'PROPS \u00b7 SPACETIMEDB PHYSICS' with all 12 props drawn.",
+    "staleness": "With the player tab hidden (game pauses), the spectator showed 'no update for 13 s' and dimmed the reading as held.",
+    "layout": "375x812: no horizontal scroll (scrollWidth 375 = clientWidth 375).",
+    "screenshots": [
+      "spectate-remote-desktop.jpg",
+      "spectate-remote-mobile.jpg"
+    ],
+    "notChecked": "A door pound seen in the browser (covered by the server end-to-end run instead); Electron desktop with live Presage; Maincloud."
+  },
+  "serverEndToEndBeforeReviewFixes": {
     "checkedAt": "2026-10-24T23:17:21.247Z",
     "server": "ws://127.0.0.1:3000",
     "database": "hush-local",
@@ -93,16 +105,107 @@
       }
     ]
   },
-  "browser": {
-    "checkedAt": "2026-10-24",
-    "player": "http://127.0.0.1:5181 (npm run dev with VITE_SPACETIMEDB_HOST=ws://127.0.0.1:3000, VITE_SPACETIMEDB_DB_NAME=hush-local); trace sharing and the separate heart-rate consent turned on in the J panel; status read 'SpacetimeDB live trace'.",
-    "spectator": "http://localhost:5181/#watch=... (different origin, so no BroadcastChannel; data came only through SpacetimeDB). Page read 'Live \u00b7 SpacetimeDB', SIMULATED 72 BPM, 0 vs baseline, Holding steady, Stage 1 of 4, creature 16-17 of 24, exposure 13-14%, 'PROPS \u00b7 SPACETIMEDB PHYSICS' with all 12 props drawn.",
-    "staleness": "With the player tab hidden (game pauses), the spectator showed 'no update for 13 s' and dimmed the reading as held.",
-    "layout": "375x812: no horizontal scroll (scrollWidth 375 = clientWidth 375).",
-    "screenshots": [
-      "spectate-remote-desktop.jpg",
-      "spectate-remote-mobile.jpg"
-    ],
-    "notChecked": "A door pound seen in the browser (covered by the server end-to-end run instead); Electron desktop with live Presage; Maincloud."
+  "serverEndToEnd": {
+    "checkedAt": "2026-10-25T00:18:51.134Z",
+    "server": "ws://127.0.0.1:3000",
+    "database": "hush-local-2",
+    "durationMs": 30299,
+    "passed": 15,
+    "failed": 0,
+    "results": [
+      {
+        "check": "first trace batch creates a resting 12-prop world visible to the spectator",
+        "ok": true,
+        "detail": {
+          "props": 12
+        }
+      },
+      {
+        "check": "SCARE impact wakes props and the server tick advances them",
+        "ok": true,
+        "detail": {
+          "moving": 12,
+          "tick": 7
+        }
+      },
+      {
+        "check": "props settle back to sleep within 4 s, displaced by the pound",
+        "ok": true,
+        "detail": {
+          "maxDisplacementM": 0.773,
+          "tick": 46
+        }
+      },
+      {
+        "check": "the world's tick freezes once every prop sleeps (verify the physics_tick row with owner SQL separately)",
+        "ok": true
+      },
+      {
+        "check": "a resent event batch does not re-apply its impulse",
+        "ok": true
+      },
+      {
+        "check": "no vitals row exists before the player opts in",
+        "ok": true
+      },
+      {
+        "check": "opted-in vitals reach the spectator, labelled simulated, without a server clock",
+        "ok": true,
+        "detail": {
+          "sequence": 1,
+          "source": "simulated",
+          "status": "ready",
+          "quality": "accepted",
+          "trend": "STEADY",
+          "pulseBpm": 83,
+          "baselineBpm": 72
+        }
+      },
+      {
+        "check": "an accepted reading without a pulse is rejected",
+        "ok": true
+      },
+      {
+        "check": "a wrong owner capability cannot write vitals",
+        "ok": true
+      },
+      {
+        "check": "a later reading replaces the row (latest value only)",
+        "ok": true,
+        "detail": {
+          "updates": 2
+        }
+      },
+      {
+        "check": "withdrawing consent deletes the row for the spectator",
+        "ok": true
+      },
+      {
+        "check": "an abandoned heart-rate row is swept within 21 s",
+        "ok": true
+      },
+      {
+        "check": "an owner knock moves exactly that prop",
+        "ok": true
+      },
+      {
+        "check": "a spectator with the wrong capability receives no rows at all",
+        "ok": true
+      },
+      {
+        "check": "removing the session removes trace and props from the spectator",
+        "ok": true,
+        "detail": {
+          "props": 0
+        }
+      }
+    ]
+  },
+  "ownerSqlAfterRun": {
+    "database": "hush-local-2",
+    "physics_tick": "0 rows (the 50 ms schedule deleted itself once every world slept or was removed)",
+    "vitals_sweep": "0 rows (the stale-vitals sweep deleted itself once no vitals rows remained)",
+    "physics_body": "0 rows (removeSession cascaded)",
+    "command": "spacetime --config-path <local cli.toml> sql -s http://127.0.0.1:3000 hush-local-2 \"SELECT * FROM physics_tick\" (and vitals_sweep, physics_body)"
   }
 }

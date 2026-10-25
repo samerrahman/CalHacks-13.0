@@ -13,12 +13,13 @@ export class LocalPhysics {
   private lastSeq = 0;
   private lastMs: number | null = null;
   private carryMs = 0;
-  ingest(events: readonly PhysicsEvent[]): void {
+  /** `nowGameSeconds` is the snapshot's game time; older events never push props. */
+  ingest(events: readonly PhysicsEvent[], nowGameSeconds: number): void {
     const newest = events.reduce((max, e) => Math.max(max, e.seq), 0);
     if (newest < this.lastSeq) this.reset(); // a restarted run numbers its events from 1 again
     const fresh = events.filter(e => e.seq > this.lastSeq);
     if (!fresh.length) return;
-    this.bodies = impulsesFromEvents(fresh).reduce(applyImpulse, this.bodies);
+    this.bodies = impulsesFromEvents(fresh, nowGameSeconds).reduce(applyImpulse, this.bodies);
     this.lastSeq = Math.max(this.lastSeq, newest);
   }
   advance(nowMs: number): PropView[] {

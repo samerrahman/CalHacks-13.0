@@ -77,11 +77,18 @@ test('a same-browser spectator follows the trace, vitals and an offline physics 
 
 test('local replay applies each event once and restarts with a new run', () => {
   const physics = new LocalPhysics();
-  physics.ingest([{ seq: 5, type: 'SCARE', detail: 'impact' }]);
+  physics.ingest([{ seq: 5, time: 40, type: 'SCARE', detail: 'impact' }], 40.1);
   physics.advance(0);
   const moving = physics.advance(500);
-  physics.ingest([{ seq: 5, type: 'SCARE', detail: 'impact' }]);
+  physics.ingest([{ seq: 5, time: 40, type: 'SCARE', detail: 'impact' }], 40.2);
   assert.deepEqual(physics.advance(500), moving, 'a resent event does not kick again');
-  physics.ingest([{ seq: 1, type: 'RUN_STARTED', detail: 'standard' }]);
+  physics.ingest([{ seq: 1, time: 0, type: 'RUN_STARTED', detail: 'standard' }], 0.1);
   assert.ok(physics.advance(500).every(p => p.sleeping), 'a lower sequence means a new run with fresh props');
+});
+
+test('a spectator joining mid-run does not replay the backlog as one blast', () => {
+  const physics = new LocalPhysics();
+  physics.ingest([{ seq: 3, time: 20, type: 'SCARE', detail: 'impact' }, { seq: 9, time: 70, type: 'ATTACK_COMMITTED', detail: '' }], 120);
+  physics.advance(0);
+  assert.ok(physics.advance(200).every(p => p.sleeping));
 });

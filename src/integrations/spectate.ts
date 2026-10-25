@@ -8,6 +8,8 @@ import { LocalPhysics, type PropView } from './physics';
 /** The only physiology a spectator receives, and only under the separate heart-rate consent:
  * the current accepted estimate in whole BPM, the frozen baseline and coarse labels. */
 export type SpectatorVitals = { source: 'presage' | 'simulated'; status: SensorView['status']; quality: SensorView['quality']; trend: Trend; pulseBpm: number | null; baselineBpm: number | null };
+/** Same threshold SpectateView uses to dim a reading as held. */
+const HELD_AFTER_MS = 5000;
 const wholeBpm = (value: number | null) => value === null || !Number.isFinite(value) ? null : Math.min(110, Math.max(40, Math.round(value)));
 
 export function spectatorVitals(sensor: SensorView): SpectatorVitals | null {
@@ -82,7 +84,7 @@ export class SpectateFeed {
   private localSnapshot(snapshot: TraceSnapshot): void {
     if (this.state.physics === 'spacetime' || !snapshot?.summary || !Array.isArray(snapshot.events)) return;
     const now = performance.now();
-    this.local.ingest(snapshot.events);
+    this.local.ingest(snapshot.events, snapshot.summary.time);
     const vitals = snapshot.vitals ?? null;
     this.emit({ trace: snapshot, traceReceivedAt: now, vitals, vitalsReceivedAt: vitals ? now : null, status: 'Live · same-browser local link' });
   }
@@ -93,21 +95,24 @@ export class SpectateFeed {
       this.client = connection;
       // View rows carry no client-side primary key, so one update arrives as a separate insert and
       // delete in server order. The cache is final when callbacks run, so always resync from it.
-      let traceKey: string | null = null, vitalsSequence: number | null = null;
+      // Rows already present when the subscription applies may belong to a player who left hours
+      // ago, so they count as held (SpectateView dims after 5 s) until a genuinely new update.
+      let traceKey: string | null = null, vitalsSequence: number | null = null, replaying = false;
+      const stamp = () => performance.now() - (replaying ? HELD_AFTER_MS + 1 : 0);
       const syncTrace = () => {
         const row = [...connection.db.judgeTrace.iter()][0];
         if (!row) { if (traceKey !== null) { traceKey = null; this.emit({ trace: null, vitals: null, status: 'The player stopped sharing or the session expired' }); } return; }
         const key = `${row.summary.time}:${row.events.at(-1)?.seq ?? 0}`;
         if (key === traceKey) return;
         traceKey = key;
-        this.emit({ physics: 'spacetime', trace: { seed: row.seed, mode: row.mode, summary: { ...row.summary, sensorAgeMs: row.summary.sensorAgeMs ?? null }, events: row.events, transport: 'spacetime' }, traceReceivedAt: performance.now(), status: 'Live · SpacetimeDB' });
+        this.emit({ physics: 'spacetime', trace: { seed: row.seed, mode: row.mode, summary: { ...row.summary, sensorAgeMs: row.summary.sensorAgeMs ?? null }, events: row.events, transport: 'spacetime' }, traceReceivedAt: stamp(), status: replaying ? 'Last known state · waiting for a live update' : 'Live · SpacetimeDB' });
       };
       const syncVitals = () => {
         const row = [...connection.db.spectatorVitalsFeed.iter()][0];
         if ((row?.sequence ?? null) === vitalsSequence) return;
         vitalsSequence = row?.sequence ?? null;
         const vitals = remoteVitals(row);
-        this.emit({ vitals, vitalsReceivedAt: vitals ? performance.now() : null });
+        this.emit({ vitals, vitalsReceivedAt: vitals ? stamp() : null });
       };
       const syncProps = () => {
         const next = new Map<number, { target: RemoteProp; shown: RemoteProp }>();
@@ -119,7 +124,11 @@ export class SpectateFeed {
       connection.db.spectatorVitalsFeed.onInsert(syncVitals); connection.db.spectatorVitalsFeed.onDelete(syncVitals);
       connection.db.physicsFeed.onInsert(syncProps); connection.db.physicsFeed.onDelete(syncProps);
       connection.subscriptionBuilder()
-        .onApplied(() => { syncTrace(); syncVitals(); syncProps(); })
+        .onApplied(() => {
+          // Also runs again after an automatic reconnect, where unchanged rows fire no callbacks.
+          replaying = true; syncTrace(); syncVitals(); syncProps(); replaying = false;
+          if (this.state.status.startsWith('SpacetimeDB reconnecting')) this.emit({ status: 'Reconnected · waiting for the next update' });
+        })
         .onError(() => this.emit({ status: 'SpacetimeDB feed unavailable · same-browser link only' }))
         .subscribe([capabilityQuery('judge_trace', id, capability), capabilityQuery('spectator_vitals_feed', id, capability), capabilityQuery('physics_feed', id, capability)]);
     } catch { this.emit({ status: 'SpacetimeDB unavailable · same-browser link only' }); }

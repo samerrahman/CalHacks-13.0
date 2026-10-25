@@ -9,14 +9,14 @@ Two separate opt-ins, both off at the start of every run, both in the J panel:
 1. **Share sanitized game events** (the existing trace consent). Creates the private session and the link. Without it there is nothing to watch.
 2. **Also share my live heart rate with spectators** (new, needs 1). Adds the current accepted pulse in whole BPM, the change from your frozen baseline, the coarse trend and signal quality. Turning it off withdraws it from the local link at once and deletes the database row. Turning off trace sharing or deleting the session removes everything.
 
-Anyone with the link can see what you share; the link is the capability. Each run creates a new session and link.
+Anyone with the link can see what you share; the link is the capability. Each run creates a new session and link. Until the SpacetimeDB session exists the button reads "Copy same-browser link". A friend on another machine needs a page they can open: set `VITE_SPECTATE_ORIGIN` to a hosted web build (any static host); the desktop app's `hush://` page and a loopback dev server cannot be opened elsewhere, so without it the copy button is disabled there. "Open spectator view" works locally in both builds.
 
 ## What a spectator receives, and what never leaves
 
 | Shared (with consent 2) | Never shared |
 | --- | --- |
 | Pulse in whole BPM (only while accepted and fresh), frozen baseline in whole BPM | Camera frames, preview images or recordings |
-| Trend label (UNKNOWN, STEADY, ELEVATED, RECOVERED), quality (accepted, rejected, unknown) | Pulse history (the server keeps one latest row, no history) |
+| Trend label (UNKNOWN, STEADY, ELEVATED, RECOVERED), quality (accepted, rejected, unknown) | Pulse history (the server keeps one latest row, no history; a row not refreshed for 15 s is swept) |
 | Source: `presage` or `simulated`; simulated shows **SIMULATED · not a real heart rate** | Measurement clocks, native confidence, validation codes, diagnostics |
 | Capture status (calibrating, ready, paused…) | Puzzle answers, wire solutions, RNG state |
 
@@ -26,7 +26,8 @@ The game reducer never reads anything spectators do; spectators cannot send anyt
 
 - **Player:** `TraceBridge` (`src/integrations/client.ts`) already publishes a sanitized snapshot every ~90 ms to a BroadcastChannel and appends the trace to SpacetimeDB at most once a second. With consent 2 it adds `vitals` (`spectatorVitals()` in `src/integrations/spectate.ts`) to the local snapshot and calls `shareVitals` at most once a second. Nothing here runs in the game step or waits on the network.
 - **Spectator:** `#watch=<access>` routes to `src/ui/SpectateView.tsx`, which reads `SpectateFeed`. It subscribes to three capability-checked views, `judge_trace`, `spectator_vitals_feed` and `physics_feed`, all keyed by the session ID and the judge capability in the link. Without SpacetimeDB (or on the same browser) it falls back to the BroadcastChannel and replays prop physics locally from the same public events. The page labels which transport and physics source it is showing.
-- **Freshness:** the spectator times readings on its own clock from when each update arrived (never a remote clock). After 5 s without an update the reading is dimmed and marked held; after 15 s it is hidden.
+- **Freshness:** the spectator times readings on its own clock from when each update arrived (never a remote clock). After 5 s without an update the reading is dimmed and marked held; after 15 s it is hidden. Rows already present when the page subscribes (possibly from a player who left) start out held until a genuinely new update arrives. On the server, a share nobody refreshes for 15 s (closed tab, crash, pause) is swept; a closing game also withdraws its row on a best-effort basis.
+- **Revoking:** the client treats the row as possibly present from the moment a share is sent, and retries `stopVitals` until one lands after its last share, including a revoke during an in-flight share, during a reconnect or after a failed stop. Deleting the session detaches the connection first, so a restart in the same click cannot cancel the delete.
 - **Server:** `spacetimedb/src/spectate.ts` holds the `spectator_vitals` table, `shareVitals` / `stopVitals` and the `spectator_vitals_feed` view; `removeSession` and the 24-hour expiry delete the row.
 
 View rows have no client-side primary key, so the SDK delivers one update as a separate insert and delete callback, in server order. `SpectateFeed` (and the judge screen) therefore re-read the settled client cache on every callback instead of trusting the last callback.
@@ -56,7 +57,8 @@ In the game: Operator settings → Pulse input SIMULATED (browser) → Share san
 ## Verified
 
 - `npm run check`: unit tests for the vitals projection, remote revalidation, link parsing, consent on/off over the local link, the offline spectator feed and the local physics replay (`src/integrations/spectate.test.ts`).
-- [Local SpacetimeDB evidence](qa/spectate-physics-local-spacetime.json): 14/14 server checks (`npm run spacetime:e2e`) and a browser run with the spectator on a separate origin. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
+- `src/integrations/traceBridge.test.ts`: the revoke and restart races with a mocked connection.
+- [Local SpacetimeDB evidence](qa/spectate-physics-local-spacetime.json): 15/15 server checks (`npm run spacetime:e2e`, including the 15 s sweep), owner SQL showing both schedules stopped, and a browser run with the spectator on a separate origin. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
 
 ## Not verified / not done
 

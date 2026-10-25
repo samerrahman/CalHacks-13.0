@@ -90,7 +90,12 @@ export class TraceBridge {
   private connecting = false;
   private generation = 0;
   private vitalsConsent = false;
+  /** The server may hold our vitals row: set before a share is sent, cleared only by a stop that
+   * no later share overtook. A pending withdrawal is retried until it succeeds. */
   private vitalsRemote = false;
+  private withdrawPending = false;
+  private stopBusy = false;
+  private lastStopTry = -Infinity;
   private vitalsBusy = false;
   private vitalsSequence = 0;
   private lastVitalsWrite = -Infinity;
@@ -109,7 +114,7 @@ export class TraceBridge {
       if (generation !== this.generation || this.disposed) return;
       this.client = await connectSpacetime(
         () => { if (!this.disposed) this.status = 'SpacetimeDB reconnecting · local trace continues'; },
-        () => { if (!this.disposed && this.connected) this.status = 'SpacetimeDB reconnected · live trace resumes'; },
+        () => { if (!this.disposed && this.connected) { this.status = 'SpacetimeDB reconnected · live trace resumes'; this.retryWithdraw(); } },
       );
       if (generation !== this.generation || this.disposed) return;
       this.sessionId = token();
@@ -118,6 +123,7 @@ export class TraceBridge {
       this.connected = true; activeTrace = this;
       this.access = { channel: channelName, sessionId: this.sessionId, capability: this.judge, host: spacetimeConfig.uri, database: spacetimeConfig.database };
       this.status = 'SpacetimeDB connected · consenting sanitized trace';
+      globalThis.addEventListener?.('pagehide', this.onPageHide);
     } catch {
       this.status = 'SpacetimeDB unavailable · local trace only';
       if (this.client && this.sessionId) {
@@ -131,19 +137,40 @@ export class TraceBridge {
   judgeUrl(): string | null { return this.access ? `${location.origin}${location.pathname}#judge=${encodeURIComponent(btoa(JSON.stringify(this.access)))}` : null; }
   /** Read-only friend link: same capability as the second screen, friendlier page. */
   spectateUrl(): string | null { return this.access ? `${location.origin}${location.pathname}#watch=${encodeURIComponent(btoa(JSON.stringify(this.access)))}` : null; }
+  /** The link to send a friend. A loopback dev server or the desktop app's hush:// page cannot be
+   * opened on another machine, so a hosted web build's public origin (VITE_SPECTATE_ORIGIN) wins. */
+  shareableSpectateUrl(): string | null {
+    if (!this.access) return null;
+    const hosted = String(import.meta.env?.VITE_SPECTATE_ORIGIN ?? '').replace(/\/+$/, '');
+    const base = /^https?:\/\/[^/]+$/.test(hosted) ? `${hosted}/` : /^https?:$/.test(location.protocol) ? `${location.origin}${location.pathname}` : null;
+    return base && `${base}#watch=${encodeURIComponent(btoa(JSON.stringify(this.access)))}`;
+  }
+  /** True once the SpacetimeDB session exists; before that a link reaches only this browser. */
+  get remoteReady(): boolean { return !!this.access?.sessionId; }
   get sharingVitals(): boolean { return this.vitalsConsent; }
   /** Separate, revocable consent for the live heart rate. It needs trace sharing; turning it
    * off withdraws vitals from the local link at once and deletes the remote row. */
   setVitalsConsent(consent: boolean): boolean {
     this.vitalsConsent = consent && !!this.channel && !this.disposed;
-    if (!this.vitalsConsent) this.withdrawVitals();
+    if (this.vitalsConsent) this.withdrawPending = false; else this.withdrawVitals();
     return this.vitalsConsent;
   }
   private withdrawVitals(): void {
     if (this.channel && this.lastSnapshot?.vitals) { this.lastSnapshot = { ...this.lastSnapshot, vitals: null }; this.channel.postMessage(this.lastSnapshot); }
-    if (!this.vitalsRemote || !this.client?.isActive || !this.sessionId) return;
-    const generation = this.generation;
-    void this.client.reducers.stopVitals({ id: this.sessionId, ownerCapability: this.owner }).then(() => { if (generation === this.generation) this.vitalsRemote = false; }).catch(() => { if (generation === this.generation) this.status = 'Heart rate withdrawn locally · remote row is deleted with the session'; });
+    if (this.vitalsRemote) this.withdrawPending = true;
+    this.retryWithdraw();
+  }
+  /** Sends stopVitals until one lands after our last share: covers a revoke while a share is in
+   * flight, during a reconnect, or after a failed stop. */
+  private retryWithdraw(): void {
+    if (!this.withdrawPending || this.vitalsConsent) { this.withdrawPending = this.withdrawPending && !this.vitalsConsent; return; }
+    if (this.stopBusy || !this.client?.isActive || !this.sessionId || performance.now() - this.lastStopTry < 1000) return;
+    this.stopBusy = true; this.lastStopTry = performance.now();
+    const generation = this.generation, sharedThrough = this.vitalsSequence;
+    void this.client.reducers.stopVitals({ id: this.sessionId, ownerCapability: this.owner })
+      .then(() => { if (generation === this.generation && this.vitalsSequence === sharedThrough) { this.vitalsRemote = false; this.withdrawPending = false; } })
+      .catch(() => { if (generation === this.generation) this.status = 'Heart rate withdrawn locally · remote deletion pending, retrying'; })
+      .finally(() => { this.stopBusy = false; if (this.withdrawPending && !this.disposed) setTimeout(() => this.retryWithdraw(), 1100); });
   }
   publish(state: GameState, sensor: SensorView): void {
     if (!this.channel || this.disposed) return;
@@ -160,28 +187,45 @@ export class TraceBridge {
     void this.client.reducers.appendTrace({ id: this.sessionId, ownerCapability: this.owner, events, summary: { ...snapshot.summary, sensorAgeMs: snapshot.summary.sensorAgeMs ?? undefined } }).then(() => { if (generation === this.generation && this.connected) { this.sequence = events.at(-1)?.seq ?? this.sequence; this.status = 'SpacetimeDB live trace'; } }).catch(() => { if (generation === this.generation && this.connected) this.status = 'SpacetimeDB disconnected · retrying trace'; }).finally(() => { this.busy = false; });
   }
   private publishVitals(vitals: SpectatorVitals | null): void {
-    if (!this.vitalsConsent || !this.connected || !this.client?.isActive || !this.sessionId || this.vitalsBusy || performance.now() - this.lastVitalsWrite < 1000) return;
-    if (!vitals) { if (this.vitalsRemote) this.withdrawVitals(); return; }
-    this.vitalsBusy = true; this.lastVitalsWrite = performance.now();
+    this.retryWithdraw();
+    // Without a reading (manual play) nothing is sent; the server sweeps a stale row within 15 s.
+    if (!vitals || !this.vitalsConsent || !this.connected || !this.client?.isActive || !this.sessionId || this.vitalsBusy || performance.now() - this.lastVitalsWrite < 1000) return;
+    this.vitalsBusy = true; this.lastVitalsWrite = performance.now(); this.vitalsRemote = true;
     const generation = this.generation;
     void this.client.reducers.shareVitals({ id: this.sessionId, ownerCapability: this.owner, sequence: ++this.vitalsSequence, source: vitals.source, status: vitals.status, quality: vitals.quality, trend: vitals.trend, pulseBpm: vitals.pulseBpm ?? undefined, baselineBpm: vitals.baselineBpm ?? undefined })
-      .then(() => { if (generation === this.generation && this.vitalsConsent) this.vitalsRemote = true; else if (generation === this.generation) this.withdrawVitals(); })
+      .then(() => { if (generation === this.generation && !this.vitalsConsent) this.withdrawVitals(); })
       .catch(() => { /* The next reading retries; the local link is unaffected. */ })
       .finally(() => { this.vitalsBusy = false; });
   }
   async deleteSession(): Promise<void> {
     // Stop local publication immediately even if the remote deletion is offline.
-    this.vitalsConsent = false;
+    this.vitalsConsent = false; this.withdrawPending = false;
     if (this.channel && this.lastSnapshot?.vitals) this.channel.postMessage({ ...this.lastSnapshot, vitals: null });
     this.generation++; this.connected = false;
     this.channel?.close(); this.channel = null; this.access = null;
     if (activeTrace === this) activeTrace = null;
-    if (this.client && this.sessionId) await this.client.reducers.removeSession({ id: this.sessionId, ownerCapability: this.owner });
-    this.sessionId = null;
-    this.client?.disconnect(); this.client = null;
+    globalThis.removeEventListener?.('pagehide', this.onPageHide);
+    // Detach first: a restart disposes this bridge in the same click, and must not cancel the delete.
+    const client = this.client, id = this.sessionId;
+    this.client = null; this.sessionId = null;
+    try { if (client && id) await client.reducers.removeSession({ id, ownerCapability: this.owner }); }
+    finally { client?.disconnect(); }
     this.status = 'Session deleted';
   }
-  async dispose(): Promise<void> { this.disposed = true; this.vitalsConsent = false; if (this.channel && this.lastSnapshot?.vitals) this.channel.postMessage({ ...this.lastSnapshot, vitals: null }); this.generation++; this.channel?.close(); this.channel = null; if (activeTrace === this) activeTrace = null; this.client?.disconnect(); this.connected = false; }
+  async dispose(): Promise<void> {
+    this.disposed = true; this.vitalsConsent = false;
+    if (this.channel && this.lastSnapshot?.vitals) this.channel.postMessage({ ...this.lastSnapshot, vitals: null });
+    this.generation++; this.channel?.close(); this.channel = null; if (activeTrace === this) activeTrace = null;
+    globalThis.removeEventListener?.('pagehide', this.onPageHide);
+    const client = this.client; this.client = null; this.connected = false;
+    if (!client) return;
+    // Best effort: a closing game withdraws its heart rate now; the server sweep covers crashes.
+    if (this.vitalsRemote && this.sessionId && client.isActive) {
+      let closed = false; const close = () => { if (!closed) { closed = true; client.disconnect(); } };
+      void client.reducers.stopVitals({ id: this.sessionId, ownerCapability: this.owner }).then(close, close); setTimeout(close, 1500);
+    } else client.disconnect();
+  }
+  private onPageHide = (): void => { if (this.vitalsRemote && this.sessionId && this.client?.isActive) void this.client.reducers.stopVitals({ id: this.sessionId, ownerCapability: this.owner }).catch(() => {}); };
 }
 
 export function subscribeJudge(listener: (snapshot: TraceSnapshot) => void, reportStatus: (status: string) => void): () => void {

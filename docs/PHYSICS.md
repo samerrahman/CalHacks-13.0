@@ -33,10 +33,10 @@ Offline (no `VITE_SPACETIMEDB_DB_NAME`, or the server is unreachable): the spect
 
 | Name | Kind | Contents / rule |
 | --- | --- | --- |
-| `physics_world` | private table | One row per session: `tick`, `awake`, `lastEventSeq` (trace events already applied, so a resent batch never double-kicks), `knocks`, `lastKnockAtMs`. |
+| `physics_world` | private table | One row per session: `tick`, `awake`, `lastEventSeq` (trace events already applied, so a resent batch never double-kicks), `lastImpulseTick`, `knocks`, `lastKnockAtMs`. |
 | `physics_body` | private table | One row per prop: `sessionId` (btree), `slot`, position, velocity, `rest` counter, `sleeping`. Static properties (kind, radius, mass, restitution, friction) live in code by slot. |
 | `physics_tick` | private scheduled table | At most one repeating 50 ms row. Inserted when something wakes; `physicsStep` deletes it when every world sleeps, so an idle database costs nothing. |
-| `physicsStep` | scheduled reducer | Steps each awake world 3 × 1/60 s, writes only bodies that moved, and garbage-collects worlds whose session is gone. |
+| `physicsStep` | scheduled reducer | Steps each awake world 3 × 1/60 s, writes only bodies that moved, and garbage-collects worlds whose session is gone. A world still awake 600 ticks (30 s) after its last impulse is put to sleep, so the schedule row is always deleted eventually. |
 | `physicsKnock(id, ownerCapability, slot)` | reducer | Owner-only flick of one prop (four a second at most). The hook for a later "knock it off the desk as a distraction" interaction; nothing calls it yet. |
 | `physics_feed(id, judgeCapability)` | public view | The session's props (`slot` primary key, kind, radius, position, sleeping, tick) when the capability matches; otherwise nothing. |
 
@@ -52,14 +52,15 @@ Changes to the contract file `spacetimedb/src/index.ts` (user-approved 2026-10-2
 | `ATTACK_COMMITTED` | `DOOR_POUND` | 1.0 |
 | `MONSTER_STEP … to=0/1/2` | `FOOTSTEPS` | 0.6 / 0.4 / 0.2 |
 
-Every viewer already sees these events; the map uses only their sanitized type and detail.
+Every viewer already sees these events; the map uses only their sanitized type, detail and game time. Only events from the last 2 game seconds of a batch push props, so a backlog (a world created mid-run, a reconnect resending 30 s of events, a spectator joining late) never fires as one stacked blast.
 
 ## Simulation model (`physicsSim.ts`)
 
 - **Bodies:** 12 spheres (radius 1.5–4.5 cm, mass 20–400 g) on the workdesk, the floor and the machine rack, at the render scene's coordinates in metres, so `src/render` could draw them in place later.
 - **Static colliders:** the room as an inside box (floor, ceiling, four walls) plus outside boxes for the workdesk (top at 0.92 m) and machine rack. These are approximate proxies for the GLB geometry, not mesh colliders.
 - **Step:** semi-implicit Euler at 60 Hz with gravity, light air drag and a 12 m/s speed cap. Sphere–box contacts use the closest point (or the nearest face when the centre is inside), with restitution, tangential friction and no bounce below 0.35 m/s. Sphere–sphere contacts use mass-weighted separation and impulse exchange.
-- **Sleeping:** a supported body slower than 5 cm/s for 30 steps sleeps; a moving neighbour within 1 cm wakes it, so stacks don't float. A door pound settles in about 2 s, a breach in about 3 s.
+- **Sleeping:** a supported body slower than 5 cm/s for 30 steps sleeps. A sleeper wakes only for a real hit (a neighbour moving faster than 5 cm/s, or one pressing into it); otherwise it acts as static, so two touching props can both sleep and a stack still wakes when its support slides away. A door pound settles in about 2 s, a breach in about 3 s; a regression test sweeps 400 breach and 200 pound sequence numbers and requires every one to settle.
+- **Boxes against walls:** a prop whose centre ends up inside the rack or desk leaves through the nearest face that is not flush with a room wall or the floor.
 - **Impulses:** structure-borne shake reaches every prop; the push away from the door falls off over 4.5 m. A breach throws the bottle by the door about 2.7 m and makes desk items hop 5–11 cm; footsteps rattle things by a few centimetres.
 
 ## Cost and bounds
@@ -68,9 +69,9 @@ Every viewer already sees these events; the map uses only their sanitized type a
 
 ## Verification
 
-- `spacetimedb/tests/physicsSim.test.ts`: resting props stay asleep, a pound wakes them and everything settles back to sleep inside the room and outside obstacles, identical inputs give identical frames, the event map accepts only the listed events, and corrupt rows are clamped.
+- `spacetimedb/tests/physicsSim.test.ts`: resting props stay asleep, a pound wakes them and everything settles back to sleep inside the room and outside obstacles, identical inputs give identical frames, the event map accepts only recent listed events, every breach/pound settles (the sleep-loop regression), a fast prop by the wall lands on the rack instead of inside it, and corrupt rows are clamped. Both regressions fail on the first version of the sim.
 - The module typechecks with the module's own `tsconfig`, `spacetime build` succeeds, and `spacetime generate` produces the bindings in `src/module_bindings/`.
-- Against a local SpacetimeDB 2.13 server (`npm run spacetime:e2e`, [evidence](qa/spectate-physics-local-spacetime.json)): the first trace batch creates a resting 12-prop world; a `SCARE impact` wakes all 12 and the scheduled tick advances them; they settle asleep after 46 ticks (2.3 s), up to 0.77 m from where they started, and the tick row then stops; a resent batch does not kick again; an owner knock moves its prop; a wrong capability sees no rows; removing the session deletes the props.
+- Against a local SpacetimeDB 2.13 server (`npm run spacetime:e2e`, [evidence](qa/spectate-physics-local-spacetime.json)): the first trace batch creates a resting 12-prop world; a `SCARE impact` wakes all 12 and the scheduled tick advances them; they settle asleep after 46 ticks (2.3 s), up to 0.77 m from where they started; owner SQL afterwards finds no `physics_tick` row; a resent batch does not kick again; an owner knock moves its prop; a wrong capability sees no rows; removing the session deletes the props.
 - In the browser, a spectator on a separate origin drew the server's props (`PROPS · SPACETIMEDB PHYSICS`). A door pound was not observed in the browser run; the server check above covers it.
 
 ## Not done yet
