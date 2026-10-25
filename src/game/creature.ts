@@ -92,7 +92,9 @@ export function updateClues(state: GameState, _dt: number): void {
   const transient = state.equipment === 'quiet' ? 0 : Math.min(1, state.transients.reduce((sum, s) => sum + s.strength * clamp(1 - (state.time - s.at) / s.duration), 0));
   const physiology = state.sensor.source !== 'manual' && state.sensor.quality === 'accepted' && state.sensor.trend === 'ELEVATED' ? config.threat.maximumPhysiologyClue : 0;
   state.clues = { machinery, transient, physiology };
-  if (Math.max(machinery, transient) >= config.threat.audibleEvidenceMinimumStrength) { c.lastAudibleAt = state.time; c.lastAudibleStrength = Math.max(machinery, transient); }
+  // Talking above a whisper on co-op voice chat is heard too, even with the equipment off.
+  const voice = state.voice?.loud && state.status === 'playing' ? config.voice.strength : 0;
+  if (Math.max(machinery, transient, voice) >= config.threat.audibleEvidenceMinimumStrength) { c.lastAudibleAt = state.time; c.lastAudibleStrength = Math.max(machinery, transient, voice); }
   c.confidence = clamp(state.danger / 100);
 }
 /** Named exposure contributions. The HUD explains the same numbers the movement odds use. */
@@ -106,7 +108,8 @@ export function updateDanger(state: GameState, dt: number): void {
   // and it cools whenever the room is quiet, fastest while isolated.
   const cooling = config.danger.pressureDecayPerSecond * (state.equipment === 'quiet' ? config.danger.quietCoolingMultiplier : 1);
   const machinery = state.equipment === 'on' && state.mode !== 'tutorial' ? state.clues.machinery * config.danger.machineryPressurePerSecond : 0;
-  state.pressure = clamp(state.pressure + (machinery - cooling) * dt, 0, Math.max(config.danger.pressureMaximum, state.pressure));
+  const voice = state.voice?.loud && state.mode === 'coop' ? config.voice.pressurePerSecond + cooling : 0; // talking outweighs any cooling
+  state.pressure = clamp(state.pressure + (machinery + voice - cooling) * dt, 0, Math.max(config.danger.pressureMaximum, state.pressure));
   const part = dangerParts(state);
   state.danger = state.mode === 'tutorial' ? 0 : clamp(part.base + part.time + part.noise + part.pulse + part.isolation, 0, 100);
 }

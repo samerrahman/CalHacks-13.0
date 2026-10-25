@@ -19,18 +19,18 @@ const PIPE: [number, string][] = [[1, 'M20 20V0'], [2, 'M20 20H40'], [4, 'M20 20
 export function ConduitTask({ g, send, coop = g.mode === 'coop' }: { g: GameState; send: Send; coop?: boolean }) {
   const r = g.tasks.routing, lit = coop ? new Set<number>() : energizedTiles(r), joined = !coop && conduitConnected(r);
   return <>
-    <p>{coop ? 'The relay conduit is broken and its power reading is dead. Your friend\'s manual shows the solved route: describe a tile by row and column, rotate it as they say, then press T. Rotating is quiet; engaging a broken conduit arcs loudly.' : 'The relay conduit is broken. Click tiles to rotate them until the inlet on the left joins the outlet on the right, then press T. Rotating is quiet; engaging a broken conduit arcs loudly. Powered pipe glows.'}</p>
+    <p>{coop ? 'The relay conduit is broken and its power reading is dead. Tell your friend which rows IN and OUT are on: their manual has a solved board for each. Then describe tiles by row and column and rotate them as they say, and press T. Rotating is quiet; engaging a broken conduit arcs loudly.' : 'The relay conduit is broken. Click tiles to rotate them until the inlet on the left joins the outlet on the right, then press T. Rotating is quiet; engaging a broken conduit arcs loudly. Powered pipe glows.'}</p>
     <div className="conduit" style={{ gridTemplateColumns: `14px repeat(${r.size}, 1fr) 14px` }}>
       {Array.from({ length: r.size }, (_, row) => <div key={row} className="conduit-row">
-        <i className={row === r.start ? 'conduit-port in' : 'conduit-port'} aria-hidden="true"/>
+        <i className={row === r.start ? 'conduit-port in' : 'conduit-port'} aria-hidden="true">{coop && row === r.start ? <b>IN {row + 1}</b> : null}</i>
         {Array.from({ length: r.size }, (_, col) => { const tile = row * r.size + col, open = tileOpenings(r.kinds[tile]!, r.turns[tile]!);
           return <button key={tile} className={`conduit-tile ${lit.has(tile) ? 'lit' : ''}`} title={coop ? `Row ${row + 1}, column ${col + 1}` : undefined} aria-label={`Conduit tile row ${row + 1} column ${col + 1}${lit.has(tile) ? ', powered' : ''}`} onClick={() => send({ type: 'rotate', tile })}>
             <svg viewBox="0 0 40 40" aria-hidden="true">{PIPE.filter(([bit]) => open & bit).map(([bit, d]) => <path key={bit} d={d}/>)}{open ? <circle cx="20" cy="20" r="4.5"/> : null}</svg></button>; })}
-        <i className={row === r.end ? `conduit-port out ${joined ? 'joined' : ''}` : 'conduit-port'} aria-hidden="true"/>
+        <i className={row === r.end ? `conduit-port out ${joined ? 'joined' : ''}` : 'conduit-port'} aria-hidden="true">{coop && row === r.end ? <b>OUT {row + 1}</b> : null}</i>
       </div>)}
     </div>
     <div className="terminal-actions"><button className="transmit" onClick={() => send({ type: 'engage' })}><kbd>T</kbd> Engage relay</button></div>
-    <div className="task-progress"><span>Conduit {r.round + 1} / {r.rounds}</span><span>{coop ? 'NO POWER READING · ASK THE MANUAL' : joined ? 'CONNECTED · PRESS T' : 'NOT CONNECTED'}</span></div>
+    <div className="task-progress"><span>Conduit {r.round + 1} / {r.rounds}{coop ? ` · IN row ${r.start + 1} · OUT row ${r.end + 1}` : ''}</span><span>{coop ? 'NO POWER READING · ASK THE MANUAL' : joined ? 'CONNECTED · PRESS T' : 'NOT CONNECTED'}</span></div>
   </>;
 }
 
@@ -54,15 +54,17 @@ export function FaultTask({ g, send, coop = g.mode === 'coop' }: { g: GameState;
 
 export function LocateTerminal({ g }: { g: GameState }) {
   const l = g.tasks.locate;
-  return <><p>{g.mode === 'coop' ? `The emitter needs to know where it is, but your radar is dark. Your friend sees it: ask which ring, then mark it at the monitor, ${l.required} times. It keeps moving, and wrong marks are loud.` : `The emitter needs to know where it is. Go to the radar and read it. Mark which ring it is in, ${l.required} times. It keeps moving, and wrong marks are loud.`}</p>
+  return <><p>{g.mode === 'coop' ? `The emitter needs to know where it is, but your radar is dark. Your friend can see how far out it is, and their manual says which key stands for that range this run. Ask, then mark it at the radar, ${l.required} times. It keeps moving, and wrong marks are loud.` : `The emitter needs to know where it is. Go to the radar and read it. Mark which ring it is in, ${l.required} times. It keeps moving, and wrong marks are loud.`}</p>
     <div className="task-progress"><span>{l.marks} / {l.required} positions marked</span><span>MONITOR · KEYS 1–4</span></div></>;
 }
 
 export function LocatePanel({ g, send }: { g: GameState; send: Send }) {
   const l = g.tasks.locate, wait = Math.max(0, l.lastMarkAt + config.tasks.locate.spacingSeconds - g.time);
   return <div className="locate-panel" data-testid="locate-panel">
-    <div className="locate-heading"><span>MARK ITS POSITION · {l.marks} / {l.required}</span><small>{wait > 0 ? `Marker recharging · ${wait.toFixed(1)}s` : g.mode === 'coop' ? 'Ask your friend which ring, then mark' : 'Read the sonar, then mark'}</small></div>
-    <div className="locate-buttons">{SECTORS.map(([sector, label, detail], i) => <button key={sector} disabled={wait > 0} onClick={() => send({ type: 'mark', sector })}><kbd>{i + 1}</kbd><span>{label}</span><small>{detail}</small></button>)}</div>
+    <div className="locate-heading"><span>MARK ITS POSITION · {l.marks} / {l.required}</span><small>{wait > 0 ? `Marker recharging · ${wait.toFixed(1)}s` : g.mode === 'coop' ? 'Ask your friend which key, then mark' : 'Read the sonar, then mark'}</small></div>
+    {/* Co-op: the keys stand for rings in a per-run order only the friend's manual gives. */}
+    <div className="locate-buttons">{g.mode === 'coop' ? [1, 2, 3, 4].map(key => <button key={key} disabled={wait > 0} onClick={() => send({ type: 'input', value: key })}><kbd>{key}</kbd><span>Key {key}</span><small>Ask the manual</small></button>)
+      : SECTORS.map(([sector, label, detail], i) => <button key={sector} disabled={wait > 0} onClick={() => send({ type: 'mark', sector })}><kbd>{i + 1}</kbd><span>{label}</span><small>{detail}</small></button>)}</div>
   </div>;
 }
 

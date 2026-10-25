@@ -14,9 +14,28 @@ export function useCameraShare(access: () => CameraSignalAccess | null, stream: 
   const [voice, setVoiceState] = useState<{ on: boolean; mic: 'off' | 'opening' | 'live' | 'denied'; friends: number }>({ on: false, mic: 'off', friends: 0 });
   const publishVoice = useCallback((patch: Partial<typeof voice>) => setVoiceState(v => ({ ...v, ...patch, friends: friends.current.size })), []);
 
+  // The player's own mic level for the co-op whisper rule (never the friends' voices): an analyser on the open mic.
+  const meter = useRef<{ context: AudioContext; analyser: AnalyserNode; data: Float32Array<ArrayBuffer> } | null>(null);
+  const closeMeter = () => { const m = meter.current; meter.current = null; if (m) void m.context.close().catch(() => undefined); };
   const releaseMic = useCallback(() => {
     mic.current?.getTracks().forEach(t => { try { t.stop(); } catch { /* already stopped */ } });
-    mic.current = null; share.current?.refreshMic();
+    mic.current = null; share.current?.refreshMic(); closeMeter();
+  }, []);
+  /** Loudness of the player's own mic, 0 (silent) to 1 (shouting), or 0 with voice off. */
+  const micLevel = useCallback((): number => {
+    const stream = mic.current;
+    if (!stream || !wantVoice.current || typeof AudioContext === 'undefined') return 0;
+    if (!meter.current) {
+      try {
+        const context = new AudioContext(), analyser = context.createAnalyser(); analyser.fftSize = 1024;
+        context.createMediaStreamSource(stream).connect(analyser); meter.current = { context, analyser, data: new Float32Array(analyser.fftSize) };
+      } catch { return 0; }
+    }
+    const { analyser, data } = meter.current; analyser.getFloatTimeDomainData(data);
+    let sum = 0; for (const v of data) sum += v * v;
+    // RMS in dBFS mapped so a whisper (≈ −45 dB) reads low and normal talking (≈ −25 dB) reads high.
+    const db = 10 * Math.log10(sum / data.length + 1e-12);
+    return Math.max(0, Math.min(1, (db + 55) / 40));
   }, []);
   const clearFriends = useCallback(() => {
     for (const el of friends.current.values()) { el.pause(); el.srcObject = null; }
@@ -73,5 +92,5 @@ export function useCameraShare(access: () => CameraSignalAccess | null, stream: 
     publishVoice({ on });
     if (on) await ensureMic(); else { releaseMic(); publishVoice({ mic: 'off' }); }
   }, [ensureMic, releaseMic, publishVoice]);
-  return { state, enabled: state.status === 'starting' || state.status === 'live', setEnabled, stop, voice, setVoice };
+  return { state, enabled: state.status === 'starting' || state.status === 'live', setEnabled, stop, voice, setVoice, micLevel };
 }

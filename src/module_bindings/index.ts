@@ -47,6 +47,7 @@ import SignalToSpectatorReducer from "./signal_to_spectator_reducer";
 import SignalToPlayerReducer from "./signal_to_player_reducer";
 import ShareVitalsReducer from "./share_vitals_reducer";
 import StopVitalsReducer from "./stop_vitals_reducer";
+import PredictOutcomeReducer from "./predict_outcome_reducer";
 
 // Import all procedure arg schemas
 
@@ -58,6 +59,7 @@ import CoopManualFeedRow from "./coop_manual_feed_table";
 import CoopRemoteInboxRow from "./coop_remote_inbox_table";
 import JudgeTraceRow from "./judge_trace_table";
 import PhysicsFeedRow from "./physics_feed_table";
+import PredictionFeedRow from "./prediction_feed_table";
 import SpectatorVitalsFeedRow from "./spectator_vitals_feed_table";
 
 /** Type-only namespace exports for generated type groups. */
@@ -113,6 +115,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, PhysicsFeedRow),
+  predictionFeed: __table({
+    name: 'prediction_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PredictionFeedRow),
   spectatorVitalsFeed: __table({
     name: 'spectator_vitals_feed',
     indexes: [
@@ -137,6 +146,7 @@ const reducersSchema = __reducers(
   __reducerSchema("signal_to_player", SignalToPlayerReducer),
   __reducerSchema("share_vitals", ShareVitalsReducer),
   __reducerSchema("stop_vitals", StopVitalsReducer),
+  __reducerSchema("predict_outcome", PredictOutcomeReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
@@ -149,7 +159,7 @@ const REMOTE_MODULE = {
     cliVersion: "2.13.0" as const,
   },
   tables: tablesSchema.schemaType.tables,
-  viewsWithArgs: ["camera_player_inbox", "camera_share_feed", "camera_spectator_inbox", "coop_manual_feed", "coop_remote_inbox", "judge_trace", "physics_feed", "spectator_vitals_feed"],
+  viewsWithArgs: ["camera_player_inbox", "camera_share_feed", "camera_spectator_inbox", "coop_manual_feed", "coop_remote_inbox", "judge_trace", "physics_feed", "prediction_feed", "spectator_vitals_feed"],
   reducers: reducersSchema.reducersType.reducers,
   ...proceduresSchema,
 } satisfies __RemoteModule<

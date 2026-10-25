@@ -51,6 +51,8 @@ export const config = {
   /** Co-op friend actions. A warning is information only. A decoy is noise far out in the trees: an outward
    * bias for a few seconds, a few per run, never during a committed attack or the final broadcast. */
   coop: { warnCooldownSeconds: 3, warnShowSeconds: 3, decoy: { charges: 3, cooldownSeconds: 25, bias: .75, durationSeconds: 7 }, doorKeyLength: 4 },
+  /** Co-op voice chat: talking above a whisper is noise. Work-cap pressure per second, audible strength, VOICE_HEARD spacing. */
+  voice: { pressurePerSecond: 4, strength: .45, eventGapSeconds: 8 },
   lineLure: { EMITTER_A: 20, EMITTER_B: 22, CONTAINMENT: 24, bias: .85, durationSeconds: 12 },
 };
 export const FIXED_DT = 1 / config.simulation.fixedStepHz;

@@ -1,7 +1,8 @@
 import { config } from './config';
 import { applyLure, contextualTaunt } from './creature';
 import { doorNeedsKey, enterDoorKey } from './coop';
-import { emit, random, type CalmState, type GameState, type LocateState, type MemoryState, type PulseMaskState, type RoutingState, type Sector, type Stage, type WireState } from './state';
+import { coopBoards, locateSector } from './book';
+import { emit, random, type CalmState, type GameState, type LocateState, type MemoryState, type PulseMaskState, type RoutingState, type Sector, type Stage, type TaskStep, type WireState } from './state';
 
 export function emptyWires(): WireState { return { targetOrder: [], connections: [] }; }
 export function emptyRouting(): RoutingState { return { round: 0, rounds: 0, size: 0, kinds: [], turns: [], answer: [], start: 0, end: 0 }; }
@@ -37,22 +38,31 @@ export function conduitConnected(routing: RoutingState): boolean {
 }
 /** A random self-avoiding path from the inlet to the outlet guarantees a solution; other tiles are decoys. */
 function createRouting(state: GameState, round: number): RoutingState {
-  const size = config.tasks.routing.size, start = Math.floor(random(state) * size), end = Math.floor(random(state) * size);
+  if (state.mode !== 'coop') return generateRouting(() => random(state), round);
+  // Co-op: the board is one of the friend's book boards (picked here), with its tiles scrambled.
+  const boards = coopBoards(state.seed), board = boards[Math.floor(random(state) * boards.length)]!;
+  const routing: RoutingState = { ...board, round, rounds: config.tasks.routing.rounds, kinds: [...board.kinds], answer: [...board.answer], turns: board.kinds.map(() => Math.floor(random(state) * 4)) };
+  if (conduitConnected(routing)) { const first = routing.answer.findIndex(turns => turns >= 0); routing.turns[first] = (routing.answer[first]! + 1) % 4; }
+  return routing;
+}
+/** The board generator behind createRouting, on any random source (the co-op book uses a seeded one). */
+export function generateRouting(random: () => number, round: number): RoutingState {
+  const size = config.tasks.routing.size, start = Math.floor(random() * size), end = Math.floor(random() * size);
   // Column by column: move up or down to a random row, then step right. Linear time, never backtracks.
   const path: number[] = [];
   for (let col = 0, row = start; col < size; col++) {
-    const target = col === size - 1 ? end : Math.floor(random(state) * size);
+    const target = col === size - 1 ? end : Math.floor(random() * size);
     path.push(row * size + col);
     while (row !== target) { row += Math.sign(target - row); path.push(row * size + col); }
   }
-  const kinds = Array.from({ length: size * size }, () => random(state) < .25 ? 0 : 1 + Math.floor(random(state) * 3)), answer = kinds.map(() => -1);
+  const kinds = Array.from({ length: size * size }, () => random() < .25 ? 0 : 1 + Math.floor(random() * 3)), answer = kinds.map(() => -1);
   path.forEach((cell, i) => {
     const direction = (from: number, to: number) => STEPS.findIndex(([dr, dc]) => Math.floor(from / size) + dr === Math.floor(to / size) && from % size + dc === to % size);
     const entry = i === 0 ? 8 : STEPS[direction(cell, path[i - 1]!)]![2], exit = i === path.length - 1 ? 2 : STEPS[direction(cell, path[i + 1]!)]![2], need = entry | exit;
-    const kind = need === 5 || need === 10 ? (random(state) < .25 ? 3 : 1) : (random(state) < .25 ? 3 : 2);
+    const kind = need === 5 || need === 10 ? (random() < .25 ? 3 : 1) : (random() < .25 ? 3 : 2);
     kinds[cell] = kind; answer[cell] = [0, 1, 2, 3].find(t => (tileOpenings(kind, t) & need) === need)!;
   });
-  const turns = kinds.map(() => Math.floor(random(state) * 4)), routing: RoutingState = { round, rounds: config.tasks.routing.rounds, size, kinds, turns, answer, start, end };
+  const turns = kinds.map(() => Math.floor(random() * 4)), routing: RoutingState = { round, rounds: config.tasks.routing.rounds, size, kinds, turns, answer, start, end };
   if (conduitConnected(routing)) routing.turns[path[0]!] = (routing.turns[path[0]!]! + 1) % 4;
   return routing;
 }
@@ -151,24 +161,76 @@ export function replayMemory(state: GameState, keepInput = false): void {
   memory.playing = true; memory.playbackElapsed = 0; memory.playbackIndex = 0; memory.cue = memory.sequence[0];
   memory.tempo = tempoFor(state); memory.responseElapsed = 0; memory.armed = false; memory.needsReplay = false;
   if (!keepInput) memory.input = [];
-  state.notice = state.mode === 'coop' ? `Your friend sees the ${memory.sequence.length}-digit sequence; you only get static. Enter it as they read it out, after playback.` : `Watch ${memory.sequence.length} cues. Enter the sequence after playback. R replays for free.`;
+  state.notice = state.mode === 'coop' ? `Read the ${memory.sequence.length} symbols out to your friend as they play; their manual turns each into a digit. Enter the digits after playback. R replays for free.` : `Watch ${memory.sequence.length} cues. Enter the sequence after playback. R replays for free.`;
   emit(state, 'MEMORY_REPLAY');
+}
+/** The puzzles each research stage asks for. Their order is shuffled from the seed (the tutorial keeps
+ * this order); stages 2 and 4 then end at the transmitter. */
+const STAGE_STEPS: Record<1 | 2 | 3 | 4, TaskStep[]> = { 1: ['faults', 'wires', 'routing'], 2: ['memory', 'pulse'], 3: ['faults', 'wires', 'locate'], 4: ['memory', 'calm'] };
+export function stageSteps(state: Pick<GameState, 'seed' | 'mode'>, stage: number): TaskStep[] {
+  if (stage < 1 || stage > 4) return ['final'];
+  const steps = [...STAGE_STEPS[stage as 1 | 2 | 3 | 4]];
+  if (state.mode !== 'tutorial') for (let i = steps.length - 1; i > 0; i--) {
+    const j = (Math.imul((state.seed ^ 0x3c6ef372) + stage * 0x9e3779b1 + i * 0x85ebca6b, 2654435761) >>> 0) % (i + 1);
+    [steps[i], steps[j]] = [steps[j]!, steps[i]!];
+  }
+  return steps;
+}
+const STEP_DONE: Partial<Record<TaskStep, string>> = { faults: 'Faults cleared.', wires: 'Cables patched.', routing: 'Relay engaged.', locate: 'Position fixed.', memory: 'Sequence matched.', pulse: 'False heartbeat locked.', calm: 'It lost your trail.' };
+/** Opens one puzzle: its state (drawn from the run's random stream as it opens) and its instructions.
+ * Exported for tests and fixtures that need a particular puzzle whatever the seed's order. */
+export function beginStep(state: GameState, step: TaskStep, done = ''): void {
+  const stage = state.tasks.stage, coop = state.mode === 'coop', lead = done ? `${done} ` : '';
+  state.tasks.step = step; state.version++;
+  if (step === 'faults') {
+    const settings = stage === 1 ? config.tasks.stage1 : config.tasks.stage3;
+    state.tasks.faults = { active: [], completed: 0, required: settings.required, spawned: 0, spawnElapsed: settings.spawnIntervalSeconds, maximumActive: settings.maxActive, listenFrom: state.time };
+    state.notice = lead + (coop ? `Describe each fault sound to your friend; their manual says which machine makes it this research stage. Fix ${settings.required} faults${stage === 3 ? ' (two can fail at once)' : ''}.`
+      : stage === 1 ? `Listen to the rack: each machine plays its fault sound. Then fix ${settings.required} faults by ear.` : `The rack sounds have changed. Learn them again, then fix ${settings.required} faults by ear; two can fail at once.`);
+  } else if (step === 'wires') {
+    const total = state.tasks.wires.connections.length;
+    state.notice = lead + (coop ? `Patch ${total} cables. Tell your friend the panel and each cable's symbol; their manual gives its socket code.` : `Patch ${total} cables: drag each cable to its matching symbol.`);
+  } else if (step === 'routing') {
+    state.tasks.routing = createRouting(state, 0);
+    state.notice = lead + (coop ? 'Rotate the conduit tiles to join the inlet to the outlet, then press T. The board shows no power: tell your friend which rows IN and OUT are on so they can find your board in the manual.' : 'Rotate the conduit tiles to join the inlet to the relay outlet, then press T.');
+  } else if (step === 'locate') {
+    state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 };
+    state.notice = lead + (coop ? `Your radar is dark. Your friend can see how far out it is, and their manual says which key that range is this run. Mark it ${config.tasks.locate.marks} times.` : `Use the radar to mark its position ${config.tasks.locate.marks} times.`);
+  } else if (step === 'memory') {
+    replayMemory(state);
+    if (done) state.notice = `${lead}${state.notice}`;
+  } else if (step === 'pulse') {
+    // The seeded draw always happens so personal sensing never shifts the run's random stream.
+    const seeded = config.tasks.pulse.minimumBpm + Math.floor(random(state) * (config.tasks.pulse.maximumBpm - config.tasks.pulse.minimumBpm + 1)), own = personalPulseBpm(state);
+    state.tasks.pulse = { periodSeconds: 60 / (own ?? seeded), startedAt: state.time, streak: 0, lastTap: null, personal: own !== null };
+    state.notice = lead + (own !== null ? 'The false heartbeat is tuned to your own resting rhythm. Tap 1 with it to mask yourself.' : 'Tap 1 in rhythm with the false heartbeat to mask your own.');
+  } else if (step === 'calm') {
+    const own = personalBreathSeconds(state);
+    state.tasks.calm = { progress: 0, required: config.tasks.calm.seconds, pacerStartedAt: state.time, holding: false, halfSeconds: own ?? config.tasks.calm.breathSeconds, phaseStartedAt: state.time, inhale: true, personal: own !== null };
+    state.notice = lead + (coop ? 'Only your friend sees the breathing pacer: hold B when they say in, let go when they say out.' : own !== null ? 'The pacer starts at your own breathing pace and slows with every breath. Hold B to breathe in, release to breathe out.' : 'Hold B to breathe in, release to breathe out. Let it lose your trail.');
+  }
+}
+/** The live puzzle is done: open the stage's next one, or finish the stage (1, 3) / arm the transmitter (2, 4). */
+function finishStep(state: GameState): void {
+  const stage = state.tasks.stage, steps = stageSteps(state, stage), done = STEP_DONE[state.tasks.step] ?? '', next = steps[steps.indexOf(state.tasks.step) + 1];
+  if (next) { beginStep(state, next, done); return; }
+  if (stage === 1 || stage === 3) { completeStage(state); startStage(state, stage === 1 ? 2 : 4); return; }
+  readyToTransmit(state, null, `${done} Press T to transmit${stage === 2 ? ' the calibrated signal' : ''}.`);
 }
 export function startStage(state: GameState, stage: Stage): void {
   state.tasks.stage = stage; state.tasks.stageStarted = state.time; state.version++;
   state.tasks.wires = emptyWires(); state.tasks.routing = emptyRouting(); state.tasks.pulse = emptyPulse(); state.tasks.locate = emptyLocate(); state.tasks.calm = emptyCalm();
-  state.tasks.step = stage === 1 || stage === 3 ? 'faults' : stage === 2 || stage === 4 ? 'memory' : 'final';
+  state.tasks.step = stage <= 4 ? stageSteps(state, stage)[0]! : 'final';
   if (stage === 1 || stage === 3) {
     const settings = stage === 1 ? config.tasks.stage1 : config.tasks.stage3;
     state.tasks.faults = { active: [], completed: 0, required: settings.required, spawned: 0, spawnElapsed: settings.spawnIntervalSeconds, maximumActive: settings.maxActive, listenFrom: state.time };
     state.tasks.memory = emptyMemory();
     state.tasks.wires = createWires(state, settings.wires);
-    state.notice = state.mode === 'coop' ? `${stage === 1 ? 'Your friend has the manual' : 'The rack sounds have changed; so has the manual'}. Describe each fault sound; they tell you the machine. Fix ${settings.required} faults${stage === 3 ? ' (two can fail at once)' : ''}, then patch ${settings.wires} cables.`
-      : stage === 1 ? `Listen to the rack: each machine plays its fault sound. Then fix ${settings.required} faults by ear and patch ${settings.wires} cables.` : `The rack sounds have changed. Learn them again, then fix ${settings.required} faults by ear; two can fail at once.`;
+    beginStep(state, state.tasks.step);
   } else if (stage === 2 || stage === 4) {
     state.tasks.faults.active = [];
     state.tasks.memory = { ...emptyMemory(), sequence: sequenceFor(state) };
-    replayMemory(state);
+    beginStep(state, state.tasks.step);
   } else if (stage === 5) {
     state.tasks.memory = emptyMemory(); state.tasks.faults.active = [];
     state.coop.doorInput = [];
@@ -201,9 +263,9 @@ export function mistake(state: GameState, kind: 'FAULT' | 'MEMORY' | 'WIRE' | 'R
   }
   state.notice = notice ?? (kind === 'FAULT' ? 'That box was quiet. Press a box marked FAULT.' : kind === 'WIRE' ? `Wrong terminal. The relay sparked. ${state.mode === 'coop' ? 'Ask your friend which socket code that cable takes.' : 'Match each cable symbol to its socket.'}` : `Sequence mismatch. Repeat all ${state.tasks.memory.sequence.length} inputs. R replays for free.`);
 }
-function readyToTransmit(state: GameState, event: string, notice: string): void {
+function readyToTransmit(state: GameState, event: string | null, notice: string): void {
   state.tasks.step = 'transmit'; state.tasks.memory.armed = true; state.notice = notice;
-  emit(state, event); state.version++;
+  if (event) emit(state, event); state.version++;
 }
 /** Conduit: rotating a tile is quiet; engaging is loud, and engaging a broken conduit is louder. */
 export function rotateTile(state: GameState, tile: number): void {
@@ -217,7 +279,7 @@ export function engageRoute(state: GameState): void {
   if (!conduitConnected(routing)) { mistake(state, 'ROUTING', 'The conduit is broken. The surge arced loudly. Connect the inlet to the outlet first.'); return; }
   workNoise(state); emit(state, 'ROUTING_ENGAGED');
   if (routing.round + 1 < routing.rounds) { state.tasks.routing = createRouting(state, routing.round + 1); state.notice = 'Relay engaged. Another conduit is broken.'; return; }
-  completeStage(state); startStage(state, 2);
+  finishStep(state);
 }
 /** Locate: from the monitor, name the sector the creature occupies now or at the last detector reading. */
 export function markSector(state: GameState, sector: Sector): void {
@@ -228,7 +290,7 @@ export function markSector(state: GameState, sector: Sector): void {
   if (!observed.includes(sector)) { mistake(state, 'LOCATE', state.mode === 'coop' ? 'Wrong ring. The marker pinged empty ground, loudly. Ask your friend again; it keeps moving.' : 'Wrong sector. The marker pinged empty ground, loudly. Check the feeds and the range reading.'); return; }
   locate.marks++; locate.lastMarkAt = state.time; workNoise(state); emit(state, 'SECTOR_MARKED');
   state.notice = `${locate.marks} / ${locate.required} positions marked. It keeps moving; check again.`;
-  if (locate.marks >= locate.required) { completeStage(state); startStage(state, 4); }
+  if (locate.marks >= locate.required) finishStep(state);
 }
 /** Heartbeat mask: matched tap intervals build a streak. An accepted ELEVATED trend demands more. */
 export function tapPulse(state: GameState): void {
@@ -240,7 +302,7 @@ export function tapPulse(state: GameState): void {
     else { pulse.streak = 0; state.notice = interval < pulse.periodSeconds ? 'Too fast. Match the pulse on the screen.' : 'Too slow. Match the pulse on the screen.'; }
   }
   pulse.lastTap = state.time;
-  if (pulse.streak >= need.beats) { readyToTransmit(state, 'PULSE_LOCKED', 'False heartbeat locked. Press T to transmit it.'); return; }
+  if (pulse.streak >= need.beats) { emit(state, 'PULSE_LOCKED'); finishStep(state); return; }
   if (pulse.streak > 0) state.notice = `${pulse.streak} / ${need.beats} beats in rhythm${heartElevated(state) ? ' · your pulse is bleeding into the mask' : ''}.`;
 }
 /** Display helpers shared by the HUD panels and the in-room terminal screen. */
@@ -294,16 +356,15 @@ export function connectWire(state: GameState, from: number, to: number): void {
   const complete = wires.connections.filter(value => value >= 0).length, panel = wirePanel(wires);
   state.notice = complete % config.tasks.wirePanelSize === 0 && complete < wires.connections.length ? `Panel ${complete / config.tasks.wirePanelSize} of ${panel.count} patched. Next panel live.` : `${complete} / ${wires.connections.length} cables connected.`;
   if (complete === wires.connections.length) {
-    if (state.tasks.stage === 1) { state.tasks.step = 'routing'; state.tasks.routing = createRouting(state, 0); state.notice = `Cables patched. Rotate the conduit tiles to join the inlet to the relay outlet, then press T.${state.mode === 'coop' ? ' The board shows no power; your friend has the solved route.' : ''}`; }
-    else { state.tasks.step = 'locate'; state.tasks.locate = { marks: 0, required: config.tasks.locate.marks, lastMarkAt: -1000 }; state.notice = state.mode === 'coop' ? `Cables patched. Your radar is dark; your friend can see it. Ask which ring, then mark it ${config.tasks.locate.marks} times.` : `Cables patched. Use the radar to mark its position ${config.tasks.locate.marks} times.`; }
-    state.version++;
+    finishStep(state);
   }
 }
 /** Number keys drive whichever step is live: faults, routing toggles, pulse taps, monitor marks or memory. */
 export function taskInput(state: GameState, value: number): void {
   if (state.equipment !== 'on' || !Number.isInteger(value) || value < 1 || value > 4) return;
   const step = state.tasks.step;
-  if (step === 'locate') { markSector(state, SECTORS[value - 1]); return; }
+  // Co-op: the keys stand for the rings in this run's order, from the friend's manual.
+  if (step === 'locate') { markSector(state, state.mode === 'coop' ? locateSector(state.seed, value) : SECTORS[value - 1]); return; }
   if (state.station !== 'terminal') return;
   if (step === 'routing') return;
   if (step === 'pulse') { tapPulse(state); return; }
@@ -315,7 +376,7 @@ export function taskInput(state: GameState, value: number): void {
     faults.active = faults.active.filter(fault => fault !== index); faults.completed++;
     emit(state, 'FAULT_CLEARED', String(stage)); workNoise(state);
     state.notice = `${faults.completed} / ${faults.required} faults resolved.`;
-    if (faults.completed >= faults.required) { state.tasks.step = 'wires'; state.notice = state.mode === 'coop' ? 'Faults cleared. Read each cable symbol to your friend; the manual gives its socket code.' : 'Faults cleared. Drag each cable to its matching symbol to restore the relay.'; }
+    if (faults.completed >= faults.required) finishStep(state);
     return;
   }
   if (step === 'final') { enterDoorKey(state, value); return; }
@@ -328,22 +389,12 @@ export function taskInput(state: GameState, value: number): void {
     const rounds = memoryRounds(state);
     if (memory.sequence.length < rounds.last) {
       memory.sequence.push(cue(state)); replayMemory(state);
-      state.notice = state.mode === 'coop' ? `Round ${rounds.round} matched. Your friend has ${memory.sequence.length} digits now: one more than before.` : `Round ${rounds.round} matched. Watch ${memory.sequence.length} cues: one more than before.`;
+      state.notice = state.mode === 'coop' ? `Round ${rounds.round} matched. ${memory.sequence.length} symbols now: one more than before. Read them all out again.` : `Round ${rounds.round} matched. Watch ${memory.sequence.length} cues: one more than before.`;
       return;
     }
     emit(state, 'MEMORY_ARMED');
     if (state.mode === 'tutorial') { readyToTransmit(state, 'MEMORY_COMPLETE', 'Sequence matched. Press T to transmit the calibrated signal.'); return; }
-    if (stage === 2) {
-      // The seeded draw always happens so personal sensing never shifts the run's random stream.
-      const seeded = config.tasks.pulse.minimumBpm + Math.floor(random(state) * (config.tasks.pulse.maximumBpm - config.tasks.pulse.minimumBpm + 1)), own = personalPulseBpm(state);
-      state.tasks.step = 'pulse'; state.tasks.pulse = { periodSeconds: 60 / (own ?? seeded), startedAt: state.time, streak: 0, lastTap: null, personal: own !== null };
-      state.notice = own !== null ? 'Sequence matched. The false heartbeat is tuned to your own resting rhythm. Tap 1 with it to mask yourself.' : 'Sequence matched. Now tap 1 in rhythm with the false heartbeat to mask your own.';
-    } else {
-      const own = personalBreathSeconds(state);
-      state.tasks.step = 'calm'; state.tasks.calm = { progress: 0, required: config.tasks.calm.seconds, pacerStartedAt: state.time, holding: false, halfSeconds: own ?? config.tasks.calm.breathSeconds, phaseStartedAt: state.time, inhale: true, personal: own !== null };
-      state.notice = state.mode === 'coop' ? 'Sequence matched. Only your friend sees the breathing pacer: hold B when they say in, let go when they say out.' : own !== null ? 'Sequence matched. The pacer starts at your own breathing pace and slows with every breath. Hold B to breathe in, release to breathe out.' : 'Sequence matched. Hold B to breathe in, release to breathe out. Let it lose your trail.';
-    }
-    state.version++;
+    finishStep(state);
   }
 }
 export function transmit(state: GameState): void {
@@ -367,7 +418,7 @@ export function tickTasks(state: GameState, dt: number): void {
     const settings = config.tasks.calm, calm = state.tasks.calm, matched = calmMatched(state);
     const rate = !matched ? -settings.drainPerSecond : heartElevated(state) ? settings.elevatedMultiplier : heartSteady(state) ? settings.steadyMultiplier : 1;
     calm.progress = Math.max(0, Math.min(calm.required, calm.progress + rate * dt));
-    if (calm.progress >= calm.required - 1e-8) readyToTransmit(state, 'CALM_COMPLETE', 'It lost your trail. Press T to transmit.');
+    if (calm.progress >= calm.required - 1e-8) { emit(state, 'CALM_COMPLETE'); finishStep(state); }
     return;
   }
   if (step === 'faults') {

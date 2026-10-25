@@ -134,3 +134,8 @@ The [sweep](../artifacts/survival-balance.json) runs 30 seeds per policy through
 The policies restore isolation as soon as the restore window is open and the creature has moved off (position 12 or more); they know every puzzle answer instantly, so a real first run takes longer than these times.
 
 Every run ended by the deadline. These results establish reachable outcomes, run length and alarm rhythm under the stated artificial policies, not a target human win rate. Earlier live Gemini/ElevenLabs results establish provider text/audio generation and playback, but predate this balance revision. No additional live provider request was run for this balance change. The trace contract remains `lock-in-v2`; it has not been deployed or verified remotely.
+
+## Puzzle order and co-op voice
+
+- Outside the tutorial the puzzles inside each research stage come in a per-seed order (`stageSteps`): stage 1 faults/cables/conduit, stage 2 memory/heartbeat mask, stage 3 faults/cables/locate, stage 4 memory/calm hold. Stages 2 and 4 still end at the transmitter. Each puzzle draws its random state when it opens, so the run's random stream follows the order.
+- Co-op voice chat: while the player's own mic is above the whisper line, work noise rises by `voice.pressurePerSecond` (4 per second, on top of any cooling, up to the work cap) and the creature hears it as audible evidence of strength `voice.strength` (0.45), even with the equipment isolated. `VOICE_HEARD` is logged at most every `voice.eventGapSeconds` (8 s). The friend's voice never counts.

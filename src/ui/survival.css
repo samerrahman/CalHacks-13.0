@@ -66,3 +66,8 @@ body .sound-caption{bottom:72px}body .radio-caption{bottom:136px}
 @keyframes friend-lamp{50%{background:#4a140af0;border-color:#ff7a52}}
 @media(prefers-reduced-motion:reduce){.friend-warning{animation:none}}
 @media(max-width:720px){.friend-alerts{top:76px}.voice-toggle{grid-column:1;grid-row:1;justify-self:end;font-size:8px;padding:3px}.voice-toggle small{display:none}}
+/* Co-op whisper rule: the player's own mic level against the whisper line. */
+.voice-toggle .whisper-meter{position:relative;display:inline-block;width:46px;height:5px;margin-left:8px;vertical-align:1px;background:#1c231c;border:1px solid #3b4434}
+.voice-toggle .whisper-meter b{position:absolute;inset:0 auto 0 0;background:#8fbf8f;transition:width .09s linear}
+.voice-toggle .whisper-meter em{position:absolute;top:-2px;bottom:-2px;left:55%;width:1px;background:#e9ac76}
+.voice-toggle.loud{color:#ff9a72}.voice-toggle.loud .whisper-meter b{background:#c9553a}

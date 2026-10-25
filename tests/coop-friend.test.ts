@@ -4,6 +4,7 @@ import { config, createGame, dispatch, step } from '../src/game/reducer';
 import { movementProbabilities } from '../src/game/creature';
 import { buildDirectorRequest } from '../src/game/directorValidation';
 import { coopManual, decoysLeft, doorKeyFor } from '../src/game/coop';
+import { coopBook } from '../src/game/book';
 import { startStage } from '../src/game/tasks';
 import type { GameState } from '../src/game/state';
 
@@ -28,7 +29,7 @@ test('door key is four digits 1–4 from the seed alone and never shifts the run
 test('co-op basement door needs the friend\'s key; wrong digits are loud and start over', () => {
   let state = atDoor();
   const key = state.coop.doorKey;
-  assert.deepEqual(coopManual(state), { kind: 'door', stage: 5, key });
+  assert.deepEqual(key, coopBook(state.seed).door, 'the friend\'s book has the key');
   state = dispatch(state, { type: 'transmit' });
   assert.equal(state.tasks.finalTransmitted, false, 'T does nothing before the key');
   const wrong = key[0] === 4 ? 1 : key[0]! + 1;
@@ -36,7 +37,6 @@ test('co-op basement door needs the friend\'s key; wrong digits are loud and sta
   assert.equal(state.events.at(-1)?.type, 'WRONG_INPUT'); assert.deepEqual(state.coop.doorInput, []);
   for (const digit of key) state = dispatch(state, { type: 'input', value: digit });
   assert.equal(state.coop.doorUnlocked, true); assert.ok(state.events.some(e => e.type === 'DOOR_UNLOCKED'));
-  assert.equal(coopManual(state), null, 'the page closes once the key turns');
   state = dispatch(state, { type: 'transmit' });
   assert.equal(state.tasks.finalTransmitted, true);
 });

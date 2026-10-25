@@ -2,25 +2,32 @@
 
 In the style of *Keep Talking and Nobody Explodes*: the player in the shelter loses the puzzle keys, and a friend on the spectate link reads them from a manual and talks the player through. Solo play is unchanged.
 
-## Rules (v2)
+## The manual is a book (v3)
 
-`createGame(seed, 'coop')` plays the standard rules and balance (same timers, exposure, creature, isolation, deadline). Only what the player is shown changes:
+The friend's manual is a book they flip through on the spectate page (`src/ui/CoopManual.tsx`): contents, then one page per puzzle. It holds **every answer for the run** and is printed from the run's seed alone (`coopBook(seed)` in `src/game/book.ts`), so nothing live is needed to look anything up. Every mapping is reshuffled for each seed. The player has to describe what they see; the friend finds it in the book and answers.
 
-| Task | Player sees | Friend's manual |
+| Puzzle | Player sees and says | Book page |
 | --- | --- | --- |
-| Faults by ear (stages 1, 3) | No rack key: `listeningTo` is always null in co-op, so the key never lights, plays or captions. The same 4.4 s gap still holds back the first fault (`rackKey` keeps the timing). L does nothing. Failing machines still sound from their rack slots and YOU HEAR still captions them. | Which sound each machine 1–4 makes, listed by sound: "if they hear high whine, press 3". |
-| Cables (stages 1, 3) | Cables keep their symbols and colours; sockets show neutral codes A–F (top to bottom) in one colour. | For the live six-cable panel: each cable symbol → its socket code. The page turns with the panel. |
-| Conduit (stage 1) | The board with no power glow, no joined outlet and no CONNECTED reading. | The solved orientation of every route tile on a labelled grid (rows from the top, columns from the left, IN/OUT rows); off-route tiles read "·". A tee shows one valid orientation. |
-| Memory (stages 2, 4) | Playback shows static (`RECEIVING ▒`), the cue digits never light on the HUD or the terminal screen, and every cue plays the same tone. Input works as standard after playback. | The live sequence, how many digits the player has entered, and whether playback is still running. |
-| Locate (stage 3) | The radar, proximity screen and CCTV silhouette go dark (`blind` in the render state) for the locate step only. | The ring key (1–4) where a mark lands now (both on a boundary), and marks made of required. Check before every mark; it keeps moving. |
-| Calm hold (stage 4) | The pacer is hidden: the ring only shows whether B is held, and IN TIME / OUT OF TIME is gone. Progress still shows. | The current half-breath (in or out), its length and how far into it; the page runs its own countdown and re-anchors on every update. |
-| Heartbeat mask (stage 2) | Unchanged. | "No page right now." |
+| Faults by ear (stage 1, 3) | No rack key. "Research 1, I hear a high whine." | Rack fault sounds: for each stage, which machine makes each sound. |
+| Cables (stage 1, 3) | Cable symbols; each socket shows the book's code for the cable that belongs in it. "Panel 2, the star." | Cable patch codes: for each panel, symbol → socket code. |
+| Conduit (stage 1) | No power glow or joined reading; the IN and OUT rows are labelled. "IN row 2, OUT row 4." | Conduit boards: four solved boards, one per IN/OUT pair. The game picks one of the four for each conduit. |
+| Memory (stage 2, 4) | Symbols during playback (☾ MOON, ◉ EYE, ✕ CROSS, ☰ BARS), one neutral tone; digits 1–4 to enter. "Moon, eye, eye, bars." | Signal symbols: for each stage, symbol → digit. |
+| Locate (stage 3) | The radar is dark; keys 1–4 with no ring names. | Radar range keys: distance band → key, plus the live range from the trace. |
+| Calm hold (stage 4) | The pacer is hidden. | Breathing pacer: the only live page (`coopManual`), so the friend can call in and out. |
+| Heartbeat mask (stage 2) | Unchanged. | Nothing to look up. |
+| Basement door (final) | Four key slots; T stays locked. | Basement door key. |
 
-Notices adapt to co-op ("describe the sound to your friend…"). The deliberate result is harder: the player must describe sounds and the friend must answer quickly while the equipment noise keeps drawing the creature in.
+**Puzzle order.** In every non-tutorial run (solo or co-op) the puzzles within each research stage come in an order shuffled from the seed (`stageSteps` in `tasks.ts`); stages 2 and 4 still end at the transmitter. So the friend can't predict which page is next and has to ask.
+
+**Interference.** While the creature is within the near position, the book breaks up with grey static bursts every few seconds (steady partial static under reduced motion).
+
+**Voice.** With voice chat on, the player's own microphone above a whisper is noise the creature hears, even with the equipment isolated (`playerVoice` in `coop.ts`, `config.voice`): it adds work noise, counts as audible evidence and logs `VOICE_HEARD`. The player's HUD shows a whisper meter. The friend's voice never counts, so a spectator cannot make noise for the player.
+
+The live page (`coopManual`) now carries only the breathing pacer. The transport, the `coop_manual` row and the server rules are unchanged and still accept the older kinds.
 
 ## The manual is a separate, narrow projection
 
-`coopManual(state)` (`src/game/coop.ts`) returns only the key for the live task, or null. It is null outside co-op, after the run ends, and on every other step. It never enters `sanitizedTrace`, the director request or any provider projection (tests compare the co-op trace and director request byte for byte with standard). The private puzzle state (`targetOrder`, routing `answer`) is unchanged and stays local.
+`coopManual(state)` (`src/game/coop.ts`) returns only the live breathing pacer, or null (the book has the rest). It is null outside co-op, after the run ends, and on every other step. It never enters `sanitizedTrace`, the director request or any provider projection (tests compare the co-op trace and director request byte for byte with standard). The private puzzle state (`targetOrder`, routing `answer`) is unchanged and stays local.
 
 ## Transport
 
@@ -32,9 +39,10 @@ Consent: co-op needs trace sharing, since the link is how the friend gets the ma
 
 ## Verified
 
-- `npm test`: `tests/coop.test.ts` (same run as standard apart from mode and notices; the key is hidden from the player-facing state and the rendered fault, cable and conduit panels; `coopManual` solves faults, both cable panels and the conduit without private state; null on every other step and outside co-op; the trace and director request carry no manual) and `src/integrations/coop.test.ts` (row validation, publisher rate and withdrawal, same-browser feed).
+- `npm test`: `tests/coop.test.ts` (whole co-op runs on six seeds, in their shuffled orders, reach the final broadcast with no wrong input using only the book and what the player would describe; orders vary per seed and stay fixed in the tutorial; every book mapping changes with the seed; the player's sockets show book codes, memory shows glyphs and the conduit no power reading; the live page is only the pacer, and nothing from the manual enters the trace or the director request; voice is heard only in co-op; every book page renders) and `src/integrations/coop.test.ts` (row validation, publisher rate and withdrawal, same-browser feed).
+- `tests/fixtures/spectate.html?mode=coop` shows the book (contents, all eight pages, page turns, static when the creature is close) on the live spectate page.
 - [Local SpacetimeDB 2.13](qa/coop-local-spacetime.json): 14/14 checks with `spacetimedb/tests/liveCoop.mts` against a fresh local database (publisher write reaches the friend, wrong owner/standard session/malformed/oversize/too-frequent writes refused, late sequence ignored, wrong capability sees nothing, removal deletes). The existing `liveSpectate.mts` 14 checks still pass on the same module.
-- `tests/fixtures/coop.html#player-<step>` / `#friend-<step>` render the real panels and manual pages from reducer states (checked at about 766 px wide).
+- `tests/fixtures/coop.html#player-<step>` / `#friend-<step>` render the real panels and the matching book page from reducer states.
 
 ## Not verified / not done
 

@@ -2,20 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { config, createGame, dispatch, step } from '../src/game/reducer';
 import { movementProbabilities } from '../src/game/creature';
-import { calmInhale, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, listeningTo, memoryRounds, pulseRequirement, sectorsAt, startStage, tileOpenings } from '../src/game/tasks';
+import { beginStep, stageSteps, calmInhale, conduitConnected, energizedTiles, FAULT_SOUNDS, faultSounds, listeningTo, memoryRounds, pulseRequirement, sectorsAt, startStage, tileOpenings } from '../src/game/tasks';
 import type { GameState } from '../src/game/state';
 
-function at(which: GameState['tasks']['step'], seed = 17): GameState {
+/** The puzzle under test is the last of its stage, so finishing it finishes the stage (orders are per seed). */
+function lastIn(stage: number, which: GameState['tasks']['step'], seed: number): number {
+  while (stageSteps({ seed, mode: 'standard' }, stage).at(-1) !== which) seed++;
+  return seed;
+}
+function at(which: GameState['tasks']['step'], from = 17): GameState {
+  const stage = which === 'routing' ? 1 : which === 'locate' ? 3 : which === 'pulse' ? 2 : 4, seed = which === 'routing' ? from : lastIn(stage, which, from);
   const s = createGame(seed); s.time = 60; s.creature.nextMoveAt = 1000; s.blackout.nextAt = 1000;
-  if (which === 'routing') { s.tasks.faults.completed = s.tasks.faults.required; s.tasks.step = 'wires'; s.tasks.wires.connections = s.tasks.wires.targetOrder.map(() => 0); s.tasks.wires.connections[0] = -1; return dispatch(s, { type: 'wire', from: 0, to: s.tasks.wires.targetOrder.indexOf(0) }); }
-  if (which === 'locate') { startStage(s, 3); s.tasks.faults.completed = s.tasks.faults.required; s.tasks.step = 'wires'; s.tasks.wires.connections = s.tasks.wires.targetOrder.map(() => 0); s.tasks.wires.connections[0] = -1; return dispatch(s, { type: 'wire', from: 0, to: s.tasks.wires.targetOrder.indexOf(0) }); }
-  startStage(s, which === 'pulse' ? 2 : 4);
-  let state = s;
-  for (let round = 0; round < memoryRounds(state).rounds; round++) {
-    while (state.tasks.memory.playing) state = step(state, .2);
-    for (const value of [...state.tasks.memory.sequence]) state = dispatch(state, { type: 'input', value });
-  }
-  return state;
+  // Puzzle order is shuffled per seed, so open the puzzle under test directly.
+  if (which === 'routing') { beginStep(s, 'routing'); return s; }
+  if (which === 'locate') { startStage(s, 3); beginStep(s, 'locate'); return s; }
+  startStage(s, which === 'pulse' ? 2 : 4); beginStep(s, which);
+  return s;
 }
 function solve(state: GameState): GameState {
   state.tasks.routing.answer.forEach((want, tile) => { if (want >= 0) for (let k = (want - state.tasks.routing.turns[tile]! + 4) % 4; k > 0; k--) state = dispatch(state, { type: 'rotate', tile }); });
@@ -30,7 +32,7 @@ test('every conduit board is solvable, starts broken, and its answer joins the i
       assert.equal(conduitConnected(state.tasks.routing), false, `seed${seed}: starts broken`);
       state = solve(state);
     }
-    assert.deepEqual(state.tasks.completedStages, [1]); assert.equal(state.tasks.stage, 2);
+    assert.notEqual(state.tasks.step, 'routing'); assert.equal(state.events.filter(e => e.type === 'ROUTING_ENGAGED').length, config.tasks.routing.rounds);
   }
 });
 
@@ -46,7 +48,7 @@ test('rotating conduit tiles is quiet; engaging a broken conduit is a loud mista
 });
 
 test('faults are found by ear: a shuffled sound key plays first, no fault spawns meanwhile, and nothing marks the answer', () => {
-  let state = createGame(23); state.time = 30; state.creature.nextMoveAt = 1e6; state.blackout.nextAt = 1e6; startStage(state, 1);
+  let state = createGame(23); state.time = 30; state.creature.nextMoveAt = 1e6; state.blackout.nextAt = 1e6; startStage(state, 1); beginStep(state, 'faults');
   const key = faultSounds(state); assert.deepEqual([...key].sort(), [0, 1, 2, 3]);
   const keys = new Set([1, 2, 3, 4, 5, 6].map(seed => { const s = createGame(seed); startStage(s, 1); return faultSounds(s).join(); }));
   assert.ok(keys.size > 1, 'the key is shuffled between runs');
@@ -109,18 +111,18 @@ test('calm hold follows the breathing pacer; live data speeds or slows it but ne
 });
 
 test('memory grows one cue per matched round before the thinking task', () => {
-  let state = createGame(5); startStage(state, 2);
+  let state = createGame(5); startStage(state, 2); beginStep(state, 'memory');
   const { first, last, rounds } = memoryRounds(state); assert.equal(rounds, last - first + 1);
   for (let length = first; length <= last; length++) {
     while (state.tasks.memory.playing) state = step(state, .2);
     assert.equal(state.tasks.memory.sequence.length, length); assert.equal(state.tasks.step, 'memory');
     for (const value of [...state.tasks.memory.sequence]) state = dispatch(state, { type: 'input', value });
   }
-  assert.equal(state.tasks.step, 'pulse');
+  assert.ok(state.events.some(e => e.type === 'MEMORY_ARMED')); assert.notEqual(state.tasks.step, 'memory');
 });
 
 test('correct work raises exposure, silence cools it, isolation cools fastest and a lost trail drifts outward', () => {
-  let state = createGame(8); state.time = 60; state.creature.nextMoveAt = 1000; state.blackout.nextAt = 1000;
+  let state = createGame(8); state.time = 60; state.creature.nextMoveAt = 1000; state.blackout.nextAt = 1000; beginStep(state, 'faults');
   for (let i = 0; i < 6; i++) { while (!state.tasks.faults.active.length) state = step(state, .1); state = dispatch(state, { type: 'input', value: state.tasks.faults.active[0] + 1 }); }
   const working = state.pressure; assert.ok(working > 5);
   state.tasks.faults.active = []; state.tasks.faults.spawned = state.tasks.faults.required;

@@ -18,13 +18,15 @@ function wire(from: Anchor, to: Anchor) {
 }
 /** Pointer drag plus select-source/select-socket buttons for keyboard and touch.
  * Long boards are patched one panel at a time; indices stay global. */
-export default function WirePuzzle({ wires, connect, coop = false }: { wires: WireState; connect: (from: number, to: number) => void; coop?: boolean }) {
+/** `codes` (co-op): the book's socket code for each cable symbol on a panel; sockets then show the code of
+ * the cable that belongs in them, so only the friend's manual pairs symbols with sockets. */
+export default function WirePuzzle({ wires, connect, coop = false, codes }: { wires: WireState; connect: (from: number, to: number) => void; coop?: boolean; codes?: (panel: number) => number[] }) {
   const board = useRef<HTMLDivElement>(null), cableColumn = useRef<HTMLDivElement>(null), socketColumn = useRef<HTMLDivElement>(null);
   const drag = useRef<{ from: number; x: number; y: number; moved: boolean } | null>(null);
   const [selected, select] = useState<number | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
   const [layout, setLayout] = useState<Layout | null>(null);
-  const panel = wirePanel(wires), rows = Array.from({ length: panel.size }, (_, i) => panel.start + i);
+  const panel = wirePanel(wires), rows = Array.from({ length: panel.size }, (_, i) => panel.start + i), book = coop && codes ? codes(panel.index) : null;
   const mark = (index: number) => index - panel.start;
   const linked = wires.connections.filter(to => to >= 0).length;
   const measure = useCallback(() => {
@@ -59,7 +61,7 @@ export default function WirePuzzle({ wires, connect, coop = false }: { wires: Wi
   }
   const dragFrom = selected === null ? undefined : cableAt(selected);
   return <div className="wire-puzzle">
-    <div className="wire-instructions"><b>PATCH THE RELAY</b><span>{coop ? 'Read each cable symbol to your friend; their manual gives its socket code. Drag, or select a cable, then its socket.' : 'Drag matching symbols together. You can also select a cable, then its socket.'}</span></div>
+    <div className="wire-instructions"><b>PATCH THE RELAY</b><span>{coop ? `Panel ${panel.index + 1}: read each cable symbol to your friend; their manual gives its socket code. Drag, or select a cable, then its socket.` : 'Drag matching symbols together. You can also select a cable, then its socket.'}</span></div>
     <div className="wire-board" ref={board} onPointerMove={event => {
       if (!drag.current) return;
       if (Math.hypot(event.clientX - drag.current.x, event.clientY - drag.current.y) > 4) drag.current.moved = true;
@@ -74,7 +76,7 @@ export default function WirePuzzle({ wires, connect, coop = false }: { wires: Wi
         aria-label={`Cable ${symbols[mark(from)]}${wires.connections[from] >= 0 ? ' connected' : ''}`} aria-pressed={selected === from} disabled={wires.connections[from] >= 0}
         onPointerDown={event => { if (event.button !== 0) return; select(from); drag.current = { from, x: event.clientX, y: event.clientY, moved: false }; event.currentTarget.setPointerCapture(event.pointerId); setTip(point(event)); }}
         onClick={() => { if (wires.connections[from] < 0) select(from); }}>{symbols[mark(from)]}<small>{wires.connections[from] >= 0 ? 'LINKED' : String(from + 1).padStart(2, '0')}</small></button>)}</div>
-      <div className="wire-column" ref={socketColumn} style={{ gridTemplateRows: `repeat(${panel.size},minmax(0,1fr))` }}>{rows.map(to => { const from = wires.targetOrder[to], label = coop ? socketCode(mark(to)) : symbols[mark(from)]; return <button key={to} type="button" data-wire-target={to} style={{ '--wire-color': coop ? NEUTRAL : colors[mark(from)] } as CSSProperties}
+      <div className="wire-column" ref={socketColumn} style={{ gridTemplateRows: `repeat(${panel.size},minmax(0,1fr))` }}>{rows.map(to => { const from = wires.targetOrder[to], label = coop ? socketCode(book ? book[mark(from)]! : mark(to)) : symbols[mark(from)]; return <button key={to} type="button" data-wire-target={to} style={{ '--wire-color': coop ? NEUTRAL : colors[mark(from)] } as CSSProperties}
         aria-label={`Socket ${label}`} disabled={wires.connections.includes(to)} onClick={() => { if (selected !== null) { connect(selected, to); select(null); } }}>{label}<small>{wires.connections.includes(to) ? 'LINKED' : 'SOCKET'}</small></button>; })}</div>
     </div>
     <div className="task-progress"><span>Panel {panel.index + 1} / {panel.count} · {linked} / {wires.connections.length} cables linked</span><span>WRONG LINK IS LOUD</span></div>

@@ -65,3 +65,49 @@
 .spectate-voice{display:grid;gap:6px}.spectate-voice button{justify-self:start;font:11px var(--mono);letter-spacing:1px}.spectate-voice button.on{border-color:#8fbf8f;color:#cfe3c6}.spectate-voice span{font-size:11px;color:#aebc9f}
 @keyframes friend-urgent{50%{box-shadow:0 0 22px #ff5a3666}}
 @media(prefers-reduced-motion:reduce){.friend-warn.urgent{animation:none}}
+/* Sound, narrator and the outside camera. */
+.spectate-sound{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:6px 0 4px;font-size:12px}
+.spectate-sound button{font:12px var(--mono);letter-spacing:1px;padding:8px 14px;border:1px solid #a3956a88;background:#1b1c14;color:#e2d6ac}
+.spectate-sound button.on{border-color:#8fbf8f;color:#cfe3c6;background:#14201a}
+.spectate-sound label{display:flex;align-items:center;gap:6px;color:#c9d2bb}.spectate-sound label em{font-style:normal;font-size:10px;color:#8f9c86}
+.spectate-feeds{display:grid;gap:18px;min-width:0}
+.spectate-exterior-card{padding:14px}
+.spectate-exterior{position:relative;aspect-ratio:21/9;background:#050805;border:1px solid #2b3527;overflow:hidden}
+.spectate-exterior-view{position:absolute;inset:0}
+.spectate-exterior .spectate-cctv-osd{color:#cfe8c2}
+.spectate-exterior-motion{grid-column:1/3;grid-row:3;justify-self:start}
+.spectate-exterior-motion.on{color:#ffe0a0}
+.spectate-exterior.near .spectate-exterior-motion{color:#ff9a72;animation:spectate-rec 1s steps(2,jump-none) infinite}
+/* A scare: the player's camera (or the shelter camera) fills the page for a moment. */
+.spectate-camera.spotlight,.spectate-cctv-card.spotlight{position:fixed;inset:4vh 4vw;z-index:40;box-shadow:0 0 0 100vmax #000c;animation:spectate-jolt .5s ease-out}
+.spectate-camera.spotlight video{width:100%;height:100%;max-height:none;object-fit:contain}
+.spectate-cctv-card.spotlight{display:flex;flex-direction:column}.spectate-cctv-card.spotlight .spectate-cctv{flex:1;aspect-ratio:auto;min-height:0}
+.spectate-camera.spotlight{display:flex;flex-direction:column}.spectate-camera.spotlight .camera-frame{flex:1;min-height:0}
+@keyframes spectate-jolt{0%{transform:scale(.9) translate(6px,-4px)}20%{transform:scale(1.02) translate(-8px,5px)}40%{transform:scale(1) translate(5px,-3px)}60%{transform:translate(-3px,2px)}100%{transform:none}}
+.spectate-reaction-toast{position:fixed;left:50%;bottom:6vh;transform:translateX(-50%);z-index:41;display:grid;justify-items:center;gap:2px;padding:12px 22px;background:#1a0b07ee;border:1px solid #b4553a;color:#f0c7ad;font:13px var(--mono)}
+.spectate-reaction-toast b{font:400 30px var(--mono);color:#ffd7c0}
+.spectate-narration{position:fixed;left:50%;bottom:2.5vh;transform:translateX(-50%);z-index:42;max-width:min(720px,92vw);margin:0;padding:8px 16px;background:#000c;color:#e8e2c8;font:16px var(--typed,var(--mono));text-align:center}
+@media(prefers-reduced-motion:reduce){.spectate-camera.spotlight,.spectate-cctv-card.spotlight{animation:none}.spectate-exterior.near .spectate-exterior-motion{animation:none}}
+/* The heart-rate line under the readouts. */
+.spectate-trace{width:100%;height:auto;display:block;font:9px var(--mono)}
+.spectate-trace text{fill:#8f9c86}.spectate-trace .baseline{stroke:#8a9c7f;stroke-dasharray:4 4;stroke-opacity:.7}.spectate-trace .mark{stroke-opacity:.55}
+.spectate-trace .fill{fill:#c9d9ac22}.spectate-trace .line{fill:none;stroke:#c9d9ac;stroke-width:2;stroke-linecap:round}.spectate-trace circle{fill:#edb078}
+.spectate-trace-empty{margin:0}
+/* Highlights over the moments list. */
+.spectate-highlights{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:6px}
+.spectate-highlights li{padding:8px 10px;border-left:3px solid #d99450;background:#1d1710;color:#f0d9b8;font-size:12px}
+.spectate-highlights li.close-call,.spectate-highlights li.caught{border-color:#c9553a;background:#231009}
+.spectate-highlights li.steadied,.spectate-highlights li.escaped,.spectate-highlights li.decoy-save{border-color:#8fbf8f;background:#101d14;color:#d7ecd0}
+/* Predictions and the recap. */
+.spectate-predict-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.spectate-predict-buttons button{flex:1;min-width:120px;font:12px var(--mono);letter-spacing:1px;padding:10px}
+.spectate-predict-buttons button.on{border-color:#e9ac76;color:#ffd9b0;background:#2a1a0e}
+.spectate-name{display:grid;gap:4px;font-size:11px;color:#aebc9f}.spectate-name input{font:13px var(--mono);padding:6px 8px;background:#0b120d;border:1px solid var(--line);color:#e2e7d4}
+.spectate-standings{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:12px}
+.spectate-standings li{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:6px 0;border-top:1px solid var(--line)}.spectate-standings li.mine{color:#ffd9b0}.spectate-standings em{font-style:normal;color:#8f9c86}.spectate-standings b{font:14px var(--mono)}
+.spectate-recap{margin-top:14px;border-color:#a3956a88;background:#14130e}
+.spectate-recap.won>strong{color:#cfe3c2}.spectate-recap.lost>strong{color:#e8a08c}
+.spectate-recap-rise{margin:0;font-size:13px;color:#d8cfb2}.spectate-recap-rise b{font:400 22px var(--mono);color:#ffd7c0;margin-right:8px}
+.spectate-recap-moments{margin:0;padding-left:18px;font-size:12px;color:#d8cfb2;display:grid;gap:4px}
+.spectate-recap-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}.spectate-recap-stats div{display:grid;gap:2px}.spectate-recap-stats b{font:400 24px var(--mono);color:#e7d6a6}.spectate-recap-stats span{font:9px var(--mono);letter-spacing:1px;color:#8f9c86}
+.spectate-recap>button{justify-self:start;font:12px var(--mono);letter-spacing:1px;padding:8px 14px}

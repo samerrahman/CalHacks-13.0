@@ -19,6 +19,7 @@ import SignalToSpectatorReducer from "../signal_to_spectator_reducer";
 import SignalToPlayerReducer from "../signal_to_player_reducer";
 import ShareVitalsReducer from "../share_vitals_reducer";
 import StopVitalsReducer from "../stop_vitals_reducer";
+import PredictOutcomeReducer from "../predict_outcome_reducer";
 
 export type AppendTraceParams = __Infer<typeof AppendTraceReducer>;
 export type PublishManualParams = __Infer<typeof PublishManualReducer>;
@@ -33,4 +34,4 @@ export type SignalToSpectatorParams = __Infer<typeof SignalToSpectatorReducer>;
 export type SignalToPlayerParams = __Infer<typeof SignalToPlayerReducer>;
 export type ShareVitalsParams = __Infer<typeof ShareVitalsReducer>;
 export type StopVitalsParams = __Infer<typeof StopVitalsReducer>;
-
+export type PredictOutcomeParams = __Infer<typeof PredictOutcomeReducer>;

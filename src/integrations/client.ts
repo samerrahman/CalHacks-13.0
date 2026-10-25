@@ -74,7 +74,7 @@ export function sanitizedTrace(state: GameState, sensor: SensorView): TraceSnaps
 function token(): string { return Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join(''); }
 type JudgeAccess = { channel: string; sessionId?: string; capability?: string; host?: string; database?: string };
 /** Event types added after the first Maincloud publish (see spacetimedb/src/index.ts eventTypes). */
-const NEWER_EVENT_TYPES = new Set(['RECOVERY_REWARD', 'FRIEND_WARNING', 'FRIEND_DECOY', 'DOOR_UNLOCKED']);
+const NEWER_EVENT_TYPES = new Set(['RECOVERY_REWARD', 'FRIEND_WARNING', 'FRIEND_DECOY', 'DOOR_UNLOCKED', 'VOICE_HEARD']);
 export class TraceBridge {
   /** Owner access stays inside the player app; only the judge capability enters invite links. */
   cameraAccess(): import('./webrtc').CameraSignalAccess | null {

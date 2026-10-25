@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame } from '../game/reducer';
 import { coopManual, type CoopManual } from '../game/coop';
+import { beginStep, startStage } from '../game/tasks';
 import type { DbConnection } from '../module_bindings';
 import { manualRowValid, type ManualRow } from '../../spacetimedb/src/coopRules';
 import { CoopManualFeed, CoopManualPublisher, currentManual, manualFromRow, manualRow, type CoopFeedState, type CoopLink } from './coop';
@@ -44,18 +45,19 @@ test('the publisher posts the live page on the -coop channel, writes on change a
   try {
     publisher.publish(createGame(17), 0); await tick();
     assert.equal(heard.length, 0); assert.equal(calls.length, 0, 'a standard run publishes nothing');
-    const game = createGame(17, 'coop'), page = coopManual(game)!;
+    // The live page is the breathing pacer (every other answer is in the friend's book).
+    const game = createGame(17, 'coop'); startStage(game, 4); beginStep(game, 'calm'); const page = coopManual(game)!;
     publisher.publish(game, 0); await tick();
     assert.deepEqual(manualFromRow(heard.at(-1)), page); assert.equal(calls.length, 1);
     assert.equal(calls[0]!.ownerCapability, 'b'.repeat(64)); assert.ok(calls[0]!.values instanceof Uint8Array);
     publisher.publish(game, 400); await tick();
     assert.equal(heard.length, 1); assert.equal(calls.length, 1, 'an unchanged page is neither reposted nor rewritten within a second');
-    const changed = structuredClone(game); changed.tasks.step = 'wires';
+    const changed = structuredClone(game); changed.time += 1.3;
     publisher.publish(changed, 600); await tick();
-    assert.equal(manualFromRow(heard.at(-1))?.kind, 'wires', 'the local link changes at once');
+    assert.notDeepEqual(manualFromRow(heard.at(-1)), page, 'the local link changes at once');
     assert.equal(calls.length, 1, 'the database waits for the one-second gap');
     publisher.publish(changed, 1100); await tick();
-    assert.equal(calls.length, 2); assert.equal(calls[1]!.kind, 'wires'); assert.ok((calls[1]!.sequence as number) > (calls[0]!.sequence as number));
+    assert.equal(calls.length, 2); assert.equal(calls[1]!.kind, 'calm'); assert.ok((calls[1]!.sequence as number) > (calls[0]!.sequence as number));
     publisher.publish(changed, 2200); await tick();
     assert.equal(heard.length, 3, 'reposted once a second for late joiners'); assert.equal(calls.length, 2, 'but not rewritten');
     link = null; publisher.publish(changed, 3000); await tick();

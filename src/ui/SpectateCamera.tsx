@@ -7,7 +7,8 @@ const TITLE: Record<SpectatorCameraState['status'], string> = { unavailable: 'Un
 /** Spectator view of the player's camera (peer to peer, muted, only while the player shares it), plus
  * optional voice chat on the same link: the friend hears the player and opens their own mic only after
  * pressing Join voice. The player separately chooses whether to talk and hear. */
-export default function SpectateCamera({ hash }: { hash: string }) {
+/** `spotlight` blows the picture up over the page for a moment (a scare); `onLive` reports whether a picture is showing. */
+export default function SpectateCamera({ hash, spotlight = false, onLive }: { hash: string; spotlight?: boolean; onLive?: (live: boolean) => void }) {
   const video = useRef<HTMLVideoElement>(null), audio = useRef<HTMLAudioElement>(null), camera = useRef<SpectatorCamera | null>(null), mic = useRef<MediaStream | null>(null);
   const [state, setState] = useState<SpectatorCameraState>({ status: 'connecting', stream: null, message: 'Connecting to the live camera' });
   const [voice, setVoice] = useState<'off' | 'opening' | 'on' | 'denied'>('off'), [videoMuted, setVideoMuted] = useState(true);
@@ -48,8 +49,9 @@ export default function SpectateCamera({ hash }: { hash: string }) {
       void audio.current?.play().catch(() => { /* retried when the stream arrives */ });
     } catch { setVoice('denied'); }
   }
-  const voiceLine = live && state.voice;
-  return <section className={`spectate-card spectate-camera ${state.status}`} aria-label="Player camera and voice">
+  const voiceLine = live && state.voice, picture = live && !videoMuted;
+  useEffect(() => { onLive?.(picture); }, [picture, onLive]);
+  return <section className={`spectate-card spectate-camera ${state.status}${spotlight && picture ? ' spotlight' : ''}`} aria-label="Player camera and voice">
     <small>PLAYER CAMERA <em>{live && videoMuted ? state.voice ? 'Voice only' : 'No picture yet' : TITLE[state.status]}</em></small>
     <div className="camera-frame">
       <video ref={video} muted playsInline autoPlay hidden={!live || videoMuted} aria-label="Live video from the player's camera"/>

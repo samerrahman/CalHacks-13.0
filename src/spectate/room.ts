@@ -5,16 +5,20 @@ import type { PropView } from '../integrations/physics';
 import type { TraceSnapshot } from '../integrations/client';
 import { camLighting, newTracker, trackFeed, type DoorCue, type Signal } from './feedState';
 import { SpringLook } from './look';
+import { createPlayerModel, playerPose, type PlayerModel } from './player';
+import { BASEMENT_DOOR, buildBasementDoor } from '../cutscene/props/basementDoor';
 
 type V3 = [number, number, number];
-// Copied from createScene in src/render/scene.ts (model placements, signage, lamp, alarm and
-// lights); keep in step with it. The creature is never added: the room is windowless.
+// Copied from createScene in src/render/scene.ts (model placements, signage, lamp, alarm, lights, the
+// sonar scope, wall status unit and basement door); keep in step with it. As in the game the security
+// monitor and wall radar stay loaded but hidden. The creature is never added: the room is windowless.
+// The player sits at the desk (./player.ts).
 const PLACEMENT: Record<Exclude<ModelName, 'creature_cctv'>, [V3, number]> = {
   shelter: [[0, 0, 0], 0], sealed_door: [[-1.75, 0, 2.39], Math.PI], workdesk: [[0, 0, -1.8], 0], terminal: [[-.62, .92, -1.8], 0], security_monitor: [[.72, .92, -1.8], 0], proximity_detector: [[1.85, 1.60, -2.35], 0], radio_speaker: [[-1.30, .92, -1.8], 0], machine_rack: [[2.67, 0, .05], -Math.PI / 2], emergency_switch: [[-.70, 1.35, 2.36], Math.PI],
 };
-const SIGNS: [string, V3, number, number][] = [['title', [.1, 2.38, -2.32], 1.15, 0], ['protocol_card', [-1.85, 1.66, -2.32], .8, 0], ['camera_notice', [.75, 1.95, -2.32], .73, 0], ['sensor_notice', [1.9, 2.16, -2.32], .65, 0], ['door_label', [-1.75, 2.2, 2.255], .7, Math.PI], ['emergency_switch', [-.7, 1.93, 2.47], .56, Math.PI]];
+const SIGNS: [string, V3, number, number][] = [['protocol_card', [-.8, 1.55, -2.32], .62, 0], ['camera_notice', [.75, 1.95, -2.32], .73, 0], ['sensor_notice', [1.9, 2.16, -2.32], .65, 0], ['door_label', [-1.75, 2.2, 2.255], .7, Math.PI], ['emergency_switch', [-.7, 1.93, 2.47], .56, Math.PI]];
 /** Screens glow as plain light; they never show feed content, labels or countdowns. */
-const SCREENS: [ModelName, string, number][] = [['terminal', 'terminal_screen', 0x6f9a72], ['security_monitor', 'security_screen', 0x5d736a], ['proximity_detector', 'proximity_screen', 0x9a7644]];
+const SCREENS: [ModelName, string, number][] = [['terminal', 'terminal_screen', 0x6f9a72]];
 const PROP_SHAPE: Record<string, { colour: number; radius: number; height: number; sides: number; lying?: boolean }> = {
   can: { colour: 0xa9b28a, radius: .033, height: .12, sides: 12 }, mug: { colour: 0xd1b98a, radius: .043, height: .095, sides: 12 }, bolt: { colour: 0x8d9188, radius: .012, height: .03, sides: 6 },
   bottle: { colour: 0x7f9f8f, radius: .038, height: .24, sides: 10 }, flashlight: { colour: 0xd49a5e, radius: .028, height: .2, sides: 10, lying: true },
@@ -96,7 +100,8 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
   container.addEventListener('keydown', keyDown); container.addEventListener('keyup', keyUp); container.addEventListener('blur', releaseLook);
   window.addEventListener('blur', releaseLook);
   let disposed = false, lostContext = false, lastRender = -Infinity, frameNo = 0, gain = 1, noise = .06, shakeAt = -Infinity, shakeAmp = 0;
-  let tracker = newTracker(), lastTrace: TraceSnapshot | null | undefined;
+  let tracker = newTracker(), lastTrace: TraceSnapshot | null | undefined, scareAt: number | null = null, wonAt: number | null = null;
+  let player: PlayerModel | null = null, lockLamps: THREE.MeshStandardMaterial[] = [], beaconLens: THREE.MeshStandardMaterial | null = null, doorLeaf: THREE.Object3D | null = null;
 
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x020303); scene.fog = new THREE.FogExp2(0x040504, .025);
   const camera = new THREE.PerspectiveCamera(CAMERA.fov, 16 / 9, .05, 20);
@@ -128,6 +133,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
   const ready = loadModels(() => undefined).then(assets => {
     if (disposed) { Object.values(assets).forEach(asset => disposeObject(asset.scene)); return; }
     disposeObject(assets.creature_cctv.scene);
+    assets.security_monitor.scene.visible = false; assets.proximity_detector.scene.visible = false;
     // The weathering canvases are the costly part, so they wait until the room is actually needed.
     const w = weathering = createWeathering(), steel = w.material('steel'), rust = w.material('rust');
     for (const [name, [pos, rotation]] of Object.entries(PLACEMENT) as [keyof typeof PLACEMENT, [V3, number]][]) {
@@ -143,6 +149,22 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
     box([.25, .035, .22], [-1.35, .945, -1.96], steel); box([.027, .77, .027], [-1.35, 1.32, -1.96], rust); box([.36, .08, .23], [-1.26, 1.72, -1.83], steel); box([.29, .015, .18], [-1.26, 1.672, -1.83], lampSurface);
     box([.22, .22, .12], [1.05, 2.3, -2.36], steel); for (const x of [1.01, 1.09]) box([.008, .19, .015], [x, 2.3, -2.17], steel);
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 8), alarmLens); bulb.position.set(1.05, 2.3, -2.25); scene.add(bulb);
+    // The round sonar scope on the desk and the wall status unit glow as plain light.
+    const scope = new THREE.Group(); scope.position.set(.72, 1.34, -1.78); scene.add(scope);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(.37, .39, .16, 40), steel); drum.rotation.x = Math.PI / 2; scope.add(drum);
+    const bezel = new THREE.Mesh(new THREE.TorusGeometry(.335, .028, 10, 48), rust); bezel.position.z = .085; scope.add(bezel);
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(.16, .1, .14), steel); stand.position.set(0, -.37, 0); scope.add(stand);
+    const sonarGlow = new THREE.MeshBasicMaterial({ color: 0x4f8a5c }), sonar = new THREE.Mesh(new THREE.CircleGeometry(.32, 48), sonarGlow); sonar.position.z = .082; scope.add(sonar);
+    screens.push({ material: sonarGlow, colour: 0x4f8a5c });
+    box([.52, .64, .05], [-.8, 2.05, -2.31], steel);
+    const statusGlow = new THREE.MeshBasicMaterial({ color: 0x6b3a1c }), status = new THREE.Mesh(new THREE.PlaneGeometry(.46, .575), statusGlow); status.position.set(-.8, 2.05, -2.282); scene.add(status);
+    screens.push({ material: statusGlow, colour: 0x6b3a1c });
+    // The basement door: its lock lamps turn green as stages complete; after the win it slides open.
+    const basement = buildBasementDoor(); basement.position.set(-2.0, 0, -2.5); w.apply(basement); scene.add(basement);
+    lockLamps = [0, 1, 2, 3].map(i => { const mesh = basement.getObjectByName(`lock_lamp_${i}`) as THREE.Mesh, material = new THREE.MeshStandardMaterial({ color: 0x1c0605, emissive: 0xff2a1a, emissiveIntensity: .8 }); mesh.material = material; orphans.push(material); return material; });
+    beaconLens = new THREE.MeshStandardMaterial({ color: 0x3a2508, emissive: 0xffa040, emissiveIntensity: .08 }); (basement.getObjectByName('beacon_lens') as THREE.Mesh).material = beaconLens; orphans.push(beaconLens);
+    doorLeaf = basement.getObjectByName('door_leaf') ?? null;
+    player = createPlayerModel(steel); scene.add(player.chair, player.root);
     const loader = new THREE.TextureLoader();
     for (const [name, pos, width, rotation] of SIGNS) {
       const material = w.material('cream'); material.color.setHex(0xa29a7c);
@@ -200,7 +222,11 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
       if (trace !== lastTrace) {
         lastTrace = trace;
         const { next, cues, restarted } = trackFeed(tracker, trace);
-        if (restarted) { door?.impact.stop(); door?.dent.stop(); look.reset(); }
+        if (restarted) { door?.impact.stop(); door?.dent.stop(); look.reset(); scareAt = wonAt = null; }
+        if (cues.length) scareAt = nowMs;
+        // A win seen live walks the player out; joining after it, they are already gone.
+        if (trace?.summary.status === 'won' && wonAt === null) wonAt = tracker.primed && !restarted ? nowMs : -1e9;
+        if (trace?.summary.status === 'playing') wonAt = null;
         const joinedDented = next.dented && !tracker.dented && !cues.includes('dent');
         tracker = next; diagnostics.signal = next.signal;
         if (joinedDented) settleDent();
@@ -222,6 +248,12 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
         for (const screen of screens) screen.material.color.setHex(light.screens ? screen.colour : 0x030504);
         if (lever) { lever.action.time = light.screens ? 0 : .34999; lever.mixer.update(0); }
         door?.mixer.update(dt); syncProps(propsAt());
+        const won = s.status === 'won', locks = won ? 4 : Math.max(0, Math.min(4, s.stage - 1)), motor = won || (s.stage >= 5 && trace!.events.some(e => e.type === 'FINAL_BROADCAST'));
+        lockLamps.forEach((lamp, i) => { const open = i < locks; lamp.color.setHex(open ? 0x061c09 : 0x1c0605); lamp.emissive.setHex(open ? 0x3dff6e : 0xff2a1a); lamp.emissiveIntensity = (open ? .9 : .8) * Math.max(.35, light.level); });
+        if (beaconLens) beaconLens.emissiveIntensity = motor ? .6 + 1.6 * Math.max(0, Math.sin(nowMs / 1000 * Math.PI * 2.2)) : .08;
+        const wonAge = won && wonAt !== null ? (nowMs - wonAt) / 1000 : null;
+        if (doorLeaf) doorLeaf.position.x = -BASEMENT_DOOR.maxTravel * Math.min(1, Math.max(0, wonAge === null ? 0 : (wonAge - 1.6) / 1.6)) * (wonAge !== null && wonAge > 5.6 ? Math.max(0, 1 - (wonAge - 5.6) / .8) : 1);
+        player?.apply(playerPose({ seconds: nowMs / 1000, equipment: s.equipment, playing: s.status === 'playing', alarm: tracker.alarm, scareAge: scareAt === null ? null : (nowMs - scareAt) / 1000, wonAge, reducedMotion }));
         camera.position.set(...CAMERA.position); camera.lookAt(...CAMERA.target);
         camera.rotateY(look.yaw); camera.rotateX(look.pitch);
         const shake = reducedMotion ? 0 : shakeAmp * Math.max(0, 1 - (nowMs - shakeAt) / 600);
@@ -239,7 +271,7 @@ export function createShelterCam(container: HTMLElement): ShelterCam {
       container.removeEventListener('keydown', keyDown); container.removeEventListener('keyup', keyUp); container.removeEventListener('blur', releaseLook);
       window.removeEventListener('blur', releaseLook);
       for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()); }
-      disposeObject(scene); new Set([...orphans, lampSurface, alarmLens]).forEach(material => material.dispose()); weathering?.dispose();
+      player?.dispose(); disposeObject(scene); new Set([...orphans, lampSurface, alarmLens]).forEach(material => material.dispose()); weathering?.dispose();
       target.dispose(); quad.geometry.dispose(); post.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove();
     },
   };

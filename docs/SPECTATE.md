@@ -25,6 +25,24 @@ One exception by design: in an experimental co-op run ([COOP.md](COOP.md)) the l
 
 The game reducer never reads anything spectators do; spectators cannot send anything to the player. Everything a spectator receives is revalidated in the page (`remoteVitals`), and the server revalidates every write (`shareVitals`): enums, 40–110 BPM integers, accepted ⇔ pulse present, owner capability, monotonic sequence and at most two writes a second.
 
+## What the spectate page adds
+
+Everything below is built on the spectator's own device from the public trace and, only under the separate heart-rate consent, the whole-BPM pulse. Nothing here reaches the player's game; spectators cannot change the run.
+
+- **Sound** (`src/spectate/audio.ts`): a "Tap for sound" button starts the game's own audio engine, driven from the trace: footsteps louder and quicker as the creature closes in, a run during a seeded hunt, pounding at the wall, a barrage when an attack commits, the scares, the power going off and on. The creature is placed at its public bearing (`creatureBearing`). Optional: the player's heartbeat as a soft lub-dub at their shared BPM.
+- **Narrator** (`src/spectate/narrator.ts`): opt-in. Written lines filled in from the trace and the shared BPM ("It is at the wall. Pulse 104."), spoken by the browser's own speech synthesis and always captioned. It uses no provider key and makes no request, so it works on any device.
+- **Player at the desk** (`src/spectate/player.ts`): the shelter camera (now the current map: sonar scope, wall status unit, basement door with its lock lamps) shows a seated figure in headphones. They type while the equipment runs, hunch over with it off, look over their shoulder at the sealed door when it is close, flinch at a scare, and after a win stand up and leave through the basement door.
+- **Outside camera** (`src/spectate/exterior.ts`): an infrared roof camera that tracks the creature through the trees at its public bearing and distance. The player has no cameras; only spectators see it coming.
+- **Reaction cam**: on a hit on the door or a committed attack, the player's webcam (or, without one, the shelter camera) fills the page for about three seconds, then a toast shows the heart-rate jump.
+- **Pulse line** (`src/spectate/PulseTrace.tsx`): the shared BPM over the last two minutes with scares and recoveries marked. Kept only in the page's memory.
+- **Highlights** (`src/spectate/highlights.ts`): close calls (going quiet with it at the wall), a visit to the wall that ends with it walking away, heart-rate spikes with their likely cause, a friend's decoy pulling it off the wall, and the outcome. Only what the page saw live counts.
+- **Predictions** (`src/spectate/predictions.ts`, module `spacetimedb/src/predict.ts`): spectators call "they escape" or "it gets them" until research stage 3, with a display name. Right calls score 200 in stage 1 and 150 in stage 2; the leaderboard shows at the end. One call per connection identity, at most 64 per session, names checked by `predictRules.ts` on both ends, deleted with the session. The player's game never reads them.
+- **Recap** (`src/spectate/Recap.tsx`): at the end, the outcome, the biggest jump and its cause, close calls, counts, what the co-op friend contributed and the prediction standings, with **Save as image**.
+
+`tests/fixtures/spectate.html` drives the page from a real reducer run over the same-browser link with SIMULATED vitals; its buttons bring the creature to the wall, scare, isolate, change stage, start the calm hold, win and lose (`?mode=coop` for a co-op run).
+
+The prediction table, its reducer and view, and the `VOICE_HEARD` event type are module changes: until `spacetimedb/` is republished and `npm run spacetime:generate` is run, predictions work between tabs of one browser only (the bindings in `src/module_bindings/` were written by hand to match). Agents do not publish.
+
 ## How it flows
 
 - **Player:** `TraceBridge` (`src/integrations/client.ts`) already publishes a sanitized snapshot every ~90 ms to a BroadcastChannel and appends the trace to SpacetimeDB at most once a second. During a friend run it adds `vitals` (`spectatorVitals()` in `src/integrations/spectate.ts`) to the local snapshot and calls `shareVitals` at most once a second. Nothing here runs in the game step or waits on the network.

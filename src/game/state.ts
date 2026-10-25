@@ -161,6 +161,9 @@ export interface GameState {
    * remote decoy that briefly pulls the creature away, and holds the key the basement door needs.
    * `doorKey` is private: only the friend's manual page shows it (see coop.ts). */
   coop: { warnedAt: number; warnings: number; decoysUsed: number; lastDecoyAt: number; decoyUntil: number; doorKey: number[]; doorInput: number[]; doorUnlocked: boolean };
+  /** Co-op voice chat: the player's own microphone is loud right now (never the friend's voice). Loud talking
+   * is noise it can hear, like work: it raises exposure and counts as audible evidence. `heardAt` spaces VOICE_HEARD. */
+  voice: { loud: boolean; since: number; heardAt: number };
   /** Alias for concise HUDs; always identical to sensor.trend. */
   trend: Trend;
   fixedMemoryTempo: boolean;
@@ -210,6 +213,8 @@ export type GameAction =
   | { type: 'personal'; restingBpm: number | null; restingBreathsPerMinute: number | null }
   /** A co-op friend's remote action, already revalidated by the transport. Ignored outside co-op. */
   | { type: 'friend'; signal: 'warn' | 'decoy' }
+  /** Co-op voice chat: whether the player's own microphone is above the whisper line (coarse, from the UI). */
+  | { type: 'voice'; loud: boolean }
   | { type: 'accessibility'; fixedMemoryTempo: boolean }
   | { type: 'proposal'; proposal: unknown; source: ProposalSource };
 export type Action = GameAction;

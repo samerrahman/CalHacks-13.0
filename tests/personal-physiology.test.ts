@@ -51,7 +51,7 @@ test('calm pacer starts at the player\'s breathing pace and slows each breath to
   }
   assert.ok(halves.length > 1, 'the pacer slowed at least once');
   for (let i = 1; i < halves.length; i++) assert.ok(halves[i]! > halves[i - 1]! && halves[i]! <= settings.breathSeconds + 1e-9);
-  assert.equal(state.tasks.step, 'transmit', 'following the personal pacer still completes the calm hold');
+  assert.ok(state.events.some(e => e.type === 'CALM_COMPLETE') && state.tasks.step !== 'calm', 'following the personal pacer still completes the calm hold');
   const quick = reach('calm', [live, { type: 'personal', restingBpm: null, restingBreathsPerMinute: 30 }]);
   assert.equal(quick.tasks.calm.halfSeconds, settings.personalMinimumBreathSeconds, 'never faster than the minimum phase');
 });

@@ -115,6 +115,32 @@ export const CoopManualRow = __t.object("CoopManualRow", {
 });
 export type CoopManualRow = __Infer<typeof CoopManualRow>;
 
+export const Prediction = __t.object("Prediction", {
+  key: __t.string(),
+  sessionId: __t.string(),
+  voter: __t.string(),
+  name: __t.string(),
+  choice: __t.string(),
+  stage: __t.u8(),
+  updatedAtMs: __t.u64(),
+});
+export type Prediction = __Infer<typeof Prediction>;
+
+export const PredictionFeed = __t.object("PredictionFeed", {
+  id: __t.string(),
+  judgeCapability: __t.string(),
+});
+export type PredictionFeed = __Infer<typeof PredictionFeed>;
+
+export const PredictionRow = __t.object("PredictionRow", {
+  key: __t.string(),
+  voter: __t.string(),
+  name: __t.string(),
+  choice: __t.string(),
+  stage: __t.u8(),
+});
+export type PredictionRow = __Infer<typeof PredictionRow>;
+
 export const CoopRemote = __t.object("CoopRemote", {
   sessionId: __t.string(),
   warnCount: __t.u32(),

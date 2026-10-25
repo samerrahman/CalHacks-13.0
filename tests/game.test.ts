@@ -4,7 +4,7 @@ import { createGame, dispatch, step, canRestore, proximityAlarm, config } from '
 import { buildDirectorRequest, validateProposal, allowedPairs, allowedTaunts, DIRECTOR_TIMEOUT_MS } from '../src/game/directorValidation';
 import { applyLure, bearingLabel, commitIfEligible, contextualTaunt, creatureBearing, creatureHeardPosition, movementProbabilities, projectCreature, restoreEquipment, triggerScare, updateCaption } from '../src/game/creature';
 import { emit, type DirectorProposal, type GameState, type Tactic, type Target } from '../src/game/state';
-import { startStage } from '../src/game/tasks';
+import { beginStep, startStage } from '../src/game/tasks';
 import { playBalancedRun } from './balance-helpers';
 /** Seeds the perfect-information policy wins under the current tuning; it is not guaranteed for every seed. */
 const WINNING_SEEDS = [1, 2, 5, 6, 17, 18];
@@ -15,7 +15,7 @@ function at(position: number, time = 50): GameState {
   projectCreature(state); return state;
 }
 /** Faults now spawn only after the rack plays its sound key. */
-function firstFault(state: GameState): GameState { while (!state.tasks.faults.active.length) state = step(state, .1); return state; }
+function firstFault(state: GameState): GameState { if (state.tasks.step !== 'faults') beginStep(state, 'faults'); while (!state.tasks.faults.active.length) state = step(state, .1); return state; }
 function request(state: GameState): GameState { state.director.request = buildDirectorRequest(state); state.director.requestSequence++; return state; }
 function proposal(state: GameState, tactic: Tactic = 'WAIT', target: Target = 'NONE'): DirectorProposal {
   const req = state.director.request!;
@@ -161,7 +161,7 @@ test('danger uses bounded accepted coarse physiology and work noise, never raw p
   assert.equal(elevated.danger - base.danger, config.danger.physiologyMaximum);
   assert.equal(dispatch(base, { type: 'sensor', source: 'presage', quality: 'rejected', trend: 'ELEVATED' }).danger, base.danger);
   assert.equal(dispatch(base, { type: 'sensor', source: 'manual', quality: 'accepted', trend: 'ELEVATED' }).danger, base.danger);
-  let state = base;
+  let state = firstFault(createGame(4));
   for (let i = 0; i < 20; i++) { const wrong = [1, 2, 3, 4].find(value => !state.tasks.faults.active.includes(value - 1))!; state = dispatch(state, { type: 'input', value: wrong }); state = step(state, .3); }
   assert.ok(state.pressure > config.danger.pressureMaximum && state.pressure <= config.danger.mistakeMaximum && state.danger <= 100, 'mistakes push noise past the work cap, never past the mistake cap');
   let quietState = firstFault(createGame(4)); const before = quietState.pressure;
