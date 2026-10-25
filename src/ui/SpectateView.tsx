@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SpectateFeed, type SpectateState, type SpectatorVitals } from '../integrations/spectate';
+import CctvFeed from '../spectate/CctvFeed';
+import { creatureDistance, METRES_PER_UNIT } from '../spectate/distance';
 import type { PropView } from '../integrations/physics';
 import { DOOR, OBSTACLES, ROOM } from '../../spacetimedb/src/physicsSim';
 import './spectate.css';
@@ -51,39 +53,50 @@ function Vitals({ vitals, age }: { vitals: SpectatorVitals | null; age: number |
 }
 
 export default function SpectateView() {
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null), feed = useRef<SpectateFeed | null>(null);
   const [state, setState] = useState<SpectateState | null>(null), [now, setNow] = useState(() => performance.now());
+  const propsAt = useCallback((t: number) => feed.current?.props(t) ?? [], []);
   useEffect(() => {
-    const feed = new SpectateFeed(location.hash), off = feed.subscribe(setState), clock = setInterval(() => setNow(performance.now()), 500);
-    let raf = requestAnimationFrame(function frame(t) { drawShelter(canvas.current, feed.props(t)); raf = requestAnimationFrame(frame); });
-    return () => { off(); clearInterval(clock); cancelAnimationFrame(raf); feed.dispose(); };
+    const current = feed.current = new SpectateFeed(location.hash), off = current.subscribe(setState), clock = setInterval(() => setNow(performance.now()), 500);
+    let raf = requestAnimationFrame(function frame(t) { drawShelter(canvas.current, current.props(t)); raf = requestAnimationFrame(frame); });
+    return () => { off(); clearInterval(clock); cancelAnimationFrame(raf); current.dispose(); if (feed.current === current) feed.current = null; };
   }, []);
   const trace = state?.trace, s = trace?.summary, traceAge = state?.traceReceivedAt == null ? null : now - state.traceReceivedAt;
   const moments = (trace?.events ?? []).filter(e => MOMENTS[e.type]).slice(-6).reverse();
+  // Run time carried forward between updates (at most 2 s) so the distance keeps drifting smoothly.
+  const distance = s ? creatureDistance(s.linePosition, s.time + (s.status === 'playing' && traceAge !== null ? Math.min(2, traceAge / 1000) : 0), trace!.seed) : null;
   return <main className="judge-page spectate-page">
     <div className="eyebrow">HUSH / SPECTATING · READ ONLY</div>
     <h1>You're watching.</h1>
     <p className="small muted">{state?.status ?? 'Connecting'}{traceAge !== null && traceAge > HELD_MS && ` · no update for ${Math.floor(traceAge / 1000)} s`}</p>
-    <div className="spectate-grid">
-      <Vitals vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt} />
-      {s ? <section className="spectate-card">
-        <small>THE RUN</small>
-        <strong>{s.status === 'won' ? 'Contained' : s.status === 'lost' ? 'Lost' : s.stage >= 5 ? 'Final containment' : `Stage ${s.stage} of 4`}</strong>
-        <span>{Math.floor(s.time / 60)}:{String(Math.floor(s.time % 60)).padStart(2, '0')} · equipment {s.equipment} · {'●'.repeat(s.quietChargesRemaining)}{'○'.repeat(Math.max(0, 3 - s.quietChargesRemaining))} isolation</span>
-        <label className="spectate-meter"><span>Creature · {s.linePosition} of {s.lineLength} from the wall · {s.creaturePhase}</span><meter min={0} max={s.lineLength} low={7} high={10} optimum={s.lineLength} value={s.linePosition} /></label>
-        <label className="spectate-meter"><span>Exposure · {s.danger}%</span><meter min={0} max={100} low={40} high={70} optimum={0} value={s.danger} /></label>
-      </section> : <section className="spectate-card off"><small>THE RUN</small><strong>Waiting</strong><span>Keep this page open. It updates when the player is in a run with sharing on.</span></section>}
+    <div className="spectate-main">
+      <section className="spectate-card spectate-cctv-card" aria-label="Shelter camera">
+        <small>SHELTER CAMERA <em>DRAWN ON THIS DEVICE FROM THE GAME STATE · NOT THE PLAYER’S WEBCAM</em></small>
+        <CctvFeed trace={trace ?? null} propsAt={propsAt} />
+      </section>
+      <div className="spectate-side">
+        {/* SLOT: live player camera. The player-camera component (separate branch) mounts here, inside this div. */}
+        <div className="spectate-player-camera" data-slot="player-camera" />
+        <Vitals vitals={state?.vitals ?? null} age={state?.vitalsReceivedAt == null ? null : now - state.vitalsReceivedAt} />
+        {s && distance ? <section className="spectate-card">
+          <small>THE RUN</small>
+          <strong>{s.status === 'won' ? 'Contained' : s.status === 'lost' ? 'Lost' : s.stage >= 5 ? 'Final containment' : `Stage ${s.stage} of 4`}</strong>
+          <span>{Math.floor(s.time / 60)}:{String(Math.floor(s.time % 60)).padStart(2, '0')} · equipment {s.equipment} · {'●'.repeat(s.quietChargesRemaining)}{'○'.repeat(Math.max(0, 3 - s.quietChargesRemaining))} isolation</span>
+          <label className="spectate-meter"><span>Creature · {distance.atWall ? distance.label : `${distance.label} from the wall`} · {s.creaturePhase}</span><meter min={0} max={s.lineLength * METRES_PER_UNIT} low={7 * METRES_PER_UNIT} high={10 * METRES_PER_UNIT} optimum={s.lineLength * METRES_PER_UNIT} value={distance.metres} /></label>
+          <label className="spectate-meter"><span>Exposure · {s.danger}%</span><meter min={0} max={100} low={40} high={70} optimum={0} value={s.danger} /></label>
+        </section> : <section className="spectate-card off"><small>THE RUN</small><strong>Waiting</strong><span>Keep this page open. It updates when the player is in a run with sharing on.</span></section>}
+      </div>
     </div>
     <div className="spectate-grid">
       <section className="spectate-card spectate-room">
-        <small>THE SHELTER <em>{state?.physics === 'spacetime' ? 'PROPS · SPACETIMEDB PHYSICS' : 'PROPS · LOCAL REPLAY (OFFLINE)'}</em></small>
-        <canvas ref={canvas} role="img" aria-label="Top-down view of the shelter. Loose props move when the creature hits the door." />
+        <small>MAP <em>{state?.physics === 'spacetime' ? 'PROPS · SPACETIMEDB PHYSICS' : 'PROPS · LOCAL REPLAY (OFFLINE)'}</em></small>
+        <canvas ref={canvas} role="img" aria-label="Top-down map of the shelter. Loose props move when the creature hits the door." />
       </section>
       <section className="spectate-card">
         <small>MOMENTS</small>
         <ol className="spectate-moments">{moments.length ? moments.map(e => <li key={e.id}><time>{Math.floor(e.time / 60)}:{String(Math.floor(e.time % 60)).padStart(2, '0')}</time>{MOMENTS[e.type]!(e.detail)}</li>) : <li>Nothing yet.</li>}</ol>
       </section>
     </div>
-    <p className="small muted spectate-privacy">You see game events, the creature's distance and, only if the player turned it on, their current heart rate. No camera image, recording or puzzle answer is shared, and you cannot affect the game. A camera pulse estimate is a game input, not a medical reading.</p>
+    <p className="small muted spectate-privacy">You see game events, the creature's distance, a shelter camera your own browser draws from those events and, only if the player turned it on, their current heart rate. The player's webcam image, recordings and puzzle answers are not shared, and you cannot affect the game. A camera pulse estimate is a game input, not a medical reading.</p>
   </main>;
 }
