@@ -10,6 +10,11 @@ import AppendTraceReducer from "../append_trace_reducer";
 import CreateSessionReducer from "../create_session_reducer";
 import PhysicsKnockReducer from "../physics_knock_reducer";
 import RemoveSessionReducer from "../remove_session_reducer";
+import SetCameraShareReducer from "../set_camera_share_reducer";
+import JoinCameraReducer from "../join_camera_reducer";
+import LeaveCameraReducer from "../leave_camera_reducer";
+import SignalToSpectatorReducer from "../signal_to_spectator_reducer";
+import SignalToPlayerReducer from "../signal_to_player_reducer";
 import ShareVitalsReducer from "../share_vitals_reducer";
 import StopVitalsReducer from "../stop_vitals_reducer";
 
@@ -17,6 +22,11 @@ export type AppendTraceParams = __Infer<typeof AppendTraceReducer>;
 export type CreateSessionParams = __Infer<typeof CreateSessionReducer>;
 export type PhysicsKnockParams = __Infer<typeof PhysicsKnockReducer>;
 export type RemoveSessionParams = __Infer<typeof RemoveSessionReducer>;
+export type SetCameraShareParams = __Infer<typeof SetCameraShareReducer>;
+export type JoinCameraParams = __Infer<typeof JoinCameraReducer>;
+export type LeaveCameraParams = __Infer<typeof LeaveCameraReducer>;
+export type SignalToSpectatorParams = __Infer<typeof SignalToSpectatorReducer>;
+export type SignalToPlayerParams = __Infer<typeof SignalToPlayerReducer>;
 export type ShareVitalsParams = __Infer<typeof ShareVitalsReducer>;
 export type StopVitalsParams = __Infer<typeof StopVitalsReducer>;
 
