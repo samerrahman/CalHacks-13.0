@@ -2,7 +2,8 @@
 
 What my agent did and why. Newest first, one or two lines each.
 
-- 2026-10-24: continued Claude's handoff: preserved all four feature branches, uploaded the friend-button checkpoint, integrated Presage signals, co-op manuals, peer-to-peer camera and spectator CCTV, added drag-and-return camera controls and sharing cleanup. 228/228 tests and web/Electron builds pass; combined local SpacetimeDB checks: 14 co-op, 26 camera signaling, 15 spectate/physics. Maincloud still needs the combined module; no real webcam or cross-network call was captured.
+- 2026-10-24: published the combined co-op + camera + physics module to Maincloud `scary-5zsk8` (14/14 live co-op and 26/26 live camera signaling checks on Maincloud) and configured `https://shouldhaveskipped.work` (`vercel.json` + `.env.example`).
+- 2026-10-24: continued Claude's handoff: preserved all four feature branches, uploaded the friend-button checkpoint, integrated Presage signals, co-op manuals, peer-to-peer camera and spectator CCTV, added drag-and-return camera controls and sharing cleanup. 228/228 tests and web/Electron builds pass; combined local SpacetimeDB checks: 14 co-op, 26 camera signaling, 15 spectate/physics.
 
 - 2026-10-24: fixed 18 confirmed review findings on `samer/spectate-physics` (physics sleep loop and rack burial, heart-rate revoke races, restart cancelling session delete, stale-row sweep, backlog blasts, desktop spectate links, env precedence); 15/15 live checks on a local SpacetimeDB. Recorded the user's decision that HUSH infers fear and emotion as game input.
 - 2026-10-24: experimental co-op mode on feat/coop-mode: the spectating friend reads the fault, cable and conduit keys from a manual (`src/game/coop.ts`, `coop_manual` table, `src/ui/CoopManual.tsx`). Solo unchanged; 175/175 tests and 14/14 local SpacetimeDB checks (docs/qa/coop-local-spacetime.json). Setup/App/HUD/SpectateView wiring left to the integrator.

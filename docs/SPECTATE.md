@@ -62,14 +62,13 @@ In the game: **Play with a friend → camera check (or Play without camera) → 
 - `npm run check`: unit tests for the vitals projection, remote revalidation, link parsing, consent on/off over the local link, the offline spectator feed and the local physics replay (`src/integrations/spectate.test.ts`).
 - `src/integrations/traceBridge.test.ts`: the revoke and restart races with a mocked connection.
 - [Local SpacetimeDB evidence](qa/spectate-physics-local-spacetime.json): 15/15 server checks (`npm run spacetime:e2e`, including the 15 s sweep), owner SQL showing both schedules stopped, and a browser run with the spectator on a separate origin.
-- [Maincloud evidence](qa/spectate-physics-maincloud.json): the same 15/15 checks against `scary-5zsk8` after the owner published this branch, with owner SQL showing every physics/vitals table and schedule empty afterwards; plus a browser run on Maincloud (spectator on a separate origin, live vitals, revoke within 3 s, delete leaves no rows). A friend on another machine or network was not checked. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
+- [Maincloud evidence](qa/spectate-physics-maincloud.json): the same 15/15 checks against `scary-5zsk8` after the owner published this branch, with owner SQL showing every physics/vitals table and schedule empty afterwards; plus a browser run on Maincloud (spectator on a separate origin, live vitals, revoke within 3 s, delete leaves no rows). The combined camera/co-op module was also published to `scary-5zsk8` on 2026-10-24 and passed [co-op 14/14](qa/integrated-coop-maincloud.json) and [camera signaling 26/26](qa/integrated-camera-maincloud.json) on Maincloud. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
 
 ## Integrated branch verification
 
 - `npm run check`: 228/228 tests, web build and Electron build passed on 2026-10-24.
-- The combined module was published only to the local `hush-integrated` test database: [co-op 14/14](qa/integrated-coop-local.json), [camera signaling 26/26](qa/integrated-camera-local.json), [spectating and physics 15/15](qa/integrated-spectate-local.json).
+- The combined module passed on both the local `hush-integrated` test database ([co-op 14/14](qa/integrated-coop-local.json), [camera signaling 26/26](qa/integrated-camera-local.json), [spectating and physics 15/15](qa/integrated-spectate-local.json)) and Maincloud `scary-5zsk8` ([co-op 14/14](qa/integrated-coop-maincloud.json), [camera signaling 26/26](qa/integrated-camera-maincloud.json)).
 - Browser: friend start, paused invitation, co-op manual across origins through SpacetimeDB, shelter camera, keyboard look, stop sharing, hidden judge controls, and a 390 px layout without horizontal overflow. [Browser evidence](qa/integrated-friend-browser.json).
-- The earlier Maincloud evidence above covers the spectate/physics baseline. **The combined camera/co-op module has not been published to Maincloud.** The database owner must publish the module from this checkout, then rebuild/host the web client with matching public connection settings.
 
 ## Not verified / not done
 

@@ -1,0 +1,146 @@
+{
+  "kind": "webrtc-signaling-live-check",
+  "host": "wss://maincloud.spacetimedb.com",
+  "database": "scary-5zsk8",
+  "at": "2026-10-25T01:50:09.824Z",
+  "note": "Reducers and views only; fake SDP/ICE strings. No media and no RTCPeerConnection in Node.",
+  "passed": 26,
+  "total": 26,
+  "results": [
+    {
+      "check": "a spectator cannot join before the player turns the camera on",
+      "ok": true
+    },
+    {
+      "check": "the share feed is empty before consent",
+      "ok": true
+    },
+    {
+      "check": "a wrong owner capability cannot turn the camera on",
+      "ok": true
+    },
+    {
+      "check": "turning it on shows live epoch 1 to spectators with the link",
+      "ok": true,
+      "detail": {
+        "sessionId": "5f5b3164c16293c5e8dbc4f991bfbcc76f416cf52c416bd7c8200dc707ca82da",
+        "live": true,
+        "epoch": 1
+      }
+    },
+    {
+      "check": "a malformed spectator key is refused",
+      "ok": true
+    },
+    {
+      "check": "the judge capability cannot double as a spectator key",
+      "ok": true
+    },
+    {
+      "check": "a wrong judge capability cannot join",
+      "ok": true
+    },
+    {
+      "check": "each spectator appears once in the player inbox (a resent join is ignored)",
+      "ok": true,
+      "detail": [
+        "79889914",
+        "2f4128ae"
+      ]
+    },
+    {
+      "check": "the offer reaches only the spectator it is addressed to",
+      "ok": true
+    },
+    {
+      "check": "the answer and ICE reach the player",
+      "ok": true
+    },
+    {
+      "check": "player inbox rows expose no timestamps or session data",
+      "ok": true,
+      "detail": [
+        "id",
+        "spectatorKey",
+        "kind",
+        "payload"
+      ]
+    },
+    {
+      "check": "an offer over 8 KB is refused",
+      "ok": true
+    },
+    {
+      "check": "a spectator cannot send an offer",
+      "ok": true
+    },
+    {
+      "check": "the player cannot forge a join",
+      "ok": true
+    },
+    {
+      "check": "unknown kinds (e.g. frames) are refused",
+      "ok": true
+    },
+    {
+      "check": "malformed ICE is refused",
+      "ok": true
+    },
+    {
+      "check": "signals to a key that never joined are refused",
+      "ok": true
+    },
+    {
+      "check": "one spectator handshake is capped per 10 s window",
+      "ok": true,
+      "detail": {
+        "accepted": 26,
+        "limit": "Too many signaling messages"
+      }
+    },
+    {
+      "check": "the cap is per peer: another spectator can still answer",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "check": "leaving notifies the player and drops that spectator's rows",
+      "ok": true
+    },
+    {
+      "check": "a spectator that left can no longer post",
+      "ok": true
+    },
+    {
+      "check": "turning it off deletes every message and join at once",
+      "ok": true,
+      "detail": {
+        "off": {
+          "sessionId": "5f5b3164c16293c5e8dbc4f991bfbcc76f416cf52c416bd7c8200dc707ca82da",
+          "live": false,
+          "epoch": 1
+        },
+        "playerRows": 0
+      }
+    },
+    {
+      "check": "after revoke a spectator cannot rejoin or post",
+      "ok": true
+    },
+    {
+      "check": "turning it back on is a new epoch",
+      "ok": true
+    },
+    {
+      "check": "a wrong capability never received a row",
+      "ok": true,
+      "detail": {
+        "strangerRows": 0
+      }
+    },
+    {
+      "check": "deleting the session removes the share flag",
+      "ok": true
+    }
+  ]
+}
