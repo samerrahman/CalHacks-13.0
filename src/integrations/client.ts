@@ -142,7 +142,8 @@ export class TraceBridge {
   shareableSpectateUrl(): string | null {
     if (!this.access) return null;
     const hosted = String(import.meta.env?.VITE_SPECTATE_ORIGIN ?? '').replace(/\/+$/, '');
-    const base = /^https?:\/\/[^/]+$/.test(hosted) ? `${hosted}/` : /^https?:$/.test(location.protocol) ? `${location.origin}${location.pathname}` : null;
+    const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
+    const base = /^https?:\/\/[^/]+$/.test(hosted) ? `${hosted}/` : /^https?:$/.test(location.protocol) && !loopback ? `${location.origin}${location.pathname}` : null;
     return base && `${base}#watch=${encodeURIComponent(btoa(JSON.stringify(this.access)))}`;
   }
   /** True once the SpacetimeDB session exists; before that a link reaches only this browser. */
