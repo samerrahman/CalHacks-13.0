@@ -79,5 +79,5 @@ Every viewer already sees these events; the map uses only their sanitized type, 
 - Props are not drawn in the player's Three.js scene (James's `src/render`); only the spectator page draws them, top-down.
 - No rotation, friction cones or mesh colliders: spheres against boxes only.
 - One world per run: a restarted run gets a new session, a new link and freshly placed props.
-- Not published to or measured on Maincloud.
+- Published to Maincloud (`scary-5zsk8`) and checked there by `npm run spacetime:e2e` ([evidence](qa/spectate-physics-maincloud.json)); performance under many concurrent runs was not measured.
 - Load: one global 50 ms tick steps every awake world in one transaction. Fine for a handful of concurrent runs; not measured beyond that.

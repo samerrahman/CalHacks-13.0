@@ -1,0 +1,109 @@
+{
+  "what": "Live spectate + physics check against Maincloud database scary-5zsk8 after the owner (identity c2001826\u2026) published branch samer/spectate-physics at 33b34c6.",
+  "schema": "Public schema read after publish: tables expiry, physics_body, physics_tick, physics_world, session, spectator_vitals, vitals_sweep; views judge_trace, physics_feed, spectator_vitals_feed.",
+  "sensing": "The check posts SIMULATED vitals; no camera or Presage involved.",
+  "serverEndToEnd": {
+    "checkedAt": "2026-10-25T00:24:58.189Z",
+    "server": "wss://maincloud.spacetimedb.com",
+    "database": "scary-5zsk8",
+    "durationMs": 32629,
+    "passed": 15,
+    "failed": 0,
+    "results": [
+      {
+        "check": "first trace batch creates a resting 12-prop world visible to the spectator",
+        "ok": true,
+        "detail": {
+          "props": 12
+        }
+      },
+      {
+        "check": "SCARE impact wakes props and the server tick advances them",
+        "ok": true,
+        "detail": {
+          "moving": 12,
+          "tick": 7
+        }
+      },
+      {
+        "check": "props settle back to sleep within 4 s, displaced by the pound",
+        "ok": true,
+        "detail": {
+          "maxDisplacementM": 0.773,
+          "tick": 46
+        }
+      },
+      {
+        "check": "the world's tick freezes once every prop sleeps (verify the physics_tick row with owner SQL separately)",
+        "ok": true
+      },
+      {
+        "check": "a resent event batch does not re-apply its impulse",
+        "ok": true
+      },
+      {
+        "check": "no vitals row exists before the player opts in",
+        "ok": true
+      },
+      {
+        "check": "opted-in vitals reach the spectator, labelled simulated, without a server clock",
+        "ok": true,
+        "detail": {
+          "sequence": 1,
+          "source": "simulated",
+          "status": "ready",
+          "quality": "accepted",
+          "trend": "STEADY",
+          "pulseBpm": 83,
+          "baselineBpm": 72
+        }
+      },
+      {
+        "check": "an accepted reading without a pulse is rejected",
+        "ok": true
+      },
+      {
+        "check": "a wrong owner capability cannot write vitals",
+        "ok": true
+      },
+      {
+        "check": "a later reading replaces the row (latest value only)",
+        "ok": true,
+        "detail": {
+          "updates": 2
+        }
+      },
+      {
+        "check": "withdrawing consent deletes the row for the spectator",
+        "ok": true
+      },
+      {
+        "check": "an abandoned heart-rate row is swept within 21 s",
+        "ok": true
+      },
+      {
+        "check": "an owner knock moves exactly that prop",
+        "ok": true
+      },
+      {
+        "check": "a spectator with the wrong capability receives no rows at all",
+        "ok": true
+      },
+      {
+        "check": "removing the session removes trace and props from the spectator",
+        "ok": true,
+        "detail": {
+          "props": 0
+        }
+      }
+    ]
+  },
+  "ownerSqlAfterRun": {
+    "physics_tick": 0,
+    "vitals_sweep": 0,
+    "physics_world": 0,
+    "spectator_vitals": 0,
+    "command": "spacetime sql -s maincloud scary-5zsk8 \"SELECT COUNT(*) AS n FROM <table>\" (read-only, as the database owner)"
+  },
+  "notChecked": "A browser spectator against Maincloud and a friend on another network; Electron with live Presage."
+}

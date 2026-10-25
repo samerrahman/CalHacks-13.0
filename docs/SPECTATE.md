@@ -58,11 +58,11 @@ In the game: Operator settings → Pulse input SIMULATED (browser) → Share san
 
 - `npm run check`: unit tests for the vitals projection, remote revalidation, link parsing, consent on/off over the local link, the offline spectator feed and the local physics replay (`src/integrations/spectate.test.ts`).
 - `src/integrations/traceBridge.test.ts`: the revoke and restart races with a mocked connection.
-- [Local SpacetimeDB evidence](qa/spectate-physics-local-spacetime.json): 15/15 server checks (`npm run spacetime:e2e`, including the 15 s sweep), owner SQL showing both schedules stopped, and a browser run with the spectator on a separate origin. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
+- [Local SpacetimeDB evidence](qa/spectate-physics-local-spacetime.json): 15/15 server checks (`npm run spacetime:e2e`, including the 15 s sweep), owner SQL showing both schedules stopped, and a browser run with the spectator on a separate origin.
+- [Maincloud evidence](qa/spectate-physics-maincloud.json): the same 15/15 checks against `scary-5zsk8` after the owner published this branch, with owner SQL showing every physics/vitals table and schedule empty afterwards. A browser spectator on Maincloud and a friend on another network were not checked. Screenshots: [desktop](qa/spectate-remote-desktop.jpg), [phone width](qa/spectate-remote-mobile.jpg).
 
 ## Not verified / not done
 
-- Not published to Maincloud (`scary-5zsk8`); that needs the owner's CLI login.
 - Not run in Electron with a live Presage camera session; the browser run used SIMULATED input.
 - Only pulse, baseline, trend and quality are shared. Breathing and the other Presage signals are not yet carried by `SensorView`.
 - One link per run: a restart makes a new session, so friends need the new link.
