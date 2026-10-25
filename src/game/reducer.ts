@@ -55,7 +55,9 @@ function tick(state: GameState): void {
   tickCreature(state, FIXED_DT);
   if (state.status === 'playing') { tickBlackout(state); tickDirector(state); }
   if (state.mode !== 'tutorial' && state.status === 'playing' && state.time >= config.line.deadlineSeconds - 1e-8) {
-    state.status = 'lost'; state.restoreHeld = false; state.lossReason = `The ${Math.round(config.line.deadlineSeconds / 60)}-minute protocol window expired.`; state.notice = 'Release all four basement locks and open the door before the deadline.'; emit(state, 'TIMEOUT'); emit(state, 'LOST', 'TIMEOUT'); state.version++;
+    state.status = 'lost'; state.restoreHeld = false; state.lossReason = `The ${Math.round(config.line.deadlineSeconds / 60)}-minute protocol window expired.`; state.notice = 'Release all four basement locks and open the door before the deadline.';
+    // Running out of time is still a breach: the app plays the breach scream for every loss, so the face must show too.
+    triggerScare(state, 'breach'); emit(state, 'TIMEOUT'); emit(state, 'LOST', 'TIMEOUT'); state.version++;
   }
   updateDistanceSensor(state);
   updateCaption(state);
