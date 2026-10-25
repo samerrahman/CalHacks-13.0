@@ -1,72 +1,96 @@
 # HUSH
 
-HUSH is the root application. `npm run dev` opens this game; NIGHT RELAY remains only in its archived build kit and historical evidence.
+**A first-person horror game you play with your face.** You are sealed in a research shelter while something blind hunts outside it by sound. Your webcam reads your pulse, breathing and fear, and the thing outside can hear all of it.
 
-You have eight active minutes to get out of a sealed shelter through its basement while the creature hunts outside; a typical win takes about five. Each of the four research stages releases one of the basement door's four locks (lamps above the door turn green, the header shows BASEMENT LOCKS n / 4). The last step sends one more decoy heartbeat and starts the door motor, and a win plays the ending film: the motor's noise gives you away, its sonar contact charges and it hits the shelter door while the basement door grinds open, you squeeze through and drop the door on its claws, and the basement turns out not to be empty. Repair faults, patch cable panels, route power quietly, memorize growing signal sequences, mask your heartbeat, mark the creature's position from the monitor, breathe with a calm pacer, and broadcast remote lures. Running equipment is loud: while a research task is live, exposure keeps climbing and the creature keeps coming until you turn the equipment off, so you will regularly have to stop mid-task and isolate. There is no alarm: you hear its footsteps get louder and quicker as it nears, from the direction it is in, and it pounds on the wall when it is there. Now and then it charges on its own (a run), even if you have made no mistakes. The security monitor's ping radar shows where it was at the last ping, never an exact number. Three isolation cells (one recharged per completed stage) buy time: an isolation lasts until you restore power (hold F, from 4 seconds) or 25 seconds, so wait until the footsteps fade. Once an attack commits at the wall, cutting power is too late.
+Built at CalHacks 13.0 with React, Three.js, Electron, Gemini, ElevenLabs, Presage and SpacetimeDB.
 
-## Run
+| | |
+| --- | --- |
+| ![The opening film: CONTAINMENT BREACH](docs/screenshots/opening.jpg) | ![The sealed shelter, with the recorded briefing on the radio](docs/screenshots/shelter.jpg) |
+| ![Co-op: the player hears the fault, the friend's manual says which machine](docs/screenshots/coop.jpg) | ![The spectator page: one live FEAR reading and the readings behind it](docs/screenshots/spectator.jpg) |
 
-```sh
-npm ci
-npm run dev
-```
+## The game
 
-Open the URL printed by Vite, normally `http://127.0.0.1:5173`. Restart your existing dev process to load the new local voice/provider bridge. Start with **Begin with guidance** for the seven-step tutorial. The first start in a session asks you to enable your camera for Presage; **I don’t want to turn on my camera** plays with neutral physiology. Browser play works offline with neutral or explicitly simulated sensing. With configured local credentials, the dev server also supplies Gemini and ElevenLabs; live Presage camera sensing requires the desktop app.
+The containment tube fails, you run for the emergency shelter, and the door seals behind you. A recorded message from the station director explains the rules: the specimen is nearly blind but hears everything. The only way out is the basement, whose door has four locks. Each research protocol on the terminal releases one. You have **five minutes** before the sedative wears off.
 
-```sh
-npm run desktop          # build and launch Electron for native camera sensing
-GEMINI_MODEL=gemini-3.5-flash-lite npm run desktop  # tested live model; leaves .env unchanged
-npm run check            # tests, typecheck, browser build, Electron build
-npm run assets:validate  # hashes, actual GLB clips, WAVs, CCTV and decals
-npm run test:reference   # kit reference invariants
-HUSH_TEST_URL=http://127.0.0.1:5173 npm run test:browser  # with dev running
-npm run test:desktop     # isolated offline Electron smoke, including second screen
-```
+- **Everything you do makes noise.** Running machines, wrong answers and the door motor all raise your exposure. There is no alarm and no countdown: you hear its footsteps get louder and quicker, from the direction it is in, and it pounds on the wall when it is there.
+- **Go quiet in time.** Pull the lever (Q) to silence the machines and let it lose interest, then bring the power back (hold F) once the steps fade. You have three isolation cells, and get one back per completed stage. Once it commits at the wall, it is too late.
+- **Your body is an input.** With the camera on, Presage estimates your pulse, breathing and facial fear. A racing heart makes the heartbeat mask and the calm hold harder, and calming down makes it lose your trail. These are camera estimates for a game, never medical readings, and the game plays fine without a camera.
 
-On a fresh checkout use `npm ci`. Dependencies are pinned; this build was verified on macOS 14.2.1, Apple Silicon, Node 22.23.3, Electron 45. Browser WebGL and audio are required. The live webcam adapter uses Presage's native SDK; the browser does not estimate pulse.
+| Stage | Puzzles (order shuffled per run) | Releases |
+| --- | --- | --- |
+| 1 | Find 6 faults by ear (the rack key plays each machine's sound once) · patch 6 cables · rotate the conduit | Lock 1 |
+| 2 | Repeat a growing signal sequence (3 → 5) · tap along to mask your heartbeat · transmit the lure to emitter A | Lock 2 |
+| 3 | 8 faults by ear, two at a time, with a new sound key · 12 cables · mark it on the sonar three times | Lock 3 |
+| 4 | A longer sequence (4 → 6) · breathe with the calm pacer until it loses your trail · emitter B | Lock 4 |
+| Final | Send the last decoy and start the (loud) basement door motor | The ending |
+
+## Ways to play
+
+- **Begin with tutorial:** seven guided practice cards, read aloud by the radio, with the threat paused. The real run follows.
+- **Skip tutorial & start:** straight into a run. A session's first run opens with Dr. Hale's recorded briefing.
+- **Play with a friend:** send a link and your friend becomes your lifeline. Co-op is asymmetric: they hold an eight-page field manual you cannot see (fault sounds, cable codes, conduit boards, signal symbols, radar keys, the breathing pacer, the heartbeat mask, the door key), so you describe what you hear and they tell you what to press. Neither of you can finish alone. They can also flash a warning lamp in your shelter, fire decoys far out in the trees, and talk to you over optional voice chat.
+- **Spectate:** anyone with the link watches live, read only: a shelter camera rebuilt from the game (your researcher at their station), the creature's distance, a map with physics props, key moments, predictions, your optional webcam and, only if you allow it, one live **FEAR** reading with your heart rate, breathing, expression, blink rate and heart-rate variability under it.
 
 ## Controls
 
-| Control | Action |
+| Key | Action |
 | --- | --- |
-| Click equipment / E | Open the computer, security monitor or isolation controls |
-| Space | Leave the equipment interface |
-| 1–4 / numbered buttons | Task choices: faults, routing switches, heartbeat taps, memory; sector marks at the monitor |
-| T | Transmit a calibrated lure, engage a routed relay, or send the last decoy and start the basement door motor |
-| R | Replay the same sequence freely |
-| Drag cables / select cable then socket | Reconnect matching symbols after each fault stage |
-| Q | Spend one of three isolation cells; hold F to restore once it is clear (from 4 s), or it restores itself at 25 s |
-| B (hold) | Breathe in with the calm pacer; release to breathe out |
-| Hold F for 1 second | Restore a blackout freely, or end isolation in its final restore window |
-| Restore button | Accessible one-click equivalent with cancel |
-| Station buttons / drag | Face equipment / look around the room |
-| Escape | Pause game time, sound and capture |
-| J | Open sanitized judge trace |
+| Click equipment / **E** | Use the terminal, the sonar monitor or the lever |
+| **Space** | Step back from the equipment |
+| **1–4** | Answer the current task (faults, conduit, heartbeat taps, memory, sonar marks) |
+| **T** | Transmit a lure, engage the conduit, or start the door motor |
+| **R** | Replay the signal sequence (free, but it costs time) |
+| Drag a cable, or select cable then socket | Patch the relay |
+| **Q** | Isolate the equipment (one cell) |
+| Hold **F** | Restore power (from 4 s into an isolation; it restores itself at 25 s) |
+| Hold **B** | Breathe in with the calm pacer; release to breathe out |
+| Station buttons / drag | Face the terminal, the sonar or the lever; look around |
+| **Esc** | Pause. **Settings** there turns on captions (off by default), reduced motion and softer scares; fixed memory tempo is under Operator settings on the start screen |
 
-The run begins with a 25-second grace period. Guided practice is nonlethal and does not use the run's timer or cells. The regular run has an eight-minute deadline, including time spent with equipment off. Every shutdown consumes a cell, adds persistent exposure and triggers a cooldown after power returns. All task progress persists.
+## Run it
 
-The detector refreshes every four seconds and goes completely dark without power. The monster moves every 2.5 seconds, at most three units per step. A nearby alarm and matching captions continue during isolation; the local rules guarantee at least 2.5 seconds of near warning before an irreversible attack can commit. The display never shows a breach countdown. Intermediate lures bias movement outward; the final broadcast brings it to position24 and a three-second seal.
+```sh
+git clone https://github.com/samerrahman/CalHacks-13.0.git
+cd CalHacks-13.0
+npm ci
+cp .env.example .env.local   # optional provider keys; never commit
+npm run dev                  # http://127.0.0.1:5173
+```
 
-Stage 1 is a rack sound key, six faults you find by ear (the buttons only say 1–4), 6 cables and a conduit board. Stage 2 is memory growing from 3 to 5 cues, then the heartbeat mask. Stage 3 is a new sound key, eight faults by ear (two can sound at once), 12 cables and three monitor marks. Stage 4 is memory growing from 4 to 6 cues, then the calm hold. The heartbeat mask and calm hold use the coarse accepted Presage trend when available (an elevated pulse makes them harder) and run on standard rules without it. With calibrated live sensing, the heartbeat mask beats at your own rounded resting pulse, and the calm pacer starts at your own resting breathing pace and slows by a quarter second each breath to the standard pace. Calming down (an accepted ELEVATED trend returning to RECOVERED) makes the creature lose your trail for eight seconds, once per stage; manual play has no equivalent reward. Only rounded, frozen resting values enter local game state; providers and traces never receive them. Memory uses 0.36-second flashes and a sixteen-second response window per round. Replaying is free but costs time. Captions, neutral sensing, reduced motion, softer impacts, fixed memory tempo, volume and mute remain available. The opening and ending cutscenes are pre-rendered films (see [cutscene/README.md](cutscene/README.md)); the ending has its own skip button, and text cards replace it under reduced motion. See [tuning and balance](docs/BALANCE.md) for defaults, probabilities, fairness bounds and measured simulation results.
+The dev server reads `.env` / `.env.local` only at startup, so restart `npm run dev` after changing keys. Without keys the game still runs: the director falls back to its seeded rules and spoken lines fall back to captions.
 
-## Optional integrations and privacy
+```sh
+npm run desktop       # build and launch the Electron app (native Presage camera, providers)
+npm run check         # typecheck, all tests, web and Electron builds
+npm run spacetime:generate   # regenerate client bindings after a module schema change
+npm run cutscene -- render   # re-render the opening film (see cutscene/README.md)
+```
 
-Keep credentials in ignored `.env` / `.env.local`; `.env.example` lists names. Never prefix secret keys with `VITE_`. Provider keys stay in Node-side Vite middleware or Electron main. Local `npm run dev` calls the loopback-only provider bridge directly; it does not need trace consent for voice. SpacetimeDB handles consenting sanitized session traces and the live judge screen. A static browser build uses local AI/voice fallbacks until a trusted provider service is configured.
+Verified on macOS (Apple Silicon), Node 22 and Electron 45. WebGL and Web Audio are required. The desktop app uses Presage's native SDK; the browser build estimates pulse from the camera itself.
 
-For a remote judge screen, publish the module in `spacetimedb/` to your chosen SpacetimeDB database, run `npm run spacetime:generate` after schema changes, and set `VITE_SPACETIMEDB_DB_NAME` plus the public `VITE_SPACETIMEDB_HOST` in `.env.local` before building. `scary-5zsk8` on Maincloud runs the earlier spectate/physics module, published by its owner and checked live ([evidence](docs/qa/spectate-physics-maincloud.json)); its name is public configuration. Without a configured database, traces stay in the same browser through BroadcastChannel. The database keeps each consenting trace private, exposes a capability checked judge view, and schedules deletion after 24 hours. Solo runs remain private. **Play with a friend** starts co-op: the friend reads the fault, cable and conduit manual while the player controls the shelter. The game reducer remains authoritative and never waits on a database write. The same session also drives cosmetic, server-authoritative prop physics (see [PHYSICS](docs/PHYSICS.md)). The SpacetimeDB SDK needs `'unsafe-eval'` and the database host in the page's Content Security Policy; both policies now allow it.
+## How it is built
 
-Gemini chooses validated, bounded probability biases; it never directly sets the creature position. An eight-second deadline falls back locally. Monster text is separately generated from public game events, then its exact caption is sent to ElevenLabs. Generated text, authored fallback, live voice and cached voice are labelled separately. A serial speech scheduler prevents overlapping narration and creature dialogue. Use **Camera & pulse setup** before a run or the pulse button during play to select a device, view its mirrored local preview, calibrate and stop capture. After 30 usable calibration seconds, Start calibrated game reuses the active stream. A corner preview displays accepted pulse, breathing, baseline delta and the pulse bar. Breathing has its own 30-second warm-up and quality status. The preview uses the same video stream as the native adapter; it does not open a second camera. Missing or rejected measurements immediately produce neutral UNKNOWN physiology. Neither the model nor the shared trace receives raw pulse, memory answers or webcam frames. The **Play with a friend** invitation shares the run, current accepted pulse and co-op manual; the optional camera choice also enables live peer-to-peer video. **Stop sharing** removes access and restores solo hints. See [SPECTATE](docs/SPECTATE.md) and [CAMERA](docs/CAMERA.md). All ten requested Presage metrics are exposed locally in `SensorView.signals` with status/freshness and waveform access; `?debug` reveals their detailed panel.
+| Part | What it does |
+| --- | --- |
+| `src/game/` | The deterministic game: a fixed-step reducer owns time, the creature, puzzles, danger and the deadline. Nothing waits on the network, and every AI proposal is revalidated here. |
+| `src/render/`, `src/ui/` | Three.js renders the sealed shelter; React draws the terminal panels, HUD, menus, spectator page and run report. |
+| `src/audio/` | Web Audio engine: positional footsteps, machine faults, scares and the speech queue. |
+| `src/sensing/` | Presage camera input (native in Electron, optical estimate in the browser): pulse, breathing, expressions, a frozen baseline and a sustained trend. |
+| `src/integrations/` + `electron/` | Gemini picks bounded creature tactics and writes monster taunts from public events; ElevenLabs voices the monster and the British radio ("Daniel"). Keys stay in the Electron main process or the loopback dev server. |
+| `spacetimedb/` | The multiplayer backend on SpacetimeDB Maincloud (database `scary-5zsk8`): private sessions with a 24-hour expiry, the spectator trace, server-side prop physics, consented vitals, WebRTC signalling for the webcam and voice, the co-op manual and friend actions, and predictions. All access uses per-run capabilities. Without it, everything still works in the same browser over BroadcastChannel. |
+| `cutscene/`, `src/cutscene/` | The opening and ending films, rendered offline from Three.js scenes with their own soundtrack (`tools/cutscene.mjs`). |
 
-Creature speech now uses a much darker local treatment: lower pitch and slower delivery, driven distortion, and a short filtered double. Human radio lines keep their original sound. [Monster voice auditions](notes/monster-voice.md) lists three tested ElevenLabs voices; choose the in-game voice with `ELEVENLABS_VOICE_ID` in ignored `.env.local`.
+## Privacy
 
-Pulse and breathing recording are automatic whenever camera sensing is enabled; friend sharing is enabled by choosing **Play with a friend** (or the judge-screen trace opt-in in Operator settings). Local reports chart accepted pulse and breathing rate over the run, with jump scares, other events and recovery rewards marked, and show accepted measurements with gaps, event timing and conservative supported change/recovery. Simulated reports say SIMULATED. HUSH uses Presage physiology and facial-expression scores only as game input; nothing is a diagnosis or a medical reading. Run deletion clears in-memory history and attempts deletion of the consenting remote session; remote failure is reported.
+Camera frames never leave the device. Spectators get nothing about your body unless you tick the vitals consent, and then only whole-number summaries and one fear percentage, never waveforms or recordings. Live video goes peer to peer, only while you share it. Shared sessions are deleted when you stop sharing or after 24 hours. Provider keys live in ignored `.env` files, read only by the Electron main process or the loopback dev server. See [SPECTATE](docs/SPECTATE.md) and [CAMERA](docs/CAMERA.md).
 
-The generated-monster pipeline was tested live before this overhaul: the final corrected narrative probe used Gemini in891ms and ElevenLabs in359ms, with decoded audio matching the exact generated caption. Those timings are historical evidence, not a new live test of this rule revision. The user reports successful Presage calibration; the latest reliability fixes have automated packet/lifecycle coverage but have not yet been verified against a fresh live camera session. Earlier Convex evidence is historical. The combined co-op/camera module passes local SpacetimeDB checks but still needs an owner publish to Maincloud and a hosted web build for remote invitations.
+## More docs
 
-See [current integration status](docs/INTEGRATION_STATUS.md) and [verification handoff](docs/HANDOFF.md) for actual new-game evidence and external blockers. Old NIGHT RELAY results do not count as HUSH live tests.
+[Co-op](docs/COOP.md) · [Spectating](docs/SPECTATE.md) · [Live camera](docs/CAMERA.md) · [Prop physics](docs/PHYSICS.md) · [Balance and tuning](docs/BALANCE.md) · [Assets and licences](docs/ASSETS.md) · [Cutscenes](cutscene/README.md) · [Integration status](docs/INTEGRATION_STATUS.md) · [Verification handoff](docs/HANDOFF.md) · [Demo script](docs/DEMO.md) · [Team workflow](docs/TEAM.md)
 
-## Implementation and assets
+## Team
 
-React handles menus and overlays; Three.js renders the sealed shelter. `src/game/` owns fixed-step authority, seeded faults/wires/memory, integer movement probabilities, danger, deadline, finite isolation and validated director biases. `src/report/` analyzes optional in-memory pulse history. `electron/` contains the isolated native/provider bridge; `spacetimedb/` contains the consenting session and judge trace backend. `convex/` remains as historical reference and is no longer used by the application.
+**Samer** (signals and platform: camera sensing, Electron, SpacetimeDB) · **James** (gameplay and integration) · **Lea** (art, audio and UI) · **Lucy** (AI, voice and pitch)
 
-Runtime assets include 10 GLBs, 11 animation clips, 27 original mono WAV effects, 7 SVG decals, 4 generated CCTV backgrounds and one generated breach-scare image. Deterministic rust/grime textures and dim amber/red lighting give the room its darker industrial treatment. Their provenance, licenses and actual uses are documented in [ASSETS](docs/ASSETS.md). Creature geometry is CCTV-only. The security feed is fiction, distinct from optional webcam sensing. The kit and its ZIP remain available as design/reference archives.
+The older NIGHT RELAY and LOCK IN build kits remain under `lock-in-kit/` and `night-relay-kit/` as design references only; `convex/` is historical.

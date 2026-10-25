@@ -59,8 +59,11 @@ test('faults are found by ear: a shuffled sound key plays first, no fault spawns
   const machine = state.tasks.faults.active[0]!; assert.ok(FAULT_SOUNDS[key[machine]!]);
   const wrong = dispatch(state, { type: 'input', value: (machine + 1) % 4 + 1 }); assert.equal(wrong.events.at(-1)?.detail, 'FAULT');
   state = dispatch(state, { type: 'input', value: machine + 1 }); assert.equal(state.tasks.faults.completed, 1);
-  state = dispatch(state, { type: 'listen' }); assert.equal(listeningTo(state), 0, 'L replays the key');
-  assert.equal(dispatch(dispatch(state, { type: 'station', station: 'cameras' }), { type: 'listen' }).tasks.faults.listenFrom, state.tasks.faults.listenFrom);
+  const again = dispatch(state, { type: 'listen' });
+  assert.equal(listeningTo(again), null, 'outside practice L never replays the key'); assert.match(again.notice, /once each research stage/);
+  const practice = structuredClone(state); practice.mode = 'tutorial';
+  assert.equal(listeningTo(dispatch(practice, { type: 'listen' })), 0, 'practice still replays it');
+  assert.equal(dispatch(dispatch(practice, { type: 'station', station: 'cameras' }), { type: 'listen' }).tasks.faults.listenFrom, practice.tasks.faults.listenFrom, 'only from the terminal');
 });
 
 test('locate marks need the monitor, the true or last-sampled sector, and spacing between marks', () => {

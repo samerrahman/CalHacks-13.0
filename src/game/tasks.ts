@@ -88,9 +88,13 @@ function rackKey(state: GameState): number | null {
 }
 /** Which machine the rack key is playing to the player, or null. In co-op it never plays: the friend's manual holds the key. */
 export function listeningTo(state: GameState): number | null { return state.mode === 'coop' ? null : rackKey(state); }
+/** The player asking to hear the key again. Outside practice it never replays (user decision,
+ * 2026-10-25): the key plays once as the fault step opens and once on the first terminal visit of
+ * the stage (App), then it is up to the player's memory. */
 export function listenToRack(state: GameState): void {
   if (state.tasks.step !== 'faults' || state.equipment !== 'on' || state.station !== 'terminal' || rackKey(state) !== null) return;
   if (state.mode === 'coop') { state.notice = 'No rack key in co-op. Describe the sound to your friend; their manual says which machine makes it.'; return; }
+  if (state.mode !== 'tutorial') { state.notice = 'The rack key plays once each research stage. Trust your ears.'; return; }
   state.tasks.faults.listenFrom = state.time; emit(state, 'RACK_KEY');
   state.notice = 'Each machine plays its fault sound in turn. Remember which number makes which sound.';
 }
