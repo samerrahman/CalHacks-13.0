@@ -65,7 +65,7 @@ body .spectate-footage{display:grid;gap:20px;min-width:0}
 body .spectate-page .spectate-footage .camera-frame{aspect-ratio:16/9;max-height:26vh}
 @media(min-width:1000px){
  body .spectate-columns{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,1fr);column-gap:5vw;align-items:start}
- body .spectate-footage{grid-column:1;grid-row:1;position:sticky;top:3vh;max-height:94vh;overflow:hidden}
+ body .spectate-footage{grid-column:1;grid-row:1;position:sticky;top:3vh;max-height:94vh;overflow-y:auto}
  body .spectate-scroll{grid-column:2;grid-row:1}
 }
 @media(max-width:999px){body .spectate-footage{order:-1;position:sticky;top:0;z-index:2;background:#020303;padding-bottom:10px}body .spectate-columns{display:flex;flex-direction:column;gap:4vh}}

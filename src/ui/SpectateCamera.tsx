@@ -62,5 +62,6 @@ export default function SpectateCamera({ hash, spotlight = false, onLive }: { ha
       <button className={voice === 'on' ? 'on' : ''} aria-pressed={voice === 'on'} onClick={() => void joinVoice()}>{voice === 'on' ? '● Leave voice' : voice === 'opening' ? 'Opening mic…' : 'Join voice'}</button>
       <span>{voice === 'on' ? 'Your mic is on. They hear you only if they turned voice chat on.' : voice === 'denied' ? 'Microphone blocked. Allow it in your browser settings, or use the warning button.' : 'Optional: talk to the player and hear them. Use headphones.'}</span>
     </div>}
+    {!voiceLine && state.status !== 'unavailable' && <div className="spectate-voice"><span>Voice chat: a Join voice button appears here once the player shares their camera or turns on MIC.</span></div>}
   </section>;
 }

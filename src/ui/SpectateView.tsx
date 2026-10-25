@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { SpectateFeed, type SpectateState, type SpectatorVitals } from '../integrations/spectate';
 import type { TraceSnapshot } from '../integrations/client';
 import CctvFeed from '../spectate/CctvFeed';
-import ExteriorFeed from '../spectate/ExteriorFeed';
 import PulseTrace from '../spectate/PulseTrace';
 import Recap, { recapData } from '../spectate/Recap';
 import { PlayerWalker, type PlayerView } from '../spectate/player';
@@ -235,10 +234,6 @@ export default function SpectateView() {
       <section className={`spectate-card spectate-cctv-card${cctvSpotlight ? ' spotlight' : ''}`} aria-label="Shelter camera">
         <small>SHELTER CAMERA</small>
         <CctvFeed trace={trace ?? null} propsAt={propsAt} playerAt={playerAt} />
-      </section>
-      <section className="spectate-card spectate-exterior-card" aria-label="Outside camera">
-        <small>OUTSIDE <em>only you see this</em></small>
-        <ExteriorFeed trace={trace ?? null} seconds={() => runSeconds(live.current, performance.now())}/>
       </section>
       <SpectateCamera hash={location.hash} spotlight={spotlight} onLive={setCameraLive}/>
     </aside>
