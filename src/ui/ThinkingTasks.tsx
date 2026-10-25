@@ -14,35 +14,37 @@ function heartLine(g: GameState, elevated: string, steady: string): string {
 }
 
 const PIPE: [number, string][] = [[1, 'M20 20V0'], [2, 'M20 20H40'], [4, 'M20 20V40'], [8, 'M20 20H0']];
-export function ConduitTask({ g, send }: { g: GameState; send: Send }) {
-  const r = g.tasks.routing, lit = energizedTiles(r), joined = conduitConnected(r);
+/** Co-op hides the power glow and the joined reading: the friend's manual has the solved route. */
+export function ConduitTask({ g, send, coop = g.mode === 'coop' }: { g: GameState; send: Send; coop?: boolean }) {
+  const r = g.tasks.routing, lit = coop ? new Set<number>() : energizedTiles(r), joined = !coop && conduitConnected(r);
   return <>
-    <p>The relay conduit is broken. Click tiles to rotate them until the inlet on the left joins the outlet on the right, then press T. Rotating is quiet; engaging a broken conduit arcs loudly. Powered pipe glows.</p>
+    <p>{coop ? 'The relay conduit is broken and its power reading is dead. Your friend\'s manual shows the solved route: describe a tile by row and column, rotate it as they say, then press T. Rotating is quiet; engaging a broken conduit arcs loudly.' : 'The relay conduit is broken. Click tiles to rotate them until the inlet on the left joins the outlet on the right, then press T. Rotating is quiet; engaging a broken conduit arcs loudly. Powered pipe glows.'}</p>
     <div className="conduit" style={{ gridTemplateColumns: `14px repeat(${r.size}, 1fr) 14px` }}>
       {Array.from({ length: r.size }, (_, row) => <div key={row} className="conduit-row">
         <i className={row === r.start ? 'conduit-port in' : 'conduit-port'} aria-hidden="true"/>
         {Array.from({ length: r.size }, (_, col) => { const tile = row * r.size + col, open = tileOpenings(r.kinds[tile]!, r.turns[tile]!);
-          return <button key={tile} className={`conduit-tile ${lit.has(tile) ? 'lit' : ''}`} aria-label={`Conduit tile row ${row + 1} column ${col + 1}${lit.has(tile) ? ', powered' : ''}`} onClick={() => send({ type: 'rotate', tile })}>
+          return <button key={tile} className={`conduit-tile ${lit.has(tile) ? 'lit' : ''}`} title={coop ? `Row ${row + 1}, column ${col + 1}` : undefined} aria-label={`Conduit tile row ${row + 1} column ${col + 1}${lit.has(tile) ? ', powered' : ''}`} onClick={() => send({ type: 'rotate', tile })}>
             <svg viewBox="0 0 40 40" aria-hidden="true">{PIPE.filter(([bit]) => open & bit).map(([bit, d]) => <path key={bit} d={d}/>)}{open ? <circle cx="20" cy="20" r="4.5"/> : null}</svg></button>; })}
         <i className={row === r.end ? `conduit-port out ${joined ? 'joined' : ''}` : 'conduit-port'} aria-hidden="true"/>
       </div>)}
     </div>
     <div className="terminal-actions"><button className="transmit" onClick={() => send({ type: 'engage' })}><kbd>T</kbd> Engage relay</button></div>
-    <div className="task-progress"><span>Conduit {r.round + 1} / {r.rounds}</span><span>{joined ? 'CONNECTED · PRESS T' : 'NOT CONNECTED'}</span></div>
+    <div className="task-progress"><span>Conduit {r.round + 1} / {r.rounds}</span><span>{coop ? 'NO POWER READING · ASK THE MANUAL' : joined ? 'CONNECTED · PRESS T' : 'NOT CONNECTED'}</span></div>
   </>;
 }
 
-/** Faults are found by ear: plain numbered buttons, the rack's sound key while it plays, and a caption of what is audible. */
-export function FaultTask({ g, send }: { g: GameState; send: Send }) {
-  const f = g.tasks.faults, sounds = faultSounds(g), playing = listeningTo(g);
+/** Faults are found by ear: plain numbered buttons, the rack's sound key while it plays, and a caption of what is audible.
+ * In co-op the key never plays (listeningTo is null) and the friend's manual maps each sound to its machine. */
+export function FaultTask({ g, send, coop = g.mode === 'coop' }: { g: GameState; send: Send; coop?: boolean }) {
+  const f = g.tasks.faults, sounds = faultSounds(g), playing = coop ? null : listeningTo(g);
   const heard = f.active.map(machine => FAULT_SOUNDS[sounds[machine]!]);
   return <>
-    <p>{playing !== null ? 'Listen: each machine plays its fault sound in turn. Remember which number makes which sound.' : `Fix the machine that is making the noise. Up to ${f.maximumActive} can fail at once. Wrong guesses clang loudly.`}</p>
-    <div className="fault-grid listen-grid">{[0, 1, 2, 3].map(i => <button key={i} data-tutorial={i === f.active[0] ? 'fault-box-1' : undefined} className={`machine ${playing === i ? 'playing' : ''}`} aria-label={playing === i ? `Machine ${i + 1}: ${FAULT_SOUNDS[sounds[i]!]}` : `Machine ${i + 1}`} onClick={() => send({ type: 'input', value: i + 1 })}>
+    <p>{coop ? `Tell your friend what you hear; their manual says which machine makes that sound. Up to ${f.maximumActive} can fail at once. Wrong guesses clang loudly.` : playing !== null ? 'Listen: each machine plays its fault sound in turn. Remember which number makes which sound.' : `Fix the machine that is making the noise. Up to ${f.maximumActive} can fail at once. Wrong guesses clang loudly.`}</p>
+    <div className="fault-grid listen-grid">{[0, 1, 2, 3].map(i => <button key={i} data-tutorial={!coop && i === f.active[0] ? 'fault-box-1' : undefined} className={`machine ${playing === i ? 'playing' : ''}`} aria-label={playing === i ? `Machine ${i + 1}: ${FAULT_SOUNDS[sounds[i]!]}` : `Machine ${i + 1}`} onClick={() => send({ type: 'input', value: i + 1 })}>
       <kbd>{i + 1}</kbd><b>{playing === i ? FAULT_SOUNDS[sounds[i]!] : ''}</b></button>)}</div>
     <div className="you-hear" data-testid="fault-hearing" aria-live="polite"><span>YOU HEAR</span><b>{playing !== null ? 'The rack key' : heard.length ? heard.join(' + ') : 'Nothing from the rack'}</b></div>
-    <div className="terminal-actions"><button onClick={() => send({ type: 'listen' })} disabled={playing !== null}><kbd>L</kbd> Listen to the rack again</button></div>
-    <div className="task-progress"><span>{f.completed} / {f.required} faults fixed</span><span>1–4 · BY EAR</span></div>
+    {!coop && <div className="terminal-actions"><button onClick={() => send({ type: 'listen' })} disabled={playing !== null}><kbd>L</kbd> Listen to the rack again</button></div>}
+    <div className="task-progress"><span>{f.completed} / {f.required} faults fixed</span><span>{coop ? '1–4 · ASK THE MANUAL' : '1–4 · BY EAR'}</span></div>
   </>;
 }
 

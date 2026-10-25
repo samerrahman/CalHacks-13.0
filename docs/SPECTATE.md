@@ -22,6 +22,8 @@ A further, separate opt-in shares your camera as live peer-to-peer video that is
 | Source: `presage` or `simulated`; simulated shows **SIMULATED · not a real heart rate** | Measurement clocks, native confidence, validation codes, diagnostics |
 | Capture status (calibrating, ready, paused…) | Puzzle answers, wire solutions, RNG state |
 
+One exception by design: in an experimental co-op run ([COOP.md](COOP.md)) the link also carries the key for the player's live fault, cable or conduit task, because the friend reads it out. Standard runs never publish it, and it never enters the trace.
+
 The game reducer never reads anything spectators do; spectators cannot send anything to the player. Everything a spectator receives is revalidated in the page (`remoteVitals`), and the server revalidates every write (`shareVitals`): enums, 40–110 BPM integers, accepted ⇔ pulse present, owner capability, monotonic sequence and at most two writes a second.
 
 ## How it flows

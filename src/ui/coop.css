@@ -1,0 +1,25 @@
+/* Co-op manual on the spectator page: a printed field manual, cream on dark, large enough to read aloud. */
+.coop-manual{margin-top:18px;border-color:#a3956a66;background:#13150f}
+.coop-page h2{margin:0;font:400 24px var(--mono);color:#e2d6ac;display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.coop-page h2 small{font-size:10px;letter-spacing:1px;color:#9da99c}
+.coop-page p{margin:6px 0 12px;font-size:13px;line-height:1.6;color:#c9cdb4;max-width:640px}
+.coop-key{border-collapse:collapse;width:100%;max-width:420px;font:15px var(--mono)}
+.coop-key th{text-align:left;font-size:10px;letter-spacing:1px;color:#9da99c;padding:0 0 8px;font-weight:400}
+.coop-key td{padding:10px 0;border-top:1px solid var(--line);color:#e2d6ac;text-transform:uppercase}
+.coop-key td:last-child{width:70px;text-align:right}
+.coop-key kbd,.coop-cables strong{display:inline-grid;place-items:center;min-width:38px;height:38px;border:1px solid #e2d6ac88;font:22px var(--mono);color:#f0e4b8;background:#1d1f15}
+.coop-cables{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-width:640px}
+.coop-cables li{display:flex;align-items:center;gap:14px;padding:8px 12px;border:1px solid var(--line);background:#0f120d}
+.coop-cables b{font:400 26px var(--mono);color:var(--wire-color);min-width:30px;text-align:center}
+.coop-cables i{font-style:normal;color:#7d8572}
+.coop-conduit{display:grid;gap:5px;max-width:340px;align-items:center}
+.coop-conduit-row{display:contents}
+.coop-axis{font:11px var(--mono);color:#9da99c;text-align:center;white-space:nowrap}
+.coop-axis.port{color:#e0a463}
+.coop-tile{aspect-ratio:1;display:grid;place-items:center;border:1px dashed #3b4434;background:#0d110c;color:#4f5a46;font-size:20px}
+.coop-tile.route{border:1px solid #a3956a88;background:#1a1d13}
+.coop-tile svg{width:100%;height:100%}
+.coop-tile path{stroke:#e0a463;stroke-width:7;stroke-linecap:square;fill:none}.coop-tile circle{fill:#e0a463}
+.coop-empty{display:grid;gap:6px;font-size:13px;color:#aebc9f}.coop-empty strong{font:400 20px var(--mono);color:#d7cfa8}
+.coop-note{font-size:11px!important;color:#8f9c86!important}
+@media(max-width:820px){.coop-conduit{max-width:100%}.coop-axis{font-size:10px}.coop-cables{grid-template-columns:repeat(2,minmax(0,1fr))}.coop-cables li{gap:8px;padding:8px}}

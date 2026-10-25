@@ -7,6 +7,7 @@ import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
 import AppendTraceReducer from "../append_trace_reducer";
+import PublishManualReducer from "../publish_manual_reducer";
 import CreateSessionReducer from "../create_session_reducer";
 import PhysicsKnockReducer from "../physics_knock_reducer";
 import RemoveSessionReducer from "../remove_session_reducer";
@@ -19,6 +20,7 @@ import ShareVitalsReducer from "../share_vitals_reducer";
 import StopVitalsReducer from "../stop_vitals_reducer";
 
 export type AppendTraceParams = __Infer<typeof AppendTraceReducer>;
+export type PublishManualParams = __Infer<typeof PublishManualReducer>;
 export type CreateSessionParams = __Infer<typeof CreateSessionReducer>;
 export type PhysicsKnockParams = __Infer<typeof PhysicsKnockReducer>;
 export type RemoveSessionParams = __Infer<typeof RemoveSessionReducer>;

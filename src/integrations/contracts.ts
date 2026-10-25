@@ -81,7 +81,7 @@ export function publicEvent(event: PublicEvent): PublicEvent {
   const type = EVENT_TYPES.has(event.type) ? event.type : 'UNKNOWN';
   let detail = '';
   const value = typeof event.detail === 'string' ? event.detail : '';
-  if (type === 'RUN_STARTED' && /^(standard|demo|tutorial)$/.test(value)) detail = value;
+  if (type === 'RUN_STARTED' && /^(standard|demo|tutorial|coop)$/.test(value)) detail = value;
   else if (type === 'FAULT_CLEARED' && /^(1|3)$/.test(value)) detail = value;
   else if (type === 'TASK_COMPLETE' && /^[1-4]$/.test(value)) detail = value;
   else if (type === 'WRONG_INPUT' && /^(FAULT|MEMORY|WIRE)$/.test(value)) detail = value;
