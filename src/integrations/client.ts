@@ -118,7 +118,7 @@ export class TraceBridge {
     this.channel = new BroadcastChannel(channelName);
     this.access = { channel: channelName };
     this.status = 'Local trace · same browser only';
-    if (!import.meta.env?.VITE_SPACETIMEDB_DB_NAME) return;
+    if (!spacetimeConfig.database) return;
     this.connecting = true;
     try {
       if ((await window.lockIn?.status())?.offline) return;
@@ -152,7 +152,7 @@ export class TraceBridge {
    * opened on another machine, so a hosted web build's public origin (VITE_SPECTATE_ORIGIN) wins. */
   shareableSpectateUrl(): string | null {
     if (!this.access) return null;
-    const hosted = String(import.meta.env?.VITE_SPECTATE_ORIGIN ?? '').replace(/\/+$/, '');
+    const hosted = String(import.meta.env?.VITE_SPECTATE_ORIGIN ?? (import.meta.env ? 'https://shouldhaveskipped.work' : '')).replace(/\/+$/, '');
     const loopback = (host: string) => /^(localhost|127\..*|0\.0\.0\.0|\[::1\])$/.test(host) || host.endsWith('.localhost');
     let hostedOrigin: string | null = null;
     try { const url = new URL(hosted); if (/^https?:$/.test(url.protocol) && url.pathname === '/' && !url.search && !url.hash && !url.username && !url.password && !loopback(url.hostname)) hostedOrigin = url.origin; } catch { /* no hosted build configured */ }
@@ -254,7 +254,7 @@ export function subscribeJudge(listener: (snapshot: TraceSnapshot) => void, repo
     channel = new BroadcastChannel(access.channel);
     channel.onmessage = e => listener(e.data as TraceSnapshot);
     reportStatus('Waiting for consenting local session');
-    if (access.host === spacetimeConfig.uri && access.database === spacetimeConfig.database && access.sessionId && access.capability && import.meta.env.VITE_SPACETIMEDB_DB_NAME) {
+    if (access.host === spacetimeConfig.uri && access.database === spacetimeConfig.database && access.sessionId && access.capability && spacetimeConfig.database) {
       void connectSpacetime(() => reportStatus('SpacetimeDB reconnecting')).then(connection => {
         if (disposed) { connection.disconnect(); return; }
         client = connection;

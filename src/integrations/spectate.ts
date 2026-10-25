@@ -61,7 +61,10 @@ export class SpectateFeed {
     this.channel = new BroadcastChannel(access.channel);
     this.channel.onmessage = e => this.localSnapshot(e.data as TraceSnapshot);
     this.state.status = 'Waiting for the player · same browser';
-    if (access.host === spacetimeConfig.uri && access.database === spacetimeConfig.database && access.sessionId && access.capability && import.meta.env?.VITE_SPACETIMEDB_DB_NAME) void this.connect(access.sessionId, access.capability);
+    if (access.host === spacetimeConfig.uri && access.database === spacetimeConfig.database && access.sessionId && access.capability && spacetimeConfig.database) {
+      this.state.status = 'Connecting · SpacetimeDB';
+      void this.connect(access.sessionId, access.capability);
+    }
   }
   subscribe(listener: (state: SpectateState) => void): () => void { this.listeners.add(listener); listener(this.state); return () => { this.listeners.delete(listener); }; }
   /** Prop positions for this animation frame: smoothed server rows, or the local replay. */
@@ -128,6 +131,7 @@ export class SpectateFeed {
           // Also runs again after an automatic reconnect, where unchanged rows fire no callbacks.
           replaying = true; syncTrace(); syncVitals(); syncProps(); replaying = false;
           if (this.state.status.startsWith('SpacetimeDB reconnecting')) this.emit({ status: 'Reconnected · waiting for the next update' });
+          else if (this.state.status.startsWith('Connecting')) this.emit({ status: 'Waiting for the player · SpacetimeDB' });
         })
         .onError(() => this.emit({ status: 'SpacetimeDB feed unavailable · same-browser link only' }))
         .subscribe([capabilityQuery('judge_trace', id, capability), capabilityQuery('spectator_vitals_feed', id, capability), capabilityQuery('physics_feed', id, capability)]);

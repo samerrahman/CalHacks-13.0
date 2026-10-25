@@ -3,7 +3,7 @@ import { DbConnection } from '../module_bindings';
 const nodeEnv = typeof process === 'undefined' ? undefined : process.env;
 export const spacetimeConfig = {
   uri: import.meta.env?.VITE_SPACETIMEDB_HOST || nodeEnv?.VITE_SPACETIMEDB_HOST || 'wss://maincloud.spacetimedb.com',
-  database: import.meta.env?.VITE_SPACETIMEDB_DB_NAME || nodeEnv?.VITE_SPACETIMEDB_DB_NAME || '',
+  database: import.meta.env?.VITE_SPACETIMEDB_DB_NAME || nodeEnv?.VITE_SPACETIMEDB_DB_NAME || (import.meta.env ? 'scary-5zsk8' : ''),
 };
 
 /** Create an isolated connection. The database name is public configuration. */

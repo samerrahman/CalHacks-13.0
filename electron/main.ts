@@ -16,6 +16,7 @@ for (const name of ['.env.local', '.env']) { const p = path.join(root, name); if
 // a live network/camera test. This mutates only the child process environment.
 const offline = process.env.LOCK_IN_OFFLINE === '1' || process.env.HUSH_OFFLINE === '1';
 if (offline) for (const name of ['PRESAGE_API_KEY', 'GEMINI_API_KEY', 'ELEVENLABS_API_KEY', 'VITE_SPACETIMEDB_DB_NAME']) delete process.env[name];
+else process.env.VITE_SPACETIMEDB_DB_NAME ||= 'scary-5zsk8';
 app.setName('HUSH');
 protocol.registerSchemesAsPrivileged([{ scheme: 'lockin', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }]);
 let mainWindow: BrowserWindow | null = null;

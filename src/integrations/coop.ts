@@ -87,7 +87,10 @@ export class CoopManualFeed {
     this.channel = new BroadcastChannel(`${access.channel}-coop`);
     this.channel.onmessage = e => this.emit({ local: manualFromRow(e.data), localAt: performance.now() });
     this.state.status = 'Waiting for the player · same browser';
-    if (access.host === spacetimeConfig.uri && access.database === spacetimeConfig.database && access.sessionId && access.capability && import.meta.env?.VITE_SPACETIMEDB_DB_NAME) void this.connect(connect, access.sessionId, access.capability);
+    if (access.host === spacetimeConfig.uri && access.database === spacetimeConfig.database && access.sessionId && access.capability && spacetimeConfig.database) {
+      this.state.status = 'Connecting · SpacetimeDB';
+      void this.connect(connect, access.sessionId, access.capability);
+    }
   }
   subscribe(listener: (state: CoopFeedState) => void): () => void { this.listeners.add(listener); listener(this.state); return () => { this.listeners.delete(listener); }; }
   dispose(): void { this.disposed = true; this.channel?.close(); this.channel = null; this.client?.disconnect(); this.client = null; this.listeners.clear(); }
@@ -105,7 +108,10 @@ export class CoopManualFeed {
       let sequenceSeen: number | null = null;
       const sync = () => {
         const row = [...connection.db.coopManualFeed.iter()][0];
-        if ((row?.sequence ?? null) === sequenceSeen) return;
+        if ((row?.sequence ?? null) === sequenceSeen) {
+          if (this.state.status.startsWith('Connecting')) this.emit({ status: 'Live · SpacetimeDB' });
+          return;
+        }
         sequenceSeen = row?.sequence ?? null;
         this.emit({ remote: row ? manualFromRow(row) : undefined, status: 'Live · SpacetimeDB' });
       };
