@@ -91,6 +91,6 @@ Camera frames never leave the device. Spectators get nothing about your body unl
 
 ## Team
 
-**Samer** (signals and platform: camera sensing, Electron, SpacetimeDB) · **James** (gameplay and integration) · **Lea** (art, audio and UI) · **Lucy** (AI, voice and pitch)
+**Samer** (Modeling, Cutscenes, Electron, SpacetimeDB) · **James** (gameplay and integration) · **Lea** (art, audio and UI) · **Lucy** (Presage integration, health and privacy features)
 
 The older NIGHT RELAY and LOCK IN build kits remain under `lock-in-kit/` and `night-relay-kit/` as design references only; `convex/` is historical.
