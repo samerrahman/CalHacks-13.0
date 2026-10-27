@@ -177,3 +177,13 @@ body .results .screen-left>p.small+.worn-menu{margin-top:5vh}
 /* Start menu: all three choices share one colour and height (the base primary button is taller). */
 body .setup .setup-actions button.primary{color:#a49b86;min-height:0}
 body .worn-menu button.primary{min-height:0}
+/* Camera prompt choices (and Recalibrate / Stop camera once it is on) read as start-menu items. Without this the base modal rule paints the enable button pale until hovered, and the rest keep the old boxed buttons. The hover indent swaps padding sides so labels never rewrap. */
+body .camera-modal.camera-prompt .camera-prompt-actions{gap:14px}
+body .camera-modal.camera-prompt .button-row{display:flex;flex-wrap:wrap;gap:8px 28px}
+body .camera-modal.camera-prompt .camera-prompt-actions button,body .camera-modal.camera-prompt .button-row button{position:relative;display:inline-block;font-size:13px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:#a49b86;background:none;border:0;border-radius:0;box-shadow:none;padding:4px 16px 4px 0;margin:0;width:auto;min-height:0;text-align:left;white-space:normal;transform:none;transition:color .3s,padding .3s,text-shadow .3s}
+body .camera-modal.camera-prompt .button-row button{font-size:12px}
+body .camera-modal.camera-prompt .camera-prompt-actions button span{margin-left:10px}
+body .camera-modal.camera-prompt .camera-prompt-actions button.primary{color:#e0d6c0}
+body .camera-modal.camera-prompt .camera-prompt-actions button:hover:not(:disabled),body .camera-modal.camera-prompt .button-row button:hover:not(:disabled),body .camera-modal.camera-prompt .camera-prompt-actions button:focus-visible,body .camera-modal.camera-prompt .button-row button:focus-visible{background:none;color:#fff3dc;padding:4px 0 4px 16px;text-shadow:0 0 10px #ffffff40}
+body .camera-modal.camera-prompt .camera-prompt-actions button:hover:not(:disabled)::before,body .camera-modal.camera-prompt .button-row button:hover:not(:disabled)::before,body .camera-modal.camera-prompt .camera-prompt-actions button:focus-visible::before,body .camera-modal.camera-prompt .button-row button:focus-visible::before{content:'';position:absolute;left:0;top:50%;width:8px;height:2px;background:#b8261a;box-shadow:0 0 8px #ff3a1a}
+body .camera-modal.camera-prompt .camera-prompt-actions button:disabled,body .camera-modal.camera-prompt .button-row button:disabled{opacity:.3}
